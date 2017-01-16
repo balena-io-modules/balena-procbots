@@ -30,22 +30,28 @@
     "gulp": "^3.9.1",
     "gulp-util": "^3.0.7",
     "gulp-typescript": "^3.1.3",
-    "gulp-sourcemaps": "^1.9.1"
+    "gulp-sourcemaps": "^2.3.1"
   },
   "dependencies": {
-    "@types/bluebird": "^3.0.35",
+    "@types/bluebird-global": "^3.0.0",
     "@types/body-parser": "0.0.33",
     "@types/express": "^4.0.34",
+    "@types/github": "^0.0.0",
     "@types/lodash": "^4.14.43",
     "@types/node": "^6.0.48",
     "@types/node-getopt": "^0.2.29",
+    "@types/request": "^0.0.39",
     "bluebird": "^3.0.35",
     "body-parser": "^1.9.2",
     "express": "^4.0.34",
+    "github": "^8.0.0",
     "github-webhook-handler": "^0.6.0",
+    "hmac": "^1.0.1",
+    "jsonwebtoken": "^7.2.1",
     "lodash": "^4.17.2",
     "node-getopt": "^0.2.3",
     "mkdirp": "^0.5.1",
+    "request": "^2.79.0",
     "rmdir": "^1.2.0",
     "temp": "^0.8.3"
   }

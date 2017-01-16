@@ -11,11 +11,15 @@
             "program": "${workspaceRoot}/lib/app.ts",
             "cwd": "${workspaceRoot}",
             "sourceMaps": true,
-            "outDir": "${workspaceRoot}/build",
+            "outFiles": [ "${workspaceRoot}/build/**/*.js" ],
             "preLaunchTask": "build",
             "args": [ "-b", "versionbot" ],
+            // You'll need the right secret webhook and integration ID.
+            // ATM, see Heds for details.
             "env": {
-                "VERSIONBOT_REPOBASE": "/Work/tmp/versionbot"
+                "VERSIONBOT_REPOBASE": "/Work/tmp/versionbot",
+                "WEBHOOK_SECRET": "",
+                "INTEGRATION_ID": ""
             }
         },
         {

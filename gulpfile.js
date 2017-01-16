@@ -17,7 +17,10 @@ gulp.task('typescript', () => {
 	gulp.src(OPTIONS.files.typescript)
 		.pipe(sourcemaps.init())
 		.pipe(tsProject()).on('error', gutil.log)
-		.pipe(sourcemaps.write('./', { includeContent: true, sourceRoot: '../lib' }))
+		.pipe(sourcemaps.write('./', { includeContent: true,
+			sourceRoot: '../lib',
+			mapSources: (pathFile) => { return pathFile; }
+		}))
 		.pipe(gulp.dest('build/'));
 });
 

@@ -21,7 +21,8 @@ import * as bodyParser from 'body-parser';
 import * as _ from 'lodash';
 import * as Promise from 'bluebird';
 import { GithubBot } from './githubbot';
-const githubHooks: any = require('github-webhook-handler');
+
+const hmac = require('crypto');
 
 // Arguments determine which bot type we want to use.
 const getopt = new Opts([
@@ -40,7 +41,23 @@ if (opt.options['help'] || Object.keys(opt.options).length === 0) {
 	process.exit(0)
 }
 
-// Import any specified bots. These will all listen for webhooks.
+// Verify the sender of data is allowed to.
+function verifyWebhookToken(payload: string, hubSignature: string) {
+	const newHmac: any = hmac.createHmac('sha1', process.env.WEBHOOK_SECRET);
+	newHmac.update(payload);
+	if (('sha1=' + newHmac.digest('hex')) === hubSignature) {
+		return true;
+	}
+
+	return false;
+}
+
+// Standard Express gubbins.
+const app = express();
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+
+	// Import any specified bots. These will all listen for webhooks.
 let botRegistry: GithubBot[] = [];
 for (let bot of opt.options['bot-names']) {
 	// Dynamically require the bots.
@@ -54,11 +71,6 @@ for (let bot of opt.options['bot-names']) {
 	}
 }
 
-// Standard Express gubbins.
-const app = express();
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
-
 // Run the hook listener now, and for each bot we've been asked to listen
 // to, wait for events. When we get an event, check against those bots
 // registered, and send filtered messages on to them for action.
@@ -66,8 +78,18 @@ app.post('/webhooks', (req: any, res: any) => {
 	const eventType: string = req.get('x-github-event');
 	const payload = req.body;
 
+	if (req.get('x-hub-signature'))
+
+	// Ensure that the sender is authorised and uses our secret.
+	if (!verifyWebhookToken(JSON.stringify(payload), req.get('x-hub-signature'))) {
+		res.sendStatus(401);
+		return;
+	}
+
 	// Let the hook get on with it.
 	res.sendStatus(200);
+
+	console.log(eventType);
 
 	// Go through all registered bots, and send them any appropriate hook.
 	_.forEach(botRegistry, (bot: GithubBot) => {
@@ -81,3 +103,7 @@ app.post('/webhooks', (req: any, res: any) => {
 app.listen(4567, () => {
 	console.log('Listening for github hooks on port 4567.');
 });
+
+
+
+

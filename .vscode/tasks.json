@@ -7,7 +7,7 @@
   "tasks": [
     {
       "taskName": "build",
-      "args": ["--app"],
+      "args": [],
       "isBuildCommand": true,
       "isWatching": false
     }
