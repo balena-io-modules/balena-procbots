@@ -20,6 +20,16 @@ You'll need to fill in the `WEBHOOK_SECRET` and `INTEGRATION_ID` fields in `.vsc
 
 Ask Heds how this works.
 
+## Initialising a Repo
+
+Before the Versionist Procbot can deal with a repository, the repo itself needs to be updated to support it.
+
+Use the tool in `tools/initRepo` to do this:
+
+    ./tools/initRepo/bin/initRepo -u bob -p bobspassword -r bob/bobsrepo
+
+**Note:** This must be carried out by an admin user of the repo.
+
 ## Running
 
 Currently there is only one version bot.
