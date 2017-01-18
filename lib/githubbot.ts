@@ -112,6 +112,15 @@ class RepoWorker {
 	}
 }
 
+export interface GithubCall {
+	owner: string,
+	repo: string
+};
+
+export interface GithubPRCall extends GithubCall {
+	number: number
+};
+
 class GithubAccess {
 	private integrationId: number;
 	private jwt: string;
@@ -173,7 +182,6 @@ class GithubAccess {
 		}
 		return request.getAsync(installationsOpts).then((res: any) => {
 			const installations: any[] = res.body;
-
 			// Get the URL for the token.
 			const tokenUrl = installations[0].access_tokens_url;
 
@@ -214,35 +222,45 @@ class GithubAccess {
 			// For debug.
 			console.log(`token for manual fiddling is: ${tokenDetails.token}`);
 			console.log('Base curl command:');
-			console.log(`curl -XGET -H "Bearer: token ${tokenDetails.token}" -H "Accept: application/vnd.github.black-cat-preview+json" https://api.github.com/`)
+			console.log(`curl -XGET -H "Authorisation: token ${tokenDetails.token}" -H "Accept: application/vnd.github.black-cat-preview+json" https://api.github.com/`)
 		});
 	}
 
 	// Make a 'github' API call. We explicitly wrap this so that any authentication error
 	// can result in re-authentication before moving on.
-	// We also allow authentication as a user, if required.
-	public makeCall = (method: any, options: any, user?: number) =>{
-		let authPromise: Promise<void> = Promise.resolve();
+	public makeCall = (method: any, options: any, retries: 6) =>{
+		let badCreds = false;
+		let retriesLeft: number = retries || 1;
 
-		// Ensure that our current token is of the right type.
-		if (this.user && !user) {
-			authPromise = this.authenticate();
-		} else if (!this.user && user) {
-			authPromise = this.authenticate(user);
-		}
+		// We need a new Promise here, as we might need to do retries.
+		return new Promise((resolve, reject) => {
+			const runApi = () => {
+				retriesLeft -= 1;
 
-		// Make the github call. If we get bad credentials, we re-authenticate.
-		return authPromise.then(() => {
-			return method(options);
-		}).catch((err: Error) => {
-			if (err.message === 'Bad credentials') {
-				// Re-authenticate, then try again.
-				return this.authenticate(this.user).then(() => {
-					return method(options);
+				// Run the method.
+				return method(options).catch((err: Error) => {
+					// We only try and reauthenticate once, else we throw.
+					if ((err.message === 'Bad credentials') && !badCreds) {
+						badCreds = true;
+						// Re-authenticate, then try again.
+						return runApi();
+					} else if (retriesLeft === 0) {
+						// No more retries, just reject.
+						reject(err);
+					} else {
+						// If there's more retries, try again in 5 seconds.
+						setTimeout(() => {
+							runApi();
+						}, 5000);
+					}
+				}).then((data: any) => {
+					// Hurrah, all data back safely.
+					resolve(data);
 				});
-			}
+			};
 
-			throw err;
+			// Kick it off.
+			runApi();
 		});
 	}
 }

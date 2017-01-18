@@ -16,16 +16,21 @@ limitations under the License.
 
 // VersionBot listens for merges of a PR to the `master` branch and then
 // updates any packages for it.
-import { GithubBot, RepoWorkerMethod, RepoEvent } from './githubbot';
+import { GithubBot, RepoWorkerMethod, RepoEvent, GithubCall, GithubPRCall } from './githubbot';
 import * as Promise from 'bluebird';
 import Path = require('path');
 import * as _ from 'lodash';
+import * as path from 'path';
 
 //const temp: any = Promise.promisifyAll(require('temp').track());
 const temp: any = Promise.promisifyAll(require('temp'));
 const mkdirp: any = Promise.promisify(require('mkdirp'));
 const rmdir: any = Promise.promisify(require('rmdir'));
 const exec: any = Promise.promisify(require('child_process').exec);
+const fs: any = Promise.promisifyAll(require('fs'));
+
+// TBD
+// Constant a load of the text ('Versionbot' + email + etc.)
 
 // Here's something worth noting, some of the URLs that the 'github' API
 // calls have changed and are no longer valid. Sigh.
@@ -67,11 +72,6 @@ export class VersionBot extends GithubBot {
 					method = this.checkVersioning(event, data);
 					break;
 
-				// Version up on a PR close.
-				case 'closed':
-					method = this.generateVersion(event, data);
-					break;
-
 				// Check the rest at merge, if it's not for it it'll exit.
 				default:
 					method = this.mergePR(event, data);
@@ -90,11 +90,11 @@ export class VersionBot extends GithubBot {
 	//  3. If no PR commit has a 'Change-Type: <type>' commit, we create a status failing the PR.
 	protected checkVersioning = (event: string, data: any) => {
 		const githubApi = this._github.githubApi;
+		const gitCall = this._github.makeCall;
 		const pr = data.pull_request;
 		const head = data.pull_request.head;
 		const owner = head.repo.owner.login;
 		const name = head.repo.name;
-		const gitCall = this._github.makeCall;
 		console.log('PR has been opened or synchronised, check for commits');
 
 		return gitCall(githubApi.pullRequests.getCommits, {
@@ -117,19 +117,17 @@ export class VersionBot extends GithubBot {
 
 			// If we found a change-type message, then mark this commit as ok.
 			if (changetypeFound) {
-				console.log('Found a good versionist tag.');
 				return gitCall(githubApi.repos.createStatus, {
 					owner: owner,
 					repo: name,
 					sha: head.sha,
-					state: 'success',//'failure'
+					state: 'success',
 					description: 'Found a valid Versionist `Change-Type` tag',
 					context: 'Versionist'
-				});
+				}).return(true);
 			}
 
 			// Else we mark it as having failed.
-			console.log('Found no versionist tag at all');
 			return gitCall(githubApi.repos.createStatus, {
 				owner: owner,
 				repo: name,
@@ -137,6 +135,52 @@ export class VersionBot extends GithubBot {
 				state: 'failure',
 				description: 'None of the commits in the PR have a `Change-Type` tag',
 				context: 'Versionist'
+			}).return(false);
+		}).then(() => {
+			// If the author was Versionbot and the file marked was CHANGELOG, then
+			// we are now going to go ahead and perform a merge.
+			//
+			// Get the list of commits for the PR, then get the very last commit SHA.
+			return gitCall(githubApi.repos.getCommit, {
+				owner,
+				repo: name,
+				sha: head.sha
+			}).then((headCommit: any) => {
+				// Ensure the file is 'CHANGELOG.md', ensure the caller is the Versionbot.
+				const commit = headCommit.commit;
+				const files = headCommit.files;
+
+				console.log(commit);
+				console.log(files);
+				if ((commit.author.name === 'Versionbot') &&
+					(files.length === 1) &&
+					(files[0].filename === 'CHANGELOG.md')) {
+						// We go ahead and merge.
+						const commitVersion = commit.message;
+						return gitCall(githubApi.pullRequests.merge, {
+							owner,
+							repo: name,
+							number: pr.number,
+							commit_title: `Auto-merge for PR ${pr.number} via Versionbot`
+						}, 3).then((mergedData: any) => {
+							// We get an SHA back when the merge occurs, and we use this for
+							// a tag.
+							// FIXME: Call appears invalid, but follows API convention. What's wrong?
+							return gitCall(githubApi.gitdata.createTag, {
+								owner,
+								repo: name,
+								tag: commitVersion,
+								message: commitVersion,
+								object: mergedData.sha,
+								type: 'commit',
+								tagger: {
+									name: 'Versionbot',
+									email: 'versionbot@whaleway.net',
+									date: new Date().toISOString()
+								}
+							});
+						});
+					}
 			});
 		});
 	}
@@ -160,13 +204,15 @@ export class VersionBot extends GithubBot {
 		//  * There is an 'APPROVED' review comment *and* no comment after is of state 'CHANGES_REQUESTED'
 		// The latter overrides the label should it exist, as it will be assumed it is in error.
 		const githubApi = this._github.githubApi;
+		const gitCall = this._github.makeCall;
 		const pr = data.pull_request;
 		const head = data.pull_request.head;
 		const owner = head.repo.owner.login;
 		const name = head.repo.name;
-		const gitCall = this._github.makeCall;
 		let approvePromise: Promise<boolean> = Promise.resolve(false);
 		let labelPromise: Promise<boolean> = Promise.resolve(false);
+
+		console.log('PR has been updated with comments or a label');
 
 		const getReviewComments = () => {
 			return gitCall(githubApi.pullRequests.getReviews, {
@@ -207,7 +253,6 @@ export class VersionBot extends GithubBot {
 			});
 		};
 
-		console.log('PR has been updated with comments or a label');
 		// Check the action on the event to see what we're dealing with.
 		switch (data.action) {
 			// Submission is a PR review
@@ -250,7 +295,7 @@ export class VersionBot extends GithubBot {
 
 			default:
 				// We have no idea what sparked this, but we're not doing anything!
-				console.log('Invalid data action trigged merge condition, exiting');
+				console.log(`Data action wasn't useful for merging`);
 				return Promise.resolve();
 		}
 
@@ -259,120 +304,171 @@ export class VersionBot extends GithubBot {
 			labelPromise
 		]).then((results: boolean[]) => {
 			if (!_.includes(results, false)) {
-				console.log(`Merging PR ${pr.number} to master of ${owner}/${name}`);
-				return gitCall(githubApi.pullRequests.merge, {
-					owner: owner,
-					repo: name,
-					number: pr.number,
-					commit_title: `Auto-merge for PR ${pr.number} via Procbot`
-				});
+				// If all is well, we now generate a new version.
+				// This will end up committing relevant files, which in turn will get
+				// `sychronized`, kicking off a status check and final merge.
+				return this.generateVersion(owner, name, pr.number);
 			}
 
 			console.log(`Unable to merge: PRapproved(${results[0]}, Labels(${results[1]})`);
 		});
 	};
 
-	// IMPORTANT NOTE: This all needs tearing up and throwing away!
-	// 				   Individual users, even a specific one for bots, should *not* be carrying out the
-	// 				   final version changes. Instead we need to use the Github DB API to manually create
-	// 				   git objects to carry this work out *as* the bot.
 	// Actually generate a new version of a component:
-	//  1. Clones a copy of the repo to be operated on, at the HEAD of the repo on the master branch (this is important)
-	//  2. Runs `versionist` on the repo. It expects to see a new `CHANGELOG.md` and possibly a new `package.json`
-	//  3. It looks for the new version of the component, first trying `package.json` and then falling back to the `CHANGELOG.md`
-	//  4. It commits the changed files to the master branch
-	//  5. It creates a new tag with the given version, eg. (v1.2.3)
-	//  6. It pushes the changed files and the tag to the `master` branch
-	//  7. If there is a `package.json` and this is an `npm` module, it also publishes it (TBD, CLARIFY)
-	protected generateVersion = (event: string, data: any) => {
-		const repo = data.repository;
-		const pr = data.pull_request;
-
-		console.log('PR has been closed, attempting to carry out a version up.');
-
-		// If it's not closed, not on the master or not merged, we do not continue.
-		if ((data.action !== 'closed') || (pr.base.ref !== 'master') || (pr.merged !== true)) {
-			return Promise.resolve();
-		}
+	// 1. Clone the repo
+	// 2. Checkout the appropriate branch given the PR number
+	// 3. Run `versionist`
+	// 4. Read the `CHANGELOG.md` (and any `package.json`, if present)
+	// 5. Base64 encode them
+	// 6. Call Github to update them, in serial, CHANGELOG last (important for merging expectations)
+	// 7. Finish
+	protected generateVersion = (owner: string, repo: string, pr: number) => {
+		console.log('PR is ready to merge, attempting to carry out a version up.');
 
 		// Ensure we have a base directory to use.
-		if (!process.env.VERSIONBOT_REPOBASE) {
-			throw new Error('Base directory for carrying out version upping does not exist');
-		}
-		const repoFullName = repo.full_name;
-		const repoName = repo.name;
-		const commitHash = pr.merge_commit_sha;
+		const githubApi = this._github.githubApi;
+		const gitCall = this._github.makeCall;
+		const repoFullName = `${owner}/${repo}`;
 		const cwd = process.cwd();
-		const moddedFiles: string[] = [];
 		let newVersion: string;
 		let fullPath: string;
+		let branchName: string;
 
-		// Create new work dir.
-		return temp.mkdirAsync(`${repoName}-${commitHash}`).then((tempDir: string) => {
-			fullPath = tempDir;
+		interface EncodedFile {
+			file: string,
+			encoding: string
+			sha?: string
+		};
 
-			// Clone the repository inside the directory using the commit name and the run versionist.
-			// We only care about output from the git status.
-			// IMPORTANT NOTE: Currently, Versionist will fail if it doesn't find a
-			// 	`package.json` file. This needs rectifying in Versionist, as this code doesn't pick it up.
-			const promiseResults: string[] = [];
-			return Promise.mapSeries([
-				`git clone ssh://github.com/${data.repository.full_name} ${fullPath}`,
-				'versionist',
-				'git status -s'
-			], (command) => {
-				return exec(command, { cwd: fullPath });
-			}).get(2);
+		// Get the branch for this PR.
+		return gitCall(githubApi.pullRequests.get, {
+			owner: owner,
+			repo: repo,
+			number: pr
+		}).then((prInfo: any) => {
+			// Get the relevant branch.
+			branchName = prInfo.head.ref;
+
+			// Create new work dir.
+			return temp.mkdirAsync(`${repo}-${pr}_`).then((tempDir: string) => {
+				fullPath = `${tempDir}${path.sep}`;
+				console.log(fullPath);
+
+				// Clone the repository inside the directory using the commit name and the run versionist.
+				// We only care about output from the git status.
+				// IMPORTANT NOTE: Currently, Versionist will fail if it doesn't find a
+				// 	`package.json` file. This needs rectifying in Versionist, as this code doesn't pick it up.
+				const promiseResults: string[] = [];
+				return Promise.mapSeries([
+					`git clone ssh://github.com/${repoFullName} ${fullPath}`,
+					`git checkout ${branchName}`,
+					'versionist',
+					'git status -s'
+				], (command) => {
+					return exec(command, { cwd: fullPath });
+				}).get(3)
+			});
 		}).then((status: string) => {
 			// Split the changes by line
-			const changeLines = status.split('\n');
+			let changeLines = status.split('\n');
+			const moddedFiles: string[] = [];
+			let changeLogFound = false;
 
+			if (changeLines.length === 0) {
+				throw new Error(`Couldn't find any status changes after running 'versionist', exiting`);
+			}
+			changeLines = _.slice(changeLines, 0, changeLines.length - 1);
 			// For each change, get the name of the change. We shouldn't see *anything* that isn't
 			// expected, and we should only see modifications. Log anything else as an issue
 			// (but not an error).
 			changeLines.forEach((line) => {
 				// If we get anything other than an 'M', flag this.
+				console.log(line);
 				const match = line.match(/^\sM\s(.+)$/);
 				if (!match) {
-					console.log(`Found a spurious git status entry: ${line.trim()}`);
+					throw new Error(`Found a spurious git status entry: ${line.trim()}, abandoning version up`);
 				} else {
-					moddedFiles.push(match[1]);
+					// Remove the status so we just get a filename.
+					if (match[1] !== 'CHANGELOG.md') {
+						moddedFiles.push(match[1]);
+					} else {
+						changeLogFound = true;
+					}
 				}
 			});
 
+			// Ensure that the CHANGELOG.md file is always the last and that it exists!
+			if (!changeLogFound) {
+				throw new Error(`Couldn't find the CHANGELOG.md file, abandoning version up`);
+			}
+			moddedFiles.push(`CHANGELOG.md`);
+
 			// Now we get the new version from the CHANGELOG (*not* the package.json, it may not exist).
-			return exec('cat CHANGELOG.md', { cwd: fullPath }).then((contents: string) => {
+			return exec(`cat ${fullPath}${_.last(moddedFiles)}`).then((contents: string) => {
 				// Only interested in the first match for '## v...'
-				const match = contents.match(/^## v([0-9]\.[0-9]\.[0-9]).+$/m);
+				const match = contents.match(/^## (v[0-9]\.[0-9]\.[0-9]).+$/m);
 
 				if (!match) {
-					throw new Error('Cannot find new version for ${fullRepoName}-${commitHash}');
+					throw new Error('Cannot find new version for ${repo}-${pr}');
 				}
 
 				newVersion = match[1];
-			});
-		}).then(() => {
-			// Add each file (we don't do a single commit, want to make sure they're all valid).
-			return Promise.map(moddedFiles, (file) => {
-				return exec(`git add ${file}`, { cwd: fullPath });
-			});
-		}).then(() => {
-			// Commit, tag, push.
-			return Promise.mapSeries([
-					`git commit -m "${newVersion}"`,
-					`git tag -a ${newVersion} -m "${newVersion}"`
-					//'git push origin master'
-			], (command) => {
-				return exec(command, { cwd: fullPath });
+			}).return(moddedFiles);
+		}).then((files: string[]) => {
+			// Read each file and base64 encode it.
+			return Promise.map(files, (file: string) => {
+				return fs.readFileAsync(`${fullPath}${file}`).call(`toString`, 'base64').then((encoding: string) => {
+					let newFile: EncodedFile = {
+						file,
+						encoding
+					};
+					return newFile;
+				});
+			})
+		}).then((files: EncodedFile[]) => {
+			// We use the Github API to now update every file in our list, ending with the CHANGELOG.md
+			// We need this to be the final file updated, as it'll kick off our actual merge.
+
+			// Get the top level hierarchy for the branch. It includes the files we need.
+			return gitCall(githubApi.gitdata.getTree, {
+				owner,
+				repo,
+				sha: branchName
+			}).then((treeData: any) => {
+				// Get the blob data for each of the entries we need.
+				files.forEach((file: EncodedFile) => {
+					const pathInfo = _.find(treeData.tree, (info: any) => {
+						return info.path === file.file;
+					});
+
+					if (!pathInfo) {
+						throw new Error(`Can't find the blob for ${file.file}`);
+					}
+
+					file.sha = pathInfo.sha;
+				});
+
+				return Promise.mapSeries(files, file => {
+					// Get SHA for file
+					return gitCall(githubApi.repos.updateFile, {
+						owner,
+						repo,
+						path: file.file,
+						message: `${newVersion}`,
+						content: file.encoding,
+						sha: file.sha,
+						branch: branchName,
+						committer: {
+							name: 'Versionbot',
+							email: 'versionbot@whaleway.net'
+						}
+					});
+				});
 			});
 		}).then(() => {
 			console.log(`Upped version of ${repoFullName} to ${newVersion}; tagged and pushed.`);
 		}).catch((err: Error) => {
-			// TBD: This needs to go somewhere sensible.
-			// Most probably:
-			//	* logentries.com
-			//	* Hubot alert to relevant maintainer (so we need to register these per-repo)
-			//	* Maybe even a 'Danger! Danger, repo maintainer!' alert email, if this is bad news.
+			// We post to the PR, informing we couldn't continue the merge.
 			console.log(err);
 		});
 	}

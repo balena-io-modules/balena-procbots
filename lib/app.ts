@@ -31,7 +31,8 @@ const getopt = new Opts([
 ]);
 
 getopt.setHelp(`
-	Usage: ${process.argv[1].split('/').slice(-1)} [OPTION]
+Usage: ${process.argv[1].split('/').slice(-1)} [OPTION]
+[[OPTIONS]]
 `);
 
 // No options, no run.
@@ -67,6 +68,7 @@ for (let bot of opt.options['bot-names']) {
 		console.log(`Imported ${bot}...`)
 	} catch (err) {
 		console.log(`Could not import bot type ${bot}`);
+		console.log(err);
 		throw err;
 	}
 }
