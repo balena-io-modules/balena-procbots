@@ -146,15 +146,15 @@ export class VersionBot extends GithubBot {
 				repo: name,
 				sha: head.sha
 			}).then((headCommit: any) => {
-				// Ensure the file is 'CHANGELOG.md', ensure the caller is the Versionbot.
+				// We will go ahead and perform a merge if we see Versionbot has committed
+				// something with 'CHANGELOG.md' in it.
 				const commit = headCommit.commit;
 				const files = headCommit.files;
 
-				console.log(commit);
-				console.log(files);
-				if ((commit.author.name === 'Versionbot') &&
-					(files.length === 1) &&
-					(files[0].filename === 'CHANGELOG.md')) {
+				if ((commit.committer.name === 'Versionbot') &&
+					_.find(files, (file: any) => {
+						return file.filename === 'CHANGELOG.md';
+				})) {
 						// We go ahead and merge.
 						const commitVersion = commit.message;
 						return gitCall(githubApi.pullRequests.merge, {
@@ -163,9 +163,8 @@ export class VersionBot extends GithubBot {
 							number: pr.number,
 							commit_title: `Auto-merge for PR ${pr.number} via Versionbot`
 						}, 3).then((mergedData: any) => {
-							// We get an SHA back when the merge occurs, and we use this for
-							// a tag.
-							// FIXME: Call appears invalid, but follows API convention. What's wrong?
+							// We get an SHA back when the merge occurs, and we use this for a tag.
+							// Note date gets filed in automatically by API.
 							return gitCall(githubApi.gitdata.createTag, {
 								owner,
 								repo: name,
@@ -175,9 +174,18 @@ export class VersionBot extends GithubBot {
 								type: 'commit',
 								tagger: {
 									name: 'Versionbot',
-									email: 'versionbot@whaleway.net',
-									date: new Date().toISOString()
+									email: 'versionbot@whaleway.net'
 								}
+							});
+						}).then((newTag: any) => {
+							console.log(newTag);
+							// We now have a SHA back that contains the tag object.
+							// Create a new reference based on it.
+							return gitCall(githubApi.gitdata.createReference, {
+								owner,
+								repo: name,
+								ref: `refs/tags/${commitVersion}`,
+								sha: newTag.sha
 							});
 						});
 					}
@@ -229,7 +237,6 @@ export class VersionBot extends GithubBot {
 						approved = false;
 					}
 				});
-				console.log(reviews);
 
 				return approved;
 			});
@@ -333,11 +340,13 @@ export class VersionBot extends GithubBot {
 		let newVersion: string;
 		let fullPath: string;
 		let branchName: string;
+		let newTreeSha: string;
 
 		interface EncodedFile {
 			file: string,
-			encoding: string
-			sha?: string
+			encoding: string,
+			treeEntry?: any,
+			blobSha?: string
 		};
 
 		// Get the branch for this PR.
@@ -352,7 +361,6 @@ export class VersionBot extends GithubBot {
 			// Create new work dir.
 			return temp.mkdirAsync(`${repo}-${pr}_`).then((tempDir: string) => {
 				fullPath = `${tempDir}${path.sep}`;
-				console.log(fullPath);
 
 				// Clone the repository inside the directory using the commit name and the run versionist.
 				// We only care about output from the git status.
@@ -383,7 +391,6 @@ export class VersionBot extends GithubBot {
 			// (but not an error).
 			changeLines.forEach((line) => {
 				// If we get anything other than an 'M', flag this.
-				console.log(line);
 				const match = line.match(/^\sM\s(.+)$/);
 				if (!match) {
 					throw new Error(`Found a spurious git status entry: ${line.trim()}, abandoning version up`);
@@ -428,6 +435,9 @@ export class VersionBot extends GithubBot {
 		}).then((files: EncodedFile[]) => {
 			// We use the Github API to now update every file in our list, ending with the CHANGELOG.md
 			// We need this to be the final file updated, as it'll kick off our actual merge.
+			//
+			// Turn all this into a single method, cleaner.
+			// CommitEncodedFile, or something.
 
 			// Get the top level hierarchy for the branch. It includes the files we need.
 			return gitCall(githubApi.gitdata.getTree, {
@@ -435,33 +445,79 @@ export class VersionBot extends GithubBot {
 				repo,
 				sha: branchName
 			}).then((treeData: any) => {
-				// Get the blob data for each of the entries we need.
-				files.forEach((file: EncodedFile) => {
-					const pathInfo = _.find(treeData.tree, (info: any) => {
-						return info.path === file.file;
+				// We need to save the tree data, we'll be modifying it for updates in a moment.
+
+				// Create a new blob for our files.
+				return Promise.map(files, (file: EncodedFile) => {
+					// Find the relevant entry in the tree.
+					file.treeEntry = _.find(treeData.tree, (treeEntry: any) => {
+						return treeEntry.path === file.file;
 					});
 
-					if (!pathInfo) {
-						throw new Error(`Can't find the blob for ${file.file}`);
+					if (!file.treeEntry) {
+						throw new Error(`Couldn't find a git tree entry for the file ${file.file}`);
 					}
 
-					file.sha = pathInfo.sha;
-				});
-
-				return Promise.mapSeries(files, file => {
-					// Get SHA for file
-					return gitCall(githubApi.repos.updateFile, {
+					return gitCall(githubApi.gitdata.createBlob, {
 						owner,
 						repo,
-						path: file.file,
-						message: `${newVersion}`,
 						content: file.encoding,
-						sha: file.sha,
-						branch: branchName,
+						encoding: 'base64'
+					}).then((blob: any) => {
+						file.treeEntry.sha = blob.sha;
+					}).return(file);
+				}).then((files: EncodedFile[]) => {
+					// We now have a load of update tree path entries. We write the
+					// data back to Github to get a new SHA for it.
+					const newTree: any[] = [];
+
+					files.forEach((file: EncodedFile) => {
+						newTree.push({
+							path: file.treeEntry.path,
+							mode: file.treeEntry.mode,
+							type: 'blob',
+							sha: file.treeEntry.sha
+						})
+					});
+
+					// Now write this new tree and get back an SHA for it.
+					return gitCall(githubApi.gitdata.createTree, {
+						owner,
+						repo,
+						tree: newTree,
+						base_tree: treeData.sha
+					});
+				}).then((newTree: any) => {
+					newTreeSha = newTree.sha;
+
+					// Get the last commit for the branch.
+					return gitCall(githubApi.repos.getCommit, {
+						owner,
+						repo,
+						sha: `${branchName}`
+					});
+				}).then((lastCommit: any) => {
+					// We have new tree object, we now want to create a new commit referencing it.
+					return gitCall(githubApi.gitdata.createCommit, {
+						owner,
+						repo,
+						message: `${newVersion}`,
+						tree: newTreeSha,
+						parents: [ lastCommit.sha ],
 						committer: {
 							name: 'Versionbot',
 							email: 'versionbot@whaleway.net'
 						}
+					});
+				}).then((commit: any) => {
+					// Finally, we now update the reference to the branch that's changed.
+					// This should kick off the change for status.
+					return gitCall(githubApi.gitdata.updateReference, {
+						owner,
+						repo,
+						ref: `heads/${branchName}`,
+						sha: commit.sha,
+						force: false // Not that I'm paranoid...
 					});
 				});
 			});
