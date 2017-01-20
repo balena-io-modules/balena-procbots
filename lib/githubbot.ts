@@ -230,7 +230,7 @@ class GithubAccess {
 	// can result in re-authentication before moving on.
 	public makeCall = (method: any, options: any, retries: 6) =>{
 		let badCreds = false;
-		let retriesLeft: number = retries || 1;
+		let retriesLeft: number = retries || 3;
 
 		// We need a new Promise here, as we might need to do retries.
 		return new Promise((resolve, reject) => {
