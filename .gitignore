@@ -29,8 +29,5 @@ build/Release
 # Modules
 node_modules
 
-# Built code
-build/
-
 # Secrets
 procbots.pem

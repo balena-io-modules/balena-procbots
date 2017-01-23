@@ -155,7 +155,9 @@ class GithubAccess {
 	// If user is passed, then the Integration is authenticating as a installation user
 	public authenticate(user?: number): Promise<void> {
 		// Initialise JWTs
-		const privatePem = fs.readFileSync(`${__dirname}/../procbots.pem`);
+		//const privatePem = fs.readFileSync(`${__dirname}/../procbots.pem`);
+		const privatePem = new Buffer(process.env.PROCBOTS_PEM, 'base64').toString();
+
 		const payload = {
 			iat: Math.floor((Date.now() / 1000)),
 			exp: Math.floor((Date.now() / 1000)) + (10 * 60),

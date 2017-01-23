@@ -368,7 +368,7 @@ export class VersionBot extends GithubBot {
 				// 	`package.json` file. This needs rectifying in Versionist, as this code doesn't pick it up.
 				const promiseResults: string[] = [];
 				return Promise.mapSeries([
-					`git clone ssh://github.com/${repoFullName} ${fullPath}`,
+					`git clone https://${process.env.WEBHOOK_SECRET}:x-oauth-basic@github.com/${repoFullName} ${fullPath}`,
 					`git checkout ${branchName}`,
 					'versionist',
 					'git status -s'

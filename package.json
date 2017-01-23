@@ -23,7 +23,8 @@
     "url": "https://github.com/resin-io-modules/resin-procbots/issues"
   },
   "scripts": {
-    "build": "gulp build"
+    "build": "gulp build",
+    "start": "node ./bin/procbots -b versionbot"
   },
   "devDependencies": {
     "@types/bluebird-global": "^3.0.0",
@@ -53,6 +54,7 @@
     "mkdirp": "^0.5.1",
     "request": "^2.79.0",
     "rmdir": "^1.2.0",
-    "temp": "^0.8.3"
+    "temp": "^0.8.3",
+    "versionist": "^2.8.0"
   }
 }

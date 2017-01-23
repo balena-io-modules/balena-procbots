@@ -17,9 +17,9 @@
             // You'll need the right secret webhook and integration ID.
             // ATM, see Heds for details.
             "env": {
-                "VERSIONBOT_REPOBASE": "/Work/tmp/versionbot",
                 "WEBHOOK_SECRET": "",
-                "INTEGRATION_ID": ""
+                "INTEGRATION_ID": "",
+                "PROCBOTS_PEM": ""
             }
         },
         {
