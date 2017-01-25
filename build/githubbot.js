@@ -6,11 +6,10 @@ const hmac = require('crypto');
 const githubHooks = require('github-webhook-handler');
 const jwt = require('jsonwebtoken');
 const request = Promise.promisifyAll(require('request'));
-;
-;
-class GithubAccess {
+class GithubBot extends ProcBot.ProcBot {
     constructor(integration) {
-        this.makeCall = (method, options, retries) => {
+        super();
+        this.gitCall = (method, options, retries) => {
             let badCreds = false;
             let retriesLeft = retries || 3;
             return new Promise((resolve, reject) => {
@@ -36,8 +35,19 @@ class GithubAccess {
                 runApi();
             });
         };
+        this._botname = 'GithubBot';
         this.integrationId = integration;
-        this._githubApi = new GithubApi({
+        this.getWorker = (event) => {
+            const context = event.data.repository.full_name;
+            let worker = this.workers.get(context);
+            if (worker) {
+                return worker;
+            }
+            worker = new ProcBot.Worker(context, this.workers);
+            this.workers.set(context, worker);
+            return worker;
+        };
+        this.githubApi = new GithubApi({
             protocol: 'https',
             host: 'api.github.com',
             headers: {
@@ -47,8 +57,8 @@ class GithubAccess {
             timeout: 5000
         });
     }
-    get githubApi() {
-        return this._githubApi;
+    firedEvent(event, repoEvent) {
+        console.log('This method should not be called directly.');
     }
     authenticate(user) {
         const privatePem = new Buffer(process.env.PROCBOTS_PEM, 'base64').toString();
@@ -57,7 +67,6 @@ class GithubAccess {
             exp: Math.floor((Date.now() / 1000)) + (10 * 60),
             iss: this.integrationId
         };
-        console.log(payload);
         const jwToken = jwt.sign(payload, privatePem, { algorithm: 'RS256' });
         const installationsOpts = {
             url: 'https://api.github.com/integration/installations',
@@ -90,7 +99,7 @@ class GithubAccess {
             return request.postAsync(tokenOpts);
         }).then((res) => {
             const tokenDetails = res.body;
-            this._githubApi.authenticate({
+            this.githubApi.authenticate({
                 type: 'token',
                 token: tokenDetails.token
             });
@@ -100,39 +109,9 @@ class GithubAccess {
         });
     }
 }
-class GithubBot extends ProcBot.ProcBot {
-    constructor(webhooks, integration) {
-        super();
-        this._botname = 'GithubBot';
-        this._runsAfter = [];
-        this._webhooks = [];
-        this._webhooks = webhooks;
-        this._github = new GithubAccess(integration);
-        this.getWorker = (event) => {
-            const context = event.data.repository.full_name;
-            let worker = this.workers.get(context);
-            if (worker) {
-                return worker;
-            }
-            worker = new ProcBot.Worker(context, this.workers);
-            this.workers.set(context, worker);
-            return worker;
-        };
-        this.log(ProcBot.LogLevel.INFO, 'Construction GithubBot...');
-    }
-    get botname() {
-        return this._botname;
-    }
-    get webhooks() {
-        return this._webhooks;
-    }
-    firedEvent(event, repoEvent) {
-        console.log('This method should not be called directly.');
-    }
-}
 exports.GithubBot = GithubBot;
 function createBot() {
-    return new GithubBot([], 0);
+    return new GithubBot(0);
 }
 exports.createBot = createBot;
 

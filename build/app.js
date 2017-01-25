@@ -52,9 +52,7 @@ app.post('/webhooks', (req, res) => {
     res.sendStatus(200);
     console.log(eventType);
     _.forEach(botRegistry, (bot) => {
-        if (_.includes(bot.webhooks, eventType) === true) {
-            bot.firedEvent(eventType, payload);
-        }
+        bot.firedEvent(eventType, payload);
     });
 });
 app.listen(4567, () => {

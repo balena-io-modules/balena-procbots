@@ -17,7 +17,7 @@ limitations under the License.
 // VersionBot listens for merges of a PR to the `master` branch and then
 // updates any packages for it.
 import * as ProcBot from './procbot';
-import { GithubBot, GithubCall, GithubPRCall } from './githubbot';
+import { GithubBot } from './githubbot';
 import { WorkerMethod, BotEvent } from './procbot';
 import * as Promise from 'bluebird';
 import Path = require('path');
@@ -42,16 +42,14 @@ const GithubApi: any = require('github');
 // The VersionBot is built ontop of GithubBot, which does all the heavy lifting and scheduling.
 export class VersionBot extends GithubBot {
     // Name and register ourself.
-    constructor(webhooks: string[], integration: number) {
-        super(webhooks, integration);
+    constructor(integration: number) {
+        super(integration);
 
         // This is the VersionBot.
         this._botname = 'VersionBot';
 
         // Authenticate the Github API.
-        this._github.authenticate();
-
-        this.log(ProcBot.LogLevel.INFO, 'Starting up');
+        this.authenticate();
     }
 
     // When a relevant event occurs, this is fired.
@@ -117,15 +115,14 @@ export class VersionBot extends GithubBot {
     //  2. If any PR commit has a 'Change-Type: <type>' commit, we create a status approving the PR.
     //  3. If no PR commit has a 'Change-Type: <type>' commit, we create a status failing the PR.
     protected checkVersioning = (event: string, data: any) => {
-        const githubApi = this._github.githubApi;
-        const gitCall = this._github.makeCall;
+        const githubApi = this.githubApi;
         const pr = data.pull_request;
         const head = data.pull_request.head;
         const owner = head.repo.owner.login;
         const name = head.repo.name;
         console.log('PR has been opened or synchronised, check for commits');
 
-        return gitCall(githubApi.pullRequests.getCommits, {
+        return this.gitCall(githubApi.pullRequests.getCommits, {
             owner: owner,
             repo: name,
             number: pr.number
@@ -145,7 +142,7 @@ export class VersionBot extends GithubBot {
 
             // If we found a change-type message, then mark this commit as ok.
             if (changetypeFound) {
-                return gitCall(githubApi.repos.createStatus, {
+                return this.gitCall(githubApi.repos.createStatus, {
                     owner: owner,
                     repo: name,
                     sha: head.sha,
@@ -156,7 +153,7 @@ export class VersionBot extends GithubBot {
             }
 
             // Else we mark it as having failed.
-            return gitCall(githubApi.repos.createStatus, {
+            return this.gitCall(githubApi.repos.createStatus, {
                 owner: owner,
                 repo: name,
                 sha: head.sha,
@@ -169,7 +166,7 @@ export class VersionBot extends GithubBot {
             // we are now going to go ahead and perform a merge.
             //
             // Get the list of commits for the PR, then get the very last commit SHA.
-            return gitCall(githubApi.repos.getCommit, {
+            return this.gitCall(githubApi.repos.getCommit, {
                 owner,
                 repo: name,
                 sha: head.sha
@@ -185,7 +182,7 @@ export class VersionBot extends GithubBot {
                 })) {
                         // We go ahead and merge.
                         const commitVersion = commit.message;
-                        return gitCall(githubApi.pullRequests.merge, {
+                        return this.gitCall(githubApi.pullRequests.merge, {
                             owner,
                             repo: name,
                             number: pr.number,
@@ -193,7 +190,7 @@ export class VersionBot extends GithubBot {
                         }, 3).then((mergedData: any) => {
                             // We get an SHA back when the merge occurs, and we use this for a tag.
                             // Note date gets filed in automatically by API.
-                            return gitCall(githubApi.gitdata.createTag, {
+                            return this.gitCall(githubApi.gitdata.createTag, {
                                 owner,
                                 repo: name,
                                 tag: commitVersion,
@@ -209,7 +206,7 @@ export class VersionBot extends GithubBot {
                             console.log(newTag);
                             // We now have a SHA back that contains the tag object.
                             // Create a new reference based on it.
-                            return gitCall(githubApi.gitdata.createReference, {
+                            return this.gitCall(githubApi.gitdata.createReference, {
                                 owner,
                                 repo: name,
                                 ref: `refs/tags/${commitVersion}`,
@@ -239,8 +236,7 @@ export class VersionBot extends GithubBot {
         //  * The 'flow/ready-to-merge' label appear on the PR issue
         //  * There is an 'APPROVED' review comment *and* no comment after is of state 'CHANGES_REQUESTED'
         // The latter overrides the label should it exist, as it will be assumed it is in error.
-        const githubApi = this._github.githubApi;
-        const gitCall = this._github.makeCall;
+        const githubApi = this.githubApi;
         const pr = data.pull_request;
         const head = data.pull_request.head;
         const owner = head.repo.owner.login;
@@ -251,7 +247,7 @@ export class VersionBot extends GithubBot {
         console.log('PR has been updated with comments or a label');
 
         const getReviewComments = () => {
-            return gitCall(githubApi.pullRequests.getReviews, {
+            return this.gitCall(githubApi.pullRequests.getReviews, {
                 owner: owner,
                 repo: name,
                 number: pr.number
@@ -271,7 +267,7 @@ export class VersionBot extends GithubBot {
         };
 
         const getLabels = ()=> {
-            return gitCall(githubApi.issues.getIssueLabels, {
+            return this.gitCall(githubApi.issues.getIssueLabels, {
                 owner: owner,
                 repo: name,
                 number: pr.number
@@ -361,8 +357,7 @@ export class VersionBot extends GithubBot {
         console.log('PR is ready to merge, attempting to carry out a version up.');
 
         // Ensure we have a base directory to use.
-        const githubApi = this._github.githubApi;
-        const gitCall = this._github.makeCall;
+        const githubApi = this.githubApi;
         const repoFullName = `${owner}/${repo}`;
         const cwd = process.cwd();
         let newVersion: string;
@@ -378,7 +373,7 @@ export class VersionBot extends GithubBot {
         };
 
         // Get the branch for this PR.
-        return gitCall(githubApi.pullRequests.get, {
+        return this.gitCall(githubApi.pullRequests.get, {
             owner: owner,
             repo: repo,
             number: pr
@@ -468,7 +463,7 @@ export class VersionBot extends GithubBot {
             // CommitEncodedFile, or something.
 
             // Get the top level hierarchy for the branch. It includes the files we need.
-            return gitCall(githubApi.gitdata.getTree, {
+            return this.gitCall(githubApi.gitdata.getTree, {
                 owner,
                 repo,
                 sha: branchName
@@ -486,7 +481,7 @@ export class VersionBot extends GithubBot {
                         throw new Error(`Couldn't find a git tree entry for the file ${file.file}`);
                     }
 
-                    return gitCall(githubApi.gitdata.createBlob, {
+                    return this.gitCall(githubApi.gitdata.createBlob, {
                         owner,
                         repo,
                         content: file.encoding,
@@ -509,7 +504,7 @@ export class VersionBot extends GithubBot {
                     });
 
                     // Now write this new tree and get back an SHA for it.
-                    return gitCall(githubApi.gitdata.createTree, {
+                    return this.gitCall(githubApi.gitdata.createTree, {
                         owner,
                         repo,
                         tree: newTree,
@@ -519,14 +514,14 @@ export class VersionBot extends GithubBot {
                     newTreeSha = newTree.sha;
 
                     // Get the last commit for the branch.
-                    return gitCall(githubApi.repos.getCommit, {
+                    return this.gitCall(githubApi.repos.getCommit, {
                         owner,
                         repo,
                         sha: `${branchName}`
                     });
                 }).then((lastCommit: any) => {
                     // We have new tree object, we now want to create a new commit referencing it.
-                    return gitCall(githubApi.gitdata.createCommit, {
+                    return this.gitCall(githubApi.gitdata.createCommit, {
                         owner,
                         repo,
                         message: `${newVersion}`,
@@ -540,7 +535,7 @@ export class VersionBot extends GithubBot {
                 }).then((commit: any) => {
                     // Finally, we now update the reference to the branch that's changed.
                     // This should kick off the change for status.
-                    return gitCall(githubApi.gitdata.updateReference, {
+                    return this.gitCall(githubApi.gitdata.updateReference, {
                         owner,
                         repo,
                         ref: `heads/${branchName}`,
@@ -562,5 +557,5 @@ export class VersionBot extends GithubBot {
 // We register the Github events we're interested in here.
 export function createBot(integration: number): VersionBot {
 
-    return new VersionBot([ 'pull_request', 'pull_request_review' ], process.env.INTEGRATION_ID);
+    return new VersionBot(process.env.INTEGRATION_ID);
 }

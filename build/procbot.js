@@ -98,7 +98,6 @@ class ProcBot {
         }
         entry = this.getWorker(event);
         entry.addEvent(event.event, event.data, event.workerMethod);
-        return;
     }
 }
 exports.ProcBot = ProcBot;

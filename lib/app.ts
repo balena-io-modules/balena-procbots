@@ -95,9 +95,7 @@ app.post('/webhooks', (req: any, res: any) => {
 
 	// Go through all registered bots, and send them any appropriate hook.
 	_.forEach(botRegistry, (bot: GithubBot) => {
-		if (_.includes(bot.webhooks, eventType) === true) {
-			bot.firedEvent(eventType, payload);
-		}
+		bot.firedEvent(eventType, payload);
 	});
 });
 

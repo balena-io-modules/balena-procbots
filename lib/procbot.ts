@@ -208,7 +208,6 @@ export class ProcBot<T> {
         this.output(level, this._alertLevel, this.alertLevelStrings, message);
     }
 
-
     // Queue an event ready for running in a child.
     protected queueEvent(event: BotEvent): void {
         let entry: Worker<T> | undefined;
@@ -230,7 +229,5 @@ export class ProcBot<T> {
 
         // Now add the event to the found/created repo worker.
         entry.addEvent(event.event, event.data, event.workerMethod);
-
-        return;
     }
 }

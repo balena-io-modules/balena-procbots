@@ -37,52 +37,67 @@ const githubHooks = require('github-webhook-handler');
 const jwt = require('jsonwebtoken');
 const request: any = Promise.promisifyAll(require('request'));
 
-// GithubAccess ---------------------------------------------------------------------------
+// GithubBot ---------------------------------------------------------------------------
 
-export interface GithubCall {
-    owner: string,
-    repo: string
-};
-
-export interface GithubPRCall extends GithubCall {
-    number: number
-};
-
-class GithubAccess {
+// Main GithubBot.
+export class GithubBot extends ProcBot.ProcBot<string> {
+	// Github API
     private integrationId: number;
     private jwt: string;
     private user: number;
     private token: string;
-    private _githubApi: any;
+    protected githubApi: any;
 
+    // Takes a set of webhook types that the bot is interested in.
     constructor(integration: number) {
+        super();
+		this._botname = 'GithubBot';
         this.integrationId = integration;
+
+        // The getWorker method is an overload for generic context types.
+        // In the case of the GithubBot, it's the name of the repo (a string).
+        this.getWorker = (event: ProcBot.BotEvent): ProcBot.Worker<string> => {
+            const context = event.data.repository.full_name;
+            let worker: ProcBot.Worker<string> | undefined = this.workers.get(context);
+
+            // If we already have a worker for this context (the repo name), return it.
+            if (worker) {
+                return worker;
+            }
+
+            // Create new Worker using the repo name as context.
+            worker = new ProcBot.Worker(context, this.workers);
+
+            // Note that workers are self-regualting; that is, they will remove themselves
+            // from the Map once there are no more queued tasks.
+            this.workers.set(context, worker);
+
+            return worker;
+        };
 
         // The `github` module is a bit behind the preview API. We may have to override
         // some of the methods here (PR review comments for a start).
-        this._githubApi = new GithubApi({
+        this.githubApi = new GithubApi({
             //debug: true,
             protocol: 'https',
             host: 'api.github.com',
             headers: {
+                // This is the current voodoo to allow all API calls to succeed.
                 'Accept': 'application/vnd.github.black-cat-preview+json'
-                // We *hope* that the above overrides all previews. As otherwise we're going to
-                // have to start interleaving header media types for different calls. :-/
-                //'Accept': 'application/vnd.github.machine-man-preview+json'
             },
             Promise: Promise,
             timeout: 5000
         });
     }
 
-    public get githubApi() {
-        return this._githubApi;
+    // Not a pure virtual, but not callable directly from GithubBot.
+    public firedEvent(event: string, repoEvent: any): void {
+        console.log('This method should not be called directly.');
     }
 
     // If user is passed, then the Integration is authenticating as a installation user
-    public authenticate(user?: number): Promise<void> {
+    protected authenticate(user?: number): Promise<void> {
         // Initialise JWTs
-        //const privatePem = fs.readFileSync(`${__dirname}/../procbots.pem`);
         const privatePem = new Buffer(process.env.PROCBOTS_PEM, 'base64').toString();
 
         const payload = {
@@ -90,12 +105,8 @@ class GithubAccess {
             exp: Math.floor((Date.now() / 1000)) + (10 * 60),
             iss: this.integrationId
         };
-        console.log(payload);
+
         const jwToken = jwt.sign(payload, privatePem, { algorithm: 'RS256' });
-
-        //console.log(`curl -i -XGET -H "Authorization: Bearer ${jwToken}" -H "Accept: application/vnd.github.machine-man-preview+json" https://api.github.com/integration/installations`);
-        //console.log(`curl -i -XPOST -H "Authorization: Bearer ${jwToken}" -H "Accept: application/vnd.github.machine-man-preview+json" https://api.github.com/installations/5806/access_tokens`);
-
         const installationsOpts = {
             url: 'https://api.github.com/integration/installations',
             headers: {
@@ -110,8 +121,8 @@ class GithubAccess {
             this.user = user;
         }
         return request.getAsync(installationsOpts).then((res: any) => {
-            const installations: any[] = res.body;
             // Get the URL for the token.
+            const installations: any[] = res.body;
             const tokenUrl = installations[0].access_tokens_url;
 
             // Request new token.
@@ -143,7 +154,7 @@ class GithubAccess {
             // We also need to take into account the expiry date, which will require a new kickoff.
             const tokenDetails = res.body;
 
-            this._githubApi.authenticate({
+            this.githubApi.authenticate({
                 type: 'token',
                 token: tokenDetails.token
             });
@@ -157,7 +168,7 @@ class GithubAccess {
 
     // Make a 'github' API call. We explicitly wrap this so that any authentication error
     // can result in re-authentication before moving on.
-    public makeCall = (method: any, options: any, retries: 6) =>{
+    protected gitCall = (method: any, options: any, retries?: number): Promise<any> => {
         let badCreds = false;
         let retriesLeft: number = retries || 3;
 
@@ -194,63 +205,7 @@ class GithubAccess {
     }
 }
 
-// GithubBot ---------------------------------------------------------------------------
-
-// Main GithubBot.
-export class GithubBot extends ProcBot.ProcBot<string> {
-    protected _botname: string = 'GithubBot';
-    protected _runsAfter: string[] = [];
-    protected _github: any;
-    private _webhooks: string[] = [];
-    //private workers: ProcBot.Worker[] = [];
-
-    // Takes a set of webhook types that the bot is interested in.
-    constructor(webhooks: string[], integration: any) {
-        super();
-        this._webhooks = webhooks;
-        this._github = new GithubAccess(integration);
-
-        // The getWorker method is an overload for generic context types.
-        // In the case of the GithubBot, it's the name of the repo (a string).
-        this.getWorker = (event: ProcBot.BotEvent): ProcBot.Worker<string> => {
-            const context = event.data.repository.full_name;
-            let worker: ProcBot.Worker<string> | undefined = this.workers.get(context);
-
-            // If we already have a worker for this context (the repo name), return it.
-            if (worker) {
-                return worker;
-            }
-
-            // Create new Worker using the repo name as context.
-            worker = new ProcBot.Worker(context, this.workers);
-
-            // Note that workers are self-regualting; that is, they will remove themselves
-            // from the Map once there are no more queued tasks.
-            this.workers.set(context, worker);
-
-            return worker;
-        };
-
-        this.log(ProcBot.LogLevel.INFO, 'Construction GithubBot...');
-    }
-
-    // Get the name of the bot.
-    get botname(): string {
-        return this._botname;
-    }
-
-    // Get the hooks we're interested in.
-    get webhooks(): string[] {
-        return this._webhooks;
-    }
-
-    // Not a pure virtual, but not callable directly from GithubBot.
-    public firedEvent(event: string, repoEvent: any): void {
-        console.log('This method should not be called directly.');
-    }
-}
-
 // Create a new GithubBot.
 export function createBot(): GithubBot {
-    return new GithubBot([], 0);
+    return new GithubBot(0);
 }

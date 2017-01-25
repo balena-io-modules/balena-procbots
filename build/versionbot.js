@@ -1,5 +1,4 @@
 "use strict";
-const ProcBot = require("./procbot");
 const githubbot_1 = require("./githubbot");
 const Promise = require("bluebird");
 const _ = require("lodash");
@@ -11,8 +10,8 @@ const exec = Promise.promisify(require('child_process').exec);
 const fs = Promise.promisifyAll(require('fs'));
 const GithubApi = require('github');
 class VersionBot extends githubbot_1.GithubBot {
-    constructor(webhooks, integration) {
-        super(webhooks, integration);
+    constructor(integration) {
+        super(integration);
         this.prHandler = (event, data) => {
             let method = Promise.resolve();
             if (event === 'pull_request') {
@@ -32,14 +31,13 @@ class VersionBot extends githubbot_1.GithubBot {
             return method;
         };
         this.checkVersioning = (event, data) => {
-            const githubApi = this._github.githubApi;
-            const gitCall = this._github.makeCall;
+            const githubApi = this.githubApi;
             const pr = data.pull_request;
             const head = data.pull_request.head;
             const owner = head.repo.owner.login;
             const name = head.repo.name;
             console.log('PR has been opened or synchronised, check for commits');
-            return gitCall(githubApi.pullRequests.getCommits, {
+            return this.gitCall(githubApi.pullRequests.getCommits, {
                 owner: owner,
                 repo: name,
                 number: pr.number
@@ -55,7 +53,7 @@ class VersionBot extends githubbot_1.GithubBot {
                     }
                 }
                 if (changetypeFound) {
-                    return gitCall(githubApi.repos.createStatus, {
+                    return this.gitCall(githubApi.repos.createStatus, {
                         owner: owner,
                         repo: name,
                         sha: head.sha,
@@ -64,7 +62,7 @@ class VersionBot extends githubbot_1.GithubBot {
                         context: 'Versionist'
                     }).return(true);
                 }
-                return gitCall(githubApi.repos.createStatus, {
+                return this.gitCall(githubApi.repos.createStatus, {
                     owner: owner,
                     repo: name,
                     sha: head.sha,
@@ -73,7 +71,7 @@ class VersionBot extends githubbot_1.GithubBot {
                     context: 'Versionist'
                 }).return(false);
             }).then(() => {
-                return gitCall(githubApi.repos.getCommit, {
+                return this.gitCall(githubApi.repos.getCommit, {
                     owner,
                     repo: name,
                     sha: head.sha
@@ -85,13 +83,13 @@ class VersionBot extends githubbot_1.GithubBot {
                             return file.filename === 'CHANGELOG.md';
                         })) {
                         const commitVersion = commit.message;
-                        return gitCall(githubApi.pullRequests.merge, {
+                        return this.gitCall(githubApi.pullRequests.merge, {
                             owner,
                             repo: name,
                             number: pr.number,
                             commit_title: `Auto-merge for PR ${pr.number} via Versionbot`
                         }, 3).then((mergedData) => {
-                            return gitCall(githubApi.gitdata.createTag, {
+                            return this.gitCall(githubApi.gitdata.createTag, {
                                 owner,
                                 repo: name,
                                 tag: commitVersion,
@@ -105,7 +103,7 @@ class VersionBot extends githubbot_1.GithubBot {
                             });
                         }).then((newTag) => {
                             console.log(newTag);
-                            return gitCall(githubApi.gitdata.createReference, {
+                            return this.gitCall(githubApi.gitdata.createReference, {
                                 owner,
                                 repo: name,
                                 ref: `refs/tags/${commitVersion}`,
@@ -117,8 +115,7 @@ class VersionBot extends githubbot_1.GithubBot {
             });
         };
         this.mergePR = (event, data) => {
-            const githubApi = this._github.githubApi;
-            const gitCall = this._github.makeCall;
+            const githubApi = this.githubApi;
             const pr = data.pull_request;
             const head = data.pull_request.head;
             const owner = head.repo.owner.login;
@@ -127,7 +124,7 @@ class VersionBot extends githubbot_1.GithubBot {
             let labelPromise = Promise.resolve(false);
             console.log('PR has been updated with comments or a label');
             const getReviewComments = () => {
-                return gitCall(githubApi.pullRequests.getReviews, {
+                return this.gitCall(githubApi.pullRequests.getReviews, {
                     owner: owner,
                     repo: name,
                     number: pr.number
@@ -145,7 +142,7 @@ class VersionBot extends githubbot_1.GithubBot {
                 });
             };
             const getLabels = () => {
-                return gitCall(githubApi.issues.getIssueLabels, {
+                return this.gitCall(githubApi.issues.getIssueLabels, {
                     owner: owner,
                     repo: name,
                     number: pr.number
@@ -202,8 +199,7 @@ class VersionBot extends githubbot_1.GithubBot {
         };
         this.generateVersion = (owner, repo, pr) => {
             console.log('PR is ready to merge, attempting to carry out a version up.');
-            const githubApi = this._github.githubApi;
-            const gitCall = this._github.makeCall;
+            const githubApi = this.githubApi;
             const repoFullName = `${owner}/${repo}`;
             const cwd = process.cwd();
             let newVersion;
@@ -211,7 +207,7 @@ class VersionBot extends githubbot_1.GithubBot {
             let branchName;
             let newTreeSha;
             ;
-            return gitCall(githubApi.pullRequests.get, {
+            return this.gitCall(githubApi.pullRequests.get, {
                 owner: owner,
                 repo: repo,
                 number: pr
@@ -273,7 +269,7 @@ class VersionBot extends githubbot_1.GithubBot {
                     });
                 });
             }).then((files) => {
-                return gitCall(githubApi.gitdata.getTree, {
+                return this.gitCall(githubApi.gitdata.getTree, {
                     owner,
                     repo,
                     sha: branchName
@@ -285,7 +281,7 @@ class VersionBot extends githubbot_1.GithubBot {
                         if (!file.treeEntry) {
                             throw new Error(`Couldn't find a git tree entry for the file ${file.file}`);
                         }
-                        return gitCall(githubApi.gitdata.createBlob, {
+                        return this.gitCall(githubApi.gitdata.createBlob, {
                             owner,
                             repo,
                             content: file.encoding,
@@ -303,7 +299,7 @@ class VersionBot extends githubbot_1.GithubBot {
                                 sha: file.treeEntry.sha
                             });
                         });
-                        return gitCall(githubApi.gitdata.createTree, {
+                        return this.gitCall(githubApi.gitdata.createTree, {
                             owner,
                             repo,
                             tree: newTree,
@@ -311,13 +307,13 @@ class VersionBot extends githubbot_1.GithubBot {
                         });
                     }).then((newTree) => {
                         newTreeSha = newTree.sha;
-                        return gitCall(githubApi.repos.getCommit, {
+                        return this.gitCall(githubApi.repos.getCommit, {
                             owner,
                             repo,
                             sha: `${branchName}`
                         });
                     }).then((lastCommit) => {
-                        return gitCall(githubApi.gitdata.createCommit, {
+                        return this.gitCall(githubApi.gitdata.createCommit, {
                             owner,
                             repo,
                             message: `${newVersion}`,
@@ -329,7 +325,7 @@ class VersionBot extends githubbot_1.GithubBot {
                             }
                         });
                     }).then((commit) => {
-                        return gitCall(githubApi.gitdata.updateReference, {
+                        return this.gitCall(githubApi.gitdata.updateReference, {
                             owner,
                             repo,
                             ref: `heads/${branchName}`,
@@ -345,8 +341,7 @@ class VersionBot extends githubbot_1.GithubBot {
             });
         };
         this._botname = 'VersionBot';
-        this._github.authenticate();
-        this.log(ProcBot.LogLevel.INFO, 'Starting up');
+        this.authenticate();
     }
     firedEvent(event, repoEvent) {
         this.queueEvent({
@@ -358,7 +353,7 @@ class VersionBot extends githubbot_1.GithubBot {
 }
 exports.VersionBot = VersionBot;
 function createBot(integration) {
-    return new VersionBot(['pull_request', 'pull_request_review'], process.env.INTEGRATION_ID);
+    return new VersionBot(process.env.INTEGRATION_ID);
 }
 exports.createBot = createBot;
 
