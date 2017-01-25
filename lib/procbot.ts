@@ -64,19 +64,20 @@ export interface BotEvent {
     workerMethod: WorkerMethod
 };
 
+// WorkerMap type.
+type WorkerMap<T> = Map<T, Worker<T>>;
+
 // The worker class is created for each unique repo that is seen.
 // This ensures that multiple repos can be operated on in parallel,
 // but operations only occur in series for each unique repo.
 export class Worker<T> {
     private _context: T;
-    private parentMap: Map<T, Worker<T>>;
+    private parentMap: WorkerMap<T>;
     private queue: QueueEntry[] = [];
 
-    constructor(context: T, parentMap: Map<T, Worker<T>>) {
-        //this.repositoryName = repoName;
+    constructor(context: T, parentMap: WorkerMap<T>) {
         this._context = context;
         this.parentMap = parentMap;
-        //this.parentList.push(this);
     }
 
     get context(): T {
@@ -142,10 +143,10 @@ export class ProcBot<T> {
     protected _botname = 'Procbot';
     protected _logLevel = process.env.PROCBOT_LOG_LEVEL | LogLevel.WARN;
     protected _alertLevel = process.env.PROCBOT_ALERT_LEVEL | AlertLevel.CRITICAL;
-    //private workers: Worker[] = [];
-    protected workers: Map<T, Worker<T>> = new Map<T, Worker<T>>();
-    /*private workers:
-    private thing: <U>(context: U, event: BotEvent) => U = this.getContextWorker;*/
+    protected workers: WorkerMap<T> = new Map<T, Worker<T>>();
+
+    // This generic method must be implemented in children extended from a ProcBot.
+    // It defines the context type used for Workers.
     protected getWorker: (event: BotEvent) => Worker<T>;
 
     private logLevelStrings = [
@@ -209,9 +210,6 @@ export class ProcBot<T> {
 
 
     // Queue an event ready for running in a child.
-    //
-    // If we make this contextualised, we don't need repoName which makes no sense for
-    // other bots. Change repoName to context here and in the Worker class.
     protected queueEvent(event: BotEvent): void {
         let entry: Worker<T> | undefined;
 
