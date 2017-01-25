@@ -16,7 +16,9 @@ limitations under the License.
 
 // VersionBot listens for merges of a PR to the `master` branch and then
 // updates any packages for it.
-import { GithubBot, RepoWorkerMethod, RepoEvent, GithubCall, GithubPRCall } from './githubbot';
+import * as ProcBot from './procbot';
+import { GithubBot, GithubCall, GithubPRCall } from './githubbot';
+import { WorkerMethod, BotEvent } from './procbot';
 import * as Promise from 'bluebird';
 import Path = require('path');
 import * as _ from 'lodash';
@@ -48,12 +50,38 @@ export class VersionBot extends GithubBot {
 
 		// Authenticate the Github API.
 		this._github.authenticate();
+
+		this.log(ProcBot.LogLevel.INFO, 'Starting up');
 	}
 
 	// When a relevant event occurs, this is fired.
 	firedEvent(event: string, repoEvent: any): void {
 		// Just call GithubBot's queueEvent method, telling it which method to use.
-		super.queueEvent({
+		// QueueEvent needs to become QueueTrigger (Action?) and what needs to be passed is
+		// a number of events that will cause this to fire, as well as optional labels.
+		// Should triggerLabels exist, then these are all the labels that are required for
+		// an operation to occur (should it be valid). suppressLabels must not be passed!
+		// Should suppressLabels exist, then these are all the labels that need to exist
+		// for the trigger to be suppressed. Obviously fewer labels mean greater suppression.
+		// triggerLabels must not be passed!
+		//
+		// {
+		// 	  events: [...],
+		//    triggerLabels: [...]  \
+		//    suppressLabels: [...] /  ONLY one of these may be filled in
+		// }
+		// Actually, we don't do this here. What we do is have a separate registration function
+		// specifically for GithubBot which notes the events and the labels we want.
+		// queueEvent merely sends the event and the data for it.
+		// This means we have a separate handler which GithubBot registers for *all* events to the
+		// worker thread, which always calls it and determines where the event/labels should go to
+		// or if the action should be suppressed:
+		//
+		// versionbot: githubBot.registerAction(events, labels, suppressions, workerMethod)
+		// -> githubBot: worker.registerHandler(githubbot.eventCheck);
+		// Event fires: queueEvent(event, data) -> githubBot.eventCheck(event, data)
+		// -> checking stuff -> versionbot.action(event, data)
+		this.queueEvent({
 			event: event,
 			repoData: repoEvent,
 			workerMethod: this.prHandler
@@ -533,5 +561,6 @@ export class VersionBot extends GithubBot {
 // Export the Versionbot to the app.
 // We register the Github events we're interested in here.
 export function createBot(integration: number): VersionBot {
+
 	return new VersionBot([ 'pull_request', 'pull_request_review' ], process.env.INTEGRATION_ID);
 }

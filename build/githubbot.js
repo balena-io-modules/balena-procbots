@@ -1,47 +1,16 @@
 "use strict";
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
+var ProcBot = require("./procbot");
 var Promise = require("bluebird");
-var _ = require("lodash");
 var GithubApi = require('github');
 var hmac = require('crypto');
 var githubHooks = require('github-webhook-handler');
 var jwt = require('jsonwebtoken');
 var request = Promise.promisifyAll(require('request'));
-var RepoWorker = (function () {
-    function RepoWorker(repoName, parentList) {
-        this.queue = [];
-        this.repositoryName = repoName;
-        this.parentList = parentList;
-        this.parentList.push(this);
-    }
-    Object.defineProperty(RepoWorker.prototype, "repoName", {
-        get: function () {
-            return this.repositoryName;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    RepoWorker.prototype.addEvent = function (event, data, worker) {
-        this.queue.push({ event: event, data: data, worker: worker });
-        if (this.queue.length === 1) {
-            this.runWorker();
-        }
-    };
-    RepoWorker.prototype.runWorker = function () {
-        var _this = this;
-        var entry = this.queue.shift();
-        var self = this;
-        entry.worker(entry.event, entry.data)
-            .then(function () {
-            if (_this.queue.length > 0) {
-                process.nextTick(_this.runWorker);
-            }
-            else {
-                self.parentList.splice(_.findIndex(self.parentList, self));
-            }
-        });
-    };
-    return RepoWorker;
-}());
 ;
 ;
 var GithubAccess = (function () {
@@ -142,14 +111,17 @@ var GithubAccess = (function () {
     };
     return GithubAccess;
 }());
-var GithubBot = (function () {
+var GithubBot = (function (_super) {
+    __extends(GithubBot, _super);
     function GithubBot(webhooks, integration) {
-        this._botname = 'GithubBot';
-        this._runsAfter = [];
-        this._webhooks = [];
-        this.repoWorkers = [];
-        this._webhooks = webhooks;
-        this._github = new GithubAccess(integration);
+        var _this = _super.call(this) || this;
+        _this._botname = 'GithubBot';
+        _this._runsAfter = [];
+        _this._webhooks = [];
+        _this._webhooks = webhooks;
+        _this._github = new GithubAccess(integration);
+        _this.log(ProcBot.LogLevel.INFO, 'Construction GithubBot...');
+        return _this;
     }
     Object.defineProperty(GithubBot.prototype, "botname", {
         get: function () {
@@ -165,39 +137,11 @@ var GithubBot = (function () {
         enumerable: true,
         configurable: true
     });
-    Object.defineProperty(GithubBot.prototype, "runsAfter", {
-        get: function () {
-            return this._runsAfter;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    GithubBot.prototype.queueEvent = function (event) {
-        if (!event.workerMethod) {
-            console.log("WorkerMethod must be passed into the Githubbot.firedEvent() method");
-            return;
-        }
-        if (!event.repoData) {
-            console.log('Could not find a payload or a repository for the event');
-            return;
-        }
-        var repoEntry = _.find(this.repoWorkers, function (entry) {
-            if (entry.repoName === event.repoData.full_name) {
-                return true;
-            }
-            return false;
-        });
-        if (!repoEntry) {
-            repoEntry = new RepoWorker(event.repoData.full_name, this.repoWorkers);
-        }
-        repoEntry.addEvent(event.event, event.repoData, event.workerMethod);
-        return;
-    };
     GithubBot.prototype.firedEvent = function (event, repoEvent) {
         console.log('This method should not be called directly.');
     };
     return GithubBot;
-}());
+}(ProcBot.ProcBot));
 exports.GithubBot = GithubBot;
 function createBot() {
     return new GithubBot([], 0);

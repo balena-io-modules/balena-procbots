@@ -4,6 +4,7 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
+var ProcBot = require("./procbot");
 var githubbot_1 = require("./githubbot");
 var Promise = require("bluebird");
 var _ = require("lodash");
@@ -351,10 +352,11 @@ var VersionBot = (function (_super) {
         };
         _this._botname = 'VersionBot';
         _this._github.authenticate();
+        _this.log(ProcBot.LogLevel.INFO, 'Starting up');
         return _this;
     }
     VersionBot.prototype.firedEvent = function (event, repoEvent) {
-        _super.prototype.queueEvent.call(this, {
+        this.queueEvent({
             event: event,
             repoData: repoEvent,
             workerMethod: this.prHandler
