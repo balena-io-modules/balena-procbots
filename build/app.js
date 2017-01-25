@@ -1,47 +1,49 @@
 "use strict";
-var Opts = require("node-getopt");
-var express = require("express");
-var bodyParser = require("body-parser");
-var _ = require("lodash");
-var hmac = require('crypto');
-var getopt = new Opts([
+const Opts = require("node-getopt");
+const express = require("express");
+const bodyParser = require("body-parser");
+const _ = require("lodash");
+const hmac = require('crypto');
+const getopt = new Opts([
     ['b', 'bot-names=ARG+', 'Determines which bots will run'],
     ['h', 'help', 'This help message']
 ]);
-getopt.setHelp("\nUsage: " + process.argv[1].split('/').slice(-1) + " [OPTION]\n[[OPTIONS]]\n");
-var opt = getopt.parse(process.argv.slice(2));
+getopt.setHelp(`
+Usage: ${process.argv[1].split('/').slice(-1)} [OPTION]
+[[OPTIONS]]
+`);
+const opt = getopt.parse(process.argv.slice(2));
 if (opt.options['help'] || Object.keys(opt.options).length === 0) {
     console.log(getopt.getHelp());
     process.exit(0);
 }
 function verifyWebhookToken(payload, hubSignature) {
-    var newHmac = hmac.createHmac('sha1', process.env.WEBHOOK_SECRET);
+    const newHmac = hmac.createHmac('sha1', process.env.WEBHOOK_SECRET);
     newHmac.update(payload);
     if (('sha1=' + newHmac.digest('hex')) === hubSignature) {
         return true;
     }
     return false;
 }
-var app = express();
+const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-var botRegistry = [];
-for (var _i = 0, _a = opt.options['bot-names']; _i < _a.length; _i++) {
-    var bot = _a[_i];
+let botRegistry = [];
+for (let bot of opt.options['bot-names']) {
     try {
-        var importedBot = require("./" + bot);
+        let importedBot = require(`./${bot}`);
         botRegistry.push(importedBot.createBot());
-        console.log("Imported " + bot + "...");
+        console.log(`Imported ${bot}...`);
     }
     catch (err) {
-        console.log("Could not import bot type " + bot);
+        console.log(`Could not import bot type ${bot}`);
         console.log(err);
         throw err;
     }
 }
-app.post('/webhooks', function (req, res) {
-    var eventType = req.get('x-github-event');
-    var payload = req.body;
+app.post('/webhooks', (req, res) => {
+    const eventType = req.get('x-github-event');
+    const payload = req.body;
     if (req.get('x-hub-signature'))
         if (!verifyWebhookToken(JSON.stringify(payload), req.get('x-hub-signature'))) {
             res.sendStatus(401);
@@ -49,13 +51,13 @@ app.post('/webhooks', function (req, res) {
         }
     res.sendStatus(200);
     console.log(eventType);
-    _.forEach(botRegistry, function (bot) {
+    _.forEach(botRegistry, (bot) => {
         if (_.includes(bot.webhooks, eventType) === true) {
             bot.firedEvent(eventType, payload);
         }
     });
 });
-app.listen(4567, function () {
+app.listen(4567, () => {
     console.log('Listening for github hooks on port 4567.');
 });
 

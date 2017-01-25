@@ -51,63 +51,64 @@ export type WorkerMethod = <T>(event: string, data: T) => Promise<void>;
 // An entry in a queue used to schedule the next worker and
 // the data to work upon, for a specific repo.
 interface QueueEntry {
-	worker: WorkerMethod;
-	event: string;
-	data: any;
+    worker: WorkerMethod;
+    event: string;
+    data: any;
 };
 
 // An event passed from an extended Bot, detailing the event it
 // wished to work due to, the data to work on and the method to use.
 export interface BotEvent {
-	event: string,
-	repoData: any,
-	workerMethod: WorkerMethod
+    event: string,
+    data: any,
+    workerMethod: WorkerMethod
 };
 
 // The worker class is created for each unique repo that is seen.
 // This ensures that multiple repos can be operated on in parallel,
 // but operations only occur in series for each unique repo.
-class Worker {
-	private repositoryName: string;
-	private parentList: Worker[];
-	private queue: QueueEntry[] = [];
+export class Worker<T> {
+    private _context: T;
+    private parentMap: Map<T, Worker<T>>;
+    private queue: QueueEntry[] = [];
 
-	constructor(repoName: string, parentList: Worker[]) {
-		this.repositoryName = repoName;
-		this.parentList = parentList;
-		this.parentList.push(this);
-	}
+    constructor(context: T, parentMap: Map<T, Worker<T>>) {
+        //this.repositoryName = repoName;
+        this._context = context;
+        this.parentMap = parentMap;
+        //this.parentList.push(this);
+    }
 
-	get repoName(): string {
-		return this.repositoryName;
-	}
+    get context(): T {
+        return this._context;
+    }
 
-	// Add a new event and worker method to the queue for this repo.
-	addEvent(event: string, data: string, worker: WorkerMethod): void {
-		this.queue.push({ event, data, worker });
-		// If this is a new worker, ensure it operates.
-		if (this.queue.length === 1) {
-			this.runWorker();
-		}
-	}
+    // Add a new event and worker method to the queue for this repo.
+    addEvent(event: string, data: string, worker: WorkerMethod): void {
+        this.queue.push({ event, data, worker });
+        // If this is a new worker, ensure it operates.
+        if (this.queue.length === 1) {
+            this.runWorker();
+        }
+    }
 
-	// Run as many workers as are queued. Do this atomically, in FIFO order.
-	private runWorker(): void {
-		// Get the next thing from the queue.
-		const entry = <QueueEntry>this.queue.shift();
-		const self: this = this;
+    // Run as many workers as are queued. Do this atomically, in FIFO order.
+    private runWorker(): void {
+        // Get the next thing from the queue.
+        const entry = <QueueEntry>this.queue.shift();
+        const self: this = this;
 
-		// Run worker, proceed to next worker.
-		entry.worker(entry.event, entry.data)
-		.then(() => {
-			if (this.queue.length > 0) {
-				process.nextTick(this.runWorker);
-			} else {
-				// Unlink ourselves from our parent list.
-				self.parentList.splice(_.findIndex(self.parentList, self));
-			}
-		});
-	}
+        // Run worker, proceed to next worker.
+        entry.worker(entry.event, entry.data)
+        .then(() => {
+            if (this.queue.length > 0) {
+                process.nextTick(this.runWorker);
+            } else {
+                // Unlink ourselves from our parent list.
+                self.parentMap.delete(self.context);
+            }
+        });
+    }
 }
 
 // ProcBot ----------------------------------------------------------------------------------
@@ -134,14 +135,18 @@ export enum AlertLevel {
 };
 
 
-export class ProcBot {
+export class ProcBot<T> {
     // Defaults.
     // Log and Alert levels are taken from an envvar or set to the minimum.
     // These can be overriden by specific methods.
     protected _botname = 'Procbot';
     protected _logLevel = process.env.PROCBOT_LOG_LEVEL | LogLevel.WARN;
     protected _alertLevel = process.env.PROCBOT_ALERT_LEVEL | AlertLevel.CRITICAL;
-    private workers: Worker[] = [];
+    //private workers: Worker[] = [];
+    protected workers: Map<T, Worker<T>> = new Map<T, Worker<T>>();
+    /*private workers:
+    private thing: <U>(context: U, event: BotEvent) => U = this.getContextWorker;*/
+    protected getWorker: (event: BotEvent) => Worker<T>;
 
     private logLevelStrings = [
         'WARNING',
@@ -155,14 +160,14 @@ export class ProcBot {
     ];
 
     // Dummy constructor ATM.
-	constructor() {
+    constructor() {
         // Nada.
-	}
+    }
 
-	// Get the name of the bot.
-	protected get botname() {
-		return this._botname;
-	}
+    // Get the name of the bot.
+    protected get botname() {
+        return this._botname;
+    }
 
     // Get the log level.
     protected get logLevel() {
@@ -207,41 +212,27 @@ export class ProcBot {
     //
     // If we make this contextualised, we don't need repoName which makes no sense for
     // other bots. Change repoName to context here and in the Worker class.
-	protected queueEvent(event: BotEvent): void {
-		if (!event.workerMethod) {
-			console.log(`WorkerMethod must be passed into the Githubbot.firedEvent() method`);
-			return;
-		}
+    protected queueEvent(event: BotEvent): void {
+        let entry: Worker<T> | undefined;
 
-		// Look at the repo. If there's no repo, we can't actually do anything with this.
-		if (!event.repoData) {
-			console.log('Could not find a payload or a repository for the event');
-			return;
-		}
+        if (!event.workerMethod) {
+            console.log(`WorkerMethod must be passed into the Githubbot.firedEvent() method`);
+            return;
+        }
 
-		// Look through all the RepoWorkers, is there one already that exists for
-		// this repo?
-		// If not, create a new worker.
-        //
-        // FIXME: Remove specific repo based stuff with 'context' which can be
-        // a generic type as long as there's a relevant checker.
-        // Or maybe just have it as a string.
-		let entry = _.find(this.workers, (entry: Worker) => {
-			if (entry.repoName === event.repoData.full_name) {
-				return true;
-			}
+        // Look at the repo. If there's no repo, we can't actually do anything with this.
+        if (!event.data) {
+            console.log('Could not find a payload for the event');
+            return;
+        }
 
-			return false;
-		});
+        // Retrieve any worker with a matching context, or create a new one.
+        // Bot implementation specific.
+        entry = this.getWorker(event);
 
-		// If no entry found, create one.
-		if (!entry) {
-			entry = new Worker(event.repoData.full_name, this.workers);
-		}
+        // Now add the event to the found/created repo worker.
+        entry.addEvent(event.event, event.data, event.workerMethod);
 
-		// Now add the event to the found/created repo worker.
-		entry.addEvent(event.event, event.repoData, event.workerMethod);
-
-		return;
-	}
+        return;
+    }
 }
