@@ -62,6 +62,7 @@ const request: any = Promise.promisifyAll(require('request'));
 //  }
 // ]
 export interface GithubAction {
+    name: string,
     events: string[],
     triggerLabels?: string[],
     suppressionLabels?: string[]
@@ -70,7 +71,6 @@ export interface GithubAction {
 // The Register interface is passed to the GithubBot.register method to register
 // for callback when the appropriate events and labels are received.
 export interface GithubActionRegister extends GithubAction {
-    name: string,
     workerMethod: GithubActionMethod
 }
 

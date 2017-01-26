@@ -19,7 +19,9 @@
             "env": {
                 "WEBHOOK_SECRET": "",
                 "INTEGRATION_ID": "",
-                "PROCBOTS_PEM": ""
+                "PROCBOTS_PEM": "",
+                "VERSIONBOT_NAME": "",
+                "VERSIONBOT_EMAIL": ""
             }
         },
         {
