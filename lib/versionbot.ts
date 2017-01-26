@@ -17,8 +17,7 @@ limitations under the License.
 // VersionBot listens for merges of a PR to the `master` branch and then
 // updates any packages for it.
 import * as ProcBot from './procbot';
-import { GithubBot } from './githubbot';
-import { WorkerMethod, BotEvent } from './procbot';
+import * as GithubBot from './githubbot';
 import * as Promise from 'bluebird';
 import Path = require('path');
 import * as _ from 'lodash';
@@ -40,7 +39,7 @@ const fs: any = Promise.promisifyAll(require('fs'));
 const GithubApi: any = require('github');
 
 // The VersionBot is built ontop of GithubBot, which does all the heavy lifting and scheduling.
-export class VersionBot extends GithubBot {
+export class VersionBot extends GithubBot.GithubBot {
     // Name and register ourself.
     constructor(integration: number) {
         super(integration);
@@ -48,79 +47,50 @@ export class VersionBot extends GithubBot {
         // This is the VersionBot.
         this._botname = 'VersionBot';
 
+        // We have two different WorkerMethods here:
+        // 1) Status checks on PR open and commits
+        // 2) PR review and label checks for merge
+        const registrations: GithubBot.GithubActionRegister[] = [
+            {
+                name: 'CheckVersionistCommitStatus',
+                events: [ 'pull_request' ],
+                suppressionLabels: [ 'flow/no-version-checks' ],
+                workerMethod: this.checkVersioning
+            },
+            {
+                name: 'CheckForReadyMergeState',
+                events: [ 'pull_request', 'pull_request_review' ],
+                triggerLabels: [ 'flow/ready-to-merge' ],
+                suppressionLabels: [ 'flow/no-version-checks' ],
+                workerMethod: this.mergePR
+            }
+        ];
+        _.forEach(registrations, (reg) => {
+            this.registerAction(reg);
+        });
+
         // Authenticate the Github API.
         this.authenticate();
-    }
-
-    // When a relevant event occurs, this is fired.
-    firedEvent(event: string, repoEvent: any): void {
-        // Just call GithubBot's queueEvent method, telling it which method to use.
-        // QueueEvent needs to become QueueTrigger (Action?) and what needs to be passed is
-        // a number of events that will cause this to fire, as well as optional labels.
-        // Should triggerLabels exist, then these are all the labels that are required for
-        // an operation to occur (should it be valid). suppressLabels must not be passed!
-        // Should suppressLabels exist, then these are all the labels that need to exist
-        // for the trigger to be suppressed. Obviously fewer labels mean greater suppression.
-        // triggerLabels must not be passed!
-        //
-        // {
-        //       events: [...],
-        //    triggerLabels: [...]  \
-        //    suppressLabels: [...] /  ONLY one of these may be filled in
-        // }
-        // Actually, we don't do this here. What we do is have a separate registration function
-        // specifically for GithubBot which notes the events and the labels we want.
-        // queueEvent merely sends the event and the data for it.
-        // This means we have a separate handler which GithubBot registers for *all* events to the
-        // worker thread, which always calls it and determines where the event/labels should go to
-        // or if the action should be suppressed:
-        //
-        // versionbot: githubBot.registerAction(events, labels, suppressions, workerMethod)
-        // -> githubBot: worker.registerHandler(githubbot.eventCheck);
-        // Event fires: queueEvent(event, data) -> githubBot.eventCheck(event, data)
-        // -> checking stuff -> versionbot.action(event, data)
-        this.queueEvent({
-            event: event,
-            data: repoEvent,
-            workerMethod: this.prHandler
-        });
-    }
-
-    // Handle a particular PR event.
-    protected prHandler = (event: string, data: any) => {
-        let method = Promise.resolve();
-
-        if (event === 'pull_request') {
-            switch (data.action) {
-                // Version check for a PR open or commit against it.
-                case 'opened':
-                case 'synchronize':
-                    method = this.checkVersioning(event, data);
-                    break;
-
-                // Check the rest at merge, if it's not for it it'll exit.
-                default:
-                    method = this.mergePR(event, data);
-                    break;
-            }
-        } else if (event === 'pull_request_review') {
-            method = this.mergePR(event, data);
-        }
-
-        return method;
     }
 
     // Checks the newly opened PR and its commits.
     //  1. Triggered by an 'opened' or 'synchronize' event.
     //  2. If any PR commit has a 'Change-Type: <type>' commit, we create a status approving the PR.
     //  3. If no PR commit has a 'Change-Type: <type>' commit, we create a status failing the PR.
-    protected checkVersioning = (event: string, data: any) => {
+    //protected checkVersioning = (event: string, data: any) => {
+    protected checkVersioning = (action: GithubBot.GithubAction, data: any) => {
         const githubApi = this.githubApi;
         const pr = data.pull_request;
         const head = data.pull_request.head;
         const owner = head.repo.owner.login;
         const name = head.repo.name;
         console.log('PR has been opened or synchronised, check for commits');
+
+        // Only for opened or synced actions.
+        console.log(data.action);
+        if ((data.action !== 'opened') && (data.action !== 'synchronize')) {
+            return Promise.resolve();
+        }
 
         return this.gitCall(githubApi.pullRequests.getCommits, {
             owner: owner,
@@ -226,7 +196,8 @@ export class VersionBot extends GithubBot {
     //
     // It should be noted that this will, of course, result in a 'closed' event on a PR, which
     // in turn will feed into the 'generateVersion' method below.
-    protected mergePR = (event: string, data: any) => {
+    //protected mergePR = (event: string, data: any) => {
+    protected mergePR = (action: GithubBot.GithubAction, data: any) => {
         // States for review comments are:
         //  * COMMENT
         //  * CHANGES_REQUESTED
@@ -556,6 +527,5 @@ export class VersionBot extends GithubBot {
 // Export the Versionbot to the app.
 // We register the Github events we're interested in here.
 export function createBot(integration: number): VersionBot {
-
     return new VersionBot(process.env.INTEGRATION_ID);
 }

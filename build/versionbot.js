@@ -1,5 +1,5 @@
 "use strict";
-const githubbot_1 = require("./githubbot");
+const GithubBot = require("./githubbot");
 const Promise = require("bluebird");
 const _ = require("lodash");
 const path = require("path");
@@ -9,34 +9,20 @@ const rmdir = Promise.promisify(require('rmdir'));
 const exec = Promise.promisify(require('child_process').exec);
 const fs = Promise.promisifyAll(require('fs'));
 const GithubApi = require('github');
-class VersionBot extends githubbot_1.GithubBot {
+class VersionBot extends GithubBot.GithubBot {
     constructor(integration) {
         super(integration);
-        this.prHandler = (event, data) => {
-            let method = Promise.resolve();
-            if (event === 'pull_request') {
-                switch (data.action) {
-                    case 'opened':
-                    case 'synchronize':
-                        method = this.checkVersioning(event, data);
-                        break;
-                    default:
-                        method = this.mergePR(event, data);
-                        break;
-                }
-            }
-            else if (event === 'pull_request_review') {
-                method = this.mergePR(event, data);
-            }
-            return method;
-        };
-        this.checkVersioning = (event, data) => {
+        this.checkVersioning = (action, data) => {
             const githubApi = this.githubApi;
             const pr = data.pull_request;
             const head = data.pull_request.head;
             const owner = head.repo.owner.login;
             const name = head.repo.name;
             console.log('PR has been opened or synchronised, check for commits');
+            console.log(data.action);
+            if ((data.action !== 'opened') && (data.action !== 'synchronize')) {
+                return Promise.resolve();
+            }
             return this.gitCall(githubApi.pullRequests.getCommits, {
                 owner: owner,
                 repo: name,
@@ -114,7 +100,7 @@ class VersionBot extends githubbot_1.GithubBot {
                 });
             });
         };
-        this.mergePR = (event, data) => {
+        this.mergePR = (action, data) => {
             const githubApi = this.githubApi;
             const pr = data.pull_request;
             const head = data.pull_request.head;
@@ -341,14 +327,25 @@ class VersionBot extends githubbot_1.GithubBot {
             });
         };
         this._botname = 'VersionBot';
-        this.authenticate();
-    }
-    firedEvent(event, repoEvent) {
-        this.queueEvent({
-            event: event,
-            data: repoEvent,
-            workerMethod: this.prHandler
+        const registrations = [
+            {
+                name: 'CheckVersionistCommitStatus',
+                events: ['pull_request'],
+                suppressionLabels: ['flow/no-version-checks'],
+                workerMethod: this.checkVersioning
+            },
+            {
+                name: 'CheckForReadyMergeState',
+                events: ['pull_request', 'pull_request_review'],
+                triggerLabels: ['flow/ready-to-merge'],
+                suppressionLabels: ['flow/no-version-checks'],
+                workerMethod: this.mergePR
+            }
+        ];
+        _.forEach(registrations, (reg) => {
+            this.registerAction(reg);
         });
+        this.authenticate();
     }
 }
 exports.VersionBot = VersionBot;

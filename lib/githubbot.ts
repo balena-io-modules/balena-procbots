@@ -39,19 +39,60 @@ const request: any = Promise.promisifyAll(require('request'));
 
 // GithubBot ---------------------------------------------------------------------------
 
+// The GithubAction  defines an action, which is passed to a WorkerMethod should all of
+// the given pre-requisites be applicable.
+// At least one event. For each additional event, this is considered an 'OR' comparator.
+// eg. 'pull_request' OR 'pull_request_review' event
+// Labels, on the other hand, are ANDed together.
+// eg. 'flow/ready-to-merge' AND 'flow/in-review' (trigger or suppression)
+//
+// In the future, some sort of comparator language might be useful, eg:
+// and: [
+//  {
+//      or: [
+//          {
+//              name: <eventType>
+//              value: 'pull_request',
+//              op: eq | neq;
+//          },
+//          ...
+//      }]
+//  ,
+//  ...
+//  }
+// ]
+export interface GithubAction {
+    events: string[],
+    triggerLabels?: string[],
+    suppressionLabels?: string[]
+}
+
+// The Register interface is passed to the GithubBot.register method to register
+// for callback when the appropriate events and labels are received.
+export interface GithubActionRegister extends GithubAction {
+    name: string,
+    workerMethod: GithubActionMethod
+}
+
+//export type GithubActionMethod = <T>(event: string, data: T) => Promise<void>;
+export type GithubActionMethod = <T>(action: GithubAction, data: T) => Promise<void>;
+
 // Main GithubBot.
 export class GithubBot extends ProcBot.ProcBot<string> {
-	// Github API
+    // Github API
     private integrationId: number;
     private jwt: string;
     private user: number;
     private token: string;
+    private eventTriggers: GithubActionRegister[] = [];
     protected githubApi: any;
 
     // Takes a set of webhook types that the bot is interested in.
+    // Registrations can be passed in on bot creation, or registered/deregistered later.
+    // However, 'baked in' registrations are not available for deregistration.
     constructor(integration: number) {
         super();
-		this._botname = 'GithubBot';
+        this._botname = 'GithubBot';
         this.integrationId = integration;
 
         // The getWorker method is an overload for generic context types.
@@ -90,9 +131,101 @@ export class GithubBot extends ProcBot.ProcBot<string> {
         });
     }
 
-    // Not a pure virtual, but not callable directly from GithubBot.
-    public firedEvent(event: string, repoEvent: any): void {
-        console.log('This method should not be called directly.');
+    // Create a new event triggered action for the list. We don't check signatures, so someone
+    // could potentially register twice. If they do that, they get called twice.
+    // Currently we do not allow deregistering. Potentially there may be a need in the future,
+    // but currently any created bot has to have actions 'baked in'.
+    protected registerAction(action: GithubActionRegister) {
+        this.eventTriggers.push(action);
+    }
+
+    // FiredEvent needs to be called for any derived child bot (and in fact probably doesn't need
+    // to be implemented by them if all that's required is direct Github action handling).
+    // Override if any sort of check or state is required in the child (state not advised!).
+    public firedEvent(event: string, repoEvent: any) {
+        // Push this directly onto the queue.
+        this.queueEvent({
+            event: event,
+            data: repoEvent,
+            workerMethod: this.handleGithubEvent
+        });
+    }
+
+    // Handles all Github events to trigger actions, should the parameters meet those
+    // registered.
+    protected handleGithubEvent = (event: string, data: any) => {
+        const labelHead = () => {
+            // Note that a label event itself is not in itself a labelled type,
+            // so we don't check for it.
+            switch (event) {
+                case 'issue_comment':
+                case 'issues':
+                    return {
+                        repo: data.repository,
+                        number: data.issue.number
+                    };
+
+                case 'pull_request':
+                case 'pull_request_review':
+                case 'pull_request_review_comment':
+                    return {
+                        repo: data.repository,
+                        number: data.pull_request.number
+                    };
+
+                default:
+                    return;
+            }
+        };
+
+        _.forEach(this.eventTriggers, (action: GithubActionRegister) => {
+            // Is the event one of the type that triggers the action?
+            if (_.includes(action.events, event)) {
+                let labelEvent: any | void = labelHead();
+                let labelPromise = Promise.resolve();
+
+                // Are there any labels (trigger or suppression) set on the action?
+                if ((action.triggerLabels || action.suppressionLabels) && labelEvent) {
+                    // OK, so we've got a label event, so we now have to get all the labels
+                    // for the appropriate event.
+                    console.log(labelEvent);
+                    labelPromise = this.gitCall(this.githubApi.issues.getIssueLabels, {
+                        owner: labelEvent.repo.owner.login,
+                        repo: labelEvent.repo.name,
+                        number: labelEvent.number
+                    })
+
+                }
+                labelPromise.then((labels: any[] | void) => {
+                    // If there are some labels, then we process them.
+                    if (labels) {
+                        const foundLabels: string[] = labels.map((label: any) => {
+                            return label.name;
+                        })
+
+                        console.log(foundLabels);
+                        // First, are all the suppression labels present?
+                        if (action.suppressionLabels &&
+                            (_.intersection(action.suppressionLabels, foundLabels).length === action.suppressionLabels.length)) {
+                            console.log(_.intersection(action.suppressionLabels, foundLabels));
+                            this.log(ProcBot.LogLevel.INFO, `Dropping '${action.name}' as suppression labels are all present`)
+                            return;
+                        }
+                        // Secondly, are all the trigger labels present?
+                        if (action.triggerLabels &&
+                            (_.intersection(action.triggerLabels, foundLabels).length !== action.triggerLabels.length)) {
+                            this.log(ProcBot.LogLevel.INFO, `Dropping '${action.name}' as not all trigger labels are present`)
+                            return;
+                        }
+                    }
+
+                    return action.workerMethod(<GithubAction>action, data);
+                    //return trigger.workerMethod(event, data);
+                });
+            }
+        });
+
+        return Promise.resolve();
     }
 
     // If user is passed, then the Integration is authenticating as a installation user
