@@ -19,12 +19,10 @@ limitations under the License.
 import * as ProcBot from './procbot';
 import * as GithubBot from './githubbot';
 import * as Promise from 'bluebird';
-import Path = require('path');
 import * as _ from 'lodash';
 import * as path from 'path';
 
-//const temp: any = Promise.promisifyAll(require('temp').track());
-const temp: any = Promise.promisifyAll(require('temp'));
+const temp: any = Promise.promisifyAll(require('temp').track());
 const mkdirp: any = Promise.promisify(require('mkdirp'));
 const rmdir: any = Promise.promisify(require('rmdir'));
 const exec: any = Promise.promisify(require('child_process').exec);
@@ -37,6 +35,18 @@ const fs: any = Promise.promisifyAll(require('fs'));
 // calls have changed and are no longer valid. Sigh.
 // PR reviews are notable in this regard.
 const GithubApi: any = require('github');
+
+// Specific to VersionBot
+interface FileMapping {
+    file: string,
+    encoding: string
+}
+
+interface EncodedFile extends FileMapping {
+    treeEntry: GithubBot.TreeEntry,
+    blobSha: string
+};
+
 
 // The VersionBot is built ontop of GithubBot, which does all the heavy lifting and scheduling.
 export class VersionBot extends GithubBot.GithubBot {
@@ -76,7 +86,7 @@ export class VersionBot extends GithubBot.GithubBot {
     //  1. Triggered by an 'opened' or 'synchronize' event.
     //  2. If any PR commit has a 'Change-Type: <type>' commit, we create a status approving the PR.
     //  3. If no PR commit has a 'Change-Type: <type>' commit, we create a status failing the PR.
-    protected checkVersioning = (action: GithubBot.GithubAction, data: any) => {
+    protected checkVersioning = (action: GithubBot.GithubAction, data: GithubBot.PullRequestEvent) => {
         const githubApi = this.githubApi;
         const pr = data.pull_request;
         const head = data.pull_request.head;
@@ -94,11 +104,11 @@ export class VersionBot extends GithubBot.GithubBot {
             owner: owner,
             repo: name,
             number: pr.number
-        }).then((commits: any) => {
+        }).then((commits: GithubBot.Commit[]) => {
             let changetypeFound: boolean = false;
             // Go through all the commits. We're looking for, at a minimum, a 'change-type:' tag.
             for (let index = 0; index < commits.length; index += 1) {
-                const commit: any = commits[index];
+                const commit: GithubBot.Commit = commits[index];
                 const commitMessage: string = commit.commit.message;
                 const invalidCommit = !commitMessage.match(/^change-type:\s*(patch|minor|major)\s*$/mi);
 
@@ -139,14 +149,14 @@ export class VersionBot extends GithubBot.GithubBot {
                 owner,
                 repo: name,
                 sha: head.sha
-            }).then((headCommit: any) => {
+            }).then((headCommit: GithubBot.Commit) => {
                 // We will go ahead and perform a merge if we see Versionbot has committed
                 // something with 'CHANGELOG.md' in it.
                 const commit = headCommit.commit;
                 const files = headCommit.files;
 
                 if ((commit.committer.name === process.env.VERSIONBOT_NAME) &&
-                    _.find(files, (file: any) => {
+                    _.find(files, (file: GithubBot.CommitFile) => {
                         return file.filename === 'CHANGELOG.md';
                     })) {
                         // We go ahead and merge.
@@ -156,7 +166,7 @@ export class VersionBot extends GithubBot.GithubBot {
                             repo: name,
                             number: pr.number,
                             commit_title: `Auto-merge for PR ${pr.number} via Versionbot`
-                        }, 3).then((mergedData: any) => {
+                        }, 3).then((mergedData:GithubBot. Merge) => {
                             // We get an SHA back when the merge occurs, and we use this for a tag.
                             // Note date gets filed in automatically by API.
                             return this.gitCall(githubApi.gitdata.createTag, {
@@ -171,7 +181,7 @@ export class VersionBot extends GithubBot.GithubBot {
                                     email: process.env.VERSIONBOT_EMAIL
                                 }
                             });
-                        }).then((newTag: any) => {
+                        }).then((newTag: GithubBot.Tag) => {
                             console.log(newTag);
                             // We now have a SHA back that contains the tag object.
                             // Create a new reference based on it.
@@ -195,8 +205,7 @@ export class VersionBot extends GithubBot.GithubBot {
     //
     // It should be noted that this will, of course, result in a 'closed' event on a PR, which
     // in turn will feed into the 'generateVersion' method below.
-    //protected mergePR = (event: string, data: any) => {
-    protected mergePR = (action: GithubBot.GithubAction, data: any) => {
+    protected mergePR = (action: GithubBot.GithubAction, data:GithubBot.PullRequestEvent | GithubBot.PullRequestReviewEvent) => {
         // States for review comments are:
         //  * COMMENT
         //  * CHANGES_REQUESTED
@@ -218,13 +227,6 @@ export class VersionBot extends GithubBot.GithubBot {
         let branchName: string;
         let newTreeSha: string;
 
-        interface EncodedFile {
-            file: string,
-            encoding: string,
-            treeEntry?: any,
-            blobSha?: string
-        };
-
         console.log('PR has been updated with comments or a label');
 
         // Check the action on the event to see what we're dealing with.
@@ -243,13 +245,13 @@ export class VersionBot extends GithubBot.GithubBot {
 
         return this.gitCall(githubApi.pullRequests.getReviews, {
             owner: owner,
-            repo: name,
+            repo: repo,
             number: pr.number
-        }).then((reviews: any[]) => {
+        }).then((reviews: GithubBot.Review[]) => {
             // Cycle through reviews, ensure that any approved review occurred after any requiring changes.
             let approved = false;
             // Ooo, this is a good one. We can't do this:
-            //    reviews.forEach((review: any) => {
+            //    reviews.forEach((review: GithubBot.Review) => {
             //      if (review.state === 'APPROVED') {
             //            approved = true;
             //      } else if (review.state === 'CHANGES_REQUESTED') {
@@ -296,13 +298,13 @@ export class VersionBot extends GithubBot.GithubBot {
             return this.gitCall(githubApi.pullRequests.get, {
                 owner: owner,
                 repo: repo,
-                number: pr
-            }).then((prInfo: any) => {
+                number: pr.number
+            }).then((prInfo: GithubBot.PullRequest) => {
                 // Get the relevant branch.
                 branchName = prInfo.head.ref;
 
                 // Create new work dir.
-                return temp.mkdirAsync(`${repo}-${pr}_`).then((tempDir: string) => {
+                return temp.mkdirAsync(`${repo}-${pr.number}_`).then((tempDir: string) => {
                     fullPath = `${tempDir}${path.sep}`;
 
                     // Clone the repository inside the directory using the commit name and the run versionist.
@@ -359,7 +361,7 @@ export class VersionBot extends GithubBot.GithubBot {
                     const match = contents.match(/^## (v[0-9]\.[0-9]\.[0-9]).+$/m);
 
                     if (!match) {
-                        throw new Error('Cannot find new version for ${repo}-${pr}');
+                        throw new Error('Cannot find new version for ${repoFullName}-#${pr.number}');
                     }
 
                     newVersion = match[1];
@@ -368,14 +370,14 @@ export class VersionBot extends GithubBot.GithubBot {
                 // Read each file and base64 encode it.
                 return Promise.map(files, (file: string) => {
                     return fs.readFileAsync(`${fullPath}${file}`).call(`toString`, 'base64').then((encoding: string) => {
-                        let newFile: EncodedFile = {
+                        let newFile: FileMapping = {
                             file,
-                            encoding
+                            encoding,
                         };
                         return newFile;
                     });
                 })
-            }).then((files: EncodedFile[]) => {
+            }).then((files: FileMapping[]) => {
                 // We use the Github API to now update every file in our list, ending with the CHANGELOG.md
                 // We need this to be the final file updated, as it'll kick off our actual merge.
                 //
@@ -387,32 +389,36 @@ export class VersionBot extends GithubBot.GithubBot {
                     owner,
                     repo,
                     sha: branchName
-                }).then((treeData: any) => {
+                }).then((treeData: GithubBot.Tree) => {
                     // We need to save the tree data, we'll be modifying it for updates in a moment.
 
                     // Create a new blob for our files.
+                    // Implicit cast.
                     return Promise.map(files, (file: EncodedFile) => {
                         // Find the relevant entry in the tree.
-                        file.treeEntry = _.find(treeData.tree, (treeEntry: any) => {
+                        const treeEntry = _.find(treeData.tree, (treeEntry: GithubBot.TreeEntry) => {
                             return treeEntry.path === file.file;
                         });
 
-                        if (!file.treeEntry) {
+                        if (!treeEntry) {
                             throw new Error(`Couldn't find a git tree entry for the file ${file.file}`);
                         }
 
+                        file.treeEntry = treeEntry;
                         return this.gitCall(githubApi.gitdata.createBlob, {
                             owner,
                             repo,
                             content: file.encoding,
                             encoding: 'base64'
-                        }).then((blob: any) => {
-                            file.treeEntry.sha = blob.sha;
+                        }).then((blob: GithubBot.Blob) => {
+                            if (file.treeEntry) {
+                                file.treeEntry.sha = blob.sha;
+                            }
                         }).return(file);
                     }).then((files: EncodedFile[]) => {
                         // We now have a load of update tree path entries. We write the
                         // data back to Github to get a new SHA for it.
-                        const newTree: any[] = [];
+                        const newTree: GithubBot.TreeEntry[] = [];
 
                         files.forEach((file: EncodedFile) => {
                             newTree.push({
@@ -430,7 +436,7 @@ export class VersionBot extends GithubBot.GithubBot {
                             tree: newTree,
                             base_tree: treeData.sha
                         });
-                    }).then((newTree: any) => {
+                    }).then((newTree: GithubBot.Tree) => {
                         newTreeSha = newTree.sha;
 
                         // Get the last commit for the branch.
@@ -439,7 +445,7 @@ export class VersionBot extends GithubBot.GithubBot {
                             repo,
                             sha: `${branchName}`
                         });
-                    }).then((lastCommit: any) => {
+                    }).then((lastCommit: GithubBot.Commit) => {
                         // We have new tree object, we now want to create a new commit referencing it.
                         return this.gitCall(githubApi.gitdata.createCommit, {
                             owner,
@@ -452,7 +458,7 @@ export class VersionBot extends GithubBot.GithubBot {
                                 email: 'versionbot@whaleway.net'
                             }
                         });
-                    }).then((commit: any) => {
+                    }).then((commit: GithubBot.Commit) => {
                         // Finally, we now update the reference to the branch that's changed.
                         // This should kick off the change for status.
                         return this.gitCall(githubApi.gitdata.updateReference, {

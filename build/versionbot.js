@@ -4,12 +4,13 @@ const GithubBot = require("./githubbot");
 const Promise = require("bluebird");
 const _ = require("lodash");
 const path = require("path");
-const temp = Promise.promisifyAll(require('temp'));
+const temp = Promise.promisifyAll(require('temp').track());
 const mkdirp = Promise.promisify(require('mkdirp'));
 const rmdir = Promise.promisify(require('rmdir'));
 const exec = Promise.promisify(require('child_process').exec);
 const fs = Promise.promisifyAll(require('fs'));
 const GithubApi = require('github');
+;
 class VersionBot extends GithubBot.GithubBot {
     constructor(integration) {
         super(integration);
@@ -113,7 +114,6 @@ class VersionBot extends GithubBot.GithubBot {
             let fullPath;
             let branchName;
             let newTreeSha;
-            ;
             console.log('PR has been updated with comments or a label');
             switch (data.action) {
                 case 'submitted':
@@ -126,7 +126,7 @@ class VersionBot extends GithubBot.GithubBot {
             }
             return this.gitCall(githubApi.pullRequests.getReviews, {
                 owner: owner,
-                repo: name,
+                repo: repo,
                 number: pr.number
             }).then((reviews) => {
                 let approved = false;
@@ -148,10 +148,10 @@ class VersionBot extends GithubBot.GithubBot {
                 return this.gitCall(githubApi.pullRequests.get, {
                     owner: owner,
                     repo: repo,
-                    number: pr
+                    number: pr.number
                 }).then((prInfo) => {
                     branchName = prInfo.head.ref;
-                    return temp.mkdirAsync(`${repo}-${pr}_`).then((tempDir) => {
+                    return temp.mkdirAsync(`${repo}-${pr.number}_`).then((tempDir) => {
                         fullPath = `${tempDir}${path.sep}`;
                         const promiseResults = [];
                         return Promise.mapSeries([
@@ -192,7 +192,7 @@ class VersionBot extends GithubBot.GithubBot {
                     return exec(`cat ${fullPath}${_.last(moddedFiles)}`).then((contents) => {
                         const match = contents.match(/^## (v[0-9]\.[0-9]\.[0-9]).+$/m);
                         if (!match) {
-                            throw new Error('Cannot find new version for ${repo}-${pr}');
+                            throw new Error('Cannot find new version for ${repoFullName}-#${pr.number}');
                         }
                         newVersion = match[1];
                     }).return(moddedFiles);
@@ -201,7 +201,7 @@ class VersionBot extends GithubBot.GithubBot {
                         return fs.readFileAsync(`${fullPath}${file}`).call(`toString`, 'base64').then((encoding) => {
                             let newFile = {
                                 file,
-                                encoding
+                                encoding,
                             };
                             return newFile;
                         });
@@ -213,19 +213,22 @@ class VersionBot extends GithubBot.GithubBot {
                         sha: branchName
                     }).then((treeData) => {
                         return Promise.map(files, (file) => {
-                            file.treeEntry = _.find(treeData.tree, (treeEntry) => {
+                            const treeEntry = _.find(treeData.tree, (treeEntry) => {
                                 return treeEntry.path === file.file;
                             });
-                            if (!file.treeEntry) {
+                            if (!treeEntry) {
                                 throw new Error(`Couldn't find a git tree entry for the file ${file.file}`);
                             }
+                            file.treeEntry = treeEntry;
                             return this.gitCall(githubApi.gitdata.createBlob, {
                                 owner,
                                 repo,
                                 content: file.encoding,
                                 encoding: 'base64'
                             }).then((blob) => {
-                                file.treeEntry.sha = blob.sha;
+                                if (file.treeEntry) {
+                                    file.treeEntry.sha = blob.sha;
+                                }
                             }).return(file);
                         }).then((files) => {
                             const newTree = [];

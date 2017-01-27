@@ -31,13 +31,105 @@ import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import * as fs from 'fs';
 
+// The GithubAPI defines Promise itself. There is an issue with
+// using Bluebird as the Promise, as the type declaration file does not
+// allow for imported scope. (FIND TS FORUM ANSWER SHOING ISSUE)
 const GithubApi = require('github');
-const hmac = require('crypto');
-const githubHooks = require('github-webhook-handler');
 const jwt = require('jsonwebtoken');
 const request: any = Promise.promisifyAll(require('request'));
 
 // GithubBot ---------------------------------------------------------------------------
+
+// Github Events ------------------------------------
+// These provide the current bare minimum definitions for child Procbots working with them.
+
+export interface PullRequestEvent {
+    action: string,
+    pull_request: {
+        number: number,
+        head: {
+            repo: {
+                name: string;
+                owner: {
+                    login: string;
+                }
+            },
+            sha: string
+        }
+    }
+};
+
+export interface PullRequestReviewEvent {
+    action: string,
+    pull_request: {
+        number: number,
+        head: {
+            repo: {
+                name: string;
+                owner: {
+                    login: string;
+                }
+            },
+            sha: string
+        }
+    }
+};
+
+
+// Github API ---------------------------------------
+// These provide the current bare minimum definitions for child Procbots working with them.
+
+export interface CommitFile {
+    filename: string,
+};
+
+export interface Commit {
+    commit: {
+        committer: {
+            name: string
+        }
+        message: string
+    },
+    files: CommitFile[],
+    sha: string
+};
+
+export interface Review {
+    state: string
+};
+
+export interface Merge {
+    sha: string
+};
+
+export interface Tag {
+    sha: string
+};
+
+export interface PullRequest {
+    head: {
+        ref: string
+    }
+};
+
+export interface Blob {
+    sha: string
+};
+
+export interface TreeEntry {
+    path: string,
+    mode: string,
+    type: string,
+    sha: string,
+    url?: string,
+    size?: number
+};
+
+export interface Tree {
+    sha: string,
+    url: string,
+    tree: TreeEntry[]
+};
 
 // The GithubAction  defines an action, which is passed to a WorkerMethod should all of
 // the given pre-requisites be applicable.
@@ -219,8 +311,10 @@ export class GithubBot extends ProcBot.ProcBot<string> {
                         }
                     }
 
-                    return action.workerMethod(<GithubAction>action, data);
-                    //return trigger.workerMethod(event, data);
+                    return action.workerMethod(<GithubAction>action, data).catch((err: Error) => {
+                        // We log the error, so that it's saved and matches up with any Alert.
+                        this.log(ProcBot.LogLevel.WARN, `Error thrown: ${err.message}`);
+                    });
                 });
             }
         });

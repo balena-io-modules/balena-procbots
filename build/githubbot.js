@@ -3,10 +3,19 @@ const ProcBot = require("./procbot");
 const Promise = require("bluebird");
 const _ = require("lodash");
 const GithubApi = require('github');
-const hmac = require('crypto');
-const githubHooks = require('github-webhook-handler');
 const jwt = require('jsonwebtoken');
 const request = Promise.promisifyAll(require('request'));
+;
+;
+;
+;
+;
+;
+;
+;
+;
+;
+;
 class GithubBot extends ProcBot.ProcBot {
     constructor(integration) {
         super();
@@ -61,7 +70,9 @@ class GithubBot extends ProcBot.ProcBot {
                                 return;
                             }
                         }
-                        return action.workerMethod(action, data);
+                        return action.workerMethod(action, data).catch((err) => {
+                            this.log(ProcBot.LogLevel.WARN, `Error thrown: ${err.message}`);
+                        });
                     });
                 }
             });
