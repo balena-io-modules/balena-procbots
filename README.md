@@ -1,7 +1,5 @@
 # procbots
 
-**WARNING:** This is WIP; however the majority of it works correctly.
-
 Process bots used for automating the development and deployment CI pipeline.
 
 Currently only the `Versionbot` exists. `Versionbot` will:
@@ -13,6 +11,8 @@ Currently only the `Versionbot` exists. `Versionbot` will:
     2. Run `versionist` upon it
     3. Should a new version be generated, commit any appropriate files (eg. `CHANGELOG.md`, `package.json`) to the branch
     4. Merge the branch back into the head
+
+Merges and checks can be suppressed using the `flow/no-version-checks` label on a PR.
 
 ## Installation
 
@@ -37,13 +37,13 @@ Create new app, add appropriate git remote for resin.io.
 
 Appropriate environment variables are required before execution. See below.
 
-## Integration
+## Creating a Github Integration
 
 `Versionbot` runs as an Integration in the Github scope. For development, you can create an Integration on your personal Github account by going to your Settings page (from your profile avatar icon) and selecting 'Integrations -> Register New Integration` from the 'Developer Settings' sidebar.
 
     * Give Integration a name
     * Set a Homepage URL (required but not used)
-    * Set a callback URL (this is where all callbacks will go to, eg: `http://whaleway.net:4567/webhooks`). Currently `Versionbot` expects webhooks to be sent to the `/webhooks` path when running, and listens on port `4567`
+    * Set a callback URL (this is where all callbacks will go to, eg: `http://myurl.com:4567/webhooks`). Currently `Versionbot` expects webhooks to be sent to the `/webhooks` path when running, and listens on port `4567`
     * Create a new Webhook Secret (see [here](https://developer.github.com/webhooks/securing/)). You will require this secret later
 
 	* Set up secure Webhooks:
@@ -84,8 +84,10 @@ You'll need the right private key to run the Integration. It is not supplied her
     `WEBHOOK_SECRET`: The 20 digit hex key used to authenticate messages.
     `INTEGRATION_ID`: The ID given on Integration creation, a unique identifier.
     `PROCBOTS_PEM`: The Base64 encoded private key generated on Integration creation.
+	`VERSIONBOT_NAME`: The name shown in commits and merges for PRs by the Integration.
+	`VERSIONBOT_EMAIL`: Email address for the bot, (can be an empty string).
 
-You'll need to fill these fields out in `.vscode/launch.json` before debugging (if you're running this on the CLI, set envvars accordingly). If you're running on Resin, these must be set as application envvars.
+You'll need to fill these fields out in `.vscode/launch.json` before debugging (if you're running this on the CLI, set envvars accordingly). If you're running on Resin, these must be set as Application envvars.
 
 Ask Heds how this works if unsure.
 
@@ -99,6 +101,8 @@ Use the tool in `tools/initRepo` to setup the repository in such a way that the 
 
 **Note:** This must be carried out by an admin user of the repo, in this case `bob`.
 
+Ensure you also create the `flow/ready-to-merge` label type in the 'Issues' section of the repo (this will be added to the tool).
+
 Finally you need to install the Integration into the repo. Do this by going to your 'Settings' page, selecting 'Installed Integrations', selecting your Integration and then selecting the repos you want it installed in in the 'Repository access' section.
 
 ## Running
@@ -111,6 +115,5 @@ This allows the checking of commits for a PR and merging them when the right lab
 
 ## TBD
 
-There's lots TBD:
-* Improve code, including a base class for all Procbots (logging, event handling) and a Githubbot that includes a generic label handler for task generation
-* Tools to automatically create an installation for a user/org as well as adding an Integration to a repo
+* TypeScript review and style.
+* Addition of logging and alerting.
