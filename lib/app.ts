@@ -20,9 +20,8 @@ import * as express from 'express';
 import * as bodyParser from 'body-parser';
 import * as _ from 'lodash';
 import * as Promise from 'bluebird';
-import { GithubBot } from './githubbot';
-
-const hmac = require('crypto');
+import * as GithubBot from './githubbot';
+import * as crypto from 'crypto';
 
 // Arguments determine which bot type we want to use.
 const getopt = new Opts([
@@ -42,9 +41,9 @@ if (opt.options['help'] || Object.keys(opt.options).length === 0) {
 	process.exit(0)
 }
 
-// Verify the sender of data is allowed to.
+// Verify that events being sent our way are valid and authenticated.
 function verifyWebhookToken(payload: string, hubSignature: string) {
-	const newHmac: any = hmac.createHmac('sha1', process.env.WEBHOOK_SECRET);
+	const newHmac: any = crypto.createHmac('sha1', process.env.WEBHOOK_SECRET);
 	newHmac.update(payload);
 	if (('sha1=' + newHmac.digest('hex')) === hubSignature) {
 		return true;
@@ -53,13 +52,13 @@ function verifyWebhookToken(payload: string, hubSignature: string) {
 	return false;
 }
 
-// Standard Express gubbins.
+// Standard Express installation.
 const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-	// Import any specified bots. These will all listen for webhooks.
-let botRegistry: GithubBot[] = [];
+// Import any specified bots. These will all listen for webhooks.
+let botRegistry: GithubBot.GithubBot[] = [];
 for (let bot of opt.options['bot-names']) {
 	// Dynamically require the bots.
 	try {
@@ -91,19 +90,13 @@ app.post('/webhooks', (req: any, res: any) => {
 	// Let the hook get on with it.
 	res.sendStatus(200);
 
-	console.log(eventType);
-
 	// Go through all registered bots, and send them any appropriate hook.
-	_.forEach(botRegistry, (bot: GithubBot) => {
+	_.forEach(botRegistry, (bot: GithubBot.GithubBot) => {
 		bot.firedEvent(eventType, payload);
 	});
 });
 
 // Listen on 4567 for the moment.
 app.listen(4567, () => {
-	console.log('Listening for github hooks on port 4567.');
+	console.log('Listening for Github Integration hooks on port 4567.');
 });
-
-
-
-

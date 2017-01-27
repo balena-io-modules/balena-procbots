@@ -1,6 +1,5 @@
 "use strict";
 ;
-;
 class Worker {
     constructor(context, parentMap) {
         this.queue = [];
@@ -10,8 +9,8 @@ class Worker {
     get context() {
         return this._context;
     }
-    addEvent(event, data, worker) {
-        this.queue.push({ event, data, worker });
+    addEvent(event) {
+        this.queue.push(event);
         if (this.queue.length === 1) {
             this.runWorker();
         }
@@ -19,7 +18,7 @@ class Worker {
     runWorker() {
         const entry = this.queue.shift();
         const self = this;
-        entry.worker(entry.event, entry.data)
+        entry.workerMethod(entry.event, entry.data)
             .then(() => {
             if (this.queue.length > 0) {
                 process.nextTick(this.runWorker);
@@ -89,15 +88,15 @@ class ProcBot {
     queueEvent(event) {
         let entry;
         if (!event.workerMethod) {
-            console.log(`WorkerMethod must be passed into the Githubbot.firedEvent() method`);
+            this.log(LogLevel.WARN, `WorkerMethod must be passed into the Githubbot.firedEvent() method`);
             return;
         }
         if (!event.data) {
-            console.log('Could not find a payload for the event');
+            this.log(LogLevel.WARN, 'Could not find a payload for the event');
             return;
         }
         entry = this.getWorker(event);
-        entry.addEvent(event.event, event.data, event.workerMethod);
+        entry.addEvent(event);
     }
 }
 exports.ProcBot = ProcBot;

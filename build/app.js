@@ -3,7 +3,7 @@ const Opts = require("node-getopt");
 const express = require("express");
 const bodyParser = require("body-parser");
 const _ = require("lodash");
-const hmac = require('crypto');
+const crypto = require("crypto");
 const getopt = new Opts([
     ['b', 'bot-names=ARG+', 'Determines which bots will run'],
     ['h', 'help', 'This help message']
@@ -18,7 +18,7 @@ if (opt.options['help'] || Object.keys(opt.options).length === 0) {
     process.exit(0);
 }
 function verifyWebhookToken(payload, hubSignature) {
-    const newHmac = hmac.createHmac('sha1', process.env.WEBHOOK_SECRET);
+    const newHmac = crypto.createHmac('sha1', process.env.WEBHOOK_SECRET);
     newHmac.update(payload);
     if (('sha1=' + newHmac.digest('hex')) === hubSignature) {
         return true;
@@ -50,13 +50,12 @@ app.post('/webhooks', (req, res) => {
             return;
         }
     res.sendStatus(200);
-    console.log(eventType);
     _.forEach(botRegistry, (bot) => {
         bot.firedEvent(eventType, payload);
     });
 });
 app.listen(4567, () => {
-    console.log('Listening for github hooks on port 4567.');
+    console.log('Listening for Github Integration hooks on port 4567.');
 });
 
 //# sourceMappingURL=app.js.map

@@ -21,20 +21,13 @@ import * as GithubBot from './githubbot';
 import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import * as path from 'path';
+import * as GithubApi from 'github';
 
 const temp: any = Promise.promisifyAll(require('temp').track());
 const mkdirp: any = Promise.promisify(require('mkdirp'));
 const rmdir: any = Promise.promisify(require('rmdir'));
 const exec: any = Promise.promisify(require('child_process').exec);
 const fs: any = Promise.promisifyAll(require('fs'));
-
-// TBD
-// Constant a load of the text ('Versionbot' + email + etc.)
-
-// Here's something worth noting, some of the URLs that the 'github' API
-// calls have changed and are no longer valid. Sigh.
-// PR reviews are notable in this regard.
-const GithubApi: any = require('github');
 
 // Specific to VersionBot
 interface FileMapping {
@@ -47,10 +40,12 @@ interface EncodedFile extends FileMapping {
     blobSha: string
 };
 
-
 // The VersionBot is built ontop of GithubBot, which does all the heavy lifting and scheduling.
+// It is designed to check for valid `versionist` commit semantics and alter (or merge) a PR
+// accordingly.
 export class VersionBot extends GithubBot.GithubBot {
-    // Name and register ourself.
+
+    // Name ourself and register the events and labels we're interested in.
     constructor(integration: number) {
         super(integration);
 
@@ -182,7 +177,6 @@ export class VersionBot extends GithubBot.GithubBot {
                                 }
                             });
                         }).then((newTag: GithubBot.Tag) => {
-                            console.log(newTag);
                             // We now have a SHA back that contains the tag object.
                             // Create a new reference based on it.
                             return this.gitCall(githubApi.gitdata.createReference, {
@@ -201,7 +195,8 @@ export class VersionBot extends GithubBot.GithubBot {
     //  1. Triggered by a 'labeled' event ('flow/ready-to-merge') or a 'pull_request_review_comment'
     //  2. Checks all review comments to ensure that at least one approves the PR (and that no comment
     //     that may come after it includes a 'CHANGES_REQUESTED' state).
-    //  3. Merges the PR to master, deletes the branch (does *not* close any associated PR).
+    //  3. Commit new version upped files to the branch, which will cause a 'synchronized' event,
+    //     which will finalise the merge.
     //
     // It should be noted that this will, of course, result in a 'closed' event on a PR, which
     // in turn will feed into the 'generateVersion' method below.
@@ -227,7 +222,7 @@ export class VersionBot extends GithubBot.GithubBot {
         let branchName: string;
         let newTreeSha: string;
 
-        console.log('PR has been updated with comments or a label');
+        this.log(ProcBot.LogLevel.DEBUG, `${action.name}: entered`);
 
         // Check the action on the event to see what we're dealing with.
         switch (data.action) {
@@ -239,10 +234,11 @@ export class VersionBot extends GithubBot.GithubBot {
 
             default:
                 // We have no idea what sparked this, but we're not doing anything!
-                console.log(`Data action wasn't useful for merging`);
+                this.log(ProcBot.LogLevel.INFO, `${action.name}:${data.action} isn't a useful action`);
                 return Promise.resolve();
         }
 
+        // Get the reviews for the PR.
         return this.gitCall(githubApi.pullRequests.getReviews, {
             owner: owner,
             repo: repo,
@@ -275,14 +271,9 @@ export class VersionBot extends GithubBot.GithubBot {
             }
 
             if (approved === false) {
-                console.log(`Unable to merge, no approval comment})`);
+                this.log(ProcBot.LogLevel.INFO, `Unable to merge, no approval comment`);
                 return Promise.resolve();
             }
-
-            // If all is well, we now generate a new version.
-            // This will end up committing relevant files, which in turn will get
-            // `sychronized`, kicking off a status check and final merge.
-            //return this.generateVersion(owner, name, pr.number);
 
             // Actually generate a new version of a component:
             // 1. Clone the repo
@@ -292,7 +283,7 @@ export class VersionBot extends GithubBot.GithubBot {
             // 5. Base64 encode them
             // 6. Call Github to update them, in serial, CHANGELOG last (important for merging expectations)
             // 7. Finish
-            console.log('PR is ready to merge, attempting to carry out a version up.');
+            this.log(ProcBot.LogLevel.INFO, 'PR is ready to merge, attempting to carry out a version up');
 
             // Get the branch for this PR.
             return this.gitCall(githubApi.pullRequests.get, {
@@ -322,9 +313,8 @@ export class VersionBot extends GithubBot.GithubBot {
                     }).get(3)
                 });
             }).then((status: string) => {
-                // Split the changes by line
-                let changeLines = status.split('\n');
                 const moddedFiles: string[] = [];
+                let changeLines = status.split('\n');
                 let changeLogFound = false;
 
                 if (changeLines.length === 0) {
@@ -471,11 +461,9 @@ export class VersionBot extends GithubBot.GithubBot {
                     });
                 });
             }).then(() => {
-                console.log(`Upped version of ${repoFullName} to ${newVersion}; tagged and pushed.`);
-            }).catch((err: Error) => {
-                // We post to the PR, informing we couldn't continue the merge.
-                console.log(err);
+                this.log(ProcBot.LogLevel.INFO, `Upped version of ${repoFullName} to ${newVersion}; tagged and pushed.`);
             });
+            // Maybe on an error, we should comment on the PR directly?
         });
     };
 }

@@ -9,7 +9,6 @@ const mkdirp = Promise.promisify(require('mkdirp'));
 const rmdir = Promise.promisify(require('rmdir'));
 const exec = Promise.promisify(require('child_process').exec);
 const fs = Promise.promisifyAll(require('fs'));
-const GithubApi = require('github');
 ;
 class VersionBot extends GithubBot.GithubBot {
     constructor(integration) {
@@ -90,7 +89,6 @@ class VersionBot extends GithubBot.GithubBot {
                                 }
                             });
                         }).then((newTag) => {
-                            console.log(newTag);
                             return this.gitCall(githubApi.gitdata.createReference, {
                                 owner,
                                 repo: name,
@@ -114,14 +112,14 @@ class VersionBot extends GithubBot.GithubBot {
             let fullPath;
             let branchName;
             let newTreeSha;
-            console.log('PR has been updated with comments or a label');
+            this.log(ProcBot.LogLevel.DEBUG, `${action.name}: entered`);
             switch (data.action) {
                 case 'submitted':
                 case 'labeled':
                 case 'unlabeled':
                     break;
                 default:
-                    console.log(`Data action wasn't useful for merging`);
+                    this.log(ProcBot.LogLevel.INFO, `${action.name}:${data.action} isn't a useful action`);
                     return Promise.resolve();
             }
             return this.gitCall(githubApi.pullRequests.getReviews, {
@@ -141,10 +139,10 @@ class VersionBot extends GithubBot.GithubBot {
                     }
                 }
                 if (approved === false) {
-                    console.log(`Unable to merge, no approval comment})`);
+                    this.log(ProcBot.LogLevel.INFO, `Unable to merge, no approval comment`);
                     return Promise.resolve();
                 }
-                console.log('PR is ready to merge, attempting to carry out a version up.');
+                this.log(ProcBot.LogLevel.INFO, 'PR is ready to merge, attempting to carry out a version up');
                 return this.gitCall(githubApi.pullRequests.get, {
                     owner: owner,
                     repo: repo,
@@ -164,8 +162,8 @@ class VersionBot extends GithubBot.GithubBot {
                         }).get(3);
                     });
                 }).then((status) => {
-                    let changeLines = status.split('\n');
                     const moddedFiles = [];
+                    let changeLines = status.split('\n');
                     let changeLogFound = false;
                     if (changeLines.length === 0) {
                         throw new Error(`Couldn't find any status changes after running 'versionist', exiting`);
@@ -276,9 +274,7 @@ class VersionBot extends GithubBot.GithubBot {
                         });
                     });
                 }).then(() => {
-                    console.log(`Upped version of ${repoFullName} to ${newVersion}; tagged and pushed.`);
-                }).catch((err) => {
-                    console.log(err);
+                    this.log(ProcBot.LogLevel.INFO, `Upped version of ${repoFullName} to ${newVersion}; tagged and pushed.`);
                 });
             });
         };

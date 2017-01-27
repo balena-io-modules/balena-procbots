@@ -13,36 +13,21 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
-// The GithubBot is a generic class that any bot that wishes to execute
-// based on Github webhooks can be extended upon.
-// It deals with:
-//  * Handling the scheduling of bot workers for each unique repo
-//  * Adding and removing workers/events as they fire/finalise
-//  * Error/Information logging to known endpoints (TBD)
-//  * Dealing with order of precedence (TBD)
-//
-// The latter may be important for some updates back to Github,
-// so we ensure that if a bot needs to be run after another,
-// if that bot is also running, it's ensured that this occurs.
-
 import * as ProcBot from './procbot';
 import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import * as fs from 'fs';
+import * as jwt from 'jsonwebtoken';
+import { AlertLevel } from './procbot';
 
-// The GithubAPI defines Promise itself. There is an issue with
-// using Bluebird as the Promise, as the type declaration file does not
-// allow for imported scope. (FIND TS FORUM ANSWER SHOING ISSUE)
+// The GithubAPI Promise implies built-in ES6 Promises. Therefore when assigning
+// the Promise to use as Bluebird, VS Code reports an error. Need a good
+// fix for this that doesn't require type declarations?
 const GithubApi = require('github');
-const jwt = require('jsonwebtoken');
 const request: any = Promise.promisifyAll(require('request'));
 
-// GithubBot ---------------------------------------------------------------------------
-
-// Github Events ------------------------------------
+// Github Events --------------------------------------------------------------
 // These provide the current bare minimum definitions for child Procbots working with them.
-
 export interface PullRequestEvent {
     action: string,
     pull_request: {
@@ -76,9 +61,8 @@ export interface PullRequestReviewEvent {
 };
 
 
-// Github API ---------------------------------------
+// Github API -----------------------------------------------------------------
 // These provide the current bare minimum definitions for child Procbots working with them.
-
 export interface CommitFile {
     filename: string,
 };
@@ -131,6 +115,8 @@ export interface Tree {
     tree: TreeEntry[]
 };
 
+// GithubBot ------------------------------------------------------------------
+
 // The GithubAction  defines an action, which is passed to a WorkerMethod should all of
 // the given pre-requisites be applicable.
 // At least one event. For each additional event, this is considered an 'OR' comparator.
@@ -166,16 +152,13 @@ export interface GithubActionRegister extends GithubAction {
     workerMethod: GithubActionMethod
 }
 
-//export type GithubActionMethod = <T>(event: string, data: T) => Promise<void>;
+// A GithubActionMethod is the method that will be used to process an event.
 export type GithubActionMethod = <T>(action: GithubAction, data: T) => Promise<void>;
 
 // Main GithubBot.
 export class GithubBot extends ProcBot.ProcBot<string> {
-    // Github API
     private integrationId: number;
-    private jwt: string;
     private user: number;
-    private token: string;
     private eventTriggers: GithubActionRegister[] = [];
     protected githubApi: any;
 
@@ -189,7 +172,7 @@ export class GithubBot extends ProcBot.ProcBot<string> {
 
         // The getWorker method is an overload for generic context types.
         // In the case of the GithubBot, it's the name of the repo (a string).
-        this.getWorker = (event: ProcBot.BotEvent): ProcBot.Worker<string> => {
+        this.getWorker = (event: ProcBot.WorkerEvent): ProcBot.Worker<string> => {
             const context = event.data.repository.full_name;
             let worker: ProcBot.Worker<string> | undefined = this.workers.get(context);
 
@@ -226,12 +209,12 @@ export class GithubBot extends ProcBot.ProcBot<string> {
     // Create a new event triggered action for the list. We don't check signatures, so someone
     // could potentially register twice. If they do that, they get called twice.
     // Currently we do not allow deregistering. Potentially there may be a need in the future,
-    // but currently any created bot has to have actions 'baked in'.
+    // but any created bot has to have actions 'baked in' atm.
     protected registerAction(action: GithubActionRegister) {
         this.eventTriggers.push(action);
     }
 
-    // FiredEvent needs to be called for any derived child bot (and in fact probably doesn't need
+    // FiredEvent needs to be called for any derived child bot (and usually it doesn't need
     // to be implemented by them if all that's required is direct Github action handling).
     // Override if any sort of check or state is required in the child (state not advised!).
     public firedEvent(event: string, repoEvent: any) {
@@ -246,6 +229,7 @@ export class GithubBot extends ProcBot.ProcBot<string> {
     // Handles all Github events to trigger actions, should the parameters meet those
     // registered.
     protected handleGithubEvent = (event: string, data: any) => {
+        // Determine the head to use based on the event.
         const labelHead = () => {
             // Note that a label event itself is not in itself a labelled type,
             // so we don't check for it.
@@ -279,8 +263,7 @@ export class GithubBot extends ProcBot.ProcBot<string> {
                 // Are there any labels (trigger or suppression) set on the action?
                 if ((action.triggerLabels || action.suppressionLabels) && labelEvent) {
                     // OK, so we've got a label event, so we now have to get all the labels
-                    // for the appropriate event.
-                    console.log(labelEvent);
+                    // for the appropriate issue.
                     labelPromise = this.gitCall(this.githubApi.issues.getIssueLabels, {
                         owner: labelEvent.repo.owner.login,
                         repo: labelEvent.repo.name,
@@ -295,11 +278,9 @@ export class GithubBot extends ProcBot.ProcBot<string> {
                             return label.name;
                         })
 
-                        console.log(foundLabels);
                         // First, are all the suppression labels present?
                         if (action.suppressionLabels &&
                             (_.intersection(action.suppressionLabels, foundLabels).length === action.suppressionLabels.length)) {
-                            console.log(_.intersection(action.suppressionLabels, foundLabels));
                             this.log(ProcBot.LogLevel.INFO, `Dropping '${action.name}' as suppression labels are all present`)
                             return;
                         }
@@ -313,7 +294,7 @@ export class GithubBot extends ProcBot.ProcBot<string> {
 
                     return action.workerMethod(<GithubAction>action, data).catch((err: Error) => {
                         // We log the error, so that it's saved and matches up with any Alert.
-                        this.log(ProcBot.LogLevel.WARN, `Error thrown: ${err.message}`);
+                        this.alert(ProcBot.AlertLevel.ERROR, `Error thrown: ${err.message}`);
                     });
                 });
             }
@@ -322,17 +303,15 @@ export class GithubBot extends ProcBot.ProcBot<string> {
         return Promise.resolve();
     }
 
-    // If user is passed, then the Integration is authenticating as a installation user
-    protected authenticate(user?: number): Promise<void> {
+    // Authenticates against the Github API and Installation environment (for Integrations).
+    protected authenticate(): Promise<void> {
         // Initialise JWTs
         const privatePem = new Buffer(process.env.PROCBOTS_PEM, 'base64').toString();
-
         const payload = {
             iat: Math.floor((Date.now() / 1000)),
             exp: Math.floor((Date.now() / 1000)) + (10 * 60),
             iss: this.integrationId
         };
-
         const jwToken = jwt.sign(payload, privatePem, { algorithm: 'RS256' });
         const installationsOpts = {
             url: 'https://api.github.com/integration/installations',
@@ -344,24 +323,12 @@ export class GithubBot extends ProcBot.ProcBot<string> {
             json: true
         };
 
-        if (user) {
-            this.user = user;
-        }
         return request.getAsync(installationsOpts).then((res: any) => {
             // Get the URL for the token.
             const installations: any[] = res.body;
             const tokenUrl = installations[0].access_tokens_url;
 
             // Request new token.
-            //
-            // Whilst I don't think it does, because of the way the docs are written:
-            // This may need to change when more than one repo can be used by the integration.
-            // What needs to happen here is each separate repository needs its own version of the
-            // 'github' API so that the token matches it correctly.
-            // As we have a slot for every repo in the Repo, it means that for each RepoWorker
-            // we need to Authenticate. So we move this from GithubBot to RepoWorker constructor.
-            // Then, every time we see a new repo we authenticate to the correct one.
-            // The docs are not very clear about this.
             const tokenOpts: any = {
                 url: tokenUrl,
                 method: 'POST',
@@ -372,9 +339,6 @@ export class GithubBot extends ProcBot.ProcBot<string> {
                 },
                 json: true
             };
-            if (user) {
-                tokenOpts.body = { user_id: user };
-            }
 
             return request.postAsync(tokenOpts);
         }).then((res: any) => {
@@ -387,9 +351,9 @@ export class GithubBot extends ProcBot.ProcBot<string> {
             });
 
             // For debug.
-            console.log(`token for manual fiddling is: ${tokenDetails.token}`);
-            console.log('Base curl command:');
-            console.log(`curl -XGET -H "Authorisation: token ${tokenDetails.token}" -H "Accept: application/vnd.github.black-cat-preview+json" https://api.github.com/`)
+            this.log(ProcBot.LogLevel.DEBUG, `token for manual fiddling is: ${tokenDetails.token}`);
+            this.log(ProcBot.LogLevel.DEBUG, 'Base curl command:');
+            this.log(ProcBot.LogLevel.DEBUG, `curl -XGET -H "Authorisation: token ${tokenDetails.token}" -H "Accept: application/vnd.github.black-cat-preview+json" https://api.github.com/`)
         });
     }
 
@@ -410,7 +374,9 @@ export class GithubBot extends ProcBot.ProcBot<string> {
                     if ((err.message === 'Bad credentials') && !badCreds) {
                         badCreds = true;
                         // Re-authenticate, then try again.
-                        return runApi();
+                        return this.authenticate().then(() => {
+                            return runApi();
+                        });
                     } else if (retriesLeft === 0) {
                         // No more retries, just reject.
                         reject(err);
@@ -421,7 +387,6 @@ export class GithubBot extends ProcBot.ProcBot<string> {
                         }, 5000);
                     }
                 }).then((data: any) => {
-                    // Hurrah, all data back safely.
                     resolve(data);
                 });
             };
@@ -432,7 +397,7 @@ export class GithubBot extends ProcBot.ProcBot<string> {
     }
 }
 
-// Create a new GithubBot.
+// Create a new GithubBot. Or rather, don't.
 export function createBot(): GithubBot {
-    return new GithubBot(0);
+    throw new Error('GithubBot is not a valid instantiation of a ProcBot');
 }

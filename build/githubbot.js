@@ -2,8 +2,8 @@
 const ProcBot = require("./procbot");
 const Promise = require("bluebird");
 const _ = require("lodash");
+const jwt = require("jsonwebtoken");
 const GithubApi = require('github');
-const jwt = require('jsonwebtoken');
 const request = Promise.promisifyAll(require('request'));
 ;
 ;
@@ -45,7 +45,6 @@ class GithubBot extends ProcBot.ProcBot {
                     let labelEvent = labelHead();
                     let labelPromise = Promise.resolve();
                     if ((action.triggerLabels || action.suppressionLabels) && labelEvent) {
-                        console.log(labelEvent);
                         labelPromise = this.gitCall(this.githubApi.issues.getIssueLabels, {
                             owner: labelEvent.repo.owner.login,
                             repo: labelEvent.repo.name,
@@ -57,10 +56,8 @@ class GithubBot extends ProcBot.ProcBot {
                             const foundLabels = labels.map((label) => {
                                 return label.name;
                             });
-                            console.log(foundLabels);
                             if (action.suppressionLabels &&
                                 (_.intersection(action.suppressionLabels, foundLabels).length === action.suppressionLabels.length)) {
-                                console.log(_.intersection(action.suppressionLabels, foundLabels));
                                 this.log(ProcBot.LogLevel.INFO, `Dropping '${action.name}' as suppression labels are all present`);
                                 return;
                             }
@@ -71,7 +68,7 @@ class GithubBot extends ProcBot.ProcBot {
                             }
                         }
                         return action.workerMethod(action, data).catch((err) => {
-                            this.log(ProcBot.LogLevel.WARN, `Error thrown: ${err.message}`);
+                            this.alert(ProcBot.AlertLevel.ERROR, `Error thrown: ${err.message}`);
                         });
                     });
                 }
@@ -87,7 +84,9 @@ class GithubBot extends ProcBot.ProcBot {
                     return method(options).catch((err) => {
                         if ((err.message === 'Bad credentials') && !badCreds) {
                             badCreds = true;
-                            return runApi();
+                            return this.authenticate().then(() => {
+                                return runApi();
+                            });
                         }
                         else if (retriesLeft === 0) {
                             reject(err);
@@ -136,7 +135,7 @@ class GithubBot extends ProcBot.ProcBot {
             workerMethod: this.handleGithubEvent
         });
     }
-    authenticate(user) {
+    authenticate() {
         const privatePem = new Buffer(process.env.PROCBOTS_PEM, 'base64').toString();
         const payload = {
             iat: Math.floor((Date.now() / 1000)),
@@ -153,9 +152,6 @@ class GithubBot extends ProcBot.ProcBot {
             },
             json: true
         };
-        if (user) {
-            this.user = user;
-        }
         return request.getAsync(installationsOpts).then((res) => {
             const installations = res.body;
             const tokenUrl = installations[0].access_tokens_url;
@@ -169,9 +165,6 @@ class GithubBot extends ProcBot.ProcBot {
                 },
                 json: true
             };
-            if (user) {
-                tokenOpts.body = { user_id: user };
-            }
             return request.postAsync(tokenOpts);
         }).then((res) => {
             const tokenDetails = res.body;
@@ -179,15 +172,15 @@ class GithubBot extends ProcBot.ProcBot {
                 type: 'token',
                 token: tokenDetails.token
             });
-            console.log(`token for manual fiddling is: ${tokenDetails.token}`);
-            console.log('Base curl command:');
-            console.log(`curl -XGET -H "Authorisation: token ${tokenDetails.token}" -H "Accept: application/vnd.github.black-cat-preview+json" https://api.github.com/`);
+            this.log(ProcBot.LogLevel.DEBUG, `token for manual fiddling is: ${tokenDetails.token}`);
+            this.log(ProcBot.LogLevel.DEBUG, 'Base curl command:');
+            this.log(ProcBot.LogLevel.DEBUG, `curl -XGET -H "Authorisation: token ${tokenDetails.token}" -H "Accept: application/vnd.github.black-cat-preview+json" https://api.github.com/`);
         });
     }
 }
 exports.GithubBot = GithubBot;
 function createBot() {
-    return new GithubBot(0);
+    throw new Error('GithubBot is not a valid instantiation of a ProcBot');
 }
 exports.createBot = createBot;
 
