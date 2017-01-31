@@ -7,19 +7,19 @@
             false,
             "check-type"
         ],
-        "only-arrow-functions": false,                  // Mixed functions allowed
-        "quotemark": [true, "single", "avoid-escape"],  // Allow `'` static strings
-        "no-var-requires": false,                       // Allow old-style requires
-        "no-console": false,                            // Allow console output
-        "trailing-comma": false,                        // No trailing comma on arrays/objects
-        "no-string-literal": false,                     // Allow object['property-name']
-        "interface-name": false,                        // No 'I' prefixing interface name
+        "only-arrow-functions": false,
+        "quotemark": [true, "single", "avoid-escape"],
+        "no-var-requires": false,
+        "no-console": false,
+        "trailing-comma": false,
+        "no-string-literal": false,
+        "interface-name": false,
         "variable-name": [
             true,
             "ban-keywords",
             "check-format",
             "allow-leading-underscore",
-            "allow-pascal-case"                         // Allow for old-style require of objects
+            "allow-pascal-case"
         ]
     }
 }
