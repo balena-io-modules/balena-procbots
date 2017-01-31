@@ -1,35 +1,4 @@
 "use strict";
-;
-class Worker {
-    constructor(context, parentMap) {
-        this.queue = [];
-        this._context = context;
-        this.parentMap = parentMap;
-    }
-    get context() {
-        return this._context;
-    }
-    addEvent(event) {
-        this.queue.push(event);
-        if (this.queue.length === 1) {
-            this.runWorker();
-        }
-    }
-    runWorker() {
-        const entry = this.queue.shift();
-        const self = this;
-        entry.workerMethod(entry.event, entry.data)
-            .then(() => {
-            if (this.queue.length > 0) {
-                process.nextTick(this.runWorker);
-            }
-            else {
-                self.parentMap.delete(self.context);
-            }
-        });
-    }
-}
-exports.Worker = Worker;
 var LogLevel;
 (function (LogLevel) {
     LogLevel[LogLevel["WARN"] = 0] = "WARN";
@@ -46,8 +15,8 @@ var AlertLevel;
 class ProcBot {
     constructor() {
         this._botname = 'Procbot';
-        this._logLevel = process.env.PROCBOT_LOG_LEVEL | LogLevel.WARN;
-        this._alertLevel = process.env.PROCBOT_ALERT_LEVEL | AlertLevel.CRITICAL;
+        this._logLevel = process.env.PROCBOT_LOG_LEVEL || LogLevel.WARN;
+        this._alertLevel = process.env.PROCBOT_ALERT_LEVEL || AlertLevel.CRITICAL;
         this.workers = new Map();
         this.logLevelStrings = [
             'WARNING',
@@ -58,6 +27,9 @@ class ProcBot {
             'CRITICAL',
             'ERROR'
         ];
+        this.removeWorker = (context) => {
+            this.workers.delete(context);
+        };
     }
     get botname() {
         return this._botname;
@@ -73,11 +45,6 @@ class ProcBot {
     }
     set alertLevel(level) {
         this._alertLevel = level;
-    }
-    output(level, classLevel, levelStrings, message) {
-        if (level >= classLevel) {
-            console.log(`${levelStrings[level]} - ${message}`);
-        }
     }
     log(level, message) {
         this.output(level, this._logLevel, this.logLevelStrings, message);
@@ -97,6 +64,11 @@ class ProcBot {
         }
         entry = this.getWorker(event);
         entry.addEvent(event);
+    }
+    output(level, classLevel, levelStrings, message) {
+        if (level >= classLevel) {
+            console.log(`${levelStrings[level]} - ${message}`);
+        }
     }
 }
 exports.ProcBot = ProcBot;

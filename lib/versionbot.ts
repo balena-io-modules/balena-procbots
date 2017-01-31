@@ -16,31 +16,59 @@ limitations under the License.
 
 // VersionBot listens for merges of a PR to the `master` branch and then
 // updates any packages for it.
-import * as ProcBot from './procbot';
-import * as GithubBot from './githubbot';
 import * as Promise from 'bluebird';
+import * as ChildProcess from 'child_process';
+import * as FS from 'fs';
 import * as _ from 'lodash';
 import * as path from 'path';
-import * as GithubApi from 'github';
+import * as GithubBotApiTypes from './githubapi-types';
+import * as GithubBot from './githubbot';
+import { GithubAction, GithubActionRegister } from './githubbot-types';
+import * as ProcBot from './procbot';
 
-const temp: any = Promise.promisifyAll(require('temp').track());
-const mkdirp: any = Promise.promisify(require('mkdirp'));
-const rmdir: any = Promise.promisify(require('rmdir'));
-const exec: any = Promise.promisify(require('child_process').exec);
-const fs: any = Promise.promisifyAll(require('fs'));
+// Declare correct bindings for requires without typings.
+// Exec technically has a binding because of it's Node typings, but promisify doesn't include
+// the optional object (we need for CWD).
+const fsReadFile = Promise.promisify(FS.readFile);
+const exec: (command: string, options?: any) => Promise<{}> = Promise.promisify(ChildProcess.exec);
+const tempMkdir: (dir: string) => Promise<{}> = Promise.promisify(require('temp').mkdir);
+const tempCleanup = Promise.promisify(require('temp').cleanup);
 
 // Specific to VersionBot
 interface FileMapping {
-    file: string,
-    encoding: string
+    file: string;
+    encoding: string;
 }
 
 interface EncodedFile extends FileMapping {
-    treeEntry: GithubBot.TreeEntry,
-    blobSha: string
+    treeEntry: GithubBotApiTypes.TreeEntry;
+    blobSha: string;
 };
 
-// The VersionBot is built ontop of GithubBot, which does all the heavy lifting and scheduling.
+interface RepoFileData {
+    owner: string;
+    repo: string;
+    branchName: string;
+    version: string;
+    files: FileMapping[];
+}
+
+interface VersionistData {
+    branchName: string;
+    fullPath: string;
+    repoFullName: string;
+    files?: string[];
+    version?: string;
+}
+
+interface MergeData {
+    commitVersion: string;
+    owner: string;
+    prNumber: number;
+    repoName: string;
+}
+
+// The VersionBot is built on top of GithubBot, which does all the heavy lifting and scheduling.
 // It is designed to check for valid `versionist` commit semantics and alter (or merge) a PR
 // accordingly.
 export class VersionBot extends GithubBot.GithubBot {
@@ -57,19 +85,26 @@ export class VersionBot extends GithubBot.GithubBot {
         // 2) PR review and label checks for merge
         _.forEach([
             {
-                name: 'CheckVersionistCommitStatus',
                 events: [ 'pull_request' ],
+                name: 'CheckVersionistCommitStatus',
                 suppressionLabels: [ 'flow/no-version-checks' ],
                 workerMethod: this.checkVersioning
             },
             {
-                name: 'CheckForReadyMergeState',
-                events: [ 'pull_request', 'pull_request_review' ],
-                triggerLabels: [ 'flow/ready-to-merge' ],
+                events: [ 'pull_request' ],
+                name: 'CheckVersionistCommitStatus',
                 suppressionLabels: [ 'flow/no-version-checks' ],
-                workerMethod: this.mergePR
+                triggerLabels: [ 'version/check-commits' ],
+                workerMethod: this.checkVersioning
+            },
+            {
+                events: [ 'pull_request', 'pull_request_review' ],
+                name: 'CheckForReadyMergeState',
+                suppressionLabels: [ 'flow/no-version-checks' ],
+                triggerLabels: [ 'flow/ready-to-merge' ],
+                workerMethod: this.mergePR,
             }
-        ], (reg: GithubBot.GithubActionRegister) => {
+        ], (reg: GithubActionRegister) => {
             this.registerAction(reg);
         });
 
@@ -81,7 +116,7 @@ export class VersionBot extends GithubBot.GithubBot {
     //  1. Triggered by an 'opened' or 'synchronize' event.
     //  2. If any PR commit has a 'Change-Type: <type>' commit, we create a status approving the PR.
     //  3. If no PR commit has a 'Change-Type: <type>' commit, we create a status failing the PR.
-    protected checkVersioning = (action: GithubBot.GithubAction, data: GithubBot.PullRequestEvent) => {
+    protected checkVersioning = (action: GithubAction, data: GithubBotApiTypes.PullRequestEvent) => {
         const githubApi = this.githubApi;
         const pr = data.pull_request;
         const head = data.pull_request.head;
@@ -91,19 +126,19 @@ export class VersionBot extends GithubBot.GithubBot {
         this.log(ProcBot.LogLevel.DEBUG, `${action.name}: entered`);
 
         // Only for opened or synced actions.
-        if ((data.action !== 'opened') && (data.action !== 'synchronize')) {
+        if ((data.action !== 'opened') && (data.action !== 'synchronize') &&
+            (data.action !== 'labeled')) {
             return Promise.resolve();
         }
 
         return this.gitCall(githubApi.pullRequests.getCommits, {
-            owner: owner,
+            owner,
+            number: pr.number,
             repo: name,
-            number: pr.number
-        }).then((commits: GithubBot.Commit[]) => {
+        }).then((commits: GithubBotApiTypes.Commit[]) => {
             let changetypeFound: boolean = false;
             // Go through all the commits. We're looking for, at a minimum, a 'change-type:' tag.
-            for (let index = 0; index < commits.length; index += 1) {
-                const commit: GithubBot.Commit = commits[index];
+            for (let commit of commits) {
                 const commitMessage: string = commit.commit.message;
                 const invalidCommit = !commitMessage.match(/^change-type:\s*(patch|minor|major)\s*$/mi);
 
@@ -116,24 +151,24 @@ export class VersionBot extends GithubBot.GithubBot {
             // If we found a change-type message, then mark this commit as ok.
             if (changetypeFound) {
                 return this.gitCall(githubApi.repos.createStatus, {
-                    owner: owner,
+                    context: 'Versionist',
+                    description: 'Found a valid Versionist `Change-Type` tag',
+                    owner,
                     repo: name,
                     sha: head.sha,
-                    state: 'success',
-                    description: 'Found a valid Versionist `Change-Type` tag',
-                    context: 'Versionist'
+                    state: 'success'
                 }).return(true);
             }
 
             // Else we mark it as having failed.
             this.log(ProcBot.LogLevel.DEBUG, `${action.name}: No valid 'Change-Type' tag found, failing last commit`);
             return this.gitCall(githubApi.repos.createStatus, {
-                owner: owner,
+                context: 'Versionist',
+                description: 'None of the commits in the PR have a `Change-Type` tag',
+                owner,
                 repo: name,
                 sha: head.sha,
-                state: 'failure',
-                description: 'None of the commits in the PR have a `Change-Type` tag',
-                context: 'Versionist'
+                state: 'failure'
             }).return(false);
         }).then(() => {
             // If the author was Versionbot and the file marked was CHANGELOG, then
@@ -144,50 +179,25 @@ export class VersionBot extends GithubBot.GithubBot {
                 owner,
                 repo: name,
                 sha: head.sha
-            }).then((headCommit: GithubBot.Commit) => {
-                // We will go ahead and perform a merge if we see Versionbot has committed
-                // something with 'CHANGELOG.md' in it.
-                const commit = headCommit.commit;
-                const files = headCommit.files;
-
-                if ((commit.committer.name === process.env.VERSIONBOT_NAME) &&
-                    _.find(files, (file: GithubBot.CommitFile) => {
-                        return file.filename === 'CHANGELOG.md';
-                    })) {
-                        // We go ahead and merge.
-                        const commitVersion = commit.message;
-                        return this.gitCall(githubApi.pullRequests.merge, {
-                            owner,
-                            repo: name,
-                            number: pr.number,
-                            commit_title: `Auto-merge for PR ${pr.number} via Versionbot`
-                        }, 3).then((mergedData:GithubBot. Merge) => {
-                            // We get an SHA back when the merge occurs, and we use this for a tag.
-                            // Note date gets filed in automatically by API.
-                            return this.gitCall(githubApi.gitdata.createTag, {
-                                owner,
-                                repo: name,
-                                tag: commitVersion,
-                                message: commitVersion,
-                                object: mergedData.sha,
-                                type: 'commit',
-                                tagger: {
-                                    name: process.env.VERSIONBOT_NAME,
-                                    email: process.env.VERSIONBOT_EMAIL
-                                }
-                            });
-                        }).then((newTag: GithubBot.Tag) => {
-                            // We now have a SHA back that contains the tag object.
-                            // Create a new reference based on it.
-                            return this.gitCall(githubApi.gitdata.createReference, {
-                                owner,
-                                repo: name,
-                                ref: `refs/tags/${commitVersion}`,
-                                sha: newTag.sha
-                            });
-                        });
-                    }
             });
+        }).then((headCommit: GithubBotApiTypes.Commit) => {
+            // We will go ahead and perform a merge if we see Versionbot has committed
+            // something with 'CHANGELOG.md' in it.
+            const commit = headCommit.commit;
+            const files = headCommit.files;
+
+            if ((commit.committer.name === process.env.VERSIONBOT_NAME) &&
+            _.find(files, (file: GithubBotApiTypes.CommitFile) => {
+                return file.filename === 'CHANGELOG.md';
+            })) {
+                // We go ahead and merge.
+                return this.mergeToMaster({
+                    commitVersion: commit.message,
+                    owner,
+                    prNumber: pr.number,
+                    repoName: name
+                });
+            }
         });
     }
 
@@ -200,7 +210,8 @@ export class VersionBot extends GithubBot.GithubBot {
     //
     // It should be noted that this will, of course, result in a 'closed' event on a PR, which
     // in turn will feed into the 'generateVersion' method below.
-    protected mergePR = (action: GithubBot.GithubAction, data:GithubBot.PullRequestEvent | GithubBot.PullRequestReviewEvent) => {
+    protected mergePR = (action: GithubAction,
+        data: GithubBotApiTypes.PullRequestEvent | GithubBotApiTypes.PullRequestReviewEvent) => {
         // States for review comments are:
         //  * COMMENT
         //  * CHANGES_REQUESTED
@@ -216,11 +227,9 @@ export class VersionBot extends GithubBot.GithubBot {
         const owner = head.repo.owner.login;
         const repo = head.repo.name;
         const repoFullName = `${owner}/${repo}`;
-        const cwd = process.cwd();
         let newVersion: string;
         let fullPath: string;
         let branchName: string;
-        let newTreeSha: string;
 
         this.log(ProcBot.LogLevel.DEBUG, `${action.name}: entered`);
 
@@ -240,34 +249,20 @@ export class VersionBot extends GithubBot.GithubBot {
 
         // Get the reviews for the PR.
         return this.gitCall(githubApi.pullRequests.getReviews, {
-            owner: owner,
-            repo: repo,
-            number: pr.number
-        }).then((reviews: GithubBot.Review[]) => {
+            number: pr.number,
+            owner,
+            repo
+        }).then((reviews: GithubBotApiTypes.Review[]) => {
             // Cycle through reviews, ensure that any approved review occurred after any requiring changes.
             let approved = false;
-            // Ooo, this is a good one. We can't do this:
-            //    reviews.forEach((review: GithubBot.Review) => {
-            //      if (review.state === 'APPROVED') {
-            //            approved = true;
-            //      } else if (review.state === 'CHANGES_REQUESTED') {
-            //            approved = false;
-            //      }
-            //     });
-            //
-            // Because of the CFA going on here: https://github.com/Microsoft/TypeScript/issues/11498
-            // This errors because it's optimistic that [].forEach() execution can't affect the
-            // 'approved' variable, therefore it implicitly believes it can only ever be 'false'
-            // and barfs on the 'if (approved === true)' line claiming 'true' cannot be 'false'.
-            // Not great. Still, easy to use a straight for() loop.
-            approved = false;
-            for (let index = 0; index < reviews.length; index += 1) {
-                const review = reviews[index];
-                if (review.state === 'APPROVED') {
-                    approved = true;
-                } else if (review.state === 'CHANGES_REQUESTED') {
-                    approved = false;
-                }
+            if (reviews) {
+                reviews.forEach((review: GithubBotApiTypes.Review) => {
+                    if (review.state === 'APPROVED') {
+                        approved = true;
+                    } else if (review.state === 'CHANGES_REQUESTED') {
+                        approved = false;
+                    }
+                });
             }
 
             if (approved === false) {
@@ -287,190 +282,263 @@ export class VersionBot extends GithubBot.GithubBot {
 
             // Get the branch for this PR.
             return this.gitCall(githubApi.pullRequests.get, {
-                owner: owner,
-                repo: repo,
-                number: pr.number
-            }).then((prInfo: GithubBot.PullRequest) => {
+                number: pr.number,
+                owner,
+                repo
+            }).then((prInfo: GithubBotApiTypes.PullRequest) => {
                 // Get the relevant branch.
                 branchName = prInfo.head.ref;
 
                 // Create new work dir.
-                return temp.mkdirAsync(`${repo}-${pr.number}_`).then((tempDir: string) => {
-                    fullPath = `${tempDir}${path.sep}`;
+                return tempMkdir(`${repo}-${pr.number}_`);
+            }).then((tempDir: string) => {
+                fullPath = `${tempDir}${path.sep}`;
 
-                    // Clone the repository inside the directory using the commit name and the run versionist.
-                    // We only care about output from the git status.
-                    // IMPORTANT NOTE: Currently, Versionist will fail if it doesn't find a
-                    //     `package.json` file. This needs rectifying in Versionist, as this code doesn't pick it up.
-                    const promiseResults: string[] = [];
-                    return Promise.mapSeries([
-                        `git clone https://${process.env.WEBHOOK_SECRET}:x-oauth-basic@github.com/${repoFullName} ${fullPath}`,
-                        `git checkout ${branchName}`,
-                        'versionist',
-                        'git status -s'
-                    ], (command) => {
-                        return exec(command, { cwd: fullPath });
-                    }).get(3)
+                return this.applyVersionist({
+                    fullPath,
+                    branchName,
+                    repoFullName
                 });
-            }).then((status: string) => {
-                const moddedFiles: string[] = [];
-                let changeLines = status.split('\n');
-                let changeLogFound = false;
-
-                if (changeLines.length === 0) {
-                    throw new Error(`Couldn't find any status changes after running 'versionist', exiting`);
+            }).then((versionData: VersionistData) => {
+                if (!versionData.version || !versionData.files) {
+                    throw new Error('Could not find new version!');
                 }
-                changeLines = _.slice(changeLines, 0, changeLines.length - 1);
-                // For each change, get the name of the change. We shouldn't see *anything* that isn't
-                // expected, and we should only see modifications. Log anything else as an issue
-                // (but not an error).
-                changeLines.forEach((line) => {
-                    // If we get anything other than an 'M', flag this.
-                    const match = line.match(/^\sM\s(.+)$/);
-                    if (!match) {
-                        throw new Error(`Found a spurious git status entry: ${line.trim()}, abandoning version up`);
-                    } else {
-                        // Remove the status so we just get a filename.
-                        if (match[1] !== 'CHANGELOG.md') {
-                            moddedFiles.push(match[1]);
-                        } else {
-                            changeLogFound = true;
-                        }
-                    }
-                });
+                newVersion = versionData.version;
 
-                // Ensure that the CHANGELOG.md file is always the last and that it exists!
-                if (!changeLogFound) {
-                    throw new Error(`Couldn't find the CHANGELOG.md file, abandoning version up`);
-                }
-                moddedFiles.push(`CHANGELOG.md`);
-
-                // Now we get the new version from the CHANGELOG (*not* the package.json, it may not exist).
-                return exec(`cat ${fullPath}${_.last(moddedFiles)}`).then((contents: string) => {
-                    // Only interested in the first match for '## v...'
-                    const match = contents.match(/^## (v[0-9]\.[0-9]\.[0-9]).+$/m);
-
-                    if (!match) {
-                        throw new Error('Cannot find new version for ${repoFullName}-#${pr.number}');
-                    }
-
-                    newVersion = match[1];
-                }).return(moddedFiles);
-            }).then((files: string[]) => {
                 // Read each file and base64 encode it.
-                return Promise.map(files, (file: string) => {
-                    return fs.readFileAsync(`${fullPath}${file}`).call(`toString`, 'base64').then((encoding: string) => {
+                return Promise.map(versionData.files, (file: string) => {
+                    return fsReadFile(`${fullPath}${file}`).call(`toString`, 'base64')
+                    .then((encoding: string) => {
                         let newFile: FileMapping = {
                             file,
                             encoding,
                         };
                         return newFile;
                     });
-                })
+                });
             }).then((files: FileMapping[]) => {
-                // We use the Github API to now update every file in our list, ending with the CHANGELOG.md
-                // We need this to be the final file updated, as it'll kick off our actual merge.
-                //
-                // Turn all this into a single method, cleaner.
-                // CommitEncodedFile, or something.
-
-                // Get the top level hierarchy for the branch. It includes the files we need.
-                return this.gitCall(githubApi.gitdata.getTree, {
+                return this.createCommitBlobs({
                     owner,
                     repo,
-                    sha: branchName
-                }).then((treeData: GithubBot.Tree) => {
-                    // We need to save the tree data, we'll be modifying it for updates in a moment.
-
-                    // Create a new blob for our files.
-                    // Implicit cast.
-                    return Promise.map(files, (file: EncodedFile) => {
-                        // Find the relevant entry in the tree.
-                        const treeEntry = _.find(treeData.tree, (treeEntry: GithubBot.TreeEntry) => {
-                            return treeEntry.path === file.file;
-                        });
-
-                        if (!treeEntry) {
-                            throw new Error(`Couldn't find a git tree entry for the file ${file.file}`);
-                        }
-
-                        file.treeEntry = treeEntry;
-                        return this.gitCall(githubApi.gitdata.createBlob, {
-                            owner,
-                            repo,
-                            content: file.encoding,
-                            encoding: 'base64'
-                        }).then((blob: GithubBot.Blob) => {
-                            if (file.treeEntry) {
-                                file.treeEntry.sha = blob.sha;
-                            }
-                        }).return(file);
-                    }).then((files: EncodedFile[]) => {
-                        // We now have a load of update tree path entries. We write the
-                        // data back to Github to get a new SHA for it.
-                        const newTree: GithubBot.TreeEntry[] = [];
-
-                        files.forEach((file: EncodedFile) => {
-                            newTree.push({
-                                path: file.treeEntry.path,
-                                mode: file.treeEntry.mode,
-                                type: 'blob',
-                                sha: file.treeEntry.sha
-                            })
-                        });
-
-                        // Now write this new tree and get back an SHA for it.
-                        return this.gitCall(githubApi.gitdata.createTree, {
-                            owner,
-                            repo,
-                            tree: newTree,
-                            base_tree: treeData.sha
-                        });
-                    }).then((newTree: GithubBot.Tree) => {
-                        newTreeSha = newTree.sha;
-
-                        // Get the last commit for the branch.
-                        return this.gitCall(githubApi.repos.getCommit, {
-                            owner,
-                            repo,
-                            sha: `${branchName}`
-                        });
-                    }).then((lastCommit: GithubBot.Commit) => {
-                        // We have new tree object, we now want to create a new commit referencing it.
-                        return this.gitCall(githubApi.gitdata.createCommit, {
-                            owner,
-                            repo,
-                            message: `${newVersion}`,
-                            tree: newTreeSha,
-                            parents: [ lastCommit.sha ],
-                            committer: {
-                                name: 'Versionbot',
-                                email: 'versionbot@whaleway.net'
-                            }
-                        });
-                    }).then((commit: GithubBot.Commit) => {
-                        // Finally, we now update the reference to the branch that's changed.
-                        // This should kick off the change for status.
-                        return this.gitCall(githubApi.gitdata.updateReference, {
-                            owner,
-                            repo,
-                            ref: `heads/${branchName}`,
-                            sha: commit.sha,
-                            force: false // Not that I'm paranoid...
-                        });
-                    });
+                    branchName,
+                    version: newVersion,
+                    files
                 });
             }).then(() => {
-                this.log(ProcBot.LogLevel.INFO, `Upped version of ${repoFullName} to ${newVersion}; tagged and pushed.`);
+                // Clean up the working directory to free up space.
+                // We purposefully don't clean this up on failure, as we can then inspect it.
+                return tempCleanup();
+            }).then(() => {
+                this.log(ProcBot.LogLevel.INFO, `Upped version of ${repoFullName} to ${newVersion}; ` +
+                `tagged and pushed.`);
             });
             // Maybe on an error, we should comment on the PR directly?
         });
-    };
+    }
+
+    // Runs versionist and returns the changed files
+    private applyVersionist(versionData: VersionistData) {
+        // Clone the repository inside the directory using the commit name and the run versionist.
+        // We only care about output from the git status.
+        // IMPORTANT NOTE: Currently, Versionist will fail if it doesn't find a
+        //     `package.json` file. This means components that don't have one need a custom
+        //     `versionist.conf.js` in their root dir. And we need to test to run against it.
+
+        // FIXME, test for component specific versionist.conf.js and use that if it exists.
+        return Promise.mapSeries([
+            `git clone https://${process.env.WEBHOOK_SECRET}:x-oauth-basic@github.com/${versionData.repoFullName} ` +
+            `${versionData.fullPath}`,
+            `git checkout ${versionData.branchName}`,
+            'versionist',
+            'git status -s'
+        ], (command) => {
+            return exec(command, { cwd: versionData.fullPath });
+        }).get(3).then((status: string) => {
+            const moddedFiles: string[] = [];
+            let changeLines = status.split('\n');
+            let changeLogFound = false;
+
+            if (changeLines.length === 0) {
+                throw new Error(`Couldn't find any status changes after running 'versionist', exiting`);
+            }
+            changeLines = _.slice(changeLines, 0, changeLines.length - 1);
+            // For each change, get the name of the change. We shouldn't see *anything* that isn't
+            // expected, and we should only see modifications. Log anything else as an issue
+            // (but not an error).
+            changeLines.forEach((line) => {
+                // If we get anything other than an 'M', flag this.
+                const match = line.match(/^\sM\s(.+)$/);
+                if (!match) {
+                    throw new Error(`Found a spurious git status entry: ${line.trim()}, abandoning version up`);
+                } else {
+                    // Remove the status so we just get a filename.
+                    if (match[1] !== 'CHANGELOG.md') {
+                        moddedFiles.push(match[1]);
+                    } else {
+                        changeLogFound = true;
+                    }
+                }
+            });
+
+            // Ensure that the CHANGELOG.md file is always the last and that it exists!
+            if (!changeLogFound) {
+                throw new Error(`Couldn't find the CHANGELOG.md file, abandoning version up`);
+            }
+            moddedFiles.push(`CHANGELOG.md`);
+
+            // Now we get the new version from the CHANGELOG (*not* the package.json, it may not exist).
+            return exec(`cat ${versionData.fullPath}${_.last(moddedFiles)}`).then((contents: string) => {
+                // Only interested in the first match for '## v...'
+                const match = contents.match(/^## (v[0-9]\.[0-9]\.[0-9]).+$/m);
+
+                if (!match) {
+                    throw new Error('Cannot find new version for ${repoFullName}-#${pr.number}');
+                }
+
+                versionData.version = match[1];
+                versionData.files = moddedFiles;
+            }).return(versionData);
+        });
+    }
+
+    // Given files, a tree and repo date, commits the new blobs and updates the head of the branch
+    private createCommitBlobs(repoData: RepoFileData) {
+        // We use the Github API to now update every file in our list, ending with the CHANGELOG.md
+        // We need this to be the final file updated, as it'll kick off our actual merge.
+        //
+        // Turn all this into a single method, cleaner.
+        // CommitEncodedFile, or something.
+        const githubApi = this.githubApi;
+        let newTreeSha: string;
+
+        // Get the top level hierarchy for the branch. It includes the files we need.
+        return this.gitCall(githubApi.gitdata.getTree, {
+            owner: repoData.owner,
+            repo: repoData.repo,
+            sha: repoData.branchName
+        }).then((treeData: GithubBotApiTypes.Tree) => {
+            // We need to save the tree data, we'll be modifying it for updates in a moment.
+
+            // Create a new blob for our files.
+            // Implicit cast.
+            return Promise.map(repoData.files, (file: EncodedFile) => {
+                // Find the relevant entry in the tree.
+                const treeEntry = _.find(treeData.tree, (entry: GithubBotApiTypes.TreeEntry) => {
+                    return entry.path === file.file;
+                });
+
+                if (!treeEntry) {
+                    throw new Error(`Couldn't find a git tree entry for the file ${file.file}`);
+                }
+
+                file.treeEntry = treeEntry;
+                return this.gitCall(githubApi.gitdata.createBlob, {
+                    content: file.encoding,
+                    encoding: 'base64',
+                    owner: repoData.owner,
+                    repo: repoData.repo
+                }).then((blob: GithubBotApiTypes.Blob) => {
+                    if (file.treeEntry) {
+                        file.treeEntry.sha = blob.sha;
+                    }
+                }).return(file);
+            }).then((blobFiles: EncodedFile[]) => {
+                // We now have a load of update tree path entries. We write the
+                // data back to Github to get a new SHA for it.
+                const newTree: GithubBotApiTypes.TreeEntry[] = [];
+
+                blobFiles.forEach((file: EncodedFile) => {
+                    newTree.push({
+                        mode: file.treeEntry.mode,
+                        path: file.treeEntry.path,
+                        sha: file.treeEntry.sha,
+                        type: 'blob'
+                    });
+                });
+
+                // Now write this new tree and get back an SHA for it.
+                return this.gitCall(githubApi.gitdata.createTree, {
+                    base_tree: treeData.sha,
+                    owner: repoData.owner,
+                    repo: repoData.repo,
+                    tree: newTree
+                });
+            }).then((newTree: GithubBotApiTypes.Tree) => {
+                newTreeSha = newTree.sha;
+
+                // Get the last commit for the branch.
+                return this.gitCall(githubApi.repos.getCommit, {
+                    owner: repoData.owner,
+                    repo: repoData.repo,
+                    sha: `${repoData.branchName}`
+                });
+            }).then((lastCommit: GithubBotApiTypes.Commit) => {
+                // We have new tree object, we now want to create a new commit referencing it.
+                return this.gitCall(githubApi.gitdata.createCommit, {
+                    committer: {
+                        email: 'versionbot@whaleway.net',
+                        name: 'Versionbot'
+                    },
+                    message: `${repoData.version}`,
+                    owner: repoData.owner,
+                    parents: [ lastCommit.sha ],
+                    repo: repoData.repo,
+                    tree: newTreeSha
+                });
+            }).then((commit: GithubBotApiTypes.Commit) => {
+                // Finally, we now update the reference to the branch that's changed.
+                // This should kick off the change for status.
+                return this.gitCall(githubApi.gitdata.updateReference, {
+                    force: false, // Not that I'm paranoid...
+                    owner: repoData.owner,
+                    ref: `heads/${repoData.branchName}`,
+                    repo: repoData.repo,
+                    sha: commit.sha
+                });
+            });
+        });
+    }
+
+    // Merges the given PR branch to master, given a commit and repo details.
+    private mergeToMaster(data: MergeData) {
+        const githubApi = this.githubApi;
+
+        return this.gitCall(githubApi.pullRequests.merge, {
+            commit_title: `Auto-merge for PR ${data.prNumber} via Versionbot`,
+            number: data.prNumber,
+            owner: data.owner,
+            repo: data.repoName
+        }, 3).then((mergedData: GithubBotApiTypes.Merge) => {
+            // We get an SHA back when the merge occurs, and we use this for a tag.
+            // Note date gets filed in automatically by API.
+            return this.gitCall(githubApi.gitdata.createTag, {
+                message: data.commitVersion,
+                object: mergedData.sha,
+                owner: data.owner,
+                repo: data.repoName,
+                tag: data.commitVersion,
+                tagger: {
+                    email: process.env.VERSIONBOT_EMAIL,
+                    name: process.env.VERSIONBOT_NAME
+                },
+                type: 'commit'
+            });
+        }).then((newTag: GithubBotApiTypes.Tag) => {
+            // We now have a SHA back that contains the tag object.
+            // Create a new reference based on it.
+            return this.gitCall(githubApi.gitdata.createReference, {
+                owner: data.owner,
+                ref: `refs/tags/${data.commitVersion}`,
+                repo: data.repoName,
+                sha: newTag.sha
+            });
+        });
+    }
 }
 
 // Export the Versionbot to the app.
 // We register the Github events we're interested in here.
-export function createBot(integration: number): VersionBot {
+export function createBot(): VersionBot {
     if (!(process.env.VERSIONBOT_NAME && process.env.VERSIONBOT_EMAIL)) {
         throw new Error(`'VERSIONBOT_NAME' and 'VERSIONBOT_EMAIL' environment variables need setting`);
     }

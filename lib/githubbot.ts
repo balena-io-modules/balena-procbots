@@ -13,154 +13,20 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import * as ProcBot from './procbot';
 import * as Promise from 'bluebird';
-import * as _ from 'lodash';
-import * as fs from 'fs';
+import * as GithubApi from 'github';
 import * as jwt from 'jsonwebtoken';
-import { AlertLevel } from './procbot';
+import * as _ from 'lodash';
+import * as request from 'request-promise';
+import { GithubAction, GithubActionRegister } from './githubbot-types';
+import * as ProcBot from './procbot';
+import * as Worker from './worker';
 
-// The GithubAPI Promise implies built-in ES6 Promises. Therefore when assigning
-// the Promise to use as Bluebird, VS Code reports an error. Need a good
-// fix for this that doesn't require type declarations?
-const GithubApi = require('github');
-const request: any = Promise.promisifyAll(require('request'));
-
-// Github Events --------------------------------------------------------------
-// These provide the current bare minimum definitions for child Procbots working with them.
-export interface PullRequestEvent {
-    action: string,
-    pull_request: {
-        number: number,
-        head: {
-            repo: {
-                name: string;
-                owner: {
-                    login: string;
-                }
-            },
-            sha: string
-        }
-    }
-};
-
-export interface PullRequestReviewEvent {
-    action: string,
-    pull_request: {
-        number: number,
-        head: {
-            repo: {
-                name: string;
-                owner: {
-                    login: string;
-                }
-            },
-            sha: string
-        }
-    }
-};
-
-
-// Github API -----------------------------------------------------------------
-// These provide the current bare minimum definitions for child Procbots working with them.
-export interface CommitFile {
-    filename: string,
-};
-
-export interface Commit {
-    commit: {
-        committer: {
-            name: string
-        }
-        message: string
-    },
-    files: CommitFile[],
-    sha: string
-};
-
-export interface Review {
-    state: string
-};
-
-export interface Merge {
-    sha: string
-};
-
-export interface Tag {
-    sha: string
-};
-
-export interface PullRequest {
-    head: {
-        ref: string
-    }
-};
-
-export interface Blob {
-    sha: string
-};
-
-export interface TreeEntry {
-    path: string,
-    mode: string,
-    type: string,
-    sha: string,
-    url?: string,
-    size?: number
-};
-
-export interface Tree {
-    sha: string,
-    url: string,
-    tree: TreeEntry[]
-};
-
-// GithubBot ------------------------------------------------------------------
-
-// The GithubAction  defines an action, which is passed to a WorkerMethod should all of
-// the given pre-requisites be applicable.
-// At least one event. For each additional event, this is considered an 'OR' comparator.
-// eg. 'pull_request' OR 'pull_request_review' event
-// Labels, on the other hand, are ANDed together.
-// eg. 'flow/ready-to-merge' AND 'flow/in-review' (trigger or suppression)
-//
-// In the future, some sort of comparator language might be useful, eg:
-// and: [
-//  {
-//      or: [
-//          {
-//              name: <eventType>
-//              value: 'pull_request',
-//              op: eq | neq;
-//          },
-//          ...
-//      }]
-//  ,
-//  ...
-//  }
-// ]
-export interface GithubAction {
-    name: string,
-    events: string[],
-    triggerLabels?: string[],
-    suppressionLabels?: string[]
-}
-
-// The Register interface is passed to the GithubBot.register method to register
-// for callback when the appropriate events and labels are received.
-export interface GithubActionRegister extends GithubAction {
-    workerMethod: GithubActionMethod
-}
-
-// A GithubActionMethod is the method that will be used to process an event.
-export type GithubActionMethod = <T>(action: GithubAction, data: T) => Promise<void>;
-
-// Main GithubBot.
+// GithubBot implementation.
 export class GithubBot extends ProcBot.ProcBot<string> {
-    private integrationId: number;
-    private user: number;
-    private eventTriggers: GithubActionRegister[] = [];
     protected githubApi: any;
+    private integrationId: number;
+    private eventTriggers: GithubActionRegister[] = [];
 
     // Takes a set of webhook types that the bot is interested in.
     // Registrations can be passed in on bot creation, or registered/deregistered later.
@@ -172,9 +38,9 @@ export class GithubBot extends ProcBot.ProcBot<string> {
 
         // The getWorker method is an overload for generic context types.
         // In the case of the GithubBot, it's the name of the repo (a string).
-        this.getWorker = (event: ProcBot.WorkerEvent): ProcBot.Worker<string> => {
+        this.getWorker = (event: Worker.WorkerEvent): Worker.Worker<string> => {
             const context = event.data.repository.full_name;
-            let worker: ProcBot.Worker<string> | undefined = this.workers.get(context);
+            let worker: Worker.Worker<string> | undefined = this.workers.get(context);
 
             // If we already have a worker for this context (the repo name), return it.
             if (worker) {
@@ -182,7 +48,8 @@ export class GithubBot extends ProcBot.ProcBot<string> {
             }
 
             // Create new Worker using the repo name as context.
-            worker = new ProcBot.Worker(context, this.workers);
+            // We currently just use Procbot's removal method.
+            worker = new Worker.Worker(context, this.removeWorker);
 
             // Note that workers are self-regualting; that is, they will remove themselves
             // from the Map once there are no more queued tasks.
@@ -194,15 +61,27 @@ export class GithubBot extends ProcBot.ProcBot<string> {
         // The `github` module is a bit behind the preview API. We may have to override
         // some of the methods here (PR review comments for a start).
         this.githubApi = new GithubApi({
-            //debug: true,
-            protocol: 'https',
-            host: 'api.github.com',
+            // debug: true,
+            Promise: <any>Promise,
             headers: {
                 // This is the current voodoo to allow all API calls to succeed.
-                'Accept': 'application/vnd.github.black-cat-preview+json'
+                Accept: 'application/vnd.github.black-cat-preview+json'
             },
-            Promise: Promise,
+            host: 'api.github.com',
+            protocol: 'https',
             timeout: 5000
+        });
+    }
+
+    // FiredEvent needs to be called for any derived child bot (and usually it doesn't need
+    // to be implemented by them if all that's required is direct Github action handling).
+    // Override if any sort of check or state is required in the child (state not advised!).
+    public firedEvent(event: string, repoEvent: any) {
+        // Push this directly onto the queue.
+        this.queueEvent({
+            event,
+            data: repoEvent,
+            workerMethod: this.handleGithubEvent
         });
     }
 
@@ -212,18 +91,6 @@ export class GithubBot extends ProcBot.ProcBot<string> {
     // but any created bot has to have actions 'baked in' atm.
     protected registerAction(action: GithubActionRegister) {
         this.eventTriggers.push(action);
-    }
-
-    // FiredEvent needs to be called for any derived child bot (and usually it doesn't need
-    // to be implemented by them if all that's required is direct Github action handling).
-    // Override if any sort of check or state is required in the child (state not advised!).
-    public firedEvent(event: string, repoEvent: any) {
-        // Push this directly onto the queue.
-        this.queueEvent({
-            event: event,
-            data: repoEvent,
-            workerMethod: this.handleGithubEvent
-        });
     }
 
     // Handles all Github events to trigger actions, should the parameters meet those
@@ -237,16 +104,16 @@ export class GithubBot extends ProcBot.ProcBot<string> {
                 case 'issue_comment':
                 case 'issues':
                     return {
-                        repo: data.repository,
-                        number: data.issue.number
+                        number: data.issue.number,
+                        repo: data.repository
                     };
 
                 case 'pull_request':
                 case 'pull_request_review':
                 case 'pull_request_review_comment':
                     return {
-                        repo: data.repository,
-                        number: data.pull_request.number
+                        number: data.pull_request.number,
+                        repo: data.repository
                     };
 
                 default:
@@ -265,10 +132,10 @@ export class GithubBot extends ProcBot.ProcBot<string> {
                     // OK, so we've got a label event, so we now have to get all the labels
                     // for the appropriate issue.
                     labelPromise = this.gitCall(this.githubApi.issues.getIssueLabels, {
+                        number: labelEvent.number,
                         owner: labelEvent.repo.owner.login,
-                        repo: labelEvent.repo.name,
-                        number: labelEvent.number
-                    })
+                        repo: labelEvent.repo.name
+                    });
 
                 }
                 labelPromise.then((labels: any[] | void) => {
@@ -276,18 +143,22 @@ export class GithubBot extends ProcBot.ProcBot<string> {
                     if (labels) {
                         const foundLabels: string[] = labels.map((label: any) => {
                             return label.name;
-                        })
+                        });
 
                         // First, are all the suppression labels present?
                         if (action.suppressionLabels &&
-                            (_.intersection(action.suppressionLabels, foundLabels).length === action.suppressionLabels.length)) {
-                            this.log(ProcBot.LogLevel.INFO, `Dropping '${action.name}' as suppression labels are all present`)
+                            (_.intersection(action.suppressionLabels, foundLabels).length ===
+                            action.suppressionLabels.length)) {
+                            this.log(ProcBot.LogLevel.INFO,
+                                `Dropping '${action.name}' as suppression labels are all present`);
                             return;
                         }
                         // Secondly, are all the trigger labels present?
                         if (action.triggerLabels &&
-                            (_.intersection(action.triggerLabels, foundLabels).length !== action.triggerLabels.length)) {
-                            this.log(ProcBot.LogLevel.INFO, `Dropping '${action.name}' as not all trigger labels are present`)
+                            (_.intersection(action.triggerLabels, foundLabels).length !==
+                            action.triggerLabels.length)) {
+                            this.log(ProcBot.LogLevel.INFO,
+                                `Dropping '${action.name}' as not all trigger labels are present`);
                             return;
                         }
                     }
@@ -308,52 +179,51 @@ export class GithubBot extends ProcBot.ProcBot<string> {
         // Initialise JWTs
         const privatePem = new Buffer(process.env.PROCBOTS_PEM, 'base64').toString();
         const payload = {
-            iat: Math.floor((Date.now() / 1000)),
             exp: Math.floor((Date.now() / 1000)) + (10 * 60),
+            iat: Math.floor((Date.now() / 1000)),
             iss: this.integrationId
         };
         const jwToken = jwt.sign(payload, privatePem, { algorithm: 'RS256' });
         const installationsOpts = {
-            url: 'https://api.github.com/integration/installations',
             headers: {
-                'Authorization': `Bearer ${jwToken}`,
                 'Accept': 'application/vnd.github.machine-man-preview+json',
+                'Authorization': `Bearer ${jwToken}`,
                 'User-Agent': 'request'
             },
-            json: true
+            json: true,
+            url: 'https://api.github.com/integration/installations'
         };
 
-        return request.getAsync(installationsOpts).then((res: any) => {
+        return request.get(installationsOpts).then((installations) => {
             // Get the URL for the token.
-            const installations: any[] = res.body;
             const tokenUrl = installations[0].access_tokens_url;
 
             // Request new token.
             const tokenOpts: any = {
-                url: tokenUrl,
-                method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${jwToken}`,
                     'Accept': 'application/vnd.github.machine-man-preview+json',
+                    'Authorization': `Bearer ${jwToken}`,
                     'User-Agent': 'request'
                 },
-                json: true
+                json: true,
+                method: 'POST',
+                url: tokenUrl
             };
 
-            return request.postAsync(tokenOpts);
-        }).then((res: any) => {
+            return request.post(tokenOpts);
+        }).then((tokenDetails) => {
             // We also need to take into account the expiry date, which will require a new kickoff.
-            const tokenDetails = res.body;
-
             this.githubApi.authenticate({
-                type: 'token',
-                token: tokenDetails.token
+                token: tokenDetails.token,
+                type: 'token'
             });
 
             // For debug.
             this.log(ProcBot.LogLevel.DEBUG, `token for manual fiddling is: ${tokenDetails.token}`);
             this.log(ProcBot.LogLevel.DEBUG, 'Base curl command:');
-            this.log(ProcBot.LogLevel.DEBUG, `curl -XGET -H "Authorisation: token ${tokenDetails.token}" -H "Accept: application/vnd.github.black-cat-preview+json" https://api.github.com/`)
+            this.log(ProcBot.LogLevel.DEBUG,
+                `curl -XGET -H "Authorisation: token ${tokenDetails.token}" ` +
+                `-H "Accept: application/vnd.github.black-cat-preview+json" https://api.github.com/`);
         });
     }
 
@@ -374,30 +244,19 @@ export class GithubBot extends ProcBot.ProcBot<string> {
                     if ((err.message === 'Bad credentials') && !badCreds) {
                         badCreds = true;
                         // Re-authenticate, then try again.
-                        return this.authenticate().then(() => {
-                            return runApi();
-                        });
+                        return this.authenticate().then(runApi());
                     } else if (retriesLeft === 0) {
                         // No more retries, just reject.
                         reject(err);
                     } else {
                         // If there's more retries, try again in 5 seconds.
-                        setTimeout(() => {
-                            runApi();
-                        }, 5000);
+                        setTimeout(runApi, 5000);
                     }
-                }).then((data: any) => {
-                    resolve(data);
-                });
+                }).then(resolve);
             };
 
             // Kick it off.
             runApi();
         });
     }
-}
-
-// Create a new GithubBot. Or rather, don't.
-export function createBot(): GithubBot {
-    throw new Error('GithubBot is not a valid instantiation of a ProcBot');
 }

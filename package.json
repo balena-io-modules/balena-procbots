@@ -4,7 +4,7 @@
   "description": "Process robots for automating CI pipelines",
   "homepage": "https://github.com/resin-io-modules/resin-procbots#readme",
   "preferGlobal": true,
-  "types": "lib/**/*.ts",
+  "types": "build/**/*.d.ts",
   "keywords": [
     "resin",
     "process"
@@ -35,13 +35,16 @@
     "@types/lodash": "^4.14.43",
     "@types/node": "^6.0.48",
     "@types/node-getopt": "^0.2.29",
+    "@types/request-promise": "^4.1.33",
     "@types/request": "^0.0.39",
     "gulp": "^3.9.1",
     "gulp-util": "^3.0.7",
     "gulp-typescript": "^3.1.4",
+    "gulp-tslint": "^7.0.1",
     "gulp-sourcemaps": "^2.3.1",
     "jsdoc": "^3.4.3",
-    "typescript": "^2.1.5"
+    "typescript": "^2.1.5",
+    "tslint": "^4.4.2"
   },
   "dependencies": {
     "bluebird": "^3.0.35",
@@ -54,6 +57,7 @@
     "lodash": "^4.17.2",
     "node-getopt": "^0.2.3",
     "mkdirp": "^0.5.1",
+    "request-promise": "^4.1.1",
     "request": "^2.79.0",
     "rmdir": "^1.2.0",
     "temp": "^0.8.3",

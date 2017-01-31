@@ -18,8 +18,6 @@ limitations under the License.
 import Opts = require('node-getopt');
 import * as _ from 'lodash';
 import * as Promise from 'bluebird';
-
-const hmac = require('crypto');
 const GithubApi = require('github');
 
 // Arguments determine which bot type we want to use.

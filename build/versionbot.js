@@ -1,14 +1,15 @@
 "use strict";
-const ProcBot = require("./procbot");
-const GithubBot = require("./githubbot");
 const Promise = require("bluebird");
+const ChildProcess = require("child_process");
+const FS = require("fs");
 const _ = require("lodash");
 const path = require("path");
-const temp = Promise.promisifyAll(require('temp').track());
-const mkdirp = Promise.promisify(require('mkdirp'));
-const rmdir = Promise.promisify(require('rmdir'));
-const exec = Promise.promisify(require('child_process').exec);
-const fs = Promise.promisifyAll(require('fs'));
+const GithubBot = require("./githubbot");
+const ProcBot = require("./procbot");
+const fsReadFile = Promise.promisify(FS.readFile);
+const exec = Promise.promisify(ChildProcess.exec);
+const tempMkdir = Promise.promisify(require('temp').mkdir);
+const tempCleanup = Promise.promisify(require('temp').cleanup);
 ;
 class VersionBot extends GithubBot.GithubBot {
     constructor(integration) {
@@ -20,17 +21,17 @@ class VersionBot extends GithubBot.GithubBot {
             const owner = head.repo.owner.login;
             const name = head.repo.name;
             this.log(ProcBot.LogLevel.DEBUG, `${action.name}: entered`);
-            if ((data.action !== 'opened') && (data.action !== 'synchronize')) {
+            if ((data.action !== 'opened') && (data.action !== 'synchronize') &&
+                (data.action !== 'labeled')) {
                 return Promise.resolve();
             }
             return this.gitCall(githubApi.pullRequests.getCommits, {
-                owner: owner,
+                owner,
+                number: pr.number,
                 repo: name,
-                number: pr.number
             }).then((commits) => {
                 let changetypeFound = false;
-                for (let index = 0; index < commits.length; index += 1) {
-                    const commit = commits[index];
+                for (let commit of commits) {
                     const commitMessage = commit.commit.message;
                     const invalidCommit = !commitMessage.match(/^change-type:\s*(patch|minor|major)\s*$/mi);
                     if (!invalidCommit) {
@@ -40,64 +41,43 @@ class VersionBot extends GithubBot.GithubBot {
                 }
                 if (changetypeFound) {
                     return this.gitCall(githubApi.repos.createStatus, {
-                        owner: owner,
+                        context: 'Versionist',
+                        description: 'Found a valid Versionist `Change-Type` tag',
+                        owner,
                         repo: name,
                         sha: head.sha,
-                        state: 'success',
-                        description: 'Found a valid Versionist `Change-Type` tag',
-                        context: 'Versionist'
+                        state: 'success'
                     }).return(true);
                 }
                 this.log(ProcBot.LogLevel.DEBUG, `${action.name}: No valid 'Change-Type' tag found, failing last commit`);
                 return this.gitCall(githubApi.repos.createStatus, {
-                    owner: owner,
+                    context: 'Versionist',
+                    description: 'None of the commits in the PR have a `Change-Type` tag',
+                    owner,
                     repo: name,
                     sha: head.sha,
-                    state: 'failure',
-                    description: 'None of the commits in the PR have a `Change-Type` tag',
-                    context: 'Versionist'
+                    state: 'failure'
                 }).return(false);
             }).then(() => {
                 return this.gitCall(githubApi.repos.getCommit, {
                     owner,
                     repo: name,
                     sha: head.sha
-                }).then((headCommit) => {
-                    const commit = headCommit.commit;
-                    const files = headCommit.files;
-                    if ((commit.committer.name === process.env.VERSIONBOT_NAME) &&
-                        _.find(files, (file) => {
-                            return file.filename === 'CHANGELOG.md';
-                        })) {
-                        const commitVersion = commit.message;
-                        return this.gitCall(githubApi.pullRequests.merge, {
-                            owner,
-                            repo: name,
-                            number: pr.number,
-                            commit_title: `Auto-merge for PR ${pr.number} via Versionbot`
-                        }, 3).then((mergedData) => {
-                            return this.gitCall(githubApi.gitdata.createTag, {
-                                owner,
-                                repo: name,
-                                tag: commitVersion,
-                                message: commitVersion,
-                                object: mergedData.sha,
-                                type: 'commit',
-                                tagger: {
-                                    name: process.env.VERSIONBOT_NAME,
-                                    email: process.env.VERSIONBOT_EMAIL
-                                }
-                            });
-                        }).then((newTag) => {
-                            return this.gitCall(githubApi.gitdata.createReference, {
-                                owner,
-                                repo: name,
-                                ref: `refs/tags/${commitVersion}`,
-                                sha: newTag.sha
-                            });
-                        });
-                    }
                 });
+            }).then((headCommit) => {
+                const commit = headCommit.commit;
+                const files = headCommit.files;
+                if ((commit.committer.name === process.env.VERSIONBOT_NAME) &&
+                    _.find(files, (file) => {
+                        return file.filename === 'CHANGELOG.md';
+                    })) {
+                    return this.mergeToMaster({
+                        commitVersion: commit.message,
+                        owner,
+                        prNumber: pr.number,
+                        repoName: name
+                    });
+                }
             });
         };
         this.mergePR = (action, data) => {
@@ -107,11 +87,9 @@ class VersionBot extends GithubBot.GithubBot {
             const owner = head.repo.owner.login;
             const repo = head.repo.name;
             const repoFullName = `${owner}/${repo}`;
-            const cwd = process.cwd();
             let newVersion;
             let fullPath;
             let branchName;
-            let newTreeSha;
             this.log(ProcBot.LogLevel.DEBUG, `${action.name}: entered`);
             switch (data.action) {
                 case 'submitted':
@@ -123,20 +101,20 @@ class VersionBot extends GithubBot.GithubBot {
                     return Promise.resolve();
             }
             return this.gitCall(githubApi.pullRequests.getReviews, {
-                owner: owner,
-                repo: repo,
-                number: pr.number
+                number: pr.number,
+                owner,
+                repo
             }).then((reviews) => {
                 let approved = false;
-                approved = false;
-                for (let index = 0; index < reviews.length; index += 1) {
-                    const review = reviews[index];
-                    if (review.state === 'APPROVED') {
-                        approved = true;
-                    }
-                    else if (review.state === 'CHANGES_REQUESTED') {
-                        approved = false;
-                    }
+                if (reviews) {
+                    reviews.forEach((review) => {
+                        if (review.state === 'APPROVED') {
+                            approved = true;
+                        }
+                        else if (review.state === 'CHANGES_REQUESTED') {
+                            approved = false;
+                        }
+                    });
                 }
                 if (approved === false) {
                     this.log(ProcBot.LogLevel.INFO, `Unable to merge, no approval comment`);
@@ -144,59 +122,27 @@ class VersionBot extends GithubBot.GithubBot {
                 }
                 this.log(ProcBot.LogLevel.INFO, 'PR is ready to merge, attempting to carry out a version up');
                 return this.gitCall(githubApi.pullRequests.get, {
-                    owner: owner,
-                    repo: repo,
-                    number: pr.number
+                    number: pr.number,
+                    owner,
+                    repo
                 }).then((prInfo) => {
                     branchName = prInfo.head.ref;
-                    return temp.mkdirAsync(`${repo}-${pr.number}_`).then((tempDir) => {
-                        fullPath = `${tempDir}${path.sep}`;
-                        const promiseResults = [];
-                        return Promise.mapSeries([
-                            `git clone https://${process.env.WEBHOOK_SECRET}:x-oauth-basic@github.com/${repoFullName} ${fullPath}`,
-                            `git checkout ${branchName}`,
-                            'versionist',
-                            'git status -s'
-                        ], (command) => {
-                            return exec(command, { cwd: fullPath });
-                        }).get(3);
+                    return tempMkdir(`${repo}-${pr.number}_`);
+                }).then((tempDir) => {
+                    fullPath = `${tempDir}${path.sep}`;
+                    return this.applyVersionist({
+                        fullPath,
+                        branchName,
+                        repoFullName
                     });
-                }).then((status) => {
-                    const moddedFiles = [];
-                    let changeLines = status.split('\n');
-                    let changeLogFound = false;
-                    if (changeLines.length === 0) {
-                        throw new Error(`Couldn't find any status changes after running 'versionist', exiting`);
+                }).then((versionData) => {
+                    if (!versionData.version || !versionData.files) {
+                        throw new Error('Could not find new version!');
                     }
-                    changeLines = _.slice(changeLines, 0, changeLines.length - 1);
-                    changeLines.forEach((line) => {
-                        const match = line.match(/^\sM\s(.+)$/);
-                        if (!match) {
-                            throw new Error(`Found a spurious git status entry: ${line.trim()}, abandoning version up`);
-                        }
-                        else {
-                            if (match[1] !== 'CHANGELOG.md') {
-                                moddedFiles.push(match[1]);
-                            }
-                            else {
-                                changeLogFound = true;
-                            }
-                        }
-                    });
-                    if (!changeLogFound) {
-                        throw new Error(`Couldn't find the CHANGELOG.md file, abandoning version up`);
-                    }
-                    moddedFiles.push(`CHANGELOG.md`);
-                    return exec(`cat ${fullPath}${_.last(moddedFiles)}`).then((contents) => {
-                        const match = contents.match(/^## (v[0-9]\.[0-9]\.[0-9]).+$/m);
-                        if (!match) {
-                            throw new Error('Cannot find new version for ${repoFullName}-#${pr.number}');
-                        }
-                        newVersion = match[1];
-                    }).return(moddedFiles);
-                }).then((files) => {
-                    return Promise.map(files, (file) => {
-                        return fs.readFileAsync(`${fullPath}${file}`).call(`toString`, 'base64').then((encoding) => {
+                    newVersion = versionData.version;
+                    return Promise.map(versionData.files, (file) => {
+                        return fsReadFile(`${fullPath}${file}`).call(`toString`, 'base64')
+                            .then((encoding) => {
                             let newFile = {
                                 file,
                                 encoding,
@@ -205,102 +151,197 @@ class VersionBot extends GithubBot.GithubBot {
                         });
                     });
                 }).then((files) => {
-                    return this.gitCall(githubApi.gitdata.getTree, {
+                    return this.createCommitBlobs({
                         owner,
                         repo,
-                        sha: branchName
-                    }).then((treeData) => {
-                        return Promise.map(files, (file) => {
-                            const treeEntry = _.find(treeData.tree, (treeEntry) => {
-                                return treeEntry.path === file.file;
-                            });
-                            if (!treeEntry) {
-                                throw new Error(`Couldn't find a git tree entry for the file ${file.file}`);
-                            }
-                            file.treeEntry = treeEntry;
-                            return this.gitCall(githubApi.gitdata.createBlob, {
-                                owner,
-                                repo,
-                                content: file.encoding,
-                                encoding: 'base64'
-                            }).then((blob) => {
-                                if (file.treeEntry) {
-                                    file.treeEntry.sha = blob.sha;
-                                }
-                            }).return(file);
-                        }).then((files) => {
-                            const newTree = [];
-                            files.forEach((file) => {
-                                newTree.push({
-                                    path: file.treeEntry.path,
-                                    mode: file.treeEntry.mode,
-                                    type: 'blob',
-                                    sha: file.treeEntry.sha
-                                });
-                            });
-                            return this.gitCall(githubApi.gitdata.createTree, {
-                                owner,
-                                repo,
-                                tree: newTree,
-                                base_tree: treeData.sha
-                            });
-                        }).then((newTree) => {
-                            newTreeSha = newTree.sha;
-                            return this.gitCall(githubApi.repos.getCommit, {
-                                owner,
-                                repo,
-                                sha: `${branchName}`
-                            });
-                        }).then((lastCommit) => {
-                            return this.gitCall(githubApi.gitdata.createCommit, {
-                                owner,
-                                repo,
-                                message: `${newVersion}`,
-                                tree: newTreeSha,
-                                parents: [lastCommit.sha],
-                                committer: {
-                                    name: 'Versionbot',
-                                    email: 'versionbot@whaleway.net'
-                                }
-                            });
-                        }).then((commit) => {
-                            return this.gitCall(githubApi.gitdata.updateReference, {
-                                owner,
-                                repo,
-                                ref: `heads/${branchName}`,
-                                sha: commit.sha,
-                                force: false
-                            });
-                        });
+                        branchName,
+                        version: newVersion,
+                        files
                     });
                 }).then(() => {
-                    this.log(ProcBot.LogLevel.INFO, `Upped version of ${repoFullName} to ${newVersion}; tagged and pushed.`);
+                    return tempCleanup();
+                }).then(() => {
+                    this.log(ProcBot.LogLevel.INFO, `Upped version of ${repoFullName} to ${newVersion}; ` +
+                        `tagged and pushed.`);
                 });
             });
         };
         this._botname = 'VersionBot';
         _.forEach([
             {
-                name: 'CheckVersionistCommitStatus',
                 events: ['pull_request'],
+                name: 'CheckVersionistCommitStatus',
                 suppressionLabels: ['flow/no-version-checks'],
                 workerMethod: this.checkVersioning
             },
             {
-                name: 'CheckForReadyMergeState',
-                events: ['pull_request', 'pull_request_review'],
-                triggerLabels: ['flow/ready-to-merge'],
+                events: ['pull_request'],
+                name: 'CheckVersionistCommitStatus',
                 suppressionLabels: ['flow/no-version-checks'],
-                workerMethod: this.mergePR
+                triggerLabels: ['version/check-commits'],
+                workerMethod: this.checkVersioning
+            },
+            {
+                events: ['pull_request', 'pull_request_review'],
+                name: 'CheckForReadyMergeState',
+                suppressionLabels: ['flow/no-version-checks'],
+                triggerLabels: ['flow/ready-to-merge'],
+                workerMethod: this.mergePR,
             }
         ], (reg) => {
             this.registerAction(reg);
         });
         this.authenticate();
     }
+    applyVersionist(versionData) {
+        return Promise.mapSeries([
+            `git clone https://${process.env.WEBHOOK_SECRET}:x-oauth-basic@github.com/${versionData.repoFullName} ` +
+                `${versionData.fullPath}`,
+            `git checkout ${versionData.branchName}`,
+            'versionist',
+            'git status -s'
+        ], (command) => {
+            return exec(command, { cwd: versionData.fullPath });
+        }).get(3).then((status) => {
+            const moddedFiles = [];
+            let changeLines = status.split('\n');
+            let changeLogFound = false;
+            if (changeLines.length === 0) {
+                throw new Error(`Couldn't find any status changes after running 'versionist', exiting`);
+            }
+            changeLines = _.slice(changeLines, 0, changeLines.length - 1);
+            changeLines.forEach((line) => {
+                const match = line.match(/^\sM\s(.+)$/);
+                if (!match) {
+                    throw new Error(`Found a spurious git status entry: ${line.trim()}, abandoning version up`);
+                }
+                else {
+                    if (match[1] !== 'CHANGELOG.md') {
+                        moddedFiles.push(match[1]);
+                    }
+                    else {
+                        changeLogFound = true;
+                    }
+                }
+            });
+            if (!changeLogFound) {
+                throw new Error(`Couldn't find the CHANGELOG.md file, abandoning version up`);
+            }
+            moddedFiles.push(`CHANGELOG.md`);
+            return exec(`cat ${versionData.fullPath}${_.last(moddedFiles)}`).then((contents) => {
+                const match = contents.match(/^## (v[0-9]\.[0-9]\.[0-9]).+$/m);
+                if (!match) {
+                    throw new Error('Cannot find new version for ${repoFullName}-#${pr.number}');
+                }
+                versionData.version = match[1];
+                versionData.files = moddedFiles;
+            }).return(versionData);
+        });
+    }
+    createCommitBlobs(repoData) {
+        const githubApi = this.githubApi;
+        let newTreeSha;
+        return this.gitCall(githubApi.gitdata.getTree, {
+            owner: repoData.owner,
+            repo: repoData.repo,
+            sha: repoData.branchName
+        }).then((treeData) => {
+            return Promise.map(repoData.files, (file) => {
+                const treeEntry = _.find(treeData.tree, (entry) => {
+                    return entry.path === file.file;
+                });
+                if (!treeEntry) {
+                    throw new Error(`Couldn't find a git tree entry for the file ${file.file}`);
+                }
+                file.treeEntry = treeEntry;
+                return this.gitCall(githubApi.gitdata.createBlob, {
+                    content: file.encoding,
+                    encoding: 'base64',
+                    owner: repoData.owner,
+                    repo: repoData.repo
+                }).then((blob) => {
+                    if (file.treeEntry) {
+                        file.treeEntry.sha = blob.sha;
+                    }
+                }).return(file);
+            }).then((blobFiles) => {
+                const newTree = [];
+                blobFiles.forEach((file) => {
+                    newTree.push({
+                        mode: file.treeEntry.mode,
+                        path: file.treeEntry.path,
+                        sha: file.treeEntry.sha,
+                        type: 'blob'
+                    });
+                });
+                return this.gitCall(githubApi.gitdata.createTree, {
+                    base_tree: treeData.sha,
+                    owner: repoData.owner,
+                    repo: repoData.repo,
+                    tree: newTree
+                });
+            }).then((newTree) => {
+                newTreeSha = newTree.sha;
+                return this.gitCall(githubApi.repos.getCommit, {
+                    owner: repoData.owner,
+                    repo: repoData.repo,
+                    sha: `${repoData.branchName}`
+                });
+            }).then((lastCommit) => {
+                return this.gitCall(githubApi.gitdata.createCommit, {
+                    committer: {
+                        email: 'versionbot@whaleway.net',
+                        name: 'Versionbot'
+                    },
+                    message: `${repoData.version}`,
+                    owner: repoData.owner,
+                    parents: [lastCommit.sha],
+                    repo: repoData.repo,
+                    tree: newTreeSha
+                });
+            }).then((commit) => {
+                return this.gitCall(githubApi.gitdata.updateReference, {
+                    force: false,
+                    owner: repoData.owner,
+                    ref: `heads/${repoData.branchName}`,
+                    repo: repoData.repo,
+                    sha: commit.sha
+                });
+            });
+        });
+    }
+    mergeToMaster(data) {
+        const githubApi = this.githubApi;
+        return this.gitCall(githubApi.pullRequests.merge, {
+            commit_title: `Auto-merge for PR ${data.prNumber} via Versionbot`,
+            number: data.prNumber,
+            owner: data.owner,
+            repo: data.repoName
+        }, 3).then((mergedData) => {
+            return this.gitCall(githubApi.gitdata.createTag, {
+                message: data.commitVersion,
+                object: mergedData.sha,
+                owner: data.owner,
+                repo: data.repoName,
+                tag: data.commitVersion,
+                tagger: {
+                    email: process.env.VERSIONBOT_EMAIL,
+                    name: process.env.VERSIONBOT_NAME
+                },
+                type: 'commit'
+            });
+        }).then((newTag) => {
+            return this.gitCall(githubApi.gitdata.createReference, {
+                owner: data.owner,
+                ref: `refs/tags/${data.commitVersion}`,
+                repo: data.repoName,
+                sha: newTag.sha
+            });
+        });
+    }
 }
 exports.VersionBot = VersionBot;
-function createBot(integration) {
+function createBot() {
     if (!(process.env.VERSIONBOT_NAME && process.env.VERSIONBOT_EMAIL)) {
         throw new Error(`'VERSIONBOT_NAME' and 'VERSIONBOT_EMAIL' environment variables need setting`);
     }

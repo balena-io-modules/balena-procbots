@@ -1,12 +1,12 @@
 "use strict";
-const Opts = require("node-getopt");
-const express = require("express");
 const bodyParser = require("body-parser");
-const _ = require("lodash");
 const crypto = require("crypto");
+const express = require("express");
+const Opts = require("node-getopt");
+const _ = require("lodash");
 const getopt = new Opts([
     ['b', 'bot-names=ARG+', 'Determines which bots will run'],
-    ['h', 'help', 'This help message']
+    ['h', 'help', 'This help message'],
 ]);
 getopt.setHelp(`
 Usage: ${process.argv[1].split('/').slice(-1)} [OPTION]
@@ -44,11 +44,10 @@ for (let bot of opt.options['bot-names']) {
 app.post('/webhooks', (req, res) => {
     const eventType = req.get('x-github-event');
     const payload = req.body;
-    if (req.get('x-hub-signature'))
-        if (!verifyWebhookToken(JSON.stringify(payload), req.get('x-hub-signature'))) {
-            res.sendStatus(401);
-            return;
-        }
+    if (!verifyWebhookToken(JSON.stringify(payload), req.get('x-hub-signature'))) {
+        res.sendStatus(401);
+        return;
+    }
     res.sendStatus(200);
     _.forEach(botRegistry, (bot) => {
         bot.firedEvent(eventType, payload);
