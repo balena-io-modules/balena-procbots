@@ -31,9 +31,8 @@ export class GithubBot extends ProcBot.ProcBot<string> {
     // Takes a set of webhook types that the bot is interested in.
     // Registrations can be passed in on bot creation, or registered/deregistered later.
     // However, 'baked in' registrations are not available for deregistration.
-    constructor(integration: number) {
-        super();
-        this._botname = 'GithubBot';
+    constructor(integration: number, name?: string) {
+        super(name);
         this.integrationId = integration;
 
         // The getWorker method is an overload for generic context types.
@@ -231,7 +230,7 @@ export class GithubBot extends ProcBot.ProcBot<string> {
     // can result in re-authentication before moving on.
     protected gitCall = (method: any, options: any, retries?: number): Promise<any> => {
         let badCreds = false;
-        let retriesLeft: number = retries || 3;
+        let retriesLeft = retries || 3;
 
         // We need a new Promise here, as we might need to do retries.
         return new Promise((resolve, reject) => {

@@ -16,7 +16,8 @@ export declare class ProcBot<T> {
     protected getWorker: (event: Worker.WorkerEvent) => Worker.Worker<T>;
     private logLevelStrings;
     private alertLevelStrings;
-    readonly botname: string;
+    constructor(name?: string);
+    readonly botName: string;
     protected logLevel: number;
     protected alertLevel: number;
     protected log(level: number, message: string): void;

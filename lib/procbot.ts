@@ -74,8 +74,12 @@ export class ProcBot<T> {
         'ERROR'
     ];
 
+    constructor(name = 'ProcBot') {
+        this._botname = name;
+    }
+
     // Get the name of the bot.
-    public get botname() {
+    public get botName() {
         return this._botname;
     }
 

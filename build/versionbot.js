@@ -12,8 +12,8 @@ const tempMkdir = Promise.promisify(require('temp').mkdir);
 const tempCleanup = Promise.promisify(require('temp').cleanup);
 ;
 class VersionBot extends GithubBot.GithubBot {
-    constructor(integration) {
-        super(integration);
+    constructor(integration, name) {
+        super(integration, name);
         this.checkVersioning = (action, data) => {
             const githubApi = this.githubApi;
             const pr = data.pull_request;
@@ -166,7 +166,6 @@ class VersionBot extends GithubBot.GithubBot {
                 });
             });
         };
-        this._botname = 'VersionBot';
         _.forEach([
             {
                 events: ['pull_request'],
@@ -345,7 +344,7 @@ function createBot() {
     if (!(process.env.VERSIONBOT_NAME && process.env.VERSIONBOT_EMAIL)) {
         throw new Error(`'VERSIONBOT_NAME' and 'VERSIONBOT_EMAIL' environment variables need setting`);
     }
-    return new VersionBot(process.env.INTEGRATION_ID);
+    return new VersionBot(process.env.INTEGRATION_ID, process.env.VERSIONBOT_NAME);
 }
 exports.createBot = createBot;
 

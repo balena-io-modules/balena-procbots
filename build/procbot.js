@@ -13,7 +13,7 @@ var AlertLevel;
 })(AlertLevel = exports.AlertLevel || (exports.AlertLevel = {}));
 ;
 class ProcBot {
-    constructor() {
+    constructor(name = 'ProcBot') {
         this._botname = 'Procbot';
         this._logLevel = process.env.PROCBOT_LOG_LEVEL || LogLevel.WARN;
         this._alertLevel = process.env.PROCBOT_ALERT_LEVEL || AlertLevel.CRITICAL;
@@ -30,8 +30,9 @@ class ProcBot {
         this.removeWorker = (context) => {
             this.workers.delete(context);
         };
+        this._botname = name;
     }
-    get botname() {
+    get botName() {
         return this._botname;
     }
     get logLevel() {

@@ -74,11 +74,9 @@ interface MergeData {
 export class VersionBot extends GithubBot.GithubBot {
 
     // Name ourself and register the events and labels we're interested in.
-    constructor(integration: number) {
-        super(integration);
-
+    constructor(integration: number, name?: string) {
         // This is the VersionBot.
-        this._botname = 'VersionBot';
+        super(integration, name);
 
         // We have two different WorkerMethods here:
         // 1) Status checks on PR open and commits
@@ -543,5 +541,5 @@ export function createBot(): VersionBot {
         throw new Error(`'VERSIONBOT_NAME' and 'VERSIONBOT_EMAIL' environment variables need setting`);
     }
 
-    return new VersionBot(process.env.INTEGRATION_ID);
+    return new VersionBot(process.env.INTEGRATION_ID, process.env.VERSIONBOT_NAME);
 }

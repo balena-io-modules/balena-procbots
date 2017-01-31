@@ -7,8 +7,8 @@ const request = require("request-promise");
 const ProcBot = require("./procbot");
 const Worker = require("./worker");
 class GithubBot extends ProcBot.ProcBot {
-    constructor(integration) {
-        super();
+    constructor(integration, name) {
+        super(name);
         this.eventTriggers = [];
         this.handleGithubEvent = (event, data) => {
             const labelHead = () => {
@@ -89,7 +89,6 @@ class GithubBot extends ProcBot.ProcBot {
                 runApi();
             });
         };
-        this._botname = 'GithubBot';
         this.integrationId = integration;
         this.getWorker = (event) => {
             const context = event.data.repository.full_name;
