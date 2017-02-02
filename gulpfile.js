@@ -6,17 +6,14 @@ const tslint = require('gulp-tslint');
 const tsProject = typescript.createProject('tsconfig.json');
 
 const OPTIONS = {
-    header: true,
     files: {
-        typescript: [ 'lib/**/*.ts' ],
         declarations: [ 'lib/**/*.d.ts' ]
-    },
-    base: 'lib'
+    }
 }
 
 // Compile the TS sources
 gulp.task('typescript', () => {
-    gulp.src(OPTIONS.files.typescript)
+    tsProject.src()
         .pipe(sourcemaps.init())
         .pipe(tsProject()).on('error', gutil.log)
         .pipe(sourcemaps.write('./', { includeContent: true,
@@ -32,7 +29,7 @@ gulp.task('copydecs', () => {
 });
 
 gulp.task('tslint', () =>
-    gulp.src(OPTIONS.files.typescript)
+    tsProject.src()
         .pipe(tslint({
             configuration: 'tslint.json',
             formatter: 'prose'
