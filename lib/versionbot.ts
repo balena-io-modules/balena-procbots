@@ -25,14 +25,14 @@ import * as GithubBotApiTypes from './githubapi-types';
 import * as GithubBot from './githubbot';
 import { GithubAction, GithubActionRegister } from './githubbot-types';
 import * as ProcBot from './procbot';
+import { mkdir, track } from 'temp';
 
-// Declare correct bindings for requires without typings.
 // Exec technically has a binding because of it's Node typings, but promisify doesn't include
-// the optional object (we need for CWD).
-const fsReadFile = Promise.promisify(FS.readFile);
+// the optional object (we need for CWD). So we need to special case it.
 const exec: (command: string, options?: any) => Promise<{}> = Promise.promisify(ChildProcess.exec);
-const tempMkdir: (dir: string) => Promise<{}> = Promise.promisify(require('temp').mkdir);
-const tempCleanup = Promise.promisify(require('temp').cleanup);
+const fsReadFile = Promise.promisify(FS.readFile);
+const tempMkdir = Promise.promisify(mkdir);
+const tempCleanup = Promise.promisify(track);
 
 // Specific to VersionBot
 interface FileMapping {

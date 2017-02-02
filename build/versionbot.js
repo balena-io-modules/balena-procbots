@@ -6,10 +6,11 @@ const _ = require("lodash");
 const path = require("path");
 const GithubBot = require("./githubbot");
 const ProcBot = require("./procbot");
-const fsReadFile = Promise.promisify(FS.readFile);
+const temp_1 = require("temp");
 const exec = Promise.promisify(ChildProcess.exec);
-const tempMkdir = Promise.promisify(require('temp').mkdir);
-const tempCleanup = Promise.promisify(require('temp').cleanup);
+const fsReadFile = Promise.promisify(FS.readFile);
+const tempMkdir = Promise.promisify(temp_1.mkdir);
+const tempCleanup = Promise.promisify(temp_1.track);
 ;
 class VersionBot extends GithubBot.GithubBot {
     constructor(integration, name) {
