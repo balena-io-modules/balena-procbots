@@ -12,7 +12,7 @@
         "noUnusedParameters": true,
         "noUnusedLocals": true
     },
-	"include": [
+    "include": [
         "typings/**/*.d.ts",
         "lib/**/*.ts"
     ]

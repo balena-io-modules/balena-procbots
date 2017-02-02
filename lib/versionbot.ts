@@ -21,11 +21,11 @@ import * as ChildProcess from 'child_process';
 import * as FS from 'fs';
 import * as _ from 'lodash';
 import * as path from 'path';
+import { mkdir, track } from 'temp';
 import * as GithubBotApiTypes from './githubapi-types';
 import * as GithubBot from './githubbot';
 import { GithubAction, GithubActionRegister } from './githubbot-types';
 import * as ProcBot from './procbot';
-import { mkdir, track } from 'temp';
 
 // Exec technically has a binding because of it's Node typings, but promisify doesn't include
 // the optional object (we need for CWD). So we need to special case it.
