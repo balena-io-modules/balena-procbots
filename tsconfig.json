@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "declaration": true,
+        "noImplicitAny": true,
+        "removeComments": true,
+        "preserveConstEnums": true,
+        "strictNullChecks": true,
+        "sourceMap": true,
+        "target": "es6",
+        "types": [ "bluebird-global" ],
+        "noUnusedParameters": true,
+        "noUnusedLocals": true
+    },
+    "include": [
+        "typings/**/*.d.ts",
+        "lib/**/*.ts"
+    ]
+}

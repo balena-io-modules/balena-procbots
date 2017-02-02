@@ -1,0 +1,25 @@
+{
+    "extends": "tslint:recommended",
+    "rules": {
+        "indent": "spaces",
+        "jsdoc-format": false,
+        "whitespace": [
+            false,
+            "check-type"
+        ],
+        "only-arrow-functions": false,
+        "quotemark": [true, "single", "avoid-escape"],
+        "no-var-requires": false,
+        "no-console": false,
+        "trailing-comma": false,
+        "no-string-literal": false,
+        "interface-name": false,
+        "variable-name": [
+            true,
+            "ban-keywords",
+            "check-format",
+            "allow-leading-underscore",
+            "allow-pascal-case"
+        ]
+    }
+}
