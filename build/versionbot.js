@@ -4,9 +4,9 @@ const ChildProcess = require("child_process");
 const FS = require("fs");
 const _ = require("lodash");
 const path = require("path");
+const temp_1 = require("temp");
 const GithubBot = require("./githubbot");
 const ProcBot = require("./procbot");
-const temp_1 = require("temp");
 const exec = Promise.promisify(ChildProcess.exec);
 const fsReadFile = Promise.promisify(FS.readFile);
 const tempMkdir = Promise.promisify(temp_1.mkdir);
@@ -171,20 +171,20 @@ class VersionBot extends GithubBot.GithubBot {
             {
                 events: ['pull_request'],
                 name: 'CheckVersionistCommitStatus',
-                suppressionLabels: ['flow/no-version-checks'],
+                suppressionLabels: ['procbots/versionbot/no-checks'],
                 workerMethod: this.checkVersioning
             },
             {
                 events: ['pull_request'],
                 name: 'CheckVersionistCommitStatus',
-                suppressionLabels: ['flow/no-version-checks'],
-                triggerLabels: ['version/check-commits'],
+                suppressionLabels: ['procbots/versionbot/no-checks'],
+                triggerLabels: ['procbots/versionbot/check-commits'],
                 workerMethod: this.checkVersioning
             },
             {
                 events: ['pull_request', 'pull_request_review'],
                 name: 'CheckForReadyMergeState',
-                suppressionLabels: ['flow/no-version-checks'],
+                suppressionLabels: ['procbots/versionbot/no-checks'],
                 triggerLabels: ['flow/ready-to-merge'],
                 workerMethod: this.mergePR,
             }
