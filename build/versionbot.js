@@ -184,13 +184,6 @@ class VersionBot extends GithubBot.GithubBot {
                 workerMethod: this.checkVersioning
             },
             {
-                events: ['pull_request'],
-                name: 'CheckVersionistCommitStatus',
-                suppressionLabels: ['procbots/versionbot/no-checks'],
-                triggerLabels: ['procbots/versionbot/check-commits'],
-                workerMethod: this.checkVersioning
-            },
-            {
                 events: ['pull_request', 'pull_request_review'],
                 name: 'CheckForReadyMergeState',
                 suppressionLabels: ['procbots/versionbot/no-checks'],
