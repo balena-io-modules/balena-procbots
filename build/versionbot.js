@@ -4,9 +4,9 @@ const ChildProcess = require("child_process");
 const FS = require("fs");
 const _ = require("lodash");
 const path = require("path");
+const temp_1 = require("temp");
 const GithubBot = require("./githubbot");
 const ProcBot = require("./procbot");
-const temp_1 = require("temp");
 const exec = Promise.promisify(ChildProcess.exec);
 const fsReadFile = Promise.promisify(FS.readFile);
 const tempMkdir = Promise.promisify(temp_1.mkdir);
@@ -51,14 +51,23 @@ class VersionBot extends GithubBot.GithubBot {
                     }).return(true);
                 }
                 this.log(ProcBot.LogLevel.DEBUG, `${action.name}: No valid 'Change-Type' tag found, failing last commit`);
-                return this.gitCall(githubApi.repos.createStatus, {
-                    context: 'Versionist',
-                    description: 'None of the commits in the PR have a `Change-Type` tag',
-                    owner,
-                    repo: name,
-                    sha: head.sha,
-                    state: 'failure'
-                }).return(false);
+                return Promise.all([
+                    this.gitCall(githubApi.repos.createStatus, {
+                        context: 'Versionist',
+                        description: 'None of the commits in the PR have a `Change-Type` tag',
+                        owner,
+                        repo: name,
+                        sha: head.sha,
+                        state: 'failure'
+                    }),
+                    this.gitCall(githubApi.issues.createComment, {
+                        body: `@${data.sender.login}, please ensure that at least one commit contains a` +
+                            '`Change-Type:` tag.',
+                        owner,
+                        number: pr.number,
+                        repo: name,
+                    })
+                ]).return(false);
             }).then(() => {
                 return this.gitCall(githubApi.repos.getCommit, {
                     owner,
