@@ -180,20 +180,13 @@ class VersionBot extends GithubBot.GithubBot {
             {
                 events: ['pull_request'],
                 name: 'CheckVersionistCommitStatus',
-                suppressionLabels: ['flow/no-version-checks'],
-                workerMethod: this.checkVersioning
-            },
-            {
-                events: ['pull_request'],
-                name: 'CheckVersionistCommitStatus',
-                suppressionLabels: ['flow/no-version-checks'],
-                triggerLabels: ['version/check-commits'],
+                suppressionLabels: ['procbots/versionbot/no-checks'],
                 workerMethod: this.checkVersioning
             },
             {
                 events: ['pull_request', 'pull_request_review'],
                 name: 'CheckForReadyMergeState',
-                suppressionLabels: ['flow/no-version-checks'],
+                suppressionLabels: ['procbots/versionbot/no-checks'],
                 triggerLabels: ['flow/ready-to-merge'],
                 workerMethod: this.mergePR,
             }
