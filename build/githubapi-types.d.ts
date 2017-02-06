@@ -13,7 +13,10 @@ export interface PullRequestEvent {
             };
             sha: string;
         }
-    };
+    },
+    sender: {
+        login: string;
+    }
 }
 
 export interface PullRequestReviewEvent {

@@ -158,16 +158,25 @@ export class VersionBot extends GithubBot.GithubBot {
                 }).return(true);
             }
 
-            // Else we mark it as having failed.
+            // Else we mark it as having failed and we inform the user directly in the PR.
             this.log(ProcBot.LogLevel.DEBUG, `${action.name}: No valid 'Change-Type' tag found, failing last commit`);
-            return this.gitCall(githubApi.repos.createStatus, {
-                context: 'Versionist',
-                description: 'None of the commits in the PR have a `Change-Type` tag',
-                owner,
-                repo: name,
-                sha: head.sha,
-                state: 'failure'
-            }).return(false);
+            return Promise.all([
+                this.gitCall(githubApi.repos.createStatus, {
+                    context: 'Versionist',
+                    description: 'None of the commits in the PR have a `Change-Type` tag',
+                    owner,
+                    repo: name,
+                    sha: head.sha,
+                    state: 'failure'
+                }),
+                this.gitCall(githubApi.issues.createComment, {
+                    body: `@${data.sender.login}, please ensure that at least one commit contains a` +
+                        '`Change-Type:` tag.',
+                    owner,
+                    number: pr.number,
+                    repo: name,
+                })
+            ]).return(false);
         }).then(() => {
             // If the author was Versionbot and the file marked was CHANGELOG, then
             // we are now going to go ahead and perform a merge.
