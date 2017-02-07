@@ -219,6 +219,7 @@ export class GithubBot extends ProcBot.ProcBot<string> {
 
             // For debug.
             this.log(ProcBot.LogLevel.DEBUG, `token for manual fiddling is: ${tokenDetails.token}`);
+            this.log(ProcBot.LogLevel.DEBUG, `token expres at: ${tokenDetails.expires_at}`);
             this.log(ProcBot.LogLevel.DEBUG, 'Base curl command:');
             this.log(ProcBot.LogLevel.DEBUG,
                 `curl -XGET -H "Authorisation: token ${tokenDetails.token}" ` +
@@ -238,7 +239,7 @@ export class GithubBot extends ProcBot.ProcBot<string> {
                 retriesLeft -= 1;
 
                 // Run the method.
-                return method(options).catch((err: Error) => {
+                return method(options).then(resolve).catch((err: Error) => {
                     // We only try and reauthenticate once, else we throw.
                     if ((err.message === 'Bad credentials') && !badCreds) {
                         badCreds = true;
@@ -251,7 +252,7 @@ export class GithubBot extends ProcBot.ProcBot<string> {
                         // If there's more retries, try again in 5 seconds.
                         setTimeout(runApi, 5000);
                     }
-                }).then(resolve);
+                });
             };
 
             // Kick it off.

@@ -60,6 +60,7 @@ class GithubBot extends ProcBot.ProcBot {
                             }
                         }
                         return action.workerMethod(action, data).catch((err) => {
+                            console.log(err);
                             this.alert(ProcBot.AlertLevel.ERROR, `Error thrown: ${err.message}`);
                         });
                     });
@@ -73,7 +74,7 @@ class GithubBot extends ProcBot.ProcBot {
             return new Promise((resolve, reject) => {
                 const runApi = () => {
                     retriesLeft -= 1;
-                    return method(options).catch((err) => {
+                    return method(options).then(resolve).catch((err) => {
                         if ((err.message === 'Bad credentials') && !badCreds) {
                             badCreds = true;
                             return this.authenticate().then(runApi());
@@ -84,7 +85,7 @@ class GithubBot extends ProcBot.ProcBot {
                         else {
                             setTimeout(runApi, 5000);
                         }
-                    }).then(resolve);
+                    });
                 };
                 runApi();
             });
@@ -156,6 +157,7 @@ class GithubBot extends ProcBot.ProcBot {
                 type: 'token'
             });
             this.log(ProcBot.LogLevel.DEBUG, `token for manual fiddling is: ${tokenDetails.token}`);
+            this.log(ProcBot.LogLevel.DEBUG, `token expres at: ${tokenDetails.expires_at}`);
             this.log(ProcBot.LogLevel.DEBUG, 'Base curl command:');
             this.log(ProcBot.LogLevel.DEBUG, `curl -XGET -H "Authorisation: token ${tokenDetails.token}" ` +
                 `-H "Accept: application/vnd.github.black-cat-preview+json" https://api.github.com/`);
