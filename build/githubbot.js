@@ -59,10 +59,9 @@ class GithubBot extends ProcBot.ProcBot {
                                 return;
                             }
                         }
-                        return action.workerMethod(action, data).catch((err) => {
-                            console.log(err);
-                            this.alert(ProcBot.AlertLevel.ERROR, `Error thrown: ${err.message}`);
-                        });
+                        return action.workerMethod(action, data);
+                    }).catch((err) => {
+                        this.alert(ProcBot.AlertLevel.ERROR, `Error thrown in main event/label filter loop: ${err.message}`);
                     });
                 }
             });
@@ -70,20 +69,22 @@ class GithubBot extends ProcBot.ProcBot {
         };
         this.gitCall = (method, options, retries) => {
             let badCreds = false;
-            let retriesLeft = retries || 3;
+            let retriesLeft = retries || 5;
             return new Promise((resolve, reject) => {
                 const runApi = () => {
                     retriesLeft -= 1;
-                    return method(options).then(resolve).catch((err) => {
-                        if ((err.message === 'Bad credentials') && !badCreds) {
-                            badCreds = true;
-                            return this.authenticate().then(runApi());
-                        }
-                        else if (retriesLeft === 0) {
+                    method(options).then(resolve).catch((err) => {
+                        const ghError = JSON.parse(err.message);
+                        if (retriesLeft === 0) {
                             reject(err);
                         }
                         else {
-                            setTimeout(runApi, 5000);
+                            if ((ghError.message === 'Bad credentials') && !badCreds) {
+                                this.authenticate().then(runApi);
+                            }
+                            else {
+                                setTimeout(runApi, 5000);
+                            }
                         }
                     });
                 };

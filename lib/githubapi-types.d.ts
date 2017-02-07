@@ -88,3 +88,8 @@ export interface Tree {
     url: string;
     tree: TreeEntry[];
 }
+
+export interface GithubError {
+    message: string;
+    documentation_url: string;
+}
