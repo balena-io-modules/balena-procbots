@@ -243,7 +243,7 @@ export class GithubBot extends ProcBot.ProcBot<string> {
                 method(options).then(resolve).catch((err: Error) => {
                     // Error message is actually JSON.
                     const ghError: GithubApiTypes.GithubError = JSON.parse(err.message);
-                    if (retriesLeft === 0) {
+                    if (retriesLeft < 1) {
                         // No more retries, just reject.
                         reject(err);
                     } else {

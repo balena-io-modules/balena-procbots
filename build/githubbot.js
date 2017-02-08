@@ -75,7 +75,7 @@ class GithubBot extends ProcBot.ProcBot {
                     retriesLeft -= 1;
                     method(options).then(resolve).catch((err) => {
                         const ghError = JSON.parse(err.message);
-                        if (retriesLeft === 0) {
+                        if (retriesLeft < 1) {
                             reject(err);
                         }
                         else {
@@ -158,7 +158,7 @@ class GithubBot extends ProcBot.ProcBot {
                 type: 'token'
             });
             this.log(ProcBot.LogLevel.DEBUG, `token for manual fiddling is: ${tokenDetails.token}`);
-            this.log(ProcBot.LogLevel.DEBUG, `token expres at: ${tokenDetails.expires_at}`);
+            this.log(ProcBot.LogLevel.DEBUG, `token expires at: ${tokenDetails.expires_at}`);
             this.log(ProcBot.LogLevel.DEBUG, 'Base curl command:');
             this.log(ProcBot.LogLevel.DEBUG, `curl -XGET -H "Authorisation: token ${tokenDetails.token}" ` +
                 `-H "Accept: application/vnd.github.black-cat-preview+json" https://api.github.com/`);
