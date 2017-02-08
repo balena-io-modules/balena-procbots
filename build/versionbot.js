@@ -231,7 +231,7 @@ class VersionBot extends GithubBot.GithubBot {
             }
             moddedFiles.push(`CHANGELOG.md`);
             return exec(`cat ${versionData.fullPath}${_.last(moddedFiles)}`).then((contents) => {
-                const match = contents.match(/^## (v[0-9]\.[0-9]\.[0-9]).+$/m);
+                const match = contents.match(/^## (v[0-9]+\.[0-9]+\.[0-9]+).+$/m);
                 if (!match) {
                     throw new Error('Cannot find new version for ${repoFullName}-#${pr.number}');
                 }

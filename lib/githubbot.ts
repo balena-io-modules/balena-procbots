@@ -18,6 +18,7 @@ import * as GithubApi from 'github';
 import * as jwt from 'jsonwebtoken';
 import * as _ from 'lodash';
 import * as request from 'request-promise';
+import * as GithubApiTypes from './githubapi-types';
 import { GithubAction, GithubActionRegister } from './githubbot-types';
 import * as ProcBot from './procbot';
 import * as Worker from './worker';
@@ -162,10 +163,10 @@ export class GithubBot extends ProcBot.ProcBot<string> {
                         }
                     }
 
-                    return action.workerMethod(<GithubAction>action, data).catch((err: Error) => {
-                        // We log the error, so that it's saved and matches up with any Alert.
-                        this.alert(ProcBot.AlertLevel.ERROR, `Error thrown: ${err.message}`);
-                    });
+                    return action.workerMethod(<GithubAction>action, data);
+                }).catch((err: Error) => {
+                    // We log the error, so that it's saved and matches up with any Alert.
+                    this.alert(ProcBot.AlertLevel.ERROR, `Error thrown in main event/label filter loop: ${err.message}`);
                 });
             }
         });
@@ -219,6 +220,7 @@ export class GithubBot extends ProcBot.ProcBot<string> {
 
             // For debug.
             this.log(ProcBot.LogLevel.DEBUG, `token for manual fiddling is: ${tokenDetails.token}`);
+            this.log(ProcBot.LogLevel.DEBUG, `token expires at: ${tokenDetails.expires_at}`);
             this.log(ProcBot.LogLevel.DEBUG, 'Base curl command:');
             this.log(ProcBot.LogLevel.DEBUG,
                 `curl -XGET -H "Authorisation: token ${tokenDetails.token}" ` +
@@ -230,7 +232,7 @@ export class GithubBot extends ProcBot.ProcBot<string> {
     // can result in re-authentication before moving on.
     protected gitCall = (method: any, options: any, retries?: number): Promise<any> => {
         let badCreds = false;
-        let retriesLeft = retries || 3;
+        let retriesLeft = retries || 5;
 
         // We need a new Promise here, as we might need to do retries.
         return new Promise((resolve, reject) => {
@@ -238,20 +240,22 @@ export class GithubBot extends ProcBot.ProcBot<string> {
                 retriesLeft -= 1;
 
                 // Run the method.
-                return method(options).catch((err: Error) => {
-                    // We only try and reauthenticate once, else we throw.
-                    if ((err.message === 'Bad credentials') && !badCreds) {
-                        badCreds = true;
-                        // Re-authenticate, then try again.
-                        return this.authenticate().then(runApi());
-                    } else if (retriesLeft === 0) {
+                method(options).then(resolve).catch((err: Error) => {
+                    // Error message is actually JSON.
+                    const ghError: GithubApiTypes.GithubError = JSON.parse(err.message);
+                    if (retriesLeft < 1) {
                         // No more retries, just reject.
                         reject(err);
                     } else {
-                        // If there's more retries, try again in 5 seconds.
-                        setTimeout(runApi, 5000);
+                        if ((ghError.message === 'Bad credentials') && !badCreds) {
+                            // Re-authenticate, then try again.
+                            this.authenticate().then(runApi);
+                        } else {
+                            // If there's more retries, try again in 5 seconds.
+                            setTimeout(runApi, 5000);
+                        }
                     }
-                }).then(resolve);
+                });
             };
 
             // Kick it off.
