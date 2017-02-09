@@ -2,7 +2,7 @@
 
 Process bots used for automating the development and deployment CI pipeline.
 
-Currently only the `Versionbot` exists. `Versionbot` will:
+Currently only the `VersionBot` exists. `VersionBot` will:
 
 * Look for new PRs and check that there is at least one commit in the PR which features a suitable `Change-Type:` tag
 * Look for PR review approval ***and*** a label applied to the PR to mark it ready for merge (`flow/ready-for-merge`)
@@ -16,7 +16,7 @@ Merges and checks can be suppressed using the `flow/no-version-checks` label on 
 
 ## Installation
 
-`Versionbot` can be run either on a development machine (with suitable forwarding of a chosen callback URL to it's IP address) or in a `resin-on-resin` configuration.
+`VersionBot` can be run either on a development machine (with suitable forwarding of a chosen callback URL to it's IP address) or in a `resin-on-resin` configuration.
 
 ### Host Development
 
@@ -39,11 +39,11 @@ Appropriate environment variables are required before execution. See below.
 
 ## Creating a Github Integration
 
-`Versionbot` runs as an Integration in the Github scope. For development, you can create an Integration on your personal Github account by going to your Settings page (from your profile avatar icon) and selecting 'Integrations -> Register New Integration` from the 'Developer Settings' sidebar.
+`VersionBot` runs as an Integration in the Github scope. For development, you can create an Integration on your personal Github account by going to your Settings page (from your profile avatar icon) and selecting 'Integrations -> Register New Integration` from the 'Developer Settings' sidebar.
 
     * Give Integration a name
     * Set a Homepage URL (required but not used)
-    * Set a callback URL (this is where all callbacks will go to, eg: `http://myurl.com:4567/webhooks`). Currently `Versionbot` expects webhooks to be sent to the `/webhooks` path when running, and listens on port `4567`
+    * Set a callback URL (this is where all callbacks will go to, eg: `http://myurl.com:4567/webhooks`). Currently `VersionBot` expects webhooks to be sent to the `/webhooks` path when running, and listens on port `4567`
     * Create a new Webhook Secret (see [here](https://developer.github.com/webhooks/securing/)). You will require this secret later
 
 	* Set up secure Webhooks:
@@ -79,13 +79,19 @@ Download the key and then create a Base64 string from it. It will be required la
 
 ## Secret Key, Webhook Token and Integration ID
 
-You'll need the right private key to run the Integration. It is not supplied here. `Versionbot` requires the following environment variables:
+You'll need the right private key to run the Integration. It is not supplied here. `ProcBot` requires the following environment variables:
 
     `WEBHOOK_SECRET`: The 20 digit hex key used to authenticate messages.
     `INTEGRATION_ID`: The ID given on Integration creation, a unique identifier.
     `PROCBOTS_PEM`: The Base64 encoded private key generated on Integration creation.
+	`FLOWDOCK_ALERTS`: If present and set to 'true', alerts will be sent to any relevant Flowdock room.
+
+`VersionBot` requires the following environment variables:
+
 	`VERSIONBOT_NAME`: The name shown in commits and merges for PRs by the Integration.
 	`VERSIONBOT_EMAIL`: Email address for the bot, (can be an empty string).
+	`VERSIONBOT_FLOWDOCK_ROOM`: The room ID whose inbox will be posted to. If `FLOWDOCK_ALERTS` is set to `true` this **must** be present.
+
 
 You'll need to fill these fields out in `.vscode/launch.json` before debugging (if you're running this on the CLI, set envvars accordingly). If you're running on Resin, these must be set as Application envvars.
 
@@ -93,25 +99,27 @@ Ask Heds how this works if unsure.
 
 ## Initialising a Repo
 
-Before the Versionist Procbot can deal with a repository, the repo itself needs to be updated to support it.
+Before the Versionist ProcBot can deal with a repository, the repo itself needs to be updated to support it.
 
-Use the tool in `tools/initRepo` to setup the repository in such a way that the `master` branch is guarded and merges can only occur post-review and with a `flow/ready-to-merge` label:
+Use the tool in `tools/initRepo` to setup the repository in such a way that the `master` branch is guarded and merges can only occur post-review and with a `procbot/versionbot/ready-to-merge` label:
 
     ./tools/initRepo/bin/initRepo -u bob -p bobspassword -r bob/bobsrepo
 
 **Note:** This must be carried out by an admin user of the repo, in this case `bob`.
 
-Ensure you also create the `flow/ready-to-merge` label type in the 'Issues' section of the repo (this will be added to the tool).
+Ensure you also create the `procbot/versionbot/ready-to-merge` label type in the 'Issues' section of the repo (this will be added to the tool).
 
 Finally you need to install the Integration into the repo. Do this by going to your 'Settings' page, selecting 'Installed Integrations', selecting your Integration and then selecting the repos you want it installed in in the 'Repository access' section.
 
 ## Running
 
-Currently there is only one Procbot, Versionbot. You can run this from within Visual Code by building and then debugging in the usual way, or you can run it from the command line:
+Currently there is only one ProcBot, VersionBot. You can run this from within Visual Code by building and then debugging in the usual way, or you can run it from the command line:
 
 `./bin/procbot -b versionbot`
 
 This allows the checking of commits for a PR and merging them when the right labels/conditions are met.
+
+`VersionBot` will ignore any status checks and not attempt to merge should the `procbots/versionbot/no-checks` label be present on any PR it would otherwise operate on.
 
 ## TBD
 

@@ -12,11 +12,13 @@ export interface PullRequestEvent {
                 }
             };
             sha: string;
-        }
-    },
+        };
+        html_url: string;
+        url: string;
+    };
     sender: {
         login: string;
-    }
+    };
 }
 
 export interface PullRequestReviewEvent {
@@ -31,7 +33,9 @@ export interface PullRequestReviewEvent {
                 }
             };
             sha: string;
-        }
+        };
+        html_url: string;
+        url: string;
     };
 }
 

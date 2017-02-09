@@ -14,6 +14,8 @@
     },
     "include": [
         "typings/**/*.d.ts",
-        "lib/**/*.ts"
+        "lib/**/*.ts",
+        "lib/bots/**/*.ts",
+        "lib/mixins/**/*.ts"
     ]
 }
