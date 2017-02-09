@@ -5,8 +5,7 @@ const FS = require("fs");
 const _ = require("lodash");
 const path = require("path");
 const temp_1 = require("temp");
-const flowdock_1 = require("../mixins/flowdock");
-const Runtime = require("../runtime");
+const flowdock_1 = require("../adapters/flowdock");
 const GithubBot = require("./githubbot");
 const ProcBot = require("./procbot");
 const exec = Promise.promisify(ChildProcess.exec);
@@ -97,7 +96,9 @@ class VersionBot extends GithubBot.GithubBot {
                             source: process.env.VERSIONBOT_NAME,
                             subject: `VersionBot merged ${owner}/${name}#${pr.number}`
                         };
-                        this.postToInbox(flowdockMessage);
+                        if (process.env.VERSIONBOT_FLOWDOCK_ADAPTER) {
+                            this.flowdock.postToInbox(flowdockMessage);
+                        }
                     });
                 }
             }).catch((err) => {
@@ -225,6 +226,9 @@ class VersionBot extends GithubBot.GithubBot {
         ], (reg) => {
             this.registerAction(reg);
         });
+        if (process.env.VERSIONBOT_FLOWDOCK_ROOM) {
+            this.flowdock = new flowdock_1.FlowdockAdapter();
+        }
         this.authenticate();
     }
     applyVersionist(versionData) {
@@ -378,9 +382,7 @@ class VersionBot extends GithubBot.GithubBot {
                 repo: data.repoName
             });
         }).then((prInfo) => {
-            console.log(prInfo);
             const branchName = prInfo.head.ref;
-            console.log(branchName);
             return this.gitCall(githubApi.gitdata.deleteReference, {
                 owner: data.owner,
                 ref: `heads/${branchName}`,
@@ -390,15 +392,17 @@ class VersionBot extends GithubBot.GithubBot {
     }
     reportError(error) {
         const githubApi = this.githubApi;
-        const flowdockMessage = {
-            content: error.message,
-            from_address: process.env.VERSIONBOT_EMAIL,
-            roomId: process.env.VERSIONBOT_FLOWDOCK_ROOM,
-            source: process.env.VERSIONBOT_NAME,
-            subject: error.brief,
-            tags: ['devops']
-        };
-        this.postToInbox(flowdockMessage);
+        if (process.env.VERSIONBOT_FLOWDOCK_ROOM) {
+            const flowdockMessage = {
+                content: error.message,
+                from_address: process.env.VERSIONBOT_EMAIL,
+                roomId: process.env.VERSIONBOT_FLOWDOCK_ROOM,
+                source: process.env.VERSIONBOT_NAME,
+                subject: error.brief,
+                tags: ['devops']
+            };
+            this.flowdock.postToInbox(flowdockMessage);
+        }
         this.gitCall(githubApi.issues.createComment, {
             body: error.message,
             number: error.number,
@@ -413,14 +417,8 @@ function createBot() {
     if (!(process.env.VERSIONBOT_NAME && process.env.VERSIONBOT_EMAIL)) {
         throw new Error(`'VERSIONBOT_NAME' and 'VERSIONBOT_EMAIL' environment variables need setting`);
     }
-    if (process.env.FLOWDOCK_ALERTS && (process.env.FLOWDOCK_ALERTS.toLowerCase() === 'true')) {
-        if (!process.env.VERSIONBOT_FLOWDOCK_ROOM) {
-            throw new Error(`Flowdock alerts are enabled but no room is set for Versionbot messages`);
-        }
-    }
     return new VersionBot(process.env.INTEGRATION_ID, process.env.VERSIONBOT_NAME);
 }
 exports.createBot = createBot;
-Runtime.applyMixins(VersionBot, [flowdock_1.FlowdockAdapter]);
 
 //# sourceMappingURL=versionbot.js.map

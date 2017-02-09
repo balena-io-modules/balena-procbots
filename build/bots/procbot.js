@@ -16,7 +16,7 @@ class ProcBot {
     constructor(name = 'ProcBot') {
         this._botname = 'Procbot';
         this._logLevel = process.env.PROCBOT_LOG_LEVEL || LogLevel.WARN;
-        this._alertLevel = process.env.PROCBOT_ALERT_LEVEL || AlertLevel.CRITICAL;
+        this._alertLevel = process.env.PROCBOT_ALERT_LEVEL || AlertLevel.ERROR;
         this.workers = new Map();
         this.logLevelStrings = [
             'WARNING',

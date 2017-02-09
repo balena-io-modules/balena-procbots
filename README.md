@@ -46,30 +46,30 @@ Appropriate environment variables are required before execution. See below.
     * Set a callback URL (this is where all callbacks will go to, eg: `http://myurl.com:4567/webhooks`). Currently `VersionBot` expects webhooks to be sent to the `/webhooks` path when running, and listens on port `4567`
     * Create a new Webhook Secret (see [here](https://developer.github.com/webhooks/securing/)). You will require this secret later
 
-	* Set up secure Webhooks:
-		- Go to repository you want Integration on
-		- Add a new secret
-		- Add relevant code for HMAC digest in version bot and check again 'x-hub-signature' header entry for matching digest
+    * Set up secure Webhooks:
+        - Go to repository you want Integration on
+        - Add a new secret
+        - Add relevant code for HMAC digest in version bot and check again 'x-hub-signature' header entry for matching digest
 
 Set the following permissions in 'Permissions & events':
 
-	* Settings:
-		- Commit statues:
-			# Status: R/W
-		- Issues:
-			# Issue comment: R/W  - Probably only need R/O
-			# Issues: R/W - Probably only need R/O
-		- Pull Requests:
-			# Pull request: R/W - Probably only need R/O
-			# Pull request review: R/W - Probably only need R/O
-			# Pull request review comment: R/W - Probably only need R/O
-		- Repository contents:
+    * Settings:
+        - Commit statues:
+            # Status: R/W
+        - Issues:
+            # Issue comment: R/W  - Probably only need R/O
+            # Issues: R/W - Probably only need R/O
+        - Pull Requests:
+            # Pull request: R/W - Probably only need R/O
+            # Pull request review: R/W - Probably only need R/O
+            # Pull request review comment: R/W - Probably only need R/O
+        - Repository contents:
             # Commit comment - R/W
             # Create - R/W
-			# Delete - R/W
+            # Delete - R/W
             # Fork - R/W
-			# Push - R/W
-			# Release - R/W
+            # Push - R/W
+            # Release - R/W
 
 Now hit 'Save'. The Integration will be created and you'll be given an Integration ID (note it down, it will be required later).
 
@@ -84,13 +84,12 @@ You'll need the right private key to run the Integration. It is not supplied her
     `WEBHOOK_SECRET`: The 20 digit hex key used to authenticate messages.
     `INTEGRATION_ID`: The ID given on Integration creation, a unique identifier.
     `PROCBOTS_PEM`: The Base64 encoded private key generated on Integration creation.
-	`FLOWDOCK_ALERTS`: If present and set to 'true', alerts will be sent to any relevant Flowdock room.
 
 `VersionBot` requires the following environment variables:
 
-	`VERSIONBOT_NAME`: The name shown in commits and merges for PRs by the Integration.
-	`VERSIONBOT_EMAIL`: Email address for the bot, (can be an empty string).
-	`VERSIONBOT_FLOWDOCK_ROOM`: The room ID whose inbox will be posted to. If `FLOWDOCK_ALERTS` is set to `true` this **must** be present.
+    `VERSIONBOT_NAME`: The name shown in commits and merges for PRs by the Integration.
+    `VERSIONBOT_EMAIL`: Email address for the bot, (can be an empty string).
+    `VERSIONBOT_FLOWDOCK_ROOM`: The room ID whose inbox will be posted to. If not present, Flowdock will not be used.
 
 
 You'll need to fill these fields out in `.vscode/launch.json` before debugging (if you're running this on the CLI, set envvars accordingly). If you're running on Resin, these must be set as Application envvars.

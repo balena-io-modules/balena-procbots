@@ -10,12 +10,9 @@ export class FlowdockAdapter {
             url: `https://api.flowdock.com/messages/team_inbox/${item.roomId}`,
         };
 
-        // If we aren't outputting to Flowdock (development build, test build, etc)
-        // just return.
-        // People invariably use different cases, so...
-        if (process.env.FLOWDOCK_ALERTS && (process.env.FLOWDOCK_ALERTS.toLowerCase() === 'true')) {
-            // We don't wait for a response, we have no control over it anyway.
-            request.post(requestOpts);
-        }
+        // We don't wait for a response, we have no control over it anyway.
+        request.post(requestOpts).catch((err: Error) => {
+            console.log(`FlowdockAdapter failed to post to Flowdock:\n${err.message}`);
+        });
     }
 }

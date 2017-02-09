@@ -1,11 +1,9 @@
 import * as Promise from 'bluebird';
-import { FlowdockAdapter } from '../mixins/flowdock';
-import { FlowdockInboxItem } from '../mixins/flowdock-types';
 import * as GithubBotApiTypes from './githubapi-types';
 import * as GithubBot from './githubbot';
 import { GithubAction } from './githubbot-types';
-export declare class VersionBot extends GithubBot.GithubBot implements FlowdockAdapter {
-    postToInbox: (item: FlowdockInboxItem) => void;
+export declare class VersionBot extends GithubBot.GithubBot {
+    private flowdock;
     constructor(integration: number, name?: string);
     protected checkVersioning: (action: GithubAction, data: GithubBotApiTypes.PullRequestEvent) => Promise<void>;
     protected mergePR: (action: GithubAction, data: GithubBotApiTypes.PullRequestEvent | GithubBotApiTypes.PullRequestReviewEvent) => Promise<void>;

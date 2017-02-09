@@ -22,9 +22,7 @@ import * as FS from 'fs';
 import * as _ from 'lodash';
 import * as path from 'path';
 import { mkdir, track } from 'temp';
-import { FlowdockAdapter } from '../mixins/flowdock';
-import { FlowdockInboxItem } from '../mixins/flowdock-types';
-import * as Runtime from '../runtime';
+import { FlowdockAdapter } from '../adapters/flowdock';
 import * as GithubBotApiTypes from './githubapi-types';
 import * as GithubBot from './githubbot';
 import { GithubAction, GithubActionRegister } from './githubbot-types';
@@ -82,9 +80,9 @@ interface VersionBotError {
 // The VersionBot is built on top of GithubBot, which does all the heavy lifting and scheduling.
 // It is designed to check for valid `versionist` commit semantics and alter (or merge) a PR
 // accordingly.
-export class VersionBot extends GithubBot.GithubBot implements FlowdockAdapter {
-    // Flowdock Mixin
-    public postToInbox: (item: FlowdockInboxItem) => void;
+export class VersionBot extends GithubBot.GithubBot {
+    // Flowdock Adapter
+    private flowdock: FlowdockAdapter;
 
     // Name ourself and register the events and labels we're interested in.
     constructor(integration: number, name?: string) {
@@ -111,6 +109,11 @@ export class VersionBot extends GithubBot.GithubBot implements FlowdockAdapter {
         ], (reg: GithubActionRegister) => {
             this.registerAction(reg);
         });
+
+        // Create a new Flowdock adapter, should we need one.
+        if (process.env.VERSIONBOT_FLOWDOCK_ROOM) {
+            this.flowdock = new FlowdockAdapter();
+        }
 
         // Authenticate the Github API.
         this.authenticate();
@@ -220,7 +223,9 @@ export class VersionBot extends GithubBot.GithubBot implements FlowdockAdapter {
                         source: process.env.VERSIONBOT_NAME,
                         subject: `VersionBot merged ${owner}/${name}#${pr.number}`
                     };
-                    this.postToInbox(flowdockMessage);
+                    if (process.env.VERSIONBOT_FLOWDOCK_ADAPTER) {
+                        this.flowdock.postToInbox(flowdockMessage);
+                    }
                 });
             }
         }).catch((err: Error) => {
@@ -610,15 +615,17 @@ export class VersionBot extends GithubBot.GithubBot implements FlowdockAdapter {
         //  * Local console log
         const githubApi = this.githubApi;
 
-        const flowdockMessage = {
-            content: error.message,
-            from_address: process.env.VERSIONBOT_EMAIL,
-            roomId: process.env.VERSIONBOT_FLOWDOCK_ROOM,
-            source: process.env.VERSIONBOT_NAME,
-            subject: error.brief,
-            tags: [ 'devops' ]
-        };
-        this.postToInbox(flowdockMessage);
+        if (process.env.VERSIONBOT_FLOWDOCK_ROOM) {
+            const flowdockMessage = {
+                content: error.message,
+                from_address: process.env.VERSIONBOT_EMAIL,
+                roomId: process.env.VERSIONBOT_FLOWDOCK_ROOM,
+                source: process.env.VERSIONBOT_NAME,
+                subject: error.brief,
+                tags: [ 'devops' ]
+            };
+            this.flowdock.postToInbox(flowdockMessage);
+        }
 
         // Post a comment to the relevant PR, also detailing the issue.
         this.gitCall(githubApi.issues.createComment, {
@@ -639,13 +646,5 @@ export function createBot(): VersionBot {
         throw new Error(`'VERSIONBOT_NAME' and 'VERSIONBOT_EMAIL' environment variables need setting`);
     }
 
-    if (process.env.FLOWDOCK_ALERTS && (process.env.FLOWDOCK_ALERTS.toLowerCase() === 'true')) {
-        if (!process.env.VERSIONBOT_FLOWDOCK_ROOM) {
-            throw new Error(`Flowdock alerts are enabled but no room is set for Versionbot messages`);
-        }
-    }
-
     return new VersionBot(process.env.INTEGRATION_ID, process.env.VERSIONBOT_NAME);
 }
-
-Runtime.applyMixins(VersionBot, [ FlowdockAdapter ]);

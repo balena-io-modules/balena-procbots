@@ -7,9 +7,9 @@ class FlowdockAdapter {
             json: true,
             url: `https://api.flowdock.com/messages/team_inbox/${item.roomId}`,
         };
-        if (process.env.FLOWDOCK_ALERTS && (process.env.FLOWDOCK_ALERTS.toLowerCase() === 'true')) {
-            request.post(requestOpts);
-        }
+        request.post(requestOpts).catch((err) => {
+            console.log(`FlowdockAdapter failed to post to Flowdock:\n${err.message}`);
+        });
     }
 }
 exports.FlowdockAdapter = FlowdockAdapter;
