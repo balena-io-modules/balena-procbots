@@ -5,7 +5,7 @@ Process bots used for automating the development and deployment CI pipeline.
 Currently only the `VersionBot` exists. `VersionBot` will:
 
 * Look for new PRs and check that there is at least one commit in the PR which features a suitable `Change-Type:` tag
-* Look for PR review approval ***and*** a label applied to the PR to mark it ready for merge (`flow/ready-for-merge`)
+* Look for PR review approval ***and*** a label applied to the PR to mark it ready for merge (`procbots/versionbot/ready-for-merge`)
 * On seeing appropriate label and review, will automatically:
     1. Clone the PR branch for the repo
     2. Run `versionist` upon it
@@ -100,13 +100,13 @@ Ask Heds how this works if unsure.
 
 Before the Versionist ProcBot can deal with a repository, the repo itself needs to be updated to support it.
 
-Use the tool in `tools/initRepo` to setup the repository in such a way that the `master` branch is guarded and merges can only occur post-review and with a `procbot/versionbot/ready-to-merge` label:
+Use the tool in `tools/initRepo` to setup the repository in such a way that the `master` branch is guarded and merges can only occur post-review and with a `procbots/versionbot/ready-to-merge` label:
 
     ./tools/initRepo/bin/initRepo -u bob -p bobspassword -r bob/bobsrepo
 
 **Note:** This must be carried out by an admin user of the repo, in this case `bob`.
 
-Ensure you also create the `procbot/versionbot/ready-to-merge` label type in the 'Issues' section of the repo (this will be added to the tool).
+Ensure you also create the `procbots/versionbot/ready-to-merge` label type in the 'Issues' section of the repo (this will be added to the tool).
 
 Finally you need to install the Integration into the repo. Do this by going to your 'Settings' page, selecting 'Installed Integrations', selecting your Integration and then selecting the repos you want it installed in in the 'Repository access' section.
 

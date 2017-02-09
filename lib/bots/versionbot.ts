@@ -380,7 +380,7 @@ export class VersionBot extends GithubBot.GithubBot {
             }).catch((err: Error) => {
                 // Call the VersionBot error specific method.
                 this.reportError({
-                    brief: `Versionbot failed to create a new version ready for merge for ${repoFullName}#${pr.number}`,
+                    brief: `Versionbot failed to merge ${repoFullName}#${pr.number}`,
                     message: 'Versionbot failed to commit a new version to prepare a merge for the above pull ' +
                         `request here: ${pr.html_url}. The reason for this is:\r\n${err.message}\r\n` +
                         'Please alert an appropriate admin.',
