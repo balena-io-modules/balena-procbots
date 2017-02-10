@@ -89,12 +89,12 @@ class VersionBot extends GithubBot.GithubBot {
                         repoName: name
                     }).then(() => {
                         const flowdockMessage = {
-                            content: 'VersionBot has now merged the above PR, located here:' +
+                            content: `${process.env.VERSIONBOT_NAME} has now merged the above PR, located here:` +
                                 `${pr.html_url}.`,
                             from_address: process.env.VERSIONBOT_EMAIL,
                             roomId: process.env.VERSIONBOT_FLOWDOCK_ROOM,
                             source: process.env.VERSIONBOT_NAME,
-                            subject: `VersionBot merged ${owner}/${name}#${pr.number}`
+                            subject: `{$process.env.VERSIONBOT_NAME} merged ${owner}/${name}#${pr.number}`
                         };
                         if (process.env.VERSIONBOT_FLOWDOCK_ADAPTER) {
                             this.flowdock.postToInbox(flowdockMessage);
@@ -103,9 +103,9 @@ class VersionBot extends GithubBot.GithubBot {
                 }
             }).catch((err) => {
                 this.reportError({
-                    brief: `Versionbot check failed for ${owner}/${name}#${pr.number}`,
-                    message: 'Versionbot failed to carry out a status check for the above pull request ' +
-                        `here: ${pr.html_url}. The reason for this is:\r\n${err.message}\r\n` +
+                    brief: `${process.env.VERSIONBOT_NAME} check failed for ${owner}/${name}#${pr.number}`,
+                    message: `${process.env.VERSIONBOT_NAME} failed to carry out a status check for the above pull ` +
+                        `request here: ${pr.html_url}. The reason for this is:\r\n${err.message}\r\n` +
                         'Please alert an appropriate admin.',
                     owner,
                     number: pr.number,
@@ -198,9 +198,9 @@ class VersionBot extends GithubBot.GithubBot {
                         `tagged and pushed.`);
                 }).catch((err) => {
                     this.reportError({
-                        brief: `Versionbot failed to merge ${repoFullName}#${pr.number}`,
-                        message: 'Versionbot failed to commit a new version to prepare a merge for the above pull ' +
-                            `request here: ${pr.html_url}. The reason for this is:\r\n${err.message}\r\n` +
+                        brief: `${process.env.VERSIONBOT_NAME} failed to merge ${repoFullName}#${pr.number}`,
+                        message: `${process.env.VERSIONBOT_NAME} failed to commit a new version to prepare a merge for ` +
+                            `the above pull request here: ${pr.html_url}. The reason for this is:\r\n${err.message}\r\n` +
                             'Please alert an appropriate admin.',
                         owner,
                         number: pr.number,
@@ -328,8 +328,8 @@ class VersionBot extends GithubBot.GithubBot {
             }).then((lastCommit) => {
                 return this.gitCall(githubApi.gitdata.createCommit, {
                     committer: {
-                        email: 'versionbot@whaleway.net',
-                        name: 'Versionbot'
+                        email: process.env.VERSIONBOT_EMAIL,
+                        name: process.env.VERSIONBOT_NAME
                     },
                     message: `${repoData.version}`,
                     owner: repoData.owner,
@@ -351,7 +351,7 @@ class VersionBot extends GithubBot.GithubBot {
     mergeToMaster(data) {
         const githubApi = this.githubApi;
         return this.gitCall(githubApi.pullRequests.merge, {
-            commit_title: `Auto-merge for PR ${data.prNumber} via Versionbot`,
+            commit_title: `Auto-merge for PR ${data.prNumber} via ${process.env.VERSIONBOT_NAME}`,
             number: data.prNumber,
             owner: data.owner,
             repo: data.repoName
