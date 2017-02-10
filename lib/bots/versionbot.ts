@@ -187,7 +187,7 @@ export class VersionBot extends GithubBot.GithubBot {
                 })
             ]).return(false);
         }).then(() => {
-            // If the author was Versionbot and the file marked was CHANGELOG, then
+            // If the author was VersionBot and the file marked was CHANGELOG, then
             // we are now going to go ahead and perform a merge.
             //
             // Get the list of commits for the PR, then get the very last commit SHA.
@@ -197,7 +197,7 @@ export class VersionBot extends GithubBot.GithubBot {
                 sha: head.sha
             });
         }).then((headCommit: GithubBotApiTypes.Commit) => {
-            // We will go ahead and perform a merge if we see Versionbot has committed
+            // We will go ahead and perform a merge if we see VersionBot has committed
             // something with 'CHANGELOG.md' in it.
             const commit = headCommit.commit;
             const files = headCommit.files;
@@ -216,12 +216,12 @@ export class VersionBot extends GithubBot.GithubBot {
                     // No tags here, just mention it in Flowdock so its searchable.
                     // It's not an error so doesn't need logging.
                     const flowdockMessage = {
-                        content: 'VersionBot has now merged the above PR, located here:' +
+                        content: `${process.env.VERSIONBOT_NAME} has now merged the above PR, located here:` +
                             `${pr.html_url}.`,
                         from_address: process.env.VERSIONBOT_EMAIL,
                         roomId: process.env.VERSIONBOT_FLOWDOCK_ROOM,
                         source: process.env.VERSIONBOT_NAME,
-                        subject: `VersionBot merged ${owner}/${name}#${pr.number}`
+                        subject: `{$process.env.VERSIONBOT_NAME} merged ${owner}/${name}#${pr.number}`
                     };
                     if (process.env.VERSIONBOT_FLOWDOCK_ADAPTER) {
                         this.flowdock.postToInbox(flowdockMessage);
@@ -231,9 +231,9 @@ export class VersionBot extends GithubBot.GithubBot {
         }).catch((err: Error) => {
             // Call the VersionBot error specific method.
             this.reportError({
-                brief: `Versionbot check failed for ${owner}/${name}#${pr.number}`,
-                message: 'Versionbot failed to carry out a status check for the above pull request ' +
-                    `here: ${pr.html_url}. The reason for this is:\r\n${err.message}\r\n` +
+                brief: `${process.env.VERSIONBOT_NAME} check failed for ${owner}/${name}#${pr.number}`,
+                message: `${process.env.VERSIONBOT_NAME} failed to carry out a status check for the above pull ` +
+                    `request here: ${pr.html_url}. The reason for this is:\r\n${err.message}\r\n` +
                     'Please alert an appropriate admin.',
                 owner,
                 number: pr.number,
@@ -380,9 +380,9 @@ export class VersionBot extends GithubBot.GithubBot {
             }).catch((err: Error) => {
                 // Call the VersionBot error specific method.
                 this.reportError({
-                    brief: `Versionbot failed to merge ${repoFullName}#${pr.number}`,
-                    message: 'Versionbot failed to commit a new version to prepare a merge for the above pull ' +
-                        `request here: ${pr.html_url}. The reason for this is:\r\n${err.message}\r\n` +
+                    brief: `${process.env.VERSIONBOT_NAME} failed to merge ${repoFullName}#${pr.number}`,
+                    message: `${process.env.VERSIONBOT_NAME} failed to commit a new version to prepare a merge for ` +
+                        `the above pull request here: ${pr.html_url}. The reason for this is:\r\n${err.message}\r\n` +
                         'Please alert an appropriate admin.',
                     owner,
                     number: pr.number,
@@ -532,8 +532,8 @@ export class VersionBot extends GithubBot.GithubBot {
                 // We have new tree object, we now want to create a new commit referencing it.
                 return this.gitCall(githubApi.gitdata.createCommit, {
                     committer: {
-                        email: 'versionbot@whaleway.net',
-                        name: 'Versionbot'
+                        email: process.env.VERSIONBOT_EMAIL,
+                        name: process.env.VERSIONBOT_NAME
                     },
                     message: `${repoData.version}`,
                     owner: repoData.owner,
@@ -560,7 +560,7 @@ export class VersionBot extends GithubBot.GithubBot {
         const githubApi = this.githubApi;
 
         return this.gitCall(githubApi.pullRequests.merge, {
-            commit_title: `Auto-merge for PR ${data.prNumber} via Versionbot`,
+            commit_title: `Auto-merge for PR ${data.prNumber} via ${process.env.VERSIONBOT_NAME}`,
             number: data.prNumber,
             owner: data.owner,
             repo: data.repoName
@@ -639,7 +639,7 @@ export class VersionBot extends GithubBot.GithubBot {
     }
 }
 
-// Export the Versionbot to the app.
+// Export the VersionBot to the app.
 // We register the Github events we're interested in here.
 export function createBot(): VersionBot {
     if (!(process.env.VERSIONBOT_NAME && process.env.VERSIONBOT_EMAIL)) {
