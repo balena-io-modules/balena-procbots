@@ -166,7 +166,8 @@ export class GithubBot extends ProcBot.ProcBot<string> {
                     return action.workerMethod(<GithubAction>action, data);
                 }).catch((err: Error) => {
                     // We log the error, so that it's saved and matches up with any Alert.
-                    this.alert(ProcBot.AlertLevel.ERROR, `Error thrown in main event/label filter loop: ${err.message}`);
+                    this.alert(ProcBot.AlertLevel.ERROR, 'Error thrown in main event/label filter loop:' +
+                        err.message);
                 });
             }
         });

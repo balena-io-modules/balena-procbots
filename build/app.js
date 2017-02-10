@@ -31,7 +31,7 @@ app.use(bodyParser.json());
 let botRegistry = [];
 for (let bot of opt.options['bot-names']) {
     try {
-        let importedBot = require(`./${bot}`);
+        let importedBot = require(`./bots/${bot}`);
         botRegistry.push(importedBot.createBot());
         console.log(`Imported ${bot}...`);
     }

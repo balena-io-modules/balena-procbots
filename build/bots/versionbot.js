@@ -5,6 +5,7 @@ const FS = require("fs");
 const _ = require("lodash");
 const path = require("path");
 const temp_1 = require("temp");
+const flowdock_1 = require("../adapters/flowdock");
 const GithubBot = require("./githubbot");
 const ProcBot = require("./procbot");
 const exec = Promise.promisify(ChildProcess.exec);
@@ -86,8 +87,30 @@ class VersionBot extends GithubBot.GithubBot {
                         owner,
                         prNumber: pr.number,
                         repoName: name
+                    }).then(() => {
+                        const flowdockMessage = {
+                            content: 'VersionBot has now merged the above PR, located here:' +
+                                `${pr.html_url}.`,
+                            from_address: process.env.VERSIONBOT_EMAIL,
+                            roomId: process.env.VERSIONBOT_FLOWDOCK_ROOM,
+                            source: process.env.VERSIONBOT_NAME,
+                            subject: `VersionBot merged ${owner}/${name}#${pr.number}`
+                        };
+                        if (process.env.VERSIONBOT_FLOWDOCK_ADAPTER) {
+                            this.flowdock.postToInbox(flowdockMessage);
+                        }
                     });
                 }
+            }).catch((err) => {
+                this.reportError({
+                    brief: `Versionbot check failed for ${owner}/${name}#${pr.number}`,
+                    message: 'Versionbot failed to carry out a status check for the above pull request ' +
+                        `here: ${pr.html_url}. The reason for this is:\r\n${err.message}\r\n` +
+                        'Please alert an appropriate admin.',
+                    owner,
+                    number: pr.number,
+                    repo: name
+                });
             });
         };
         this.mergePR = (action, data) => {
@@ -173,6 +196,16 @@ class VersionBot extends GithubBot.GithubBot {
                 }).then(() => {
                     this.log(ProcBot.LogLevel.INFO, `Upped version of ${repoFullName} to ${newVersion}; ` +
                         `tagged and pushed.`);
+                }).catch((err) => {
+                    this.reportError({
+                        brief: `Versionbot failed to merge ${repoFullName}#${pr.number}`,
+                        message: 'Versionbot failed to commit a new version to prepare a merge for the above pull ' +
+                            `request here: ${pr.html_url}. The reason for this is:\r\n${err.message}\r\n` +
+                            'Please alert an appropriate admin.',
+                        owner,
+                        number: pr.number,
+                        repo
+                    });
                 });
             });
         };
@@ -187,12 +220,15 @@ class VersionBot extends GithubBot.GithubBot {
                 events: ['pull_request', 'pull_request_review'],
                 name: 'CheckForReadyMergeState',
                 suppressionLabels: ['procbots/versionbot/no-checks'],
-                triggerLabels: ['flow/ready-to-merge'],
+                triggerLabels: ['procbots/versionbot/ready-to-merge'],
                 workerMethod: this.mergePR,
             }
         ], (reg) => {
             this.registerAction(reg);
         });
+        if (process.env.VERSIONBOT_FLOWDOCK_ROOM) {
+            this.flowdock = new flowdock_1.FlowdockAdapter();
+        }
         this.authenticate();
     }
     applyVersionist(versionData) {
@@ -339,7 +375,41 @@ class VersionBot extends GithubBot.GithubBot {
                 repo: data.repoName,
                 sha: newTag.sha
             });
+        }).then(() => {
+            return this.gitCall(githubApi.pullRequests.get, {
+                number: data.prNumber,
+                owner: data.owner,
+                repo: data.repoName
+            });
+        }).then((prInfo) => {
+            const branchName = prInfo.head.ref;
+            return this.gitCall(githubApi.gitdata.deleteReference, {
+                owner: data.owner,
+                ref: `heads/${branchName}`,
+                repo: data.repoName
+            });
         });
+    }
+    reportError(error) {
+        const githubApi = this.githubApi;
+        if (process.env.VERSIONBOT_FLOWDOCK_ROOM) {
+            const flowdockMessage = {
+                content: error.message,
+                from_address: process.env.VERSIONBOT_EMAIL,
+                roomId: process.env.VERSIONBOT_FLOWDOCK_ROOM,
+                source: process.env.VERSIONBOT_NAME,
+                subject: error.brief,
+                tags: ['devops']
+            };
+            this.flowdock.postToInbox(flowdockMessage);
+        }
+        this.gitCall(githubApi.issues.createComment, {
+            body: error.message,
+            number: error.number,
+            owner: error.owner,
+            repo: error.repo
+        });
+        this.alert(ProcBot.AlertLevel.ERROR, error.message);
     }
 }
 exports.VersionBot = VersionBot;

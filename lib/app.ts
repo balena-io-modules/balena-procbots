@@ -18,7 +18,7 @@ limitations under the License.
 import * as bodyParser from 'body-parser';
 import * as crypto from 'crypto';
 import * as express from 'express';
-import * as GithubBot from './githubbot';
+import * as GithubBot from './bots/githubbot';
 import Opts = require('node-getopt');
 import * as _ from 'lodash';
 
@@ -61,7 +61,7 @@ let botRegistry: GithubBot.GithubBot[] = [];
 for (let bot of opt.options['bot-names']) {
     // Dynamically require the bots.
     try {
-        let importedBot = require(`./${bot}`);
+        let importedBot = require(`./bots/${bot}`);
         botRegistry.push(importedBot.createBot());
         console.log(`Imported ${bot}...`);
     } catch (err) {

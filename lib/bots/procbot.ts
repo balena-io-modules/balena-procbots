@@ -55,7 +55,7 @@ export class ProcBot<T> {
     // These can be overriden by specific methods.
     protected _botname = 'Procbot';
     protected _logLevel = process.env.PROCBOT_LOG_LEVEL || LogLevel.WARN;
-    protected _alertLevel = process.env.PROCBOT_ALERT_LEVEL || AlertLevel.CRITICAL;
+    protected _alertLevel = process.env.PROCBOT_ALERT_LEVEL || AlertLevel.ERROR;
     protected workers: Worker.WorkerMap<T> = new Map<T, Worker.Worker<T>>();
 
     // This generic method must be implemented in children extended from a ProcBot.
