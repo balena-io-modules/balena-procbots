@@ -238,7 +238,7 @@ export class VersionBot extends GithubBot.GithubBot {
                 brief: `${process.env.VERSIONBOT_NAME} check failed for ${owner}/${name}#${pr.number}`,
                 message: `${process.env.VERSIONBOT_NAME} failed to carry out a status check for the above pull ` +
                     `request here: ${pr.html_url}. The reason for this is:\r\n${err.message}\r\n` +
-                    'Please alert an appropriate admin.',
+                    'Please carry out relevant changes or alert an appropriate admin.',
                 owner,
                 number: pr.number,
                 repo: name
@@ -341,6 +341,13 @@ export class VersionBot extends GithubBot.GithubBot {
                 // Get the relevant branch.
                 branchName = prInfo.head.ref;
 
+                // Check to ensure that the PR is actually mergeable. If it isn't, we report this as an
+                // error, passing the state.
+                if (prInfo.mergeable !== true) {
+                    throw new Error('The branch cannot currently be merged into master. It has a state of: ' +
+                        `\`${prInfo.mergeable_state}\``);
+                }
+
                 // Create new work dir.
                 return tempMkdir(`${repo}-${pr.number}_`);
             }).then((tempDir: string) => {
@@ -389,7 +396,7 @@ export class VersionBot extends GithubBot.GithubBot {
                     brief: `${process.env.VERSIONBOT_NAME} failed to merge ${repoFullName}#${pr.number}`,
                     message: `${process.env.VERSIONBOT_NAME} failed to commit a new version to prepare a merge for ` +
                         `the above pull request here: ${pr.html_url}. The reason for this is:\r\n${err.message}\r\n` +
-                        'Please alert an appropriate admin.',
+                        'Please carry out relevant changes or alert an appropriate admin.',
                     owner,
                     number: pr.number,
                     repo
