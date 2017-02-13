@@ -8,9 +8,14 @@ Currently only the `VersionBot` exists. `VersionBot` will:
 * Look for PR review approval ***and*** a label applied to the PR to mark it ready for merge (`procbots/versionbot/ready-for-merge`)
 * On seeing appropriate label and review, will automatically:
     1. Clone the PR branch for the repo
-    2. Run `versionist` upon it
+    2. Run `versionist` upon it. Should a `versionist.conf.js` config file exist in the root of
+       the repo, then this is used in preference to the in-built default config.
     3. Should a new version be generated, commit any appropriate files (eg. `CHANGELOG.md`, `package.json`) to the branch
     4. Merge the branch back into the head
+    5. Delete the PR branch
+
+If a PR branch is out of step with the `master` branch, `VersionBot` will refuse to merge (and will
+not update the versions of files).
 
 Merges and checks can be suppressed using the `flow/no-version-checks` label on a PR.
 

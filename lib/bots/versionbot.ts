@@ -32,6 +32,7 @@ import * as ProcBot from './procbot';
 // the optional object (we need for CWD). So we need to special case it.
 const exec: (command: string, options?: any) => Promise<{}> = Promise.promisify(ChildProcess.exec);
 const fsReadFile = Promise.promisify(FS.readFile);
+const fsFileExists = Promise.promisify(FS.stat);
 const tempMkdir = Promise.promisify(mkdir);
 const tempCleanup = Promise.promisify(track);
 
@@ -55,6 +56,7 @@ interface RepoFileData {
 }
 
 interface VersionistData {
+    action: GithubAction,
     branchName: string;
     fullPath: string;
     repoFullName: string;
@@ -75,6 +77,11 @@ interface VersionBotError {
     number: number;
     owner: string;
     repo: string;
+}
+
+interface FSError {
+    code: string;
+    message: string;
 }
 
 // The VersionBot is built on top of GithubBot, which does all the heavy lifting and scheduling.
@@ -276,11 +283,6 @@ export class VersionBot extends GithubBot.GithubBot {
         let fullPath: string;
         let branchName: string;
 
-        // WE WANT TO DO STATUS CHECKS HERE. IF ANY ON THE PR ARE IN FAILURE STATE
-        // THEN WE DON'T MERGE.
-        // CONVERSELY, WE MIGHT ALSO WANT TO BE TRIGGERED BY STATUS CHANGES SO THAT
-        // WE CAN BUILD IF A MERGE IS APPROVED AND A STATUS PREVIOUSLY FAILED (JENKINS)
-
         // Check the action on the event to see what we're dealing with.
         switch (data.action) {
             // Submission is a PR review
@@ -354,6 +356,7 @@ export class VersionBot extends GithubBot.GithubBot {
                 fullPath = `${tempDir}${path.sep}`;
 
                 return this.applyVersionist({
+                    action,
                     fullPath,
                     branchName,
                     repoFullName
@@ -409,20 +412,44 @@ export class VersionBot extends GithubBot.GithubBot {
     private applyVersionist(versionData: VersionistData) {
         // Clone the repository inside the directory using the commit name and the run versionist.
         // We only care about output from the git status.
+        //
         // IMPORTANT NOTE: Currently, Versionist will fail if it doesn't find a
         //     `package.json` file. This means components that don't have one need a custom
         //     `versionist.conf.js` in their root dir. And we need to test to run against it.
+        //     It's possible to get round this using a custom `versionist.conf.js`, which we now support.
+        const cliCommand = (command: string) => {
+            return exec(command, { cwd: versionData.fullPath });
+        };
 
-        // FIXME, test for component specific versionist.conf.js and use that if it exists.
         return Promise.mapSeries([
             `git clone https://${process.env.WEBHOOK_SECRET}:x-oauth-basic@github.com/${versionData.repoFullName} ` +
             `${versionData.fullPath}`,
-            `git checkout ${versionData.branchName}`,
-            'versionist',
-            'git status -s'
-        ], (command) => {
-            return exec(command, { cwd: versionData.fullPath });
-        }).get(3).then((status: string) => {
+            `git checkout ${versionData.branchName}`
+        ], cliCommand).then(() => {
+            // Test the repo, we want to see if there's a local `versionist.conf.js`.
+            // If so, we use that rather than the built-in default.
+            return fsFileExists(`${versionData.fullPath}/versionist.conf.js`)
+            .return(true)
+            .catch((err: FSError) => {
+                if (err.code !== 'ENOENT') {
+                    throw err;
+                }
+
+                return false;
+            });
+        }).then((exists: boolean) => {
+            let versionistCommand = 'versionist';
+            if (exists) {
+                versionistCommand = `${versionistCommand} -c versionist.conf.js`;
+                this.log(ProcBot.LogLevel.INFO, `${versionData.action.name}: Found an overriding versionist config ` +
+                    `for ${versionData.repoFullName}, using that`);
+            }
+
+            return Promise.mapSeries([
+                versionistCommand,
+                'git status -s'
+            ], cliCommand);
+        }).get(1).then((status: string) => {
             const moddedFiles: string[] = [];
             let changeLines = status.split('\n');
             let changeLogFound = false;
