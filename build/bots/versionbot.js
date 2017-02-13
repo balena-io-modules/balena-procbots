@@ -10,6 +10,7 @@ const GithubBot = require("./githubbot");
 const ProcBot = require("./procbot");
 const exec = Promise.promisify(ChildProcess.exec);
 const fsReadFile = Promise.promisify(FS.readFile);
+const fsFileExists = Promise.promisify(FS.stat);
 const tempMkdir = Promise.promisify(temp_1.mkdir);
 const tempCleanup = Promise.promisify(temp_1.track);
 ;
@@ -172,6 +173,7 @@ class VersionBot extends GithubBot.GithubBot {
                 }).then((tempDir) => {
                     fullPath = `${tempDir}${path.sep}`;
                     return this.applyVersionist({
+                        action,
                         fullPath,
                         branchName,
                         repoFullName
@@ -240,15 +242,34 @@ class VersionBot extends GithubBot.GithubBot {
         this.authenticate();
     }
     applyVersionist(versionData) {
+        const cliCommand = (command) => {
+            return exec(command, { cwd: versionData.fullPath });
+        };
         return Promise.mapSeries([
             `git clone https://${process.env.WEBHOOK_SECRET}:x-oauth-basic@github.com/${versionData.repoFullName} ` +
                 `${versionData.fullPath}`,
-            `git checkout ${versionData.branchName}`,
-            'versionist',
-            'git status -s'
-        ], (command) => {
-            return exec(command, { cwd: versionData.fullPath });
-        }).get(3).then((status) => {
+            `git checkout ${versionData.branchName}`
+        ], cliCommand).then(() => {
+            return fsFileExists(`${versionData.fullPath}/versionist.conf.js`)
+                .return(true)
+                .catch((err) => {
+                if (err.code !== 'ENOENT') {
+                    throw err;
+                }
+                return false;
+            });
+        }).then((exists) => {
+            let versionistCommand = 'versionist';
+            if (exists) {
+                versionistCommand = `${versionistCommand} -c versionist.conf.js`;
+                this.log(ProcBot.LogLevel.INFO, `${versionData.action.name}: Found an overriding versionist config ` +
+                    `for ${versionData.repoFullName}, using that`);
+            }
+            return Promise.mapSeries([
+                versionistCommand,
+                'git status -s'
+            ], cliCommand);
+        }).get(1).then((status) => {
             const moddedFiles = [];
             let changeLines = status.split('\n');
             let changeLogFound = false;
