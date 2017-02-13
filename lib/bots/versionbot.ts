@@ -130,13 +130,14 @@ export class VersionBot extends GithubBot.GithubBot {
         const owner = head.repo.owner.login;
         const name = head.repo.name;
 
-        this.log(ProcBot.LogLevel.DEBUG, `${action.name}: entered`);
 
         // Only for opened or synced actions.
         if ((data.action !== 'opened') && (data.action !== 'synchronize') &&
             (data.action !== 'labeled')) {
             return Promise.resolve();
         }
+
+        this.log(ProcBot.LogLevel.DEBUG, `${action.name}: checking version for ${owner}/${name}#${pr.number}`);
 
         return this.gitCall(githubApi.pullRequests.getCommits, {
             owner,
@@ -168,7 +169,8 @@ export class VersionBot extends GithubBot.GithubBot {
             }
 
             // Else we mark it as having failed and we inform the user directly in the PR.
-            this.log(ProcBot.LogLevel.DEBUG, `${action.name}: No valid 'Change-Type' tag found, failing last commit`);
+            this.log(ProcBot.LogLevel.DEBUG, `${action.name}: No valid 'Change-Type' tag found, failing last commit ` +
+                `for ${owner}/${name}#${pr.number}`);
             return Promise.all([
                 this.gitCall(githubApi.repos.createStatus, {
                     context: 'Versionist',
@@ -226,6 +228,8 @@ export class VersionBot extends GithubBot.GithubBot {
                     if (process.env.VERSIONBOT_FLOWDOCK_ADAPTER) {
                         this.flowdock.postToInbox(flowdockMessage);
                     }
+                    this.log(ProcBot.LogLevel.DEBUG, `${action.name}: Merged ${owner}/${name}#${pr.number}`);
+
                 });
             }
         }).catch((err: Error) => {
@@ -234,7 +238,7 @@ export class VersionBot extends GithubBot.GithubBot {
                 brief: `${process.env.VERSIONBOT_NAME} check failed for ${owner}/${name}#${pr.number}`,
                 message: `${process.env.VERSIONBOT_NAME} failed to carry out a status check for the above pull ` +
                     `request here: ${pr.html_url}. The reason for this is:\r\n${err.message}\r\n` +
-                    'Please alert an appropriate admin.',
+                    'Please carry out relevant changes or alert an appropriate admin.',
                 owner,
                 number: pr.number,
                 repo: name
@@ -277,8 +281,6 @@ export class VersionBot extends GithubBot.GithubBot {
         // CONVERSELY, WE MIGHT ALSO WANT TO BE TRIGGERED BY STATUS CHANGES SO THAT
         // WE CAN BUILD IF A MERGE IS APPROVED AND A STATUS PREVIOUSLY FAILED (JENKINS)
 
-        this.log(ProcBot.LogLevel.DEBUG, `${action.name}: entered`);
-
         // Check the action on the event to see what we're dealing with.
         switch (data.action) {
             // Submission is a PR review
@@ -292,6 +294,8 @@ export class VersionBot extends GithubBot.GithubBot {
                 this.log(ProcBot.LogLevel.INFO, `${action.name}:${data.action} isn't a useful action`);
                 return Promise.resolve();
         }
+
+        this.log(ProcBot.LogLevel.DEBUG, `${action.name}: Attempting merge for ${owner}/${repo}#${pr.number}`);
 
         // Get the reviews for the PR.
         return this.gitCall(githubApi.pullRequests.getReviews, {
@@ -312,7 +316,8 @@ export class VersionBot extends GithubBot.GithubBot {
             }
 
             if (approved === false) {
-                this.log(ProcBot.LogLevel.INFO, `Unable to merge, no approval comment`);
+                this.log(ProcBot.LogLevel.INFO, `${action.name}: Unable to merge ${owner}/${repo}#${pr.number}, ` +
+                    'no approval comment');
                 return Promise.resolve();
             }
 
@@ -324,7 +329,8 @@ export class VersionBot extends GithubBot.GithubBot {
             // 5. Base64 encode them
             // 6. Call Github to update them, in serial, CHANGELOG last (important for merging expectations)
             // 7. Finish
-            this.log(ProcBot.LogLevel.INFO, 'PR is ready to merge, attempting to carry out a version up');
+            this.log(ProcBot.LogLevel.DEBUG, `${action.name}: PR is ready to merge, attempting to carry out a ` +
+                `version up for ${owner}/${repo}#${pr.number}`);
 
             // Get the branch for this PR.
             return this.gitCall(githubApi.pullRequests.get, {
@@ -334,6 +340,13 @@ export class VersionBot extends GithubBot.GithubBot {
             }).then((prInfo: GithubBotApiTypes.PullRequest) => {
                 // Get the relevant branch.
                 branchName = prInfo.head.ref;
+
+                // Check to ensure that the PR is actually mergeable. If it isn't, we report this as an
+                // error, passing the state.
+                if (prInfo.mergeable !== true) {
+                    throw new Error('The branch cannot currently be merged into master. It has a state of: ' +
+                        `\`${prInfo.mergeable_state}\``);
+                }
 
                 // Create new work dir.
                 return tempMkdir(`${repo}-${pr.number}_`);
@@ -375,15 +388,15 @@ export class VersionBot extends GithubBot.GithubBot {
                 // We purposefully don't clean this up on failure, as we can then inspect it.
                 return tempCleanup();
             }).then(() => {
-                this.log(ProcBot.LogLevel.INFO, `Upped version of ${repoFullName} to ${newVersion}; ` +
-                `tagged and pushed.`);
+                this.log(ProcBot.LogLevel.INFO, `${action.name}: Upped version of ${repoFullName}#${pr.number} to ` +
+                    `${newVersion}; tagged and pushed.`);
             }).catch((err: Error) => {
                 // Call the VersionBot error specific method.
                 this.reportError({
                     brief: `${process.env.VERSIONBOT_NAME} failed to merge ${repoFullName}#${pr.number}`,
                     message: `${process.env.VERSIONBOT_NAME} failed to commit a new version to prepare a merge for ` +
                         `the above pull request here: ${pr.html_url}. The reason for this is:\r\n${err.message}\r\n` +
-                        'Please alert an appropriate admin.',
+                        'Please carry out relevant changes or alert an appropriate admin.',
                     owner,
                     number: pr.number,
                     repo

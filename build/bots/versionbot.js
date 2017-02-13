@@ -22,11 +22,11 @@ class VersionBot extends GithubBot.GithubBot {
             const head = data.pull_request.head;
             const owner = head.repo.owner.login;
             const name = head.repo.name;
-            this.log(ProcBot.LogLevel.DEBUG, `${action.name}: entered`);
             if ((data.action !== 'opened') && (data.action !== 'synchronize') &&
                 (data.action !== 'labeled')) {
                 return Promise.resolve();
             }
+            this.log(ProcBot.LogLevel.DEBUG, `${action.name}: checking version for ${owner}/${name}#${pr.number}`);
             return this.gitCall(githubApi.pullRequests.getCommits, {
                 owner,
                 number: pr.number,
@@ -51,7 +51,8 @@ class VersionBot extends GithubBot.GithubBot {
                         state: 'success'
                     }).return(true);
                 }
-                this.log(ProcBot.LogLevel.DEBUG, `${action.name}: No valid 'Change-Type' tag found, failing last commit`);
+                this.log(ProcBot.LogLevel.DEBUG, `${action.name}: No valid 'Change-Type' tag found, failing last commit ` +
+                    `for ${owner}/${name}#${pr.number}`);
                 return Promise.all([
                     this.gitCall(githubApi.repos.createStatus, {
                         context: 'Versionist',
@@ -99,6 +100,7 @@ class VersionBot extends GithubBot.GithubBot {
                         if (process.env.VERSIONBOT_FLOWDOCK_ADAPTER) {
                             this.flowdock.postToInbox(flowdockMessage);
                         }
+                        this.log(ProcBot.LogLevel.DEBUG, `${action.name}: Merged ${owner}/${name}#${pr.number}`);
                     });
                 }
             }).catch((err) => {
@@ -106,7 +108,7 @@ class VersionBot extends GithubBot.GithubBot {
                     brief: `${process.env.VERSIONBOT_NAME} check failed for ${owner}/${name}#${pr.number}`,
                     message: `${process.env.VERSIONBOT_NAME} failed to carry out a status check for the above pull ` +
                         `request here: ${pr.html_url}. The reason for this is:\r\n${err.message}\r\n` +
-                        'Please alert an appropriate admin.',
+                        'Please carry out relevant changes or alert an appropriate admin.',
                     owner,
                     number: pr.number,
                     repo: name
@@ -123,7 +125,6 @@ class VersionBot extends GithubBot.GithubBot {
             let newVersion;
             let fullPath;
             let branchName;
-            this.log(ProcBot.LogLevel.DEBUG, `${action.name}: entered`);
             switch (data.action) {
                 case 'submitted':
                 case 'labeled':
@@ -133,6 +134,7 @@ class VersionBot extends GithubBot.GithubBot {
                     this.log(ProcBot.LogLevel.INFO, `${action.name}:${data.action} isn't a useful action`);
                     return Promise.resolve();
             }
+            this.log(ProcBot.LogLevel.DEBUG, `${action.name}: Attempting merge for ${owner}/${repo}#${pr.number}`);
             return this.gitCall(githubApi.pullRequests.getReviews, {
                 number: pr.number,
                 owner,
@@ -150,16 +152,22 @@ class VersionBot extends GithubBot.GithubBot {
                     });
                 }
                 if (approved === false) {
-                    this.log(ProcBot.LogLevel.INFO, `Unable to merge, no approval comment`);
+                    this.log(ProcBot.LogLevel.INFO, `${action.name}: Unable to merge ${owner}/${repo}#${pr.number}, ` +
+                        'no approval comment');
                     return Promise.resolve();
                 }
-                this.log(ProcBot.LogLevel.INFO, 'PR is ready to merge, attempting to carry out a version up');
+                this.log(ProcBot.LogLevel.DEBUG, `${action.name}: PR is ready to merge, attempting to carry out a ` +
+                    `version up for ${owner}/${repo}#${pr.number}`);
                 return this.gitCall(githubApi.pullRequests.get, {
                     number: pr.number,
                     owner,
                     repo
                 }).then((prInfo) => {
                     branchName = prInfo.head.ref;
+                    if (prInfo.mergeable !== true) {
+                        throw new Error('The branch cannot currently be merged into master. It has a state of: ' +
+                            `\`${prInfo.mergeable_state}\``);
+                    }
                     return tempMkdir(`${repo}-${pr.number}_`);
                 }).then((tempDir) => {
                     fullPath = `${tempDir}${path.sep}`;
@@ -194,14 +202,14 @@ class VersionBot extends GithubBot.GithubBot {
                 }).then(() => {
                     return tempCleanup();
                 }).then(() => {
-                    this.log(ProcBot.LogLevel.INFO, `Upped version of ${repoFullName} to ${newVersion}; ` +
-                        `tagged and pushed.`);
+                    this.log(ProcBot.LogLevel.INFO, `${action.name}: Upped version of ${repoFullName}#${pr.number} to ` +
+                        `${newVersion}; tagged and pushed.`);
                 }).catch((err) => {
                     this.reportError({
                         brief: `${process.env.VERSIONBOT_NAME} failed to merge ${repoFullName}#${pr.number}`,
                         message: `${process.env.VERSIONBOT_NAME} failed to commit a new version to prepare a merge for ` +
                             `the above pull request here: ${pr.html_url}. The reason for this is:\r\n${err.message}\r\n` +
-                            'Please alert an appropriate admin.',
+                            'Please carry out relevant changes or alert an appropriate admin.',
                         owner,
                         number: pr.number,
                         repo

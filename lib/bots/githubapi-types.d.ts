@@ -72,6 +72,8 @@ export interface PullRequest {
     head: {
         ref: string;
     };
+    mergeable: boolean;
+    mergeable_state: string;
 }
 
 export interface Blob {
