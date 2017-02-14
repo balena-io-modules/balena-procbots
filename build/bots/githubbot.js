@@ -104,6 +104,7 @@ class GithubBot extends ProcBot.ProcBot {
             return worker;
         };
         this.githubApi = new GithubApi({
+            debug: true,
             Promise: Promise,
             headers: {
                 Accept: 'application/vnd.github.black-cat-preview+json'
