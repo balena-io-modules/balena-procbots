@@ -136,86 +136,64 @@ class VersionBot extends GithubBot.GithubBot {
                     return Promise.resolve();
             }
             this.log(ProcBot.LogLevel.DEBUG, `${action.name}: Attempting merge for ${owner}/${repo}#${pr.number}`);
-            return this.gitCall(githubApi.pullRequests.getReviews, {
+            this.log(ProcBot.LogLevel.DEBUG, `${action.name}: PR is ready to merge, attempting to carry out a ` +
+                `version up for ${owner}/${repo}#${pr.number}`);
+            return this.gitCall(githubApi.pullRequests.get, {
                 number: pr.number,
                 owner,
                 repo
-            }).then((reviews) => {
-                let approved = false;
-                if (reviews) {
-                    reviews.forEach((review) => {
-                        if (review.state === 'APPROVED') {
-                            approved = true;
-                        }
-                        else if (review.state === 'CHANGES_REQUESTED') {
-                            approved = false;
-                        }
+            }).then((prInfo) => {
+                branchName = prInfo.head.ref;
+                if (prInfo.mergeable !== true) {
+                    throw new Error('The branch cannot currently be merged into master. It has a state of: ' +
+                        `\`${prInfo.mergeable_state}\``);
+                }
+                return tempMkdir(`${repo}-${pr.number}_`);
+            }).then((tempDir) => {
+                fullPath = `${tempDir}${path.sep}`;
+                return this.applyVersionist({
+                    action,
+                    fullPath,
+                    branchName,
+                    repoFullName
+                });
+            }).then((versionData) => {
+                if (!versionData.version || !versionData.files) {
+                    throw new Error('Could not find new version!');
+                }
+                newVersion = versionData.version;
+                return Promise.map(versionData.files, (file) => {
+                    return fsReadFile(`${fullPath}${file}`).call(`toString`, 'base64')
+                        .then((encoding) => {
+                        let newFile = {
+                            file,
+                            encoding,
+                        };
+                        return newFile;
                     });
-                }
-                if (approved === false) {
-                    this.log(ProcBot.LogLevel.INFO, `${action.name}: Unable to merge ${owner}/${repo}#${pr.number}, ` +
-                        'no approval comment');
-                    return Promise.resolve();
-                }
-                this.log(ProcBot.LogLevel.DEBUG, `${action.name}: PR is ready to merge, attempting to carry out a ` +
-                    `version up for ${owner}/${repo}#${pr.number}`);
-                return this.gitCall(githubApi.pullRequests.get, {
-                    number: pr.number,
+                });
+            }).then((files) => {
+                return this.createCommitBlobs({
                     owner,
+                    repo,
+                    branchName,
+                    version: newVersion,
+                    files
+                });
+            }).then(() => {
+                return tempCleanup();
+            }).then(() => {
+                this.log(ProcBot.LogLevel.INFO, `${action.name}: Upped version of ${repoFullName}#${pr.number} to ` +
+                    `${newVersion}; tagged and pushed.`);
+            }).catch((err) => {
+                this.reportError({
+                    brief: `${process.env.VERSIONBOT_NAME} failed to merge ${repoFullName}#${pr.number}`,
+                    message: `${process.env.VERSIONBOT_NAME} failed to commit a new version to prepare a merge for ` +
+                        `the above pull request here: ${pr.html_url}. The reason for this is:\r\n${err.message}\r\n` +
+                        'Please carry out relevant changes or alert an appropriate admin.',
+                    owner,
+                    number: pr.number,
                     repo
-                }).then((prInfo) => {
-                    branchName = prInfo.head.ref;
-                    if (prInfo.mergeable !== true) {
-                        throw new Error('The branch cannot currently be merged into master. It has a state of: ' +
-                            `\`${prInfo.mergeable_state}\``);
-                    }
-                    return tempMkdir(`${repo}-${pr.number}_`);
-                }).then((tempDir) => {
-                    fullPath = `${tempDir}${path.sep}`;
-                    return this.applyVersionist({
-                        action,
-                        fullPath,
-                        branchName,
-                        repoFullName
-                    });
-                }).then((versionData) => {
-                    if (!versionData.version || !versionData.files) {
-                        throw new Error('Could not find new version!');
-                    }
-                    newVersion = versionData.version;
-                    return Promise.map(versionData.files, (file) => {
-                        return fsReadFile(`${fullPath}${file}`).call(`toString`, 'base64')
-                            .then((encoding) => {
-                            let newFile = {
-                                file,
-                                encoding,
-                            };
-                            return newFile;
-                        });
-                    });
-                }).then((files) => {
-                    return this.createCommitBlobs({
-                        owner,
-                        repo,
-                        branchName,
-                        version: newVersion,
-                        files
-                    });
-                }).then(() => {
-                    return tempCleanup();
-                }).then(() => {
-                    this.log(ProcBot.LogLevel.INFO, `${action.name}: Upped version of ${repoFullName}#${pr.number} to ` +
-                        `${newVersion}; tagged and pushed.`);
-                }).catch((err) => {
-                    this.reportError({
-                        brief: `${process.env.VERSIONBOT_NAME} failed to merge ${repoFullName}#${pr.number}`,
-                        message: `${process.env.VERSIONBOT_NAME} failed to commit a new version to prepare a merge for ` +
-                            `the above pull request here: ${pr.html_url}. The reason for this is:\r\n${err.message}\r\n` +
-                            'Please carry out relevant changes or alert an appropriate admin.',
-                        owner,
-                        number: pr.number,
-                        repo
-                    });
                 });
             });
         };
@@ -246,7 +224,7 @@ class VersionBot extends GithubBot.GithubBot {
             return exec(command, { cwd: versionData.fullPath });
         };
         return Promise.mapSeries([
-            `git clone https://${process.env.WEBHOOK_SECRET}:x-oauth-basic@github.com/${versionData.repoFullName} ` +
+            `git clone https://${this.authToken}:${this.authToken}@github.com/${versionData.repoFullName} ` +
                 `${versionData.fullPath}`,
             `git checkout ${versionData.branchName}`
         ], cliCommand).then(() => {

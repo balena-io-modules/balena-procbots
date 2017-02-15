@@ -5,6 +5,7 @@ export declare class GithubBot extends ProcBot.ProcBot<string> {
     protected githubApi: any;
     private integrationId;
     private eventTriggers;
+    protected authToken: string;
     constructor(integration: number, name?: string);
     firedEvent(event: string, repoEvent: any): void;
     protected registerAction(action: GithubActionRegister): void;
