@@ -104,7 +104,6 @@ class GithubBot extends ProcBot.ProcBot {
             return worker;
         };
         this.githubApi = new GithubApi({
-            debug: true,
             Promise: Promise,
             headers: {
                 Accept: 'application/vnd.github.black-cat-preview+json'
@@ -155,8 +154,9 @@ class GithubBot extends ProcBot.ProcBot {
             };
             return request.post(tokenOpts);
         }).then((tokenDetails) => {
+            this.authToken = tokenDetails.token;
             this.githubApi.authenticate({
-                token: tokenDetails.token,
+                token: this.authToken,
                 type: 'token'
             });
             this.log(ProcBot.LogLevel.DEBUG, `token for manual fiddling is: ${tokenDetails.token}`);

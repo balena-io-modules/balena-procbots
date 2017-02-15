@@ -28,6 +28,7 @@ export class GithubBot extends ProcBot.ProcBot<string> {
     protected githubApi: any;
     private integrationId: number;
     private eventTriggers: GithubActionRegister[] = [];
+    protected authToken: string;
 
     // Takes a set of webhook types that the bot is interested in.
     // Registrations can be passed in on bot creation, or registered/deregistered later.
@@ -61,7 +62,7 @@ export class GithubBot extends ProcBot.ProcBot<string> {
         // The `github` module is a bit behind the preview API. We may have to override
         // some of the methods here (PR review comments for a start).
         this.githubApi = new GithubApi({
-            debug: true,
+            //debug: true,
             Promise: <any>Promise,
             headers: {
                 // This is the current voodoo to allow all API calls to succeed.
@@ -214,10 +215,12 @@ export class GithubBot extends ProcBot.ProcBot<string> {
             return request.post(tokenOpts);
         }).then((tokenDetails) => {
             // We also need to take into account the expiry date, which will require a new kickoff.
+            this.authToken = tokenDetails.token;
             this.githubApi.authenticate({
-                token: tokenDetails.token,
+                token: this.authToken,
                 type: 'token'
             });
+
 
             // For debug.
             this.log(ProcBot.LogLevel.DEBUG, `token for manual fiddling is: ${tokenDetails.token}`);
