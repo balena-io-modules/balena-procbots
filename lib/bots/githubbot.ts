@@ -62,7 +62,6 @@ export class GithubBot extends ProcBot.ProcBot<string> {
         // The `github` module is a bit behind the preview API. We may have to override
         // some of the methods here (PR review comments for a start).
         this.githubApi = new GithubApi({
-            //debug: true,
             Promise: <any>Promise,
             headers: {
                 // This is the current voodoo to allow all API calls to succeed.
