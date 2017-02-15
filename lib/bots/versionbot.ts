@@ -56,7 +56,7 @@ interface RepoFileData {
 }
 
 interface VersionistData {
-    action: GithubAction,
+    action: GithubAction;
     branchName: string;
     fullPath: string;
     repoFullName: string;
@@ -112,6 +112,15 @@ export class VersionBot extends GithubBot.GithubBot {
                 suppressionLabels: [ 'procbots/versionbot/no-checks' ],
                 triggerLabels: [ 'procbots/versionbot/ready-to-merge' ],
                 workerMethod: this.mergePR,
+            },
+            // Should a status change occur (Jenkins, VersionBot, etc. all succeed)
+            // then check versioning and potentially go to a merge to master.
+            {
+                events: [ 'status' ],
+                name: 'StatusChangeState',
+                suppressionLabels: [ 'procbots/versionbot/no-checks' ],
+                triggerLabels: [ 'procbots/versionbot/ready-to-merge' ],
+                workerMethod: this.statusChange
             }
         ], (reg: GithubActionRegister) => {
             this.registerAction(reg);
@@ -126,6 +135,55 @@ export class VersionBot extends GithubBot.GithubBot {
         this.authenticate();
     }
 
+    // On a status change, we need to see if there's anything to merge.
+    protected statusChange = (action: GithubAction, data: GithubBotApiTypes.StatusEvent) => {
+        // We now use the data from the StatusEvent to mock up a PullRequestEvent with enough
+        // data to carry out the checks.
+        const githubApi = this.githubApi;
+        const owner = data.name.split('/')[0];
+        const repo = data.name.split('/')[1];
+        const commitSha = data.sha;
+        const branches = data.branches;
+
+        // If we made the status change, we stop now!
+        if (data.context === 'Versionist') {
+            return Promise.resolve();
+        }
+
+        // Get all PRs for each named branch.
+        // We *only* work on open states.
+        return Promise.map(branches, (branch) => {
+            return this.gitCall(githubApi.pullRequests.getAll, {
+                head: `${owner}:${branch.name}`,
+                owner,
+                repo,
+                state: 'open'
+            });
+        }).then((prs: GithubBotApiTypes.PullRequest[]) => {
+            let prEvents: GithubBotApiTypes.PullRequestEvent[] = [];
+
+            // For each PR, attempt to match the SHA to the head SHA. If we get a match
+            // we create a new prInfo and then hand them all to another map.
+            prs = _.flatten(prs);
+            _.each(prs, (pullRequest) => {
+                if (pullRequest.head.sha === commitSha) {
+                    prEvents.push({
+                        action: 'synchronize',
+                        pull_request: pullRequest,
+                        sender: {
+                            login: pullRequest.user.login
+                        }
+                    });
+                }
+            });
+
+            // For every one of these, call checkVersioning.
+            return Promise.map(prEvents, (event) => {
+                return this.checkVersioning(action, event);
+            });
+        });
+    }
+
     // Checks the newly opened PR and its commits.
     //  1. Triggered by an 'opened' or 'synchronize' event.
     //  2. If any PR commit has a 'Change-Type: <type>' commit, we create a status approving the PR.
@@ -136,7 +194,6 @@ export class VersionBot extends GithubBot.GithubBot {
         const head = data.pull_request.head;
         const owner = head.repo.owner.login;
         const name = head.repo.name;
-
 
         // Only for opened or synced actions.
         if ((data.action !== 'opened') && (data.action !== 'synchronize') &&
@@ -172,72 +229,49 @@ export class VersionBot extends GithubBot.GithubBot {
                     repo: name,
                     sha: head.sha,
                     state: 'success'
-                }).return(true);
+                });
             }
 
             // Else we mark it as having failed and we inform the user directly in the PR.
             this.log(ProcBot.LogLevel.DEBUG, `${action.name}: No valid 'Change-Type' tag found, failing last commit ` +
                 `for ${owner}/${name}#${pr.number}`);
-            return Promise.all([
-                this.gitCall(githubApi.repos.createStatus, {
-                    context: 'Versionist',
-                    description: 'None of the commits in the PR have a `Change-Type` tag',
-                    owner,
-                    repo: name,
-                    sha: head.sha,
-                    state: 'failure'
-                }),
-                this.gitCall(githubApi.issues.createComment, {
-                    body: `@${data.sender.login}, please ensure that at least one commit contains a` +
-                        '`Change-Type:` tag.',
-                    owner,
-                    number: pr.number,
-                    repo: name,
-                })
-            ]).return(false);
-        }).then(() => {
-            // If the author was VersionBot and the file marked was CHANGELOG, then
-            // we are now going to go ahead and perform a merge.
-            //
-            // Get the list of commits for the PR, then get the very last commit SHA.
-            return this.gitCall(githubApi.repos.getCommit, {
-                owner,
-                repo: name,
-                sha: head.sha
+            return this.gitCall(githubApi.repos.createStatus, {
+                        context: 'Versionist',
+                        description: 'None of the commits in the PR have a `Change-Type` tag',
+                        owner,
+                        repo: name,
+                        sha: head.sha,
+                        state: 'failure'
+            }).then(() => {
+                // We only complain on opening. Either at that point it'll be fixed, or we
+                // simply don't pass it in future. This stops the PR being spammed on status changes.
+                if (data.action === 'opened') {
+                    this.gitCall(githubApi.issues.createComment, {
+                        body: `@${data.sender.login}, please ensure that at least one commit contains a` +
+                            '`Change-Type:` tag.',
+                        owner,
+                        number: pr.number,
+                        repo: name,
+                    });
+                }
             });
-        }).then((headCommit: GithubBotApiTypes.Commit) => {
-            // We will go ahead and perform a merge if we see VersionBot has committed
-            // something with 'CHANGELOG.md' in it.
-            const commit = headCommit.commit;
-            const files = headCommit.files;
-
-            if ((commit.committer.name === process.env.VERSIONBOT_NAME) &&
-            _.find(files, (file: GithubBotApiTypes.CommitFile) => {
-                return file.filename === 'CHANGELOG.md';
-            })) {
-                // We go ahead and merge.
-                return this.mergeToMaster({
-                    commitVersion: commit.message,
+        }).then(() => {
+            // Get the labels for the PR.
+            return this.gitCall(this.githubApi.issues.getIssueLabels, {
+                number: pr.number,
+                owner,
+                repo: name
+            });
+        }).then((labels: GithubBotApiTypes.IssueLabel[]) => {
+            // If we don't have a relevant label for merging, we don't proceed.
+            if (_.filter(labels, (label) => {
+                return label.name === 'procbots/versionbot/ready-to-merge';
+            }).length !== 0) {
+                return this.gitCall(githubApi.pullRequests.get, {
+                    number: pr.number,
                     owner,
-                    prNumber: pr.number,
-                    repoName: name
-                }).then(() => {
-                    // No tags here, just mention it in Flowdock so its searchable.
-                    // It's not an error so doesn't need logging.
-                    const flowdockMessage = {
-                        content: `${process.env.VERSIONBOT_NAME} has now merged the above PR, located here:` +
-                            `${pr.html_url}.`,
-                        from_address: process.env.VERSIONBOT_EMAIL,
-                        roomId: process.env.VERSIONBOT_FLOWDOCK_ROOM,
-                        source: process.env.VERSIONBOT_NAME,
-                        subject: `{$process.env.VERSIONBOT_NAME} merged ${owner}/${name}#${pr.number}`
-                    };
-                    if (process.env.VERSIONBOT_FLOWDOCK_ADAPTER) {
-                        this.flowdock.postToInbox(flowdockMessage);
-                    }
-                    this.log(ProcBot.LogLevel.DEBUG, `${action.name}: Merged ${owner}/${name}#${pr.number}`);
-
-                });
+                    repo: name
+                }).then(this.finaliseMerge);
             }
         }).catch((err: Error) => {
             // Call the VersionBot error specific method.
@@ -254,7 +288,8 @@ export class VersionBot extends GithubBot.GithubBot {
     }
 
     // Merges a PR, if appropriate:
-    //  1. Triggered by a 'labeled' event ('flow/ready-to-merge') or a 'pull_request_review_comment'
+    //  1. Triggered by a 'labeled' event ('procbots/versionbot/ready-to-merge') or a
+    //     'pull_request_review_comment'
     //  2. Checks all review comments to ensure that at least one approves the PR (and that no comment
     //     that may come after it includes a 'CHANGES_REQUESTED' state).
     //  3. Commit new version upped files to the branch, which will cause a 'synchronized' event,
@@ -270,7 +305,7 @@ export class VersionBot extends GithubBot.GithubBot {
         //  * APPROVED
         //
         // We *only* go through with a merge should:
-        //  * The 'flow/ready-to-merge' label appear on the PR issue
+        //  * The 'procbots/versionbot/ready-to-merge' label appear on the PR issue
         //  * There is an 'APPROVED' review comment *and* no comment after is of state 'CHANGES_REQUESTED'
         // The latter overrides the label should it exist, as it will be assumed it is in error.
         const githubApi = this.githubApi;
@@ -282,6 +317,7 @@ export class VersionBot extends GithubBot.GithubBot {
         let newVersion: string;
         let fullPath: string;
         let branchName: string;
+        let prInfo: GithubBotApiTypes.PullRequest;
 
         // Check the action on the event to see what we're dealing with.
         switch (data.action) {
@@ -346,8 +382,9 @@ export class VersionBot extends GithubBot.GithubBot {
             number: pr.number,
             owner,
             repo
-        }).then((prInfo: GithubBotApiTypes.PullRequest) => {
+        }).then((prData: GithubBotApiTypes.PullRequest) => {
             // Get the relevant branch.
+            prInfo = prData;
             branchName = prInfo.head.ref;
 
             // Check to ensure that the PR is actually mergeable. If it isn't, we report this as an
@@ -355,6 +392,25 @@ export class VersionBot extends GithubBot.GithubBot {
             if (prInfo.mergeable !== true) {
                 throw new Error('The branch cannot currently be merged into master. It has a state of: ' +
                     `\`${prInfo.mergeable_state}\``);
+            }
+
+            // Ensure that all the statuses required have passed.
+            // If not, an error will be thrown and not proceed any further.
+            return this.checkStatuses(prInfo);
+        }).then((statusesPassed) => {
+            // Finally we have an array of booleans. If any of them are false,
+            // statuses aren't valid.
+            if (!statusesPassed) {
+                throw new Error(`At least one status check has failed; ${process.env.VERSIONBOT_NAME} will not ` +
+                    'proceed to update this PR unless forced by re-applying the ' +
+                    '`procbots/versionbot/ready-to-merge` label');
+            }
+
+            // Ensure we've not already committed. If we have, we don't wish to do so again.
+            return this.versionBotCommits(prInfo);
+        }).then((commitMessage: string | null) => {
+            if (commitMessage) {
+                throw new Error(`alreadyCommitted`);
             }
 
             // Create new work dir.
@@ -401,16 +457,19 @@ export class VersionBot extends GithubBot.GithubBot {
             this.log(ProcBot.LogLevel.INFO, `${action.name}: Upped version of ${repoFullName}#${pr.number} to ` +
                 `${newVersion}; tagged and pushed.`);
         }).catch((err: Error) => {
-            // Call the VersionBot error specific method.
-            this.reportError({
-                brief: `${process.env.VERSIONBOT_NAME} failed to merge ${repoFullName}#${pr.number}`,
-                message: `${process.env.VERSIONBOT_NAME} failed to commit a new version to prepare a merge for ` +
-                    `the above pull request here: ${pr.html_url}. The reason for this is:\r\n${err.message}\r\n` +
-                    'Please carry out relevant changes or alert an appropriate admin.',
-                owner,
-                number: pr.number,
-                repo
-            });
+            // Call the VersionBot error specific method if this wasn't the short circuit for
+            // committed code.
+            if (err.message !== 'alreadyCommitted') {
+                this.reportError({
+                    brief: `${process.env.VERSIONBOT_NAME} failed to merge ${repoFullName}#${pr.number}`,
+                    message: `${process.env.VERSIONBOT_NAME} failed to commit a new version to prepare a merge for ` +
+                        `the above pull request here: ${pr.html_url}. The reason for this is:\r\n${err.message}\r\n` +
+                        'Please carry out relevant changes or alert an appropriate admin.',
+                    owner,
+                    number: pr.number,
+                    repo
+                });
+            }
         });
     }
 
@@ -651,6 +710,124 @@ export class VersionBot extends GithubBot.GithubBot {
                 ref: `heads/${branchName}`,
                 repo: data.repoName
             });
+        });
+    }
+
+    // Checks the statuses for the given branch (that of a PR).
+    // It goes through all the checks and should it find that the
+    // last checks for each context have failed, then it will return false
+    // else true if all have passed.
+    private checkStatuses(prInfo: GithubBotApiTypes.PullRequest) {
+        // We need to check the branch protection for this repo.
+        // Get all the statuses that need to have been satisfied.
+        const githubApi = this.githubApi;
+        const owner = prInfo.head.repo.owner.login;
+        const repo = prInfo.head.repo.name;
+        const branch = prInfo.head.ref;
+        let contexts: string[] = [];
+        let foundStatuses: boolean[] = [];
+
+        return this.gitCall(githubApi.repos.getProtectedBranchRequiredStatusChecks, {
+            branch: 'master',
+            owner,
+            repo
+        }).then((statusContexts: GithubBotApiTypes.RequiredStatusChecks) => {
+            contexts = statusContexts.contexts;
+
+            // Now get all of the statuses for the master branch.
+            return this.gitCall(githubApi.repos.getCombinedStatus, {
+                owner,
+                ref: branch,
+                repo
+            });
+        }).then((statuses: GithubBotApiTypes.CombinedStatus) => {
+            // We go through the statuses and check them off against the contexts.
+            // If we get to the end and:
+            //  1. Not all of the contexts have been seen
+            //  2. Any of them have a state other than 'success'
+            // Then the status checks have failed and we throw an error.
+            _.each(statuses.statuses, (status) => {
+                if (_.includes(contexts, status.context)) {
+                    if (status.state === 'success') {
+                        foundStatuses.push(true);
+                    } else {
+                        foundStatuses.push(false);
+                    }
+                }
+            });
+            if ((foundStatuses.length !== contexts.length) ||
+                _.includes(foundStatuses, false)) {
+                return false;
+            }
+
+            return true;
+        });
+    }
+
+    // Has VersionBot already made commits to the branch.
+    private versionBotCommits(prInfo: GithubBotApiTypes.PullRequest) {
+        const githubApi = this.githubApi;
+        const owner = prInfo.head.repo.owner.login;
+        const repo = prInfo.head.repo.name;
+
+        // Get the list of commits for the PR, then get the very last commit SHA.
+        return this.gitCall(githubApi.repos.getCommit, {
+            owner,
+            repo,
+            sha: prInfo.head.sha
+        }).then((headCommit: GithubBotApiTypes.Commit) => {
+            const commit = headCommit.commit;
+            const files = headCommit.files;
+
+            if ((commit.committer.name === process.env.VERSIONBOT_NAME) &&
+            _.find(files, (file: GithubBotApiTypes.CommitFile) => {
+                return file.filename === 'CHANGELOG.md';
+            })) {
+                return commit.message;
+            }
+
+            return null;
+        });
+    }
+
+    // Actually carry out a merge.
+    private finaliseMerge = (prInfo: GithubBotApiTypes.PullRequest) => {
+        // We will go ahead and perform a merge if we see VersionBot has:
+        // 1. All of the status checks have passed on the repo
+        // 2. VersionBot has committed something with 'CHANGELOG.md' in it
+        const owner = prInfo.head.repo.owner.login;
+        const repo = prInfo.head.repo.name;
+
+        return this.checkStatuses(prInfo).then((statusesPassed) => {
+            if (statusesPassed) {
+                // Get the list of commits for the PR, then get the very last commit SHA.
+                return this.versionBotCommits(prInfo).then((commitMessage: string | null) => {
+                    if (commitMessage) {
+                        // We go ahead and merge.
+                        return this.mergeToMaster({
+                            commitVersion: commitMessage,
+                            owner,
+                            prNumber: prInfo.number,
+                            repoName: repo
+                        }).then(() => {
+                            // No tags here, just mention it in Flowdock so its searchable.
+                            // It's not an error so doesn't need logging.
+                            const flowdockMessage = {
+                                content: `${process.env.VERSIONBOT_NAME} has now merged the above PR, located here:` +
+                                    `${prInfo.html_url}.`,
+                                from_address: process.env.VERSIONBOT_EMAIL,
+                                roomId: process.env.VERSIONBOT_FLOWDOCK_ROOM,
+                                source: process.env.VERSIONBOT_NAME,
+                                subject: `{$process.env.VERSIONBOT_NAME} merged ${owner}/${repo}#${prInfo.number}`
+                            };
+                            if (process.env.VERSIONBOT_FLOWDOCK_ADAPTER) {
+                                this.flowdock.postToInbox(flowdockMessage);
+                            }
+                            this.log(ProcBot.LogLevel.DEBUG, `MergePR: Merged ${owner}/${repo}#${prInfo.number}`);
+                        });
+                    }
+                });
+            }
         });
     }
 

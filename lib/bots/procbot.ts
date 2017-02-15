@@ -145,7 +145,7 @@ export class ProcBot<T> {
     // FIXME: Alter this to output to the appropriate external service.
     private output(level: number, classLevel: number, levelStrings: string[], message: string) {
         if (level >= classLevel) {
-            console.log(`${levelStrings[level]} - ${message}`);
+            console.log(`${new Date().toISOString()}: ${levelStrings[level]} - ${message}`);
         }
     }
 }

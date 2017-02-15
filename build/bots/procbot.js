@@ -68,7 +68,7 @@ class ProcBot {
     }
     output(level, classLevel, levelStrings, message) {
         if (level >= classLevel) {
-            console.log(`${levelStrings[level]} - ${message}`);
+            console.log(`${new Date().toISOString()}: ${levelStrings[level]} - ${message}`);
         }
     }
 }

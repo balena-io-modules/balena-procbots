@@ -25,10 +25,13 @@ import * as Worker from './worker';
 
 // GithubBot implementation.
 export class GithubBot extends ProcBot.ProcBot<string> {
+    protected authToken: string;
     protected githubApi: any;
     private integrationId: number;
     private eventTriggers: GithubActionRegister[] = [];
-    protected authToken: string;
+    // This is the current voodoo to allow all API calls to succeed.
+    // Accept: 'application/vnd.github.black-cat-preview+json' is now out of date
+    private ghApiAccept = 'application/vnd.github.loki-preview+json';
 
     // Takes a set of webhook types that the bot is interested in.
     // Registrations can be passed in on bot creation, or registered/deregistered later.
@@ -64,8 +67,7 @@ export class GithubBot extends ProcBot.ProcBot<string> {
         this.githubApi = new GithubApi({
             Promise: <any>Promise,
             headers: {
-                // This is the current voodoo to allow all API calls to succeed.
-                Accept: 'application/vnd.github.black-cat-preview+json'
+                Accept: this.ghApiAccept
             },
             host: 'api.github.com',
             protocol: 'https',
@@ -138,7 +140,7 @@ export class GithubBot extends ProcBot.ProcBot<string> {
                     });
 
                 }
-                labelPromise.then((labels: any[] | void) => {
+                labelPromise.then((labels: GithubApiTypes.IssueLabel[] | void) => {
                     // If there are some labels, then we process them.
                     if (labels) {
                         const foundLabels: string[] = labels.map((label: any) => {
@@ -220,14 +222,13 @@ export class GithubBot extends ProcBot.ProcBot<string> {
                 type: 'token'
             });
 
-
             // For debug.
             this.log(ProcBot.LogLevel.DEBUG, `token for manual fiddling is: ${tokenDetails.token}`);
             this.log(ProcBot.LogLevel.DEBUG, `token expires at: ${tokenDetails.expires_at}`);
             this.log(ProcBot.LogLevel.DEBUG, 'Base curl command:');
             this.log(ProcBot.LogLevel.DEBUG,
                 `curl -XGET -H "Authorisation: token ${tokenDetails.token}" ` +
-                `-H "Accept: application/vnd.github.black-cat-preview+json" https://api.github.com/`);
+                `-H "${this.ghApiAccept}" https://api.github.com/`);
         });
     }
 

@@ -10,6 +10,7 @@ class GithubBot extends ProcBot.ProcBot {
     constructor(integration, name) {
         super(name);
         this.eventTriggers = [];
+        this.ghApiAccept = 'application/vnd.github.loki-preview+json';
         this.handleGithubEvent = (event, data) => {
             const labelHead = () => {
                 switch (event) {
@@ -106,7 +107,7 @@ class GithubBot extends ProcBot.ProcBot {
         this.githubApi = new GithubApi({
             Promise: Promise,
             headers: {
-                Accept: 'application/vnd.github.black-cat-preview+json'
+                Accept: this.ghApiAccept
             },
             host: 'api.github.com',
             protocol: 'https',
@@ -163,7 +164,7 @@ class GithubBot extends ProcBot.ProcBot {
             this.log(ProcBot.LogLevel.DEBUG, `token expires at: ${tokenDetails.expires_at}`);
             this.log(ProcBot.LogLevel.DEBUG, 'Base curl command:');
             this.log(ProcBot.LogLevel.DEBUG, `curl -XGET -H "Authorisation: token ${tokenDetails.token}" ` +
-                `-H "Accept: application/vnd.github.black-cat-preview+json" https://api.github.com/`);
+                `-H "${this.ghApiAccept}" https://api.github.com/`);
         });
     }
 }

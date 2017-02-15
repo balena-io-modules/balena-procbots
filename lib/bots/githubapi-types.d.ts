@@ -39,6 +39,24 @@ export interface PullRequestReviewEvent {
     };
 }
 
+export interface StatusEventBranch {
+    name: string;
+    commit: {
+        author: {
+            login: string;
+        }
+        sha: string;
+        url: string;
+    };
+}
+
+export interface StatusEvent {
+    context: string;
+    name: string;
+    sha: string;
+    branches: StatusEventBranch[];
+}
+
 // Github API -----------------------------------------------------------------
 // These provide the current bare minimum definitions for child Procbots working with them.
 export interface CommitFile {
@@ -71,9 +89,22 @@ export interface Tag {
 export interface PullRequest {
     head: {
         ref: string;
+        repo: {
+            owner: {
+                login: string;
+            }
+            name: string;
+        };
+        sha: string;
     };
+    html_url: string;
     mergeable: boolean;
     mergeable_state: string;
+    number: number;
+    url: string;
+    user: {
+        login: string;
+    };
 }
 
 export interface Blob {
@@ -93,6 +124,29 @@ export interface Tree {
     sha: string;
     url: string;
     tree: TreeEntry[];
+}
+
+export interface RequiredStatusChecks {
+    include_admins: boolean;
+    strict: boolean;
+    contexts: string[];
+}
+
+export interface IssueLabel {
+    default: boolean;
+    id: string;
+    name: string;
+}
+
+export interface Status {
+    state: string;
+    context: string;
+}
+
+export interface CombinedStatus {
+    state: string;
+    total_count: number;
+    statuses: Status[];
 }
 
 export interface GithubError {
