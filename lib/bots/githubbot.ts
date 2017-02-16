@@ -236,7 +236,7 @@ export class GithubBot extends ProcBot.ProcBot<string> {
     // can result in re-authentication before moving on.
     protected gitCall = (method: any, options: any, retries?: number): Promise<any> => {
         let badCreds = false;
-        let retriesLeft = retries || 5;
+        let retriesLeft = retries || 3;
 
         // We need a new Promise here, as we might need to do retries.
         return new Promise((resolve, reject) => {

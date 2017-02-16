@@ -149,7 +149,6 @@ class VersionBot extends GithubBot.GithubBot {
             switch (data.action) {
                 case 'submitted':
                 case 'labeled':
-                case 'unlabeled':
                     break;
                 default:
                     this.log(ProcBot.LogLevel.INFO, `${action.name}:${data.action} isn't a useful action`);
