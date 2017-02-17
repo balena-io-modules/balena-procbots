@@ -17,7 +17,7 @@ Currently only the `VersionBot` exists. `VersionBot` will:
 If a PR branch is out of step with the `master` branch, `VersionBot` will refuse to merge (and will
 not update the versions of files).
 
-Merges and checks can be suppressed using the `flow/no-version-checks` label on a PR.
+Merges and checks can be suppressed using the `procbots/versionbot/no-checks` label on a PR.
 
 ## Installation
 
