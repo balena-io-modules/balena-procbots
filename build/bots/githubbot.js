@@ -71,7 +71,7 @@ class GithubBot extends ProcBot.ProcBot {
         };
         this.gitCall = (method, options, retries) => {
             let badCreds = false;
-            let retriesLeft = retries || 5;
+            let retriesLeft = retries || 3;
             return new Promise((resolve, reject) => {
                 const runApi = () => {
                     retriesLeft -= 1;

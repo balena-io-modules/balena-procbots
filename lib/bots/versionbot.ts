@@ -324,7 +324,6 @@ export class VersionBot extends GithubBot.GithubBot {
             // Submission is a PR review
             case 'submitted':
             case 'labeled':
-            case 'unlabeled':
                 break;
 
             default:
