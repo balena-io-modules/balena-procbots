@@ -72,14 +72,9 @@ class VersionBot extends GithubBot.GithubBot {
                 for (let commit of commits) {
                     const commitMessage = commit.commit.message;
                     const lines = commitMessage.split('\n');
-                    let index = 0;
-                    for (index = lines.length - 1; index >= 0; index -= 1) {
-                        if (lines[index].match(/$\s*^/)) {
-                            break;
-                        }
-                    }
-                    if (index > 0) {
-                        lines.splice(0, index);
+                    const lastLine = _.findLastIndex(lines, (line) => { return line.match(/^\s*$/); });
+                    if (lastLine > 0) {
+                        lines.splice(0, lastLine);
                         const footer = lines.join('\n');
                         const invalidCommit = !footer.match(/^change-type:\s*(patch|minor|major)\s*$/mi);
                         if (!invalidCommit) {

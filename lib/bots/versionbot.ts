@@ -226,17 +226,13 @@ export class VersionBot extends GithubBot.GithubBot {
                 //  <footer>
                 // As sometimes a development patch may be self-explanatory in the header alone.
                 const lines = commitMessage.split('\n');
-                let index = 0;
-                for (index = lines.length - 1; index >= 0; index -= 1) {
-                    if (lines[index].match(/$\s*^/)) {
-                        break;
-                    }
-                }
+                const lastLine = _.findLastIndex(lines, (line) => { return line.match(/^\s*$/) });
+
                 // If there's no match, then at the very least there's no footer, and the commit
                 // is in the wrong format (as there's no text to use in the logs).
-                if (index > 0) {
+                if (lastLine > 0) {
                     // We should have a line index to join from, now.
-                    lines.splice(0, index);
+                    lines.splice(0, lastLine);
                     const footer = lines.join('\n');
                     const invalidCommit = !footer.match(/^change-type:\s*(patch|minor|major)\s*$/mi);
 
