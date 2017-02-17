@@ -5,7 +5,7 @@ Process bots used for automating the development and deployment CI pipeline.
 Currently only the `VersionBot` exists. `VersionBot` will:
 
 * Look for new PRs and check that there is at least one commit in the PR which features a suitable `Change-Type:` tag
-* Look for PR review approval ***and*** a label applied to the PR to mark it ready for merge (`procbots/versionbot/ready-for-merge`)
+* Look for PR review approval ***and*** a label applied to the PR to mark it ready for merge (`procbots/versionbot/ready-to-merge`)
 * On seeing appropriate label and review, will automatically:
     1. Clone the PR branch for the repo
     2. Run `versionist` upon it. Should a `versionist.conf.js` config file exist in the root of
