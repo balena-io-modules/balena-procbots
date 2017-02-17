@@ -212,11 +212,38 @@ export class VersionBot extends GithubBot.GithubBot {
             // Go through all the commits. We're looking for, at a minimum, a 'change-type:' tag.
             for (let commit of commits) {
                 const commitMessage: string = commit.commit.message;
-                const invalidCommit = !commitMessage.match(/^change-type:\s*(patch|minor|major)\s*$/mi);
 
-                if (!invalidCommit) {
-                    changetypeFound = true;
-                    break;
+                // Split the commits up into lines, and find the last line with any whitespace in.
+                // Whilst we tend to ask for:
+                //  <header>
+                //
+                //  <body>
+                //
+                //  <footer>
+                // This code will actually let you get away with:
+                //  <header>
+                //
+                //  <footer>
+                // As sometimes a development patch may be self-explanatory in the header alone.
+                const lines = commitMessage.split('\n');
+                let index = 0;
+                for (index = lines.length - 1; index >= 0; index -= 1) {
+                    if (lines[index].match(/$\s*^/)) {
+                        break;
+                    }
+                }
+                // If there's no match, then at the very least there's no footer, and the commit
+                // is in the wrong format (as there's no text to use in the logs).
+                if (index > 0) {
+                    // We should have a line index to join from, now.
+                    lines.splice(0, index);
+                    const footer = lines.join('\n');
+                    const invalidCommit = !footer.match(/^change-type:\s*(patch|minor|major)\s*$/mi);
+
+                    if (!invalidCommit) {
+                        changetypeFound = true;
+                        break;
+                    }
                 }
             }
 
@@ -811,15 +838,15 @@ export class VersionBot extends GithubBot.GithubBot {
                         }).then(() => {
                             // No tags here, just mention it in Flowdock so its searchable.
                             // It's not an error so doesn't need logging.
-                            const flowdockMessage = {
-                                content: `${process.env.VERSIONBOT_NAME} has now merged the above PR, located here:` +
-                                    `${prInfo.html_url}.`,
-                                from_address: process.env.VERSIONBOT_EMAIL,
-                                roomId: process.env.VERSIONBOT_FLOWDOCK_ROOM,
-                                source: process.env.VERSIONBOT_NAME,
-                                subject: `{$process.env.VERSIONBOT_NAME} merged ${owner}/${repo}#${prInfo.number}`
-                            };
-                            if (process.env.VERSIONBOT_FLOWDOCK_ADAPTER) {
+                            if (process.env.VERSIONBOT_FLOWDOCK_ROOM) {
+                                const flowdockMessage = {
+                                    content: `${process.env.VERSIONBOT_NAME} has now merged the above PR, located ` +
+                                        `here: ${prInfo.html_url}.`,
+                                    from_address: process.env.VERSIONBOT_EMAIL,
+                                    roomId: process.env.VERSIONBOT_FLOWDOCK_ROOM,
+                                    source: process.env.VERSIONBOT_NAME,
+                                    subject: `{$process.env.VERSIONBOT_NAME} merged ${owner}/${repo}#${prInfo.number}`
+                                };
                                 this.flowdock.postToInbox(flowdockMessage);
                             }
                             this.log(ProcBot.LogLevel.DEBUG, `MergePR: Merged ${owner}/${repo}#${prInfo.number}`);

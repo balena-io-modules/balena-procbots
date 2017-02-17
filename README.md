@@ -59,22 +59,26 @@ Appropriate environment variables are required before execution. See below.
 Set the following permissions in 'Permissions & events':
 
     * Settings:
-        - Commit statues:
-            # Status: R/W
+        - Repository administration: R/O
+        - Commit statues: R/W
+            # Status
+        - Deployments: R/W
+            # Deployment
+            # Deployment status
         - Issues:
-            # Issue comment: R/W  - Probably only need R/O
-            # Issues: R/W - Probably only need R/O
-        - Pull Requests:
-            # Pull request: R/W - Probably only need R/O
-            # Pull request review: R/W - Probably only need R/O
-            # Pull request review comment: R/W - Probably only need R/O
-        - Repository contents:
-            # Commit comment - R/W
-            # Create - R/W
-            # Delete - R/W
-            # Fork - R/W
-            # Push - R/W
-            # Release - R/W
+            # Issue comment: R/W
+            # Issues: R/W
+        - Pull Requests: R/W
+            # Pull request
+            # Pull request review
+            # Pull request review comment
+        - Repository contents: R/W
+            # Commit comment
+            # Create
+            # Delete
+            # Fork
+            # Push
+            # Release
 
 Now hit 'Save'. The Integration will be created and you'll be given an Integration ID (note it down, it will be required later).
 
@@ -123,7 +127,16 @@ Currently there is only one ProcBot, VersionBot. You can run this from within Vi
 
 This allows the checking of commits for a PR and merging them when the right labels/conditions are met.
 
-`VersionBot` will ignore any status checks and not attempt to merge should the `procbots/versionbot/no-checks` label be present on any PR it would otherwise operate on.
+`VersionBot` will ignore any status checks and not attempt to merge should the `procbots/versionbot/no-checks` label be present on any PR it would otherwise operate on when a PR is opened.
+
+Current, `VersionBot` will:
+* Version up only once all status checks set as 'Required' on protected branches for 'master' are successful
+* The `procbots/versionbot/ready-to-merge` is present
+
+**Some Notes:**
+* There is currently an issue with the Github API where private repositories do not correctly return PR reviews. Therefore there is no safety check for this although the code is present but disabled in `VersionBot`.
+* Should `VersionBot` come across a situation where it does not know how to proceed, it will comment on the PR as such. This can include instances where the `procbot/versionbot/ready-to-merge` label has been added without checks completing. In this case, await the checks to be successful and then reapply the label.
+
 
 ## TBD
 
