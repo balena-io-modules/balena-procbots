@@ -5,7 +5,7 @@ Process bots used for automating the development and deployment CI pipeline.
 Currently only the `VersionBot` exists. `VersionBot` will:
 
 * Look for new PRs and check that there is at least one commit in the PR which features a suitable `Change-Type:` tag
-* Look for PR review approval ***and*** a label applied to the PR to mark it ready for merge (`procbots/versionbot/ready-for-merge`)
+* Look for PR review approval ***and*** a label applied to the PR to mark it ready for merge (`procbots/versionbot/ready-to-merge`)
 * On seeing appropriate label and review, will automatically:
     1. Clone the PR branch for the repo
     2. Run `versionist` upon it. Should a `versionist.conf.js` config file exist in the root of
@@ -17,7 +17,7 @@ Currently only the `VersionBot` exists. `VersionBot` will:
 If a PR branch is out of step with the `master` branch, `VersionBot` will refuse to merge (and will
 not update the versions of files).
 
-Merges and checks can be suppressed using the `flow/no-version-checks` label on a PR.
+Merges and checks can be suppressed using the `procbots/versionbot/no-checks` label on a PR.
 
 ## Installation
 
@@ -59,22 +59,26 @@ Appropriate environment variables are required before execution. See below.
 Set the following permissions in 'Permissions & events':
 
     * Settings:
-        - Commit statues:
-            # Status: R/W
+        - Repository administration: R/O
+        - Commit statues: R/W
+            # Status
+        - Deployments: R/W
+            # Deployment
+            # Deployment status
         - Issues:
-            # Issue comment: R/W  - Probably only need R/O
-            # Issues: R/W - Probably only need R/O
-        - Pull Requests:
-            # Pull request: R/W - Probably only need R/O
-            # Pull request review: R/W - Probably only need R/O
-            # Pull request review comment: R/W - Probably only need R/O
-        - Repository contents:
-            # Commit comment - R/W
-            # Create - R/W
-            # Delete - R/W
-            # Fork - R/W
-            # Push - R/W
-            # Release - R/W
+            # Issue comment: R/W
+            # Issues: R/W
+        - Pull Requests: R/W
+            # Pull request
+            # Pull request review
+            # Pull request review comment
+        - Repository contents: R/W
+            # Commit comment
+            # Create
+            # Delete
+            # Fork
+            # Push
+            # Release
 
 Now hit 'Save'. The Integration will be created and you'll be given an Integration ID (note it down, it will be required later).
 
@@ -123,7 +127,16 @@ Currently there is only one ProcBot, VersionBot. You can run this from within Vi
 
 This allows the checking of commits for a PR and merging them when the right labels/conditions are met.
 
-`VersionBot` will ignore any status checks and not attempt to merge should the `procbots/versionbot/no-checks` label be present on any PR it would otherwise operate on.
+`VersionBot` will ignore any status checks and not attempt to merge should the `procbots/versionbot/no-checks` label be present on any PR it would otherwise operate on when a PR is opened.
+
+Current, `VersionBot` will:
+* Version up only once all status checks set as 'Required' on protected branches for 'master' are successful
+* The `procbots/versionbot/ready-to-merge` is present
+
+**Some Notes:**
+* There is currently an issue with the Github API where private repositories do not correctly return PR reviews. Therefore there is no safety check for this although the code is present but disabled in `VersionBot`.
+* Should `VersionBot` come across a situation where it does not know how to proceed, it will comment on the PR as such. This can include instances where the `procbot/versionbot/ready-to-merge` label has been added without checks completing. In this case, await the checks to be successful and then reapply the label.
+
 
 ## TBD
 
