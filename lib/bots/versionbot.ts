@@ -226,7 +226,7 @@ export class VersionBot extends GithubBot.GithubBot {
                 //  <footer>
                 // As sometimes a development patch may be self-explanatory in the header alone.
                 const lines = commitMessage.split('\n');
-                const lastLine = _.findLastIndex(lines, (line) => { return line.match(/^\s*$/) });
+                const lastLine = _.findLastIndex(lines, (line) => { return line.match(/^\s*$/); });
 
                 // If there's no match, then at the very least there's no footer, and the commit
                 // is in the wrong format (as there's no text to use in the logs).
@@ -841,7 +841,7 @@ export class VersionBot extends GithubBot.GithubBot {
                                     from_address: process.env.VERSIONBOT_EMAIL,
                                     roomId: process.env.VERSIONBOT_FLOWDOCK_ROOM,
                                     source: process.env.VERSIONBOT_NAME,
-                                    subject: `{$process.env.VERSIONBOT_NAME} merged ${owner}/${repo}#${prInfo.number}`
+                                    subject: `${process.env.VERSIONBOT_NAME} merged ${owner}/${repo}#${prInfo.number}`
                                 };
                                 this.flowdock.postToInbox(flowdockMessage);
                             }

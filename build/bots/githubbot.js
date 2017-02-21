@@ -95,7 +95,14 @@ class GithubBot extends ProcBot.ProcBot {
         };
         this.integrationId = integration;
         this.getWorker = (event) => {
-            const context = event.data.repository.full_name;
+            const repository = event.data.repository;
+            let context = '';
+            if (repository) {
+                context = repository.full_name;
+            }
+            else {
+                context = 'generic';
+            }
             let worker = this.workers.get(context);
             if (worker) {
                 return worker;

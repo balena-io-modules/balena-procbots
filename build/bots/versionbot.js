@@ -257,7 +257,7 @@ class VersionBot extends GithubBot.GithubBot {
                                         from_address: process.env.VERSIONBOT_EMAIL,
                                         roomId: process.env.VERSIONBOT_FLOWDOCK_ROOM,
                                         source: process.env.VERSIONBOT_NAME,
-                                        subject: `{$process.env.VERSIONBOT_NAME} merged ${owner}/${repo}#${prInfo.number}`
+                                        subject: `${process.env.VERSIONBOT_NAME} merged ${owner}/${repo}#${prInfo.number}`
                                     };
                                     this.flowdock.postToInbox(flowdockMessage);
                                 }
