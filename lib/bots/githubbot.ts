@@ -43,7 +43,18 @@ export class GithubBot extends ProcBot.ProcBot<string> {
         // The getWorker method is an overload for generic context types.
         // In the case of the GithubBot, it's the name of the repo (a string).
         this.getWorker = (event: Worker.WorkerEvent): Worker.Worker<string> => {
-            const context = event.data.repository.full_name;
+            const repository = event.data.repository;
+            let context = '';
+
+            // If there's a repository, we use the full name as the context,
+            // else we use a generic. Generic contexts can occur on events that
+            // are not linked to a repo (adding/removing repo from Integration,
+            // creating a user, deleting a user, etc.)
+            if (repository) {
+                context = repository.full_name;
+            } else {
+                context = 'generic';
+            }
             let worker: Worker.Worker<string> | undefined = this.workers.get(context);
 
             // If we already have a worker for this context (the repo name), return it.
