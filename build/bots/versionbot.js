@@ -72,7 +72,7 @@ class VersionBot extends GithubBot.GithubBot {
                 for (let commit of commits) {
                     const commitMessage = commit.commit.message;
                     const lines = commitMessage.split('\n');
-                    const lastLine = _.findLastIndex(lines, (line) => { return line.match(/^\s*$/); });
+                    const lastLine = _.findLastIndex(lines, (line) => line.match(/^\s*$/));
                     if (lastLine > 0) {
                         lines.splice(0, lastLine);
                         const footer = lines.join('\n');
