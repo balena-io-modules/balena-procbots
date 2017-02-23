@@ -2,7 +2,7 @@ import * as request from 'request-promise';
 import { FlowdockInboxItem } from './flowdock-types';
 
 export class FlowdockAdapter {
-    public postToInbox(item: FlowdockInboxItem) {
+    public postToInbox(item: FlowdockInboxItem): void {
         //  Make a straight post to the inbox from the client.
         const requestOpts = {
             body: item,

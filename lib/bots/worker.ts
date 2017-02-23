@@ -102,7 +102,7 @@ export class Worker<T> {
      * Retrieve the context for the Worker.
      * @return {generic} - The context.
      */
-    get context() {
+    get context(): T {
         return this._context;
     }
 
@@ -110,7 +110,7 @@ export class Worker<T> {
      * Add a new event to the Worker's event queue.
      * @param {ProcBot.WorkerEvent} worker - The event to add to the queue.
      */
-    public addEvent(event: WorkerEvent) {
+    public addEvent(event: WorkerEvent): void {
         this.queue.push(event);
         // If this is a new worker, ensure it operates.
         if (this.queue.length === 1) {
@@ -122,7 +122,7 @@ export class Worker<T> {
      * Runs the next worker in the queue, before deleting its entry. Should more entries
      * exist it then runs those.
      */
-    private runWorker() {
+    private runWorker(): void {
         // Get the next thing from the queue.
         const entry = <WorkerEvent>this.queue.shift();
         const self: this = this;

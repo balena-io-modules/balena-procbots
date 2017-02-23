@@ -41,7 +41,7 @@ if (opt.options['help'] || Object.keys(opt.options).length === 0) {
 }
 
 // Verify that events being sent our way are valid and authenticated.
-function verifyWebhookToken(payload: string, hubSignature: string) {
+function verifyWebhookToken(payload: string, hubSignature: string): boolean {
     const newHmac: any = crypto.createHmac('sha1', process.env.WEBHOOK_SECRET);
     newHmac.update(payload);
     if (('sha1=' + newHmac.digest('hex')) === hubSignature) {

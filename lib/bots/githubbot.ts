@@ -19,9 +19,19 @@ import * as jwt from 'jsonwebtoken';
 import * as _ from 'lodash';
 import * as request from 'request-promise';
 import * as GithubApiTypes from './githubapi-types';
-import { GithubAction, GithubActionRegister } from './githubbot-types';
+import { GithubAction, GithubActionRegister, GithubBotConfiguration } from './githubbot-types';
 import * as ProcBot from './procbot';
 import * as Worker from './worker';
+
+interface LabelDetails {
+    number: string;
+    repo: {
+        owner: {
+            login: string;
+        };
+        name: string;
+    };
+}
 
 // GithubBot implementation.
 export class GithubBot extends ProcBot.ProcBot<string> {
@@ -89,7 +99,7 @@ export class GithubBot extends ProcBot.ProcBot<string> {
     // FiredEvent needs to be called for any derived child bot (and usually it doesn't need
     // to be implemented by them if all that's required is direct Github action handling).
     // Override if any sort of check or state is required in the child (state not advised!).
-    public firedEvent(event: string, repoEvent: any) {
+    public firedEvent(event: string, repoEvent: any): void {
         // Push this directly onto the queue.
         this.queueEvent({
             event,
@@ -102,15 +112,15 @@ export class GithubBot extends ProcBot.ProcBot<string> {
     // could potentially register twice. If they do that, they get called twice.
     // Currently we do not allow deregistering. Potentially there may be a need in the future,
     // but any created bot has to have actions 'baked in' atm.
-    protected registerAction(action: GithubActionRegister) {
+    protected registerAction(action: GithubActionRegister): void {
         this.eventTriggers.push(action);
     }
 
     // Handles all Github events to trigger actions, should the parameters meet those
     // registered.
-    protected handleGithubEvent = (event: string, data: any) => {
+    protected handleGithubEvent = (event: string, data: any): Promise<void> => {
         // Determine the head to use based on the event.
-        const labelHead = () => {
+        const labelHead = (): LabelDetails | void => {
             // Note that a label event itself is not in itself a labelled type,
             // so we don't check for it.
             switch (event) {
@@ -137,7 +147,7 @@ export class GithubBot extends ProcBot.ProcBot<string> {
         _.forEach(this.eventTriggers, (action: GithubActionRegister) => {
             // Is the event one of the type that triggers the action?
             if (_.includes(action.events, event)) {
-                let labelEvent: any | void = labelHead();
+                let labelEvent = labelHead();
                 let labelPromise = Promise.resolve();
 
                 // Are there any labels (trigger or suppression) set on the action?
@@ -162,7 +172,7 @@ export class GithubBot extends ProcBot.ProcBot<string> {
                         if (action.suppressionLabels &&
                             (_.intersection(action.suppressionLabels, foundLabels).length ===
                             action.suppressionLabels.length)) {
-                            this.log(ProcBot.LogLevel.INFO,
+                            this.log(ProcBot.LogLevel.DEBUG,
                                 `Dropping '${action.name}' as suppression labels are all present`);
                             return;
                         }
@@ -170,7 +180,7 @@ export class GithubBot extends ProcBot.ProcBot<string> {
                         if (action.triggerLabels &&
                             (_.intersection(action.triggerLabels, foundLabels).length !==
                             action.triggerLabels.length)) {
-                            this.log(ProcBot.LogLevel.INFO,
+                            this.log(ProcBot.LogLevel.DEBUG,
                                 `Dropping '${action.name}' as not all trigger labels are present`);
                             return;
                         }
@@ -234,12 +244,39 @@ export class GithubBot extends ProcBot.ProcBot<string> {
             });
 
             // For debug.
-            this.log(ProcBot.LogLevel.DEBUG, `token for manual fiddling is: ${tokenDetails.token}`);
-            this.log(ProcBot.LogLevel.DEBUG, `token expires at: ${tokenDetails.expires_at}`);
-            this.log(ProcBot.LogLevel.DEBUG, 'Base curl command:');
-            this.log(ProcBot.LogLevel.DEBUG,
+            this.log(ProcBot.LogLevel.INFO, `token for manual fiddling is: ${tokenDetails.token}`);
+            this.log(ProcBot.LogLevel.INFO, `token expires at: ${tokenDetails.expires_at}`);
+            this.log(ProcBot.LogLevel.INFO, 'Base curl command:');
+            this.log(ProcBot.LogLevel.INFO,
                 `curl -XGET -H "Authorisation: token ${tokenDetails.token}" ` +
                 `-H "${this.ghApiAccept}" https://api.github.com/`);
+        });
+    }
+
+    // Takes the full repository name and attempts to retrieve a ProcBot config from it.
+    protected retrieveGithubConfiguration(owner: string, repo: string): Promise<GithubBotConfiguration | void> {
+        return this.gitCall(this.githubApi.repos.getContent, {
+            owner,
+            repo,
+            path: '.procbots.yml'
+        }).then((data: any) => {
+            // We only deal with a file. Anything else (dir/symlink) is not a valid
+            // config file.
+            if (!Array.isArray(data)) {
+                if (data.type === 'file') {
+                    // Try and parse this as YAML.
+                    // We have no overload for processConfiguration, as there's no GithubBot
+                    // specific variables (atm).
+                    // We have to convert from base64.
+                    const config = this.processConfiguration(new Buffer(data.content, 'base64').toString('utf8'));
+                    if (config) {
+                        return <GithubBotConfiguration>config;
+                    }
+                }
+            }
+
+            // If there isn't a config, we don't return anything.
+            return;
         });
     }
 
@@ -256,18 +293,28 @@ export class GithubBot extends ProcBot.ProcBot<string> {
 
                 // Run the method.
                 method(options).then(resolve).catch((err: Error) => {
-                    // Error message is actually JSON.
-                    const ghError: GithubApiTypes.GithubError = JSON.parse(err.message);
-                    if (retriesLeft < 1) {
-                        // No more retries, just reject.
-                        reject(err);
+                    // Sometimes the gateway can time out if we don't respond quickly enough.
+                    // This will destroy the ability to continue for this callset, so we exit.
+                    console.log(err.message);
+                    if (err.message.indexOf('504: Gateway Timeout') !== -1) {
+                        reject(new Error('Github API timed out, could not complete'));
                     } else {
-                        if ((ghError.message === 'Bad credentials') && !badCreds) {
-                            // Re-authenticate, then try again.
-                            this.authenticate().then(runApi);
+                        // Error message is actually JSON.
+                        const ghError: GithubApiTypes.GithubError = JSON.parse(err.message);
+
+                        // If there are no more retries, or we couldn't find the required
+                        // details, reject.
+                        if ((retriesLeft < 1) || (ghError.message === 'Not Found')) {
+                            // No more retries, just reject.
+                            reject(err);
                         } else {
-                            // If there's more retries, try again in 5 seconds.
-                            setTimeout(runApi, 5000);
+                            if ((ghError.message === 'Bad credentials') && !badCreds) {
+                                // Re-authenticate, then try again.
+                                this.authenticate().then(runApi);
+                            } else {
+                                // If there's more retries, try again in 5 seconds.
+                                setTimeout(runApi, 5000);
+                            }
                         }
                     }
                 });

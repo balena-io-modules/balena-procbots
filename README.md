@@ -119,7 +119,24 @@ Ensure you also create the `procbots/versionbot/ready-to-merge` label type in th
 
 Finally you need to install the Integration into the repo. Do this by going to your 'Settings' page, selecting 'Installed Integrations', selecting your Integration and then selecting the repos you want it installed in in the 'Repository access' section.
 
-## Running
+### Tailoring ProcBots for a Repo via Configuration File
+
+ProcBots now also respond to a configuration file. This is a file with the name `.procbots.yml` in a relative location for the ProcBot running. In the case of the VersionBot, this is in the root of the repository that it is working on.
+
+The configuration file uses a set of nested properties based on the class hierarch of the ProcBots, with each class able to modify variables at run time from the configuration file, eg:
+
+ProcBots itself has a single property, `minimum_version`, which is checked to ensure that operations only get carried out should that version be satisfied.
+
+Example:
+
+```
+procbot:
+    minimum_version: 0.5
+```
+
+Other bots are free to add the use of any properties they require. It should be noted that all derived bots are able to view the entire configuration file on request.
+
+## Running VersionBot
 
 Currently there is only one ProcBot, VersionBot. You can run this from within Visual Code by building and then debugging in the usual way, or you can run it from the command line:
 
@@ -129,14 +146,29 @@ This allows the checking of commits for a PR and merging them when the right lab
 
 `VersionBot` will ignore any status checks and not attempt to merge should the `procbots/versionbot/no-checks` label be present on any PR it would otherwise operate on when a PR is opened.
 
-Current, `VersionBot` will:
+Currently, `VersionBot` will:
 * Version up only once all status checks set as 'Required' on protected branches for 'master' are successful
-* The `procbots/versionbot/ready-to-merge` is present
+* The `procbots/versionbot/ready-to-merge` label is present
+
+VersionBot can be configured via `.procbots.yml` file present in any repo that it operates on. This alters the settings for it for working on that repository. Currently the configuration for VersionBot consists of the following properties:
+
+    `procbot.githubbot.versionbot.maintainers` - A list of Github user names that are authorised maintainers of the repository. The `procbots/versionbot/ready-to-merge` label will only be acted upon should a maintainer in this list have added the label.
+
+Example:
+
+```
+procbot:
+    minimum_version: 0.5
+    githubbot:
+        versionbot:
+            maintainers:
+                - lekkas
+                - hedss
+```
 
 **Some Notes:**
 * There is currently an issue with the Github API where private repositories do not correctly return PR reviews. Therefore there is no safety check for this although the code is present but disabled in `VersionBot`.
 * Should `VersionBot` come across a situation where it does not know how to proceed, it will comment on the PR as such. This can include instances where the `procbot/versionbot/ready-to-merge` label has been added without checks completing. In this case, await the checks to be successful and then reapply the label.
-
 
 ## TBD
 
