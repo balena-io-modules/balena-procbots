@@ -12,9 +12,9 @@ export declare class VersionBot extends GithubBot.GithubBot {
     private createCommitBlobs(repoData);
     private mergeToMaster(data);
     private checkStatuses(prInfo);
-    private hasVersionBotCommits(prInfo);
+    private getVersionBotCommits(prInfo);
     private finaliseMerge;
-    private isValidMaintainer(config, event);
+    private checkValidMaintainer(config, event);
     private getConfiguration(owner, repo);
     private reportError(error);
 }

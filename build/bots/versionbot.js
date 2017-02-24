@@ -190,13 +190,13 @@ class VersionBot extends GithubBot.GithubBot {
                         'proceed to update this PR unless forced by re-applying the ' +
                         `\`${MergeLabel}\` label`);
                 }
-                return this.hasVersionBotCommits(prInfo);
+                return this.getVersionBotCommits(prInfo);
             }).then((commitMessage) => {
                 if (commitMessage) {
                     throw new Error(`alreadyCommitted`);
                 }
                 if ((data.action === 'labeled') && (data.type === 'pull_request')) {
-                    this.isValidMaintainer(botConfig, data);
+                    this.checkValidMaintainer(botConfig, data);
                 }
                 return tempMkdir(`${repo}-${pr.number}_`);
             }).then((tempDir) => {
@@ -254,11 +254,11 @@ class VersionBot extends GithubBot.GithubBot {
             const repo = prInfo.head.repo.name;
             return this.checkStatuses(prInfo).then((statusesPassed) => {
                 if (statusesPassed) {
-                    return this.hasVersionBotCommits(prInfo).then((commitMessage) => {
+                    return this.getVersionBotCommits(prInfo).then((commitMessage) => {
                         if (commitMessage) {
                             return this.getConfiguration(owner, repo).then((config) => {
                                 if (data.action === 'labeled') {
-                                    this.isValidMaintainer(config, data);
+                                    this.checkValidMaintainer(config, data);
                                 }
                                 return this.mergeToMaster({
                                     commitVersion: commitMessage,
@@ -535,7 +535,7 @@ class VersionBot extends GithubBot.GithubBot {
             return true;
         });
     }
-    hasVersionBotCommits(prInfo) {
+    getVersionBotCommits(prInfo) {
         const githubApi = this.githubApi;
         const owner = prInfo.head.repo.owner.login;
         const repo = prInfo.head.repo.name;
@@ -555,7 +555,7 @@ class VersionBot extends GithubBot.GithubBot {
             return null;
         });
     }
-    isValidMaintainer(config, event) {
+    checkValidMaintainer(config, event) {
         const maintainers = ((((config || {}).procbot || {}).githubbot || {}).versionbot || {}).maintainers;
         if (maintainers) {
             if (!_.includes(maintainers, event.sender.login)) {

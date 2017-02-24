@@ -454,7 +454,7 @@ export class VersionBot extends GithubBot.GithubBot {
             }
 
             // Ensure we've not already committed. If we have, we don't wish to do so again.
-            return this.hasVersionBotCommits(prInfo);
+            return this.getVersionBotCommits(prInfo);
         }).then((commitMessage: string | null) => {
             if (commitMessage) {
                 throw new Error(`alreadyCommitted`);
@@ -464,7 +464,7 @@ export class VersionBot extends GithubBot.GithubBot {
             // list and ensure the labeler was on it.
             if ((data.action === 'labeled') && (data.type === 'pull_request')) {
                 // Note that labeling can only occur on a PRE data, hence casting.
-                this.isValidMaintainer(botConfig, data);
+                this.checkValidMaintainer(botConfig, data);
             }
 
             // Create new work dir.
@@ -828,7 +828,7 @@ export class VersionBot extends GithubBot.GithubBot {
     }
 
     // Has VersionBot already made commits to the branch.
-    private hasVersionBotCommits(prInfo: GithubBotApiTypes.PullRequest): Promise<string | null> {
+    private getVersionBotCommits(prInfo: GithubBotApiTypes.PullRequest): Promise<string | null> {
         const githubApi = this.githubApi;
         const owner = prInfo.head.repo.owner.login;
         const repo = prInfo.head.repo.name;
@@ -865,7 +865,7 @@ export class VersionBot extends GithubBot.GithubBot {
         return this.checkStatuses(prInfo).then((statusesPassed) => {
             if (statusesPassed) {
                 // Get the list of commits for the PR, then get the very last commit SHA.
-                return this.hasVersionBotCommits(prInfo).then((commitMessage: string | null) => {
+                return this.getVersionBotCommits(prInfo).then((commitMessage: string | null) => {
                     if (commitMessage) {
                         // Ensure that the labeler was authorised. We do this here, else we could
                         // end up spamming the PR with errors.
@@ -874,7 +874,7 @@ export class VersionBot extends GithubBot.GithubBot {
                             // list and ensure the labeler was on it.
                             // This throws an error if not.
                             if (data.action === 'labeled') {
-                                this.isValidMaintainer(config, data);
+                                this.checkValidMaintainer(config, data);
                             }
 
                             // We go ahead and merge.
@@ -906,7 +906,7 @@ export class VersionBot extends GithubBot.GithubBot {
         });
     }
 
-    private isValidMaintainer(config: VersionBotConfiguration, event: GithubBotApiTypes.PullRequestEvent): void {
+    private checkValidMaintainer(config: VersionBotConfiguration, event: GithubBotApiTypes.PullRequestEvent): void {
         // If we have a list of valid maintainers, then we need to ensure that if the `ready-to-merge` label
         // was added, that it was by one of these maintainers.
         const maintainers = ((((config || {}).procbot || {}).githubbot || {}).versionbot || {}).maintainers;
