@@ -102,7 +102,7 @@ type GenericPullRequestEvent = GithubBotApiTypes.PullRequestEvent | GithubBotApi
 const MergeLabel = 'procbots/versionbot/ready-to-merge';
 const IgnoreLabel = 'procbots/versionbot/no-checks';
 
-// Te VersionBot is built on top of GithubBot, which does all the heavy lifting and scheduling.
+// The VersionBot is built on top of GithubBot, which does all the heavy lifting and scheduling.
 // It is designed to check for valid `versionist` commit semantics and alter (or merge) a PR
 // accordingly.
 export class VersionBot extends GithubBot.GithubBot {
