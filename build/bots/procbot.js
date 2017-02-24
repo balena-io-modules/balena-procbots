@@ -64,10 +64,9 @@ class ProcBot {
         }
         const minimumVersion = ((config || {}).procbot || {}).minimum_version;
         if (minimumVersion && process.env.npm_package_version) {
-            config.procbot.minimum_version = (process.env.npm_package_version < minimumVersion) ? false : true;
-        }
-        else {
-            config.procbot.minimum_version = true;
+            if (process.env.npm_package_version < minimumVersion) {
+                throw new Error('Current ProcBot implementation does not minimum required version for the operations');
+            }
         }
         return config;
     }
@@ -76,7 +75,6 @@ class ProcBot {
             return this.processConfiguration(contents);
         }).catch(() => {
             this.log(this._logLevel.INFO, 'No config file was found');
-            return;
         });
     }
     queueEvent(event) {

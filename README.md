@@ -121,11 +121,11 @@ Finally you need to install the Integration into the repo. Do this by going to y
 
 ### Tailoring ProcBots for a Repo via Configuration File
 
-ProcBots now also respond to a configuration file. This is a file with the name `.procbots.yml` in a relative location for the ProcBot running. In the case of the VersionBot, this is in the root of the repository that it is working on.
+ProcBots now also respond to a configuration file. This is a file with the name `.procbots.yml` in a relative location for the ProcBot running. In the case of the GithubBot (and any other child bot derived from it, such as VersionBot), this is in the root of the repository that it is working on, on the `master` branch.
 
-The configuration file uses a set of nested properties based on the class hierarch of the ProcBots, with each class able to modify variables at run time from the configuration file, eg:
+The configuration file uses a set of nested properties based on the class hierarchy of the ProcBots, with each class able to modify variables at run time from the configuration file.
 
-ProcBots itself has a single property, `minimum_version`, which is checked to ensure that operations only get carried out should that version be satisfied.
+ProcBots itself has a single property, `minimum_version`, which is checked to ensure that operations only get carried out should that version be satisfied. Should it not find itself to be of at least the minimum version, and error is thrown.
 
 Example:
 
@@ -134,7 +134,7 @@ procbot:
     minimum_version: 0.5
 ```
 
-Other bots are free to add the use of any properties they require. It should be noted that all derived bots are able to view the entire configuration file on request.
+Other bots are free to add any properties they require. It should be noted that all derived bots are able to view the entire configuration file on request.
 
 ## Running VersionBot
 
@@ -150,7 +150,7 @@ Currently, `VersionBot` will:
 * Version up only once all status checks set as 'Required' on protected branches for 'master' are successful
 * The `procbots/versionbot/ready-to-merge` label is present
 
-VersionBot can be configured via `.procbots.yml` file present in any repo that it operates on. This alters the settings for it for working on that repository. Currently the configuration for VersionBot consists of the following properties:
+VersionBot can be configured via a `.procbots.yml` file present in any repository that it operates on. This alters the settings for it for working on that repository. Currently the configuration for VersionBot consists of the following properties:
 
     `procbot.githubbot.versionbot.maintainers` - A list of Github user names that are authorised maintainers of the repository. The `procbots/versionbot/ready-to-merge` label will only be acted upon should a maintainer in this list have added the label.
 

@@ -7,6 +7,5 @@
 export interface ProcBotConfiguration {
     procbot: {
         minimum_version?: number | boolean;
-        githubbot?: any;
     };
 }

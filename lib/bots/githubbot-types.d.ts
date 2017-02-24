@@ -39,9 +39,3 @@ export interface GithubActionRegister extends GithubAction {
 
 // A GithubActionMethod is the method that will be used to process an event.
 export type GithubActionMethod = <T>(action: GithubAction, data: T) => Promise<void>;
-
-export interface GithubBotConfiguration extends ProcBotConfiguration {
-    githubbot: {
-        versionbot?: any;
-    };
-}

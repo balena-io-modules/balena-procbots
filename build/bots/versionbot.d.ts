@@ -4,8 +4,6 @@ import * as GithubBot from './githubbot';
 import { GithubAction } from './githubbot-types';
 export declare class VersionBot extends GithubBot.GithubBot {
     private flowdock;
-    private mergeLabel;
-    private ignoreLabel;
     constructor(integration: number, name?: string);
     protected statusChange: (action: GithubAction, data: GithubBotApiTypes.StatusEvent) => Promise<void | void[]>;
     protected checkVersioning: (action: GithubAction, data: GithubBotApiTypes.PullRequestEvent) => Promise<void>;
@@ -14,9 +12,9 @@ export declare class VersionBot extends GithubBot.GithubBot {
     private createCommitBlobs(repoData);
     private mergeToMaster(data);
     private checkStatuses(prInfo);
-    private versionBotCommits(prInfo);
+    private hasVersionBotCommits(prInfo);
     private finaliseMerge;
-    private validMaintainer(config, event);
+    private isValidMaintainer(config, event);
     private getConfiguration(owner, repo);
     private reportError(error);
 }

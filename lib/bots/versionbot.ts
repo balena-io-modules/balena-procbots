@@ -25,8 +25,9 @@ import { mkdir, track } from 'temp';
 import { FlowdockAdapter } from '../adapters/flowdock';
 import * as GithubBotApiTypes from './githubapi-types';
 import * as GithubBot from './githubbot';
-import { GithubAction, GithubActionRegister, GithubBotConfiguration } from './githubbot-types';
+import { GithubAction, GithubActionRegister } from './githubbot-types';
 import * as ProcBot from './procbot';
+import { ProcBotConfiguration } from './procbot-types';
 
 // Exec technically has a binding because of it's Node typings, but promisify doesn't include
 // the optional object (we need for CWD). So we need to special case it.
@@ -84,24 +85,29 @@ interface FSError {
     message: string;
 }
 
-interface VersionBotConfiguration extends GithubBotConfiguration {
-    githubbot: {
-        versionbot: {
-            minimum_approvals?: number;
-            approved_reviewers?: string[];
-            maintainers?: string[];
+interface VersionBotConfiguration extends ProcBotConfiguration {
+    procbot: {
+        githubbot: {
+            versionbot: {
+                minimum_approvals?: number;
+                approved_reviewers?: string[];
+                maintainers?: string[];
+            };
         };
     };
 }
 
-// The VersionBot is built on top of GithubBot, which does all the heavy lifting and scheduling.
+type GenericPullRequestEvent = GithubBotApiTypes.PullRequestEvent | GithubBotApiTypes.PullRequestReviewEvent;
+
+const MergeLabel = 'procbots/versionbot/ready-to-merge';
+const IgnoreLabel = 'procbots/versionbot/no-checks';
+
+// Te VersionBot is built on top of GithubBot, which does all the heavy lifting and scheduling.
 // It is designed to check for valid `versionist` commit semantics and alter (or merge) a PR
 // accordingly.
 export class VersionBot extends GithubBot.GithubBot {
     // Flowdock Adapter
     private flowdock: FlowdockAdapter;
-    private mergeLabel = 'procbots/versionbot/ready-to-merge';
-    private ignoreLabel = 'procbots/versionbot/no-checks';
 
     // Name ourself and register the events and labels we're interested in.
     constructor(integration: number, name?: string) {
@@ -115,14 +121,14 @@ export class VersionBot extends GithubBot.GithubBot {
             {
                 events: [ 'pull_request' ],
                 name: 'CheckVersionistCommitStatus',
-                suppressionLabels: [ this.ignoreLabel ],
+                suppressionLabels: [ IgnoreLabel ],
                 workerMethod: this.checkVersioning
             },
             {
                 events: [ 'pull_request', 'pull_request_review' ],
                 name: 'CheckForReadyMergeState',
-                suppressionLabels: [ this.ignoreLabel ],
-                triggerLabels: [ this.mergeLabel ],
+                suppressionLabels: [ IgnoreLabel ],
+                triggerLabels: [ MergeLabel ],
                 workerMethod: this.mergePR,
             },
             // Should a status change occur (Jenkins, VersionBot, etc. all succeed)
@@ -130,8 +136,8 @@ export class VersionBot extends GithubBot.GithubBot {
             {
                 events: [ 'status' ],
                 name: 'StatusChangeState',
-                suppressionLabels: [ this.ignoreLabel ],
-                triggerLabels: [ this.mergeLabel ],
+                suppressionLabels: [ IgnoreLabel ],
+                triggerLabels: [ MergeLabel ],
                 workerMethod: this.statusChange
             }
         ], (reg: GithubActionRegister) => {
@@ -184,7 +190,8 @@ export class VersionBot extends GithubBot.GithubBot {
                         pull_request: pullRequest,
                         sender: {
                             login: pullRequest.user.login
-                        }
+                        },
+                        type: 'pull_request'
                     });
                 }
             });
@@ -300,7 +307,7 @@ export class VersionBot extends GithubBot.GithubBot {
         }).then((labels: GithubBotApiTypes.IssueLabel[]) => {
             // If we don't have a relevant label for merging, we don't proceed.
             if (_.filter(labels, (label) => {
-                return label.name === this.mergeLabel;
+                return label.name === MergeLabel;
             }).length !== 0) {
                 return this.gitCall(githubApi.pullRequests.get, {
                     number: pr.number,
@@ -334,8 +341,7 @@ export class VersionBot extends GithubBot.GithubBot {
     //
     // It should be noted that this will, of course, result in a 'closed' event on a PR, which
     // in turn will feed into the 'generateVersion' method below.
-    protected mergePR = (action: GithubAction,
-        data: GithubBotApiTypes.PullRequestEvent | GithubBotApiTypes.PullRequestReviewEvent): Promise<void> => {
+    protected mergePR = (action: GithubAction, data: GenericPullRequestEvent): Promise<void> => {
         // States for review comments are:
         //  * COMMENT
         //  * CHANGES_REQUESTED
@@ -444,11 +450,11 @@ export class VersionBot extends GithubBot.GithubBot {
             if (!statusesPassed) {
                 throw new Error(`At least one status check has failed; ${process.env.VERSIONBOT_NAME} will not ` +
                     'proceed to update this PR unless forced by re-applying the ' +
-                    `\`${this.mergeLabel}\` label`);
+                    `\`${MergeLabel}\` label`);
             }
 
             // Ensure we've not already committed. If we have, we don't wish to do so again.
-            return this.versionBotCommits(prInfo);
+            return this.hasVersionBotCommits(prInfo);
         }).then((commitMessage: string | null) => {
             if (commitMessage) {
                 throw new Error(`alreadyCommitted`);
@@ -456,9 +462,9 @@ export class VersionBot extends GithubBot.GithubBot {
 
             // If this was a labeling action and there's a config, check to see if there's a maintainers
             // list and ensure the labeler was on it.
-            if ((data.action === 'labeled') && botConfig) {
+            if ((data.action === 'labeled') && (data.type === 'pull_request')) {
                 // Note that labeling can only occur on a PRE data, hence casting.
-                this.validMaintainer(botConfig, <GithubBotApiTypes.PullRequestEvent>data);
+                this.isValidMaintainer(botConfig, data);
             }
 
             // Create new work dir.
@@ -745,7 +751,7 @@ export class VersionBot extends GithubBot.GithubBot {
             // Delete the merge label. This will ensure future updates to the PR are
             // ignored by us.
             return this.gitCall(githubApi.issues.removeLabel, {
-                name: this.mergeLabel,
+                name: MergeLabel,
                 number: data.prNumber,
                 owner: data.owner,
                 repo: data.repoName
@@ -822,7 +828,7 @@ export class VersionBot extends GithubBot.GithubBot {
     }
 
     // Has VersionBot already made commits to the branch.
-    private versionBotCommits(prInfo: GithubBotApiTypes.PullRequest): Promise<string | null> {
+    private hasVersionBotCommits(prInfo: GithubBotApiTypes.PullRequest): Promise<string | null> {
         const githubApi = this.githubApi;
         const owner = prInfo.head.repo.owner.login;
         const repo = prInfo.head.repo.name;
@@ -859,7 +865,7 @@ export class VersionBot extends GithubBot.GithubBot {
         return this.checkStatuses(prInfo).then((statusesPassed) => {
             if (statusesPassed) {
                 // Get the list of commits for the PR, then get the very last commit SHA.
-                return this.versionBotCommits(prInfo).then((commitMessage: string | null) => {
+                return this.hasVersionBotCommits(prInfo).then((commitMessage: string | null) => {
                     if (commitMessage) {
                         // Ensure that the labeler was authorised. We do this here, else we could
                         // end up spamming the PR with errors.
@@ -867,8 +873,8 @@ export class VersionBot extends GithubBot.GithubBot {
                             // If this was a labeling action and there's a config, check to see if there's a maintainers
                             // list and ensure the labeler was on it.
                             // This throws an error if not.
-                            if ((data.action === 'labeled') && config) {
-                                this.validMaintainer(config, data);
+                            if (data.action === 'labeled') {
+                                this.isValidMaintainer(config, data);
                             }
 
                             // We go ahead and merge.
@@ -900,16 +906,16 @@ export class VersionBot extends GithubBot.GithubBot {
         });
     }
 
-    private validMaintainer(config: VersionBotConfiguration, event: GithubBotApiTypes.PullRequestEvent): void {
+    private isValidMaintainer(config: VersionBotConfiguration, event: GithubBotApiTypes.PullRequestEvent): void {
         // If we have a list of valid maintainers, then we need to ensure that if the `ready-to-merge` label
         // was added, that it was by one of these maintainers.
         const maintainers = ((((config || {}).procbot || {}).githubbot || {}).versionbot || {}).maintainers;
         if (maintainers) {
             // Get the user who added the label.
             if (!_.includes(maintainers, event.sender.login)) {
-                let errorMessage = `The \`${this.mergeLabel}\` label was not added by an authorised ` +
+                let errorMessage = `The \`${MergeLabel}\` label was not added by an authorised ` +
                     'maintainer. Authorised maintainers are:\n';
-                _.each(maintainers, (maintainer) => errorMessage = errorMessage.concat(`* ${maintainer}\n`));
+                _.each(maintainers, (maintainer) => errorMessage = errorMessage.concat(`* @${maintainer}\n`));
                 throw new Error(errorMessage);
             }
         }
@@ -918,20 +924,7 @@ export class VersionBot extends GithubBot.GithubBot {
     private getConfiguration(owner: string, repo: string) {
         // We need to get the config file, should it exist.
         return this.retrieveGithubConfiguration(owner, repo).then((configuration: VersionBotConfiguration) => {
-            const config = configuration;
-
-            // If there is a config file and a minimum version, ensure this can run.
-            if (config) {
-                // If there's no minimum version, then we're fine.
-                const minimumVersion = (config.procbot || {}).minimum_version || true;
-                if (!minimumVersion) {
-                    throw new Error('${process.env.VERSIONBOT_NAME} cannot run as its version is less than the ' +
-                        'required minimum for the ${owner}/${repo} repository. ' +
-                        `This: ${process.env.npm_version_number}, Req: ${minimumVersion}`);
-                }
-            }
-
-            return Promise.resolve(config);
+            return configuration;
         }).catch((err) => {
             // If it doesn't exist, we'll get a 'Not Found' error back which we just ditch.
             const errMessage = JSON.parse(err.message);

@@ -19,8 +19,9 @@ import * as jwt from 'jsonwebtoken';
 import * as _ from 'lodash';
 import * as request from 'request-promise';
 import * as GithubApiTypes from './githubapi-types';
-import { GithubAction, GithubActionRegister, GithubBotConfiguration } from './githubbot-types';
+import { GithubAction, GithubActionRegister } from './githubbot-types';
 import * as ProcBot from './procbot';
+import { ProcBotConfiguration } from './procbot-types';
 import * as Worker from './worker';
 
 interface LabelDetails {
@@ -123,6 +124,8 @@ export class GithubBot extends ProcBot.ProcBot<string> {
         const labelHead = (): LabelDetails | void => {
             // Note that a label event itself is not in itself a labelled type,
             // so we don't check for it.
+            data.type = event;
+
             switch (event) {
                 case 'issue_comment':
                 case 'issues':
@@ -254,7 +257,7 @@ export class GithubBot extends ProcBot.ProcBot<string> {
     }
 
     // Takes the full repository name and attempts to retrieve a ProcBot config from it.
-    protected retrieveGithubConfiguration(owner: string, repo: string): Promise<GithubBotConfiguration | void> {
+    protected retrieveGithubConfiguration(owner: string, repo: string): Promise<ProcBotConfiguration | void> {
         return this.gitCall(this.githubApi.repos.getContent, {
             owner,
             repo,
@@ -270,7 +273,7 @@ export class GithubBot extends ProcBot.ProcBot<string> {
                     // We have to convert from base64.
                     const config = this.processConfiguration(new Buffer(data.content, 'base64').toString('utf8'));
                     if (config) {
-                        return <GithubBotConfiguration>config;
+                        return config;
                     }
                 }
             }

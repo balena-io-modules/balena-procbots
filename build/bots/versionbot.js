@@ -14,11 +14,11 @@ const fsFileExists = Promise.promisify(FS.stat);
 const tempMkdir = Promise.promisify(temp_1.mkdir);
 const tempCleanup = Promise.promisify(temp_1.track);
 ;
+const MergeLabel = 'procbots/versionbot/ready-to-merge';
+const IgnoreLabel = 'procbots/versionbot/no-checks';
 class VersionBot extends GithubBot.GithubBot {
     constructor(integration, name) {
         super(integration, name);
-        this.mergeLabel = 'procbots/versionbot/ready-to-merge';
-        this.ignoreLabel = 'procbots/versionbot/no-checks';
         this.statusChange = (action, data) => {
             const githubApi = this.githubApi;
             const owner = data.name.split('/')[0];
@@ -45,7 +45,8 @@ class VersionBot extends GithubBot.GithubBot {
                             pull_request: pullRequest,
                             sender: {
                                 login: pullRequest.user.login
-                            }
+                            },
+                            type: 'pull_request'
                         });
                     }
                 });
@@ -123,7 +124,7 @@ class VersionBot extends GithubBot.GithubBot {
                 });
             }).then((labels) => {
                 if (_.filter(labels, (label) => {
-                    return label.name === this.mergeLabel;
+                    return label.name === MergeLabel;
                 }).length !== 0) {
                     return this.gitCall(githubApi.pullRequests.get, {
                         number: pr.number,
@@ -187,15 +188,15 @@ class VersionBot extends GithubBot.GithubBot {
                 if (!statusesPassed) {
                     throw new Error(`At least one status check has failed; ${process.env.VERSIONBOT_NAME} will not ` +
                         'proceed to update this PR unless forced by re-applying the ' +
-                        `\`${this.mergeLabel}\` label`);
+                        `\`${MergeLabel}\` label`);
                 }
-                return this.versionBotCommits(prInfo);
+                return this.hasVersionBotCommits(prInfo);
             }).then((commitMessage) => {
                 if (commitMessage) {
                     throw new Error(`alreadyCommitted`);
                 }
-                if ((data.action === 'labeled') && botConfig) {
-                    this.validMaintainer(botConfig, data);
+                if ((data.action === 'labeled') && (data.type === 'pull_request')) {
+                    this.isValidMaintainer(botConfig, data);
                 }
                 return tempMkdir(`${repo}-${pr.number}_`);
             }).then((tempDir) => {
@@ -253,11 +254,11 @@ class VersionBot extends GithubBot.GithubBot {
             const repo = prInfo.head.repo.name;
             return this.checkStatuses(prInfo).then((statusesPassed) => {
                 if (statusesPassed) {
-                    return this.versionBotCommits(prInfo).then((commitMessage) => {
+                    return this.hasVersionBotCommits(prInfo).then((commitMessage) => {
                         if (commitMessage) {
                             return this.getConfiguration(owner, repo).then((config) => {
-                                if ((data.action === 'labeled') && config) {
-                                    this.validMaintainer(config, data);
+                                if (data.action === 'labeled') {
+                                    this.isValidMaintainer(config, data);
                                 }
                                 return this.mergeToMaster({
                                     commitVersion: commitMessage,
@@ -288,21 +289,21 @@ class VersionBot extends GithubBot.GithubBot {
             {
                 events: ['pull_request'],
                 name: 'CheckVersionistCommitStatus',
-                suppressionLabels: [this.ignoreLabel],
+                suppressionLabels: [IgnoreLabel],
                 workerMethod: this.checkVersioning
             },
             {
                 events: ['pull_request', 'pull_request_review'],
                 name: 'CheckForReadyMergeState',
-                suppressionLabels: [this.ignoreLabel],
-                triggerLabels: [this.mergeLabel],
+                suppressionLabels: [IgnoreLabel],
+                triggerLabels: [MergeLabel],
                 workerMethod: this.mergePR,
             },
             {
                 events: ['status'],
                 name: 'StatusChangeState',
-                suppressionLabels: [this.ignoreLabel],
-                triggerLabels: [this.mergeLabel],
+                suppressionLabels: [IgnoreLabel],
+                triggerLabels: [MergeLabel],
                 workerMethod: this.statusChange
             }
         ], (reg) => {
@@ -478,7 +479,7 @@ class VersionBot extends GithubBot.GithubBot {
             });
         }).then(() => {
             return this.gitCall(githubApi.issues.removeLabel, {
-                name: this.mergeLabel,
+                name: MergeLabel,
                 number: data.prNumber,
                 owner: data.owner,
                 repo: data.repoName
@@ -534,7 +535,7 @@ class VersionBot extends GithubBot.GithubBot {
             return true;
         });
     }
-    versionBotCommits(prInfo) {
+    hasVersionBotCommits(prInfo) {
         const githubApi = this.githubApi;
         const owner = prInfo.head.repo.owner.login;
         const repo = prInfo.head.repo.name;
@@ -554,29 +555,20 @@ class VersionBot extends GithubBot.GithubBot {
             return null;
         });
     }
-    validMaintainer(config, event) {
+    isValidMaintainer(config, event) {
         const maintainers = ((((config || {}).procbot || {}).githubbot || {}).versionbot || {}).maintainers;
         if (maintainers) {
             if (!_.includes(maintainers, event.sender.login)) {
-                let errorMessage = `The \`${this.mergeLabel}\` label was not added by an authorised ` +
+                let errorMessage = `The \`${MergeLabel}\` label was not added by an authorised ` +
                     'maintainer. Authorised maintainers are:\n';
-                _.each(maintainers, (maintainer) => errorMessage = errorMessage.concat(`* ${maintainer}\n`));
+                _.each(maintainers, (maintainer) => errorMessage = errorMessage.concat(`* @${maintainer}\n`));
                 throw new Error(errorMessage);
             }
         }
     }
     getConfiguration(owner, repo) {
         return this.retrieveGithubConfiguration(owner, repo).then((configuration) => {
-            const config = configuration;
-            if (config) {
-                const minimumVersion = (config.procbot || {}).minimum_version || true;
-                if (!minimumVersion) {
-                    throw new Error('${process.env.VERSIONBOT_NAME} cannot run as its version is less than the ' +
-                        'required minimum for the ${owner}/${repo} repository. ' +
-                        `This: ${process.env.npm_version_number}, Req: ${minimumVersion}`);
-                }
-            }
-            return Promise.resolve(config);
+            return configuration;
         }).catch((err) => {
             const errMessage = JSON.parse(err.message);
             if (errMessage.message !== 'Not Found') {

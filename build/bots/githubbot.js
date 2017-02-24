@@ -13,6 +13,7 @@ class GithubBot extends ProcBot.ProcBot {
         this.ghApiAccept = 'application/vnd.github.loki-preview+json';
         this.handleGithubEvent = (event, data) => {
             const labelHead = () => {
+                data.type = event;
                 switch (event) {
                     case 'issue_comment':
                     case 'issues':
