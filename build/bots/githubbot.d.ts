@@ -1,6 +1,7 @@
 import * as Promise from 'bluebird';
 import { GithubActionRegister } from './githubbot-types';
 import * as ProcBot from './procbot';
+import { ProcBotConfiguration } from './procbot-types';
 export declare class GithubBot extends ProcBot.ProcBot<string> {
     protected authToken: string;
     protected githubApi: any;
@@ -12,5 +13,6 @@ export declare class GithubBot extends ProcBot.ProcBot<string> {
     protected registerAction(action: GithubActionRegister): void;
     protected handleGithubEvent: (event: string, data: any) => Promise<void>;
     protected authenticate(): Promise<void>;
+    protected retrieveGithubConfiguration(owner: string, repo: string): Promise<ProcBotConfiguration | void>;
     protected gitCall: (method: any, options: any, retries?: number | undefined) => Promise<any>;
 }

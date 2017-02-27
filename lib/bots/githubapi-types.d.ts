@@ -1,6 +1,7 @@
 // Github Events --------------------------------------------------------------
 // These provide the current bare minimum definitions for child Procbots working with them.
 export interface PullRequestEvent {
+    type: 'pull_request';
     action: string;
     pull_request: {
         number: number;
@@ -22,6 +23,7 @@ export interface PullRequestEvent {
 }
 
 export interface PullRequestReviewEvent {
+    type: 'pull_request_review';
     action: string;
     pull_request: {
         number: number;

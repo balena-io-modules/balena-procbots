@@ -13,7 +13,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+import * as Promise from 'bluebird';
+import * as FS from 'fs';
+import * as yaml from 'js-yaml';
+import { ProcBotConfiguration } from './procbot-types';
 import * as Worker from './worker';
+
+const fsReadFile = Promise.promisify(FS.readFile);
 
 // A note on coding style here.
 // Exported enums and types are considered as a similar pattern to static types in
@@ -79,27 +85,27 @@ export class ProcBot<T> {
     }
 
     // Get the name of the bot.
-    public get botName() {
+    public get botName(): string {
         return this._botname;
     }
 
     // Get the log level.
-    protected get logLevel() {
+    protected get logLevel(): LogLevel {
         return this._logLevel;
     }
 
     // Set logLevel
-    protected set logLevel(level: number) {
+    protected set logLevel(level: LogLevel) {
         this._logLevel = level;
     }
 
     // Get alert level.
-    protected get alertLevel() {
+    protected get alertLevel(): AlertLevel {
         return this._alertLevel;
     }
 
     // Set logLevel
-    protected set alertLevel(level: number) {
+    protected set alertLevel(level: AlertLevel) {
         this._alertLevel = level;
     }
 
@@ -111,6 +117,35 @@ export class ProcBot<T> {
     // Alert output.
     protected alert(level: number, message: string): void {
         this.output(level, this._alertLevel, this.alertLevelStrings, message);
+    }
+
+    // Process a configuration file from YAML into a nested object.
+    protected processConfiguration(configFile: string): ProcBotConfiguration | void {
+        const config: ProcBotConfiguration = yaml.safeLoad(configFile);
+
+        if (!config) {
+            return;
+        }
+
+        // Swap out known tags that become booleans.
+        const minimumVersion = ((config || {}).procbot || {}).minimum_version;
+        if (minimumVersion && process.env.npm_package_version) {
+            if (process.env.npm_package_version < minimumVersion) {
+                throw new Error('Current ProcBot implementation does not meet minimum required version for the operations');
+            }
+        }
+
+        return config;
+    }
+
+    // Retrieve a configuration file.
+    // This default implementation assumes a pathname.
+    protected retrieveConfiguration(path: string): Promise<ProcBotConfiguration> | Promise<void> {
+        return fsReadFile(path).call('toString').then((contents) => {
+            return this.processConfiguration(contents);
+        }).catch(() => {
+            this.log(this._logLevel.INFO, 'No config file was found');
+        });
     }
 
     // Queue an event ready for running in a child.
@@ -137,13 +172,13 @@ export class ProcBot<T> {
     }
 
     // Remove a worker from a context post-action.
-    protected removeWorker = (context: T) => {
+    protected removeWorker = (context: T): void => {
         this.workers.delete(context);
     }
 
     // Generic output method for either type.
     // FIXME: Alter this to output to the appropriate external service.
-    private output(level: number, classLevel: number, levelStrings: string[], message: string) {
+    private output(level: number, classLevel: number, levelStrings: string[], message: string): void {
         if (level >= classLevel) {
             console.log(`${new Date().toISOString()}: ${levelStrings[level]} - ${message}`);
         }

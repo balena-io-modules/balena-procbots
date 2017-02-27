@@ -1,4 +1,8 @@
 "use strict";
+const Promise = require("bluebird");
+const FS = require("fs");
+const yaml = require("js-yaml");
+const fsReadFile = Promise.promisify(FS.readFile);
 var LogLevel;
 (function (LogLevel) {
     LogLevel[LogLevel["WARN"] = 0] = "WARN";
@@ -52,6 +56,26 @@ class ProcBot {
     }
     alert(level, message) {
         this.output(level, this._alertLevel, this.alertLevelStrings, message);
+    }
+    processConfiguration(configFile) {
+        const config = yaml.safeLoad(configFile);
+        if (!config) {
+            return;
+        }
+        const minimumVersion = ((config || {}).procbot || {}).minimum_version;
+        if (minimumVersion && process.env.npm_package_version) {
+            if (process.env.npm_package_version < minimumVersion) {
+                throw new Error('Current ProcBot implementation does not meet minimum required version for the operations');
+            }
+        }
+        return config;
+    }
+    retrieveConfiguration(path) {
+        return fsReadFile(path).call('toString').then((contents) => {
+            return this.processConfiguration(contents);
+        }).catch(() => {
+            this.log(this._logLevel.INFO, 'No config file was found');
+        });
     }
     queueEvent(event) {
         let entry;

@@ -1,4 +1,5 @@
-import { ProcBot } from './procbot';
+import { ProcBotConfiguration } from './procbot-types';
+
 // GithubBot ------------------------------------------------------------------
 
 // The GithubAction  defines an action, which is passed to a WorkerMethod should all of

@@ -5,15 +5,17 @@ import { GithubAction } from './githubbot-types';
 export declare class VersionBot extends GithubBot.GithubBot {
     private flowdock;
     constructor(integration: number, name?: string);
-    protected statusChange: (action: GithubAction, data: GithubBotApiTypes.StatusEvent) => Promise<void> | Promise<void[]>;
+    protected statusChange: (action: GithubAction, data: GithubBotApiTypes.StatusEvent) => Promise<void | void[]>;
     protected checkVersioning: (action: GithubAction, data: GithubBotApiTypes.PullRequestEvent) => Promise<void>;
     protected mergePR: (action: GithubAction, data: GithubBotApiTypes.PullRequestEvent | GithubBotApiTypes.PullRequestReviewEvent) => Promise<void>;
     private applyVersionist(versionData);
     private createCommitBlobs(repoData);
     private mergeToMaster(data);
     private checkStatuses(prInfo);
-    private versionBotCommits(prInfo);
+    private getVersionBotCommits(prInfo);
     private finaliseMerge;
+    private checkValidMaintainer(config, event);
+    private getConfiguration(owner, repo);
     private reportError(error);
 }
 export declare function createBot(): VersionBot;

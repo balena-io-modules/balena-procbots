@@ -13,6 +13,7 @@ class GithubBot extends ProcBot.ProcBot {
         this.ghApiAccept = 'application/vnd.github.loki-preview+json';
         this.handleGithubEvent = (event, data) => {
             const labelHead = () => {
+                data.type = event;
                 switch (event) {
                     case 'issue_comment':
                     case 'issues':
@@ -50,13 +51,13 @@ class GithubBot extends ProcBot.ProcBot {
                             if (action.suppressionLabels &&
                                 (_.intersection(action.suppressionLabels, foundLabels).length ===
                                     action.suppressionLabels.length)) {
-                                this.log(ProcBot.LogLevel.INFO, `Dropping '${action.name}' as suppression labels are all present`);
+                                this.log(ProcBot.LogLevel.DEBUG, `Dropping '${action.name}' as suppression labels are all present`);
                                 return;
                             }
                             if (action.triggerLabels &&
                                 (_.intersection(action.triggerLabels, foundLabels).length !==
                                     action.triggerLabels.length)) {
-                                this.log(ProcBot.LogLevel.INFO, `Dropping '${action.name}' as not all trigger labels are present`);
+                                this.log(ProcBot.LogLevel.DEBUG, `Dropping '${action.name}' as not all trigger labels are present`);
                                 return;
                             }
                         }
@@ -76,16 +77,22 @@ class GithubBot extends ProcBot.ProcBot {
                 const runApi = () => {
                     retriesLeft -= 1;
                     method(options).then(resolve).catch((err) => {
-                        const ghError = JSON.parse(err.message);
-                        if (retriesLeft < 1) {
-                            reject(err);
+                        console.log(err.message);
+                        if (err.message.indexOf('504: Gateway Timeout') !== -1) {
+                            reject(new Error('Github API timed out, could not complete'));
                         }
                         else {
-                            if ((ghError.message === 'Bad credentials') && !badCreds) {
-                                this.authenticate().then(runApi);
+                            const ghError = JSON.parse(err.message);
+                            if ((retriesLeft < 1) || (ghError.message === 'Not Found')) {
+                                reject(err);
                             }
                             else {
-                                setTimeout(runApi, 5000);
+                                if ((ghError.message === 'Bad credentials') && !badCreds) {
+                                    this.authenticate().then(runApi);
+                                }
+                                else {
+                                    setTimeout(runApi, 5000);
+                                }
                             }
                         }
                     });
@@ -167,11 +174,28 @@ class GithubBot extends ProcBot.ProcBot {
                 token: this.authToken,
                 type: 'token'
             });
-            this.log(ProcBot.LogLevel.DEBUG, `token for manual fiddling is: ${tokenDetails.token}`);
-            this.log(ProcBot.LogLevel.DEBUG, `token expires at: ${tokenDetails.expires_at}`);
-            this.log(ProcBot.LogLevel.DEBUG, 'Base curl command:');
-            this.log(ProcBot.LogLevel.DEBUG, `curl -XGET -H "Authorisation: token ${tokenDetails.token}" ` +
+            this.log(ProcBot.LogLevel.INFO, `token for manual fiddling is: ${tokenDetails.token}`);
+            this.log(ProcBot.LogLevel.INFO, `token expires at: ${tokenDetails.expires_at}`);
+            this.log(ProcBot.LogLevel.INFO, 'Base curl command:');
+            this.log(ProcBot.LogLevel.INFO, `curl -XGET -H "Authorisation: token ${tokenDetails.token}" ` +
                 `-H "${this.ghApiAccept}" https://api.github.com/`);
+        });
+    }
+    retrieveGithubConfiguration(owner, repo) {
+        return this.gitCall(this.githubApi.repos.getContent, {
+            owner,
+            repo,
+            path: '.procbots.yml'
+        }).then((data) => {
+            if (!Array.isArray(data)) {
+                if (data.type === 'file') {
+                    const config = this.processConfiguration(new Buffer(data.content, 'base64').toString('utf8'));
+                    if (config) {
+                        return config;
+                    }
+                }
+            }
+            return;
         });
     }
 }
