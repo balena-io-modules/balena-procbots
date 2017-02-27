@@ -6,6 +6,6 @@
 // what these may be)
 export interface ProcBotConfiguration {
     procbot: {
-        minimum_version?: number | boolean;
+        minimum_version?: number;
     };
 }

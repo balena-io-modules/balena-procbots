@@ -460,10 +460,8 @@ export class VersionBot extends GithubBot.GithubBot {
                 throw new Error(`alreadyCommitted`);
             }
 
-            // If this was a labeling action and there's a config, check to see if there's a maintainers
-            // list and ensure the labeler was on it.
+            // If this was a labeling action and it's a pull_request event.
             if ((data.action === 'labeled') && (data.type === 'pull_request')) {
-                // Note that labeling can only occur on a PRE data, hence casting.
                 this.checkValidMaintainer(botConfig, data);
             }
 
