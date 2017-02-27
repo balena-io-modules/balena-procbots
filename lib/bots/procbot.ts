@@ -131,7 +131,7 @@ export class ProcBot<T> {
         const minimumVersion = ((config || {}).procbot || {}).minimum_version;
         if (minimumVersion && process.env.npm_package_version) {
             if (process.env.npm_package_version < minimumVersion) {
-                throw new Error('Current ProcBot implementation does not minimum required version for the operations');
+                throw new Error('Current ProcBot implementation does not meet minimum required version for the operations');
             }
         }
 
