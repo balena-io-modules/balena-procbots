@@ -164,6 +164,7 @@ export class GeckoBot extends GithubBot.GithubBot {
 
                 this.newEntriesFromRepos();
                 updateGeckoboard = true;
+                this.log(ProcBot.LogLevel.INFO, `Incremented count for ${owner}/${name}@${new Date().toISOString()}`);
                 break;
 
             case 'closed':
@@ -173,6 +174,7 @@ export class GeckoBot extends GithubBot.GithubBot {
                     // Create new data entry.
                     this.newEntriesFromRepos();
                     updateGeckoboard = true;
+                    this.log(ProcBot.LogLevel.INFO, `Decremented count for ${owner}/${name}@${new Date().toISOString()}`);
                 } else {
                     // Else we just ignore it, we don't know where this came from.
                     this.log(ProcBot.LogLevel.WARN, `Got a closed PR for repo ${owner}/${name} we didn't know about!`);
