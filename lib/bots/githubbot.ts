@@ -251,8 +251,8 @@ export class GithubBot extends ProcBot.ProcBot<string> {
             this.log(ProcBot.LogLevel.INFO, `token expires at: ${tokenDetails.expires_at}`);
             this.log(ProcBot.LogLevel.INFO, 'Base curl command:');
             this.log(ProcBot.LogLevel.INFO,
-                `curl -XGET -H "Authorisation: token ${tokenDetails.token}" ` +
-                `-H "${this.ghApiAccept}" https://api.github.com/`);
+                `curl -XGET -H "Authorization: token ${tokenDetails.token}" ` +
+                `-H "Accept: ${this.ghApiAccept}" https://api.github.com/`);
         });
     }
 

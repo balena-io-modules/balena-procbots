@@ -177,8 +177,8 @@ class GithubBot extends ProcBot.ProcBot {
             this.log(ProcBot.LogLevel.INFO, `token for manual fiddling is: ${tokenDetails.token}`);
             this.log(ProcBot.LogLevel.INFO, `token expires at: ${tokenDetails.expires_at}`);
             this.log(ProcBot.LogLevel.INFO, 'Base curl command:');
-            this.log(ProcBot.LogLevel.INFO, `curl -XGET -H "Authorisation: token ${tokenDetails.token}" ` +
-                `-H "${this.ghApiAccept}" https://api.github.com/`);
+            this.log(ProcBot.LogLevel.INFO, `curl -XGET -H "Authorization: token ${tokenDetails.token}" ` +
+                `-H "Accept: ${this.ghApiAccept}" https://api.github.com/`);
         });
     }
     retrieveGithubConfiguration(owner, repo) {

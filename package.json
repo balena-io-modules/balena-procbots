@@ -50,6 +50,7 @@
     "bluebird": "^3.0.35",
     "body-parser": "^1.9.2",
     "express": "^4.0.34",
+    "geckoboard": "^1.1.0",
     "github": "^8.0.0",
     "github-webhook-handler": "^0.6.0",
     "hmac": "^1.0.1",
