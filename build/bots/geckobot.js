@@ -19,7 +19,7 @@ class GeckoBot extends GithubBot.GithubBot {
             let foundEntry;
             for (let index = 0; index < this.allRepos.length; index += 1) {
                 const entry = this.allRepos[index];
-                if (entry.name === `${owner}/${name}`) {
+                if (entry.name === `${name}`) {
                     foundEntry = entry;
                     break;
                 }
@@ -32,7 +32,7 @@ class GeckoBot extends GithubBot.GithubBot {
                     }
                     else {
                         foundEntry = {
-                            name: `${owner}/${name}`,
+                            name: `${name}`,
                             openprs: 1
                         };
                         this.allRepos.push(foundEntry);
@@ -113,7 +113,7 @@ class GeckoBot extends GithubBot.GithubBot {
             state: 'open'
         }).then((results) => {
             return {
-                name: `${owner}/${repo}`,
+                name: `${repo}`,
                 openprs: results.length,
                 attime: ''
             };
