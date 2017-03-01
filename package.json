@@ -23,7 +23,7 @@
   },
   "scripts": {
     "build": "gulp build",
-    "start": "node ./bin/procbots -b versionbot"
+    "start": "node ./bin/procbots -b geckobot"
   },
   "devDependencies": {
     "@types/bluebird-global": "^3.0.0",
