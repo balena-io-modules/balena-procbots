@@ -41,6 +41,25 @@ export interface PullRequestReviewEvent {
     };
 }
 
+export interface IssueEvent {
+    type: 'issues';
+    action: string;
+    issue: {
+        title: string;
+        html_url: string;
+        url: string;
+    };
+    repository: {
+        name: string;
+        owner: {
+            login: string;
+        }
+    };
+    sender: {
+        login: string;
+    };
+}
+
 export interface StatusEventBranch {
     name: string;
     commit: {
@@ -107,6 +126,16 @@ export interface PullRequest {
     user: {
         login: string;
     };
+}
+
+export interface Issue {
+    id: string;
+    state: string;
+    title: string;
+    body: string;
+    pull_request?: {
+        url: string;
+    }
 }
 
 export interface Blob {

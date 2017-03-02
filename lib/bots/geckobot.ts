@@ -41,16 +41,27 @@ interface RepoArray {
     repositories: AvailableRepo[];
 }
 
-interface OpenPREntry {
+interface DataPoint {
     name: string;
-    openprs: number;
     attime: string;
+}
+
+interface OpenPREntry extends DataPoint {
+    openprs: number;
+}
+
+interface OpenIssueEntry extends DataPoint {
+    openissues: number;
 }
 
 interface RepoTracker {
     name: string;
-    openprs: number;
+    openprs?: number;
+    openissues?: number;
 }
+
+const PR_SET_NAME = 'pullrequests';
+const ISSUE_SET_NAME = 'issues';
 
 // How this works:
 // * On startup, we retrieve the details of every single repo we have access to.
@@ -67,7 +78,8 @@ interface RepoTracker {
 //          * We decrement number of PRs on a close (we do *not* delete, however, as this would
 //            ruin the dataset).
 export class GeckoBot extends GithubBot.GithubBot {
-    private dataset: OpenPREntry[] = [];
+    private datasetPRs: OpenPREntry[] = [];
+    private datasetIssues: OpenIssueEntry[] = [];
     private allRepos: RepoTracker[] = [];
     private geckoBoard: any;
 
@@ -76,6 +88,8 @@ export class GeckoBot extends GithubBot.GithubBot {
         // This is the GECKOBOT.
         super(integration, name);
 
+        // Repo list.
+        let knownRepos: RepoArray;
 
         // Set login for Geckoboard
         this.geckoBoard = Promise.promisifyAll(GeckoBoard(process.env.GECKOBOT_GECKO_KEY).datasets);
@@ -85,7 +99,12 @@ export class GeckoBot extends GithubBot.GithubBot {
                 // Authenticate the Github API.
         this.authenticate().then(() => {
             // Scrub any previous data set entries.
-            return this.geckoBoard.deleteAsync('pullrequests');
+            return Promise.all([
+                this.geckoBoard.deleteAsync(PR_SET_NAME),
+                this.geckoBoard.deleteAsync(ISSUE_SET_NAME)
+            ]);
+        }).catch(() => {
+            // Plow on regardless.
         }).then(() => {
             const availableRepos: any = {
                 headers: {
@@ -99,21 +118,51 @@ export class GeckoBot extends GithubBot.GithubBot {
             };
             return request.get(availableRepos);
         }).then((repos: RepoArray) => {
-            return Promise.map(repos.repositories, (repo: AvailableRepo) => {
+            knownRepos = repos;
+            return Promise.map(knownRepos.repositories, (repo: AvailableRepo) => {
                 return this.getOpenPRsForRepo(repo.owner.login, repo.name);
-            })
+            });
         }).then((openPRs: OpenPREntry[]) => {
             // Push a new key for each repo we know about.
             _.each(openPRs, (openPR) => {
-                this.allRepos.push({
-                    name: openPR.name,
-                    openprs: openPR.openprs
-                });
+                // Try and find this already in the list.
+                const entry = _.find(this.allRepos, (entry) => entry.name === openPR.name);
+                if (entry) {
+                    entry.openprs = openPR.openprs;
+                } else {
+                    this.allRepos.push({
+                        name: openPR.name,
+                        openprs: openPR.openprs
+                    });
+                }
             });
-            this.newEntriesFromRepos();
+            this.newPREntriesFromRepos();
+
+            return Promise.map(knownRepos.repositories, (repo: AvailableRepo) => {
+                return this.getOpenIssuesForRepo(repo.owner.login, repo.name);
+            });
+        }).then((openIssues: OpenIssueEntry[]) => {
+            // Push a new key for each repo we know about.
+            console.log(openIssues);
+            _.each(openIssues, (openIssue) => {
+                // Try and find this already in the list.
+                const entry = _.find(this.allRepos, (entry) => entry.name === openIssue.name);
+                if (entry) {
+                    entry.openissues = openIssue.openissues;
+                } else {
+                    this.allRepos.push({
+                        name: openIssue.name,
+                        openissues: openIssue.openissues
+                    });
+                }
+            });
+            this.newIssueEntriesFromRepos();
 
             // We have all our data points and some keys, push the dataset to Geckoboard.
-            return this.postDataToGeckoboard();
+            return Promise.all([
+                this.postPRDataToGeckoboard(this.datasetPRs),
+                this.postIssueDataToGeckoboard(this.datasetIssues)
+            ]);
         }).then(() => {
             // Now we register for events.
             _.forEach([
@@ -121,13 +170,17 @@ export class GeckoBot extends GithubBot.GithubBot {
                     events: [ 'pull_request' ],
                     name: 'DeterminePRState',
                     workerMethod: this.updatePR
+                },
+                {
+                    events: [ 'issues' ],
+                    name: 'DetermineIssueState',
+                    workerMethod: this.updateIssue
                 }
             ], (reg: GithubActionRegister) => {
                 this.registerAction(reg);
             });
         });
     }
-
 
     protected updatePR = (action: GithubAction, data: GithubBotApiTypes.PullRequestEvent): Promise<void> => {
         const head = data.pull_request.head;
@@ -153,7 +206,11 @@ export class GeckoBot extends GithubBot.GithubBot {
             case 'reopened':
                 // Did we find a previous entry?
                 if (foundEntry) {
-                    foundEntry.openprs += 1;
+                    if (foundEntry.openprs) {
+                        foundEntry.openprs += 1;
+                    } else {
+                        foundEntry.openprs = 1;
+                    }
                 } else {
                     foundEntry = {
                         name: `${name}`,
@@ -162,17 +219,21 @@ export class GeckoBot extends GithubBot.GithubBot {
                     this.allRepos.push(foundEntry);
                 }
 
-                this.newEntriesFromRepos();
+                this.newPREntriesFromRepos();
                 updateGeckoboard = true;
                 this.log(ProcBot.LogLevel.INFO, `Incremented count for ${owner}/${name}@${new Date().toISOString()}`);
                 break;
 
             case 'closed':
                 if (foundEntry) {
-                    foundEntry.openprs -= 1;
+                    if (foundEntry.openprs) {
+                        foundEntry.openprs -= 1;
+                    } else {
+                        foundEntry.openprs = 0; // Spurious
+                    }
 
                     // Create new data entry.
-                    this.newEntriesFromRepos();
+                    this.newPREntriesFromRepos();
                     updateGeckoboard = true;
                     this.log(ProcBot.LogLevel.INFO, `Decremented count for ${owner}/${name}@${new Date().toISOString()}`);
                 } else {
@@ -183,7 +244,7 @@ export class GeckoBot extends GithubBot.GithubBot {
         }
 
         if (updateGeckoboard) {
-            return this.postDataToGeckoboard()
+            return this.postPRDataToGeckoboard(this.datasetPRs)
             .catch((err: Error) => {
                 // Call the GECKOBOT error specific method.
                 err = err;
@@ -197,6 +258,80 @@ export class GeckoBot extends GithubBot.GithubBot {
         }
     }
 
+    protected updateIssue = (action: GithubAction, data: GithubBotApiTypes.IssueEvent): Promise<void> => {
+        const owner = data.repository.owner.login;
+        const name = data.repository.name;
+        let updateGeckoboard = false;
+        action = action;
+
+        // Try and find an entry for the repo.
+        let foundEntry;
+        for (let index = 0; index < this.allRepos.length; index += 1) {
+            const entry = this.allRepos[index];
+
+            if (entry.name === `${name}`) {
+                foundEntry = entry;
+                break;
+            }
+        }
+
+        // Depending on what type of action this is, we do several things:
+        switch (data.action) {
+            case 'opened':
+            case 'reopened':
+                // Did we find a previous entry?
+                if (foundEntry) {
+                    if (foundEntry.openissues) {
+                        foundEntry.openissues += 1;
+                    } else {
+                        foundEntry.openissues = 1;
+                    }
+                } else {
+                    foundEntry = {
+                        name: `${name}`,
+                        openprs: 1
+                    }
+                    this.allRepos.push(foundEntry);
+                }
+
+                this.newIssueEntriesFromRepos();
+                updateGeckoboard = true;
+                this.log(ProcBot.LogLevel.INFO, `Incremented issue count for ${owner}/${name}@${new Date().toISOString()}`);
+                break;
+
+            case 'closed':
+                if (foundEntry) {
+                    if (foundEntry.openissues) {
+                        foundEntry.openissues -= 1;
+                    } else {
+                        foundEntry.openissues = 0; // Spurious
+                    }
+
+                    // Create new data entry.
+                    this.newIssueEntriesFromRepos();
+                    updateGeckoboard = true;
+                    this.log(ProcBot.LogLevel.INFO, `Decremented issue count for ${owner}/${name}@${new Date().toISOString()}`);
+                } else {
+                    // Else we just ignore it, we don't know where this came from.
+                    this.log(ProcBot.LogLevel.WARN, `Got a closed issue for repo ${owner}/${name} we didn't know about!`);
+                }
+                break;
+        }
+
+        if (updateGeckoboard) {
+            return this.postIssueDataToGeckoboard(this.datasetIssues)
+            .catch((err: Error) => {
+                // Call the GECKOBOT error specific method.
+                err = err;
+                this.reportError({
+                    brief: `${process.env.GECKOBOT_NAME} couldn't do geckoboard`,
+                    message: 'Whoops'
+                });
+            });
+        } else {
+            return Promise.resolve();
+        }
+    }
     private getOpenPRsForRepo(owner: string, repo: string): Promise<OpenPREntry> {
         // Get all open PRs for the repo.
         const githubApi = this.githubApi;
@@ -214,22 +349,86 @@ export class GeckoBot extends GithubBot.GithubBot {
         });
     }
 
-    private newEntriesFromRepos() {
+    private getOpenIssuesForRepo(owner: string, repo: string): Promise<OpenIssueEntry> {
+        // Get all open PRs for the repo.
+        const githubApi = this.githubApi;
+        let issueCount = 0;
+        let pageNumber = 0;
+        const pageSize = 100;
+        let issueIds: string[] = [];
+        const getPage = (): Promise<any> => {
+            console.log(`${repo} get page ${pageNumber}`);
+            return this.gitCall(githubApi.issues.getForRepo, {
+                owner,
+                repo,
+                state: 'open',
+                per_page: pageSize,
+                page: pageNumber
+            }).then((results: GithubBotApiTypes.Issue[]) => {
+                // Get actual issues and not prs.
+                console.log(`${repo}: ${results.length}`);
+                _.each(results, (result: GithubBotApiTypes.Issue) => {
+                    if (!result.pull_request && (result.state === 'open')) {
+                        if (_.includes(issueIds, result.id)) {
+                            console.log("WE HAVE SEEN THIS ONE BEFORE!");
+                        } else {
+                            issueCount += 1;
+                        }
+                    }
+                    issueIds.push(result.id);
+                });
+                console.log(`open issues for ${repo} is now: ${issueCount}`);
+
+                console.log(`results length for ${repo} was ${results.length}`);
+                if (results.length === pageSize) {
+                    pageNumber += 1;
+                    return getPage();
+                }
+
+                console.log(`firing for ${repo}, count: ${issueCount}`);
+                return {
+                    name: `${repo}`,
+                    openissues: issueCount,
+                    attime: ''
+                };
+            });
+        };
+
+        return getPage();
+    }
+
+    private newPREntriesFromRepos() {
         // Go through all the known repos and create new data points.
         const attime = new Date().toISOString();
         _.each(this.allRepos, (repo) => {
-            this.dataset.push({
-                name: repo.name,
-                openprs: repo.openprs,
-                attime: attime
-            });
+            if (repo.openprs) {
+                this.datasetPRs.push({
+                    name: repo.name,
+                    openprs: repo.openprs,
+                    attime: attime
+                });
+            }
         });
     }
 
-    private postDataToGeckoboard(): Promise<void> {
+    private newIssueEntriesFromRepos() {
+        // Go through all the known repos and create new data points.
+        const attime = new Date().toISOString();
+        _.each(this.allRepos, (repo) => {
+            if (repo.openissues) {
+                this.datasetIssues.push({
+                    name: repo.name,
+                    openissues: repo.openissues,
+                    attime: attime
+                });
+            }
+        });
+    }
+
+    private postPRDataToGeckoboard(dataset: OpenPREntry[]): Promise<void> {
         // Create the dataset (or ensure it exists)
         return this.geckoBoard.findOrCreateAsync({
-            id: 'pullrequests',
+            id: PR_SET_NAME,
             fields: {
                 name: {
                     type: 'string',
@@ -244,9 +443,33 @@ export class GeckoBot extends GithubBot.GithubBot {
                     name: 'Date'
                 }
             }
-        }).then((dataset: any) => {
-            const dataSetPromise = Promise.promisifyAll(dataset);
-            return dataSetPromise.putAsync(this.dataset);
+        }).then((dataCalls: any) => {
+            const dataSetPromise = Promise.promisifyAll(dataCalls);
+            return dataSetPromise.putAsync(dataset);
+        });
+    }
+
+    private postIssueDataToGeckoboard(dataset: OpenIssueEntry[]): Promise<void> {
+        // Create the dataset (or ensure it exists)
+        return this.geckoBoard.findOrCreateAsync({
+            id: ISSUE_SET_NAME,
+            fields: {
+                name: {
+                    type: 'string',
+                    name: 'Repository'
+                },
+                openissues: {
+                    type: 'number',
+                    name: 'Open Issues'
+                },
+                attime: {
+                    type: 'datetime',
+                    name: 'Date'
+                }
+            }
+        }).then((dataCalls: any) => {
+            const dataSetPromise = Promise.promisifyAll(dataCalls);
+            return dataSetPromise.putAsync(dataset);
         });
     }
 
