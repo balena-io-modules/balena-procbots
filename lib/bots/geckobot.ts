@@ -471,7 +471,7 @@ export class GeckoBot extends GithubBot.GithubBot {
             }
         }).then((dataCalls: any) => {
             const dataSetPromise = Promise.promisifyAll(dataCalls);
-            return dataSetPromise.postAsync(dataset);
+            return dataSetPromise.postAsync(dataset, null);
         });
     }
 
