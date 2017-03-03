@@ -399,6 +399,7 @@ export class GeckoBot extends GithubBot.GithubBot {
 
     private newPREntriesFromRepos() {
         // Go through all the known repos and create new data points.
+        this.datasetPRs = [];
         const attime = new Date().toISOString();
         _.each(this.allRepos, (repo) => {
             if (repo.openprs) {
@@ -413,6 +414,7 @@ export class GeckoBot extends GithubBot.GithubBot {
 
     private newIssueEntriesFromRepos() {
         // Go through all the known repos and create new data points.
+        this.datasetIssues = [];
         const attime = new Date().toISOString();
         _.each(this.allRepos, (repo) => {
             if (repo.openissues) {
@@ -445,7 +447,7 @@ export class GeckoBot extends GithubBot.GithubBot {
             }
         }).then((dataCalls: any) => {
             const dataSetPromise = Promise.promisifyAll(dataCalls);
-            return dataSetPromise.putAsync(dataset);
+            return dataSetPromise.postAsync(dataset);
         });
     }
 
@@ -469,7 +471,7 @@ export class GeckoBot extends GithubBot.GithubBot {
             }
         }).then((dataCalls: any) => {
             const dataSetPromise = Promise.promisifyAll(dataCalls);
-            return dataSetPromise.putAsync(dataset);
+            return dataSetPromise.postAsync(dataset);
         });
     }
 

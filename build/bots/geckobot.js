@@ -282,6 +282,7 @@ class GeckoBot extends GithubBot.GithubBot {
         return getPage();
     }
     newPREntriesFromRepos() {
+        this.datasetPRs = [];
         const attime = new Date().toISOString();
         _.each(this.allRepos, (repo) => {
             if (repo.openprs) {
@@ -294,6 +295,7 @@ class GeckoBot extends GithubBot.GithubBot {
         });
     }
     newIssueEntriesFromRepos() {
+        this.datasetIssues = [];
         const attime = new Date().toISOString();
         _.each(this.allRepos, (repo) => {
             if (repo.openissues) {
@@ -324,7 +326,7 @@ class GeckoBot extends GithubBot.GithubBot {
             }
         }).then((dataCalls) => {
             const dataSetPromise = Promise.promisifyAll(dataCalls);
-            return dataSetPromise.putAsync(dataset);
+            return dataSetPromise.postAsync(dataset);
         });
     }
     postIssueDataToGeckoboard(dataset) {
@@ -346,7 +348,7 @@ class GeckoBot extends GithubBot.GithubBot {
             }
         }).then((dataCalls) => {
             const dataSetPromise = Promise.promisifyAll(dataCalls);
-            return dataSetPromise.putAsync(dataset);
+            return dataSetPromise.postAsync(dataset);
         });
     }
     reportError(error) {
