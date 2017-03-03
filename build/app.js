@@ -53,9 +53,9 @@ app.post('/webhooks', (req, res) => {
         bot.firedEvent(eventType, payload);
     });
 });
-app.listen(5678, () => {
+app.listen(4567, () => {
     console.log(`---> ${process.env.npm_package_name}, Version ${process.env.npm_package_version} <---`);
-    console.log('Listening for Github Integration hooks on port 5678.');
+    console.log('Listening for Github Integration hooks on port 4567.');
 });
 
 //# sourceMappingURL=app.js.map
