@@ -131,7 +131,9 @@ class VersionBot extends GithubBot.GithubBot {
                         owner,
                         repo: name
                     }).then((mergePr) => {
-                        return this.finaliseMerge(data, mergePr);
+                        if (mergePr.state === 'open') {
+                            return this.finaliseMerge(data, mergePr);
+                        }
                     });
                 }
             }).catch((err) => {
@@ -504,32 +506,32 @@ class VersionBot extends GithubBot.GithubBot {
         const owner = prInfo.head.repo.owner.login;
         const repo = prInfo.head.repo.name;
         const branch = prInfo.head.ref;
-        let contexts = [];
-        let foundStatuses = [];
+        let protectedContexts = [];
         return this.gitCall(githubApi.repos.getProtectedBranchRequiredStatusChecks, {
             branch: 'master',
             owner,
             repo
         }).then((statusContexts) => {
-            contexts = statusContexts.contexts;
+            protectedContexts = statusContexts.contexts;
             return this.gitCall(githubApi.repos.getCombinedStatus, {
                 owner,
                 ref: branch,
                 repo
             });
         }).then((statuses) => {
-            _.each(statuses.statuses, (status) => {
-                if (_.includes(contexts, status.context)) {
-                    if (status.state === 'success') {
-                        foundStatuses.push(true);
+            const statusResults = [];
+            _.each(protectedContexts, (proContext) => {
+                _.each(statuses.statuses, (status) => {
+                    if (_.startsWith(status.context, proContext)) {
+                        statusResults.push({
+                            name: status.context,
+                            passed: status.state === 'success'
+                        });
                     }
-                    else {
-                        foundStatuses.push(false);
-                    }
-                }
+                });
             });
-            if ((foundStatuses.length !== contexts.length) ||
-                _.includes(foundStatuses, false)) {
+            if (!_.every(statusResults, ['passed', true])) {
+                this.log(ProcBot.LogLevel.WARN, `Status checks failed: ${JSON.stringify(statusResults)}`);
                 return false;
             }
             return true;

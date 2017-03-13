@@ -103,6 +103,7 @@ export interface PullRequest {
     mergeable: boolean;
     mergeable_state: string;
     number: number;
+    state: string;
     url: string;
     user: {
         login: string;
