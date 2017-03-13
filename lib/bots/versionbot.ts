@@ -97,6 +97,11 @@ interface VersionBotConfiguration extends ProcBotConfiguration {
     };
 }
 
+interface StatusResult {
+    name: string;
+    passed: boolean;
+}
+
 type GenericPullRequestEvent = GithubBotApiTypes.PullRequestEvent | GithubBotApiTypes.PullRequestReviewEvent;
 
 const MergeLabel = 'procbots/versionbot/ready-to-merge';
@@ -314,7 +319,9 @@ export class VersionBot extends GithubBot.GithubBot {
                     owner,
                     repo: name
                 }).then((mergePr: GithubBotApiTypes.PullRequest) => {
-                    return this.finaliseMerge(data, mergePr);
+                    if (mergePr.state === 'open') {
+                        return this.finaliseMerge(data, mergePr);
+                    }
                 });
             }
         }).catch((err: Error) => {
@@ -785,15 +792,14 @@ export class VersionBot extends GithubBot.GithubBot {
         const owner = prInfo.head.repo.owner.login;
         const repo = prInfo.head.repo.name;
         const branch = prInfo.head.ref;
-        let contexts: string[] = [];
-        let foundStatuses: boolean[] = [];
+        let protectedContexts: string[] = [];
 
         return this.gitCall(githubApi.repos.getProtectedBranchRequiredStatusChecks, {
             branch: 'master',
             owner,
             repo
         }).then((statusContexts: GithubBotApiTypes.RequiredStatusChecks) => {
-            contexts = statusContexts.contexts;
+            protectedContexts = statusContexts.contexts;
 
             // Now get all of the statuses for the master branch.
             return this.gitCall(githubApi.repos.getCombinedStatus, {
@@ -802,22 +808,44 @@ export class VersionBot extends GithubBot.GithubBot {
                 repo
             });
         }).then((statuses: GithubBotApiTypes.CombinedStatus) => {
-            // We go through the statuses and check them off against the contexts.
-            // If we get to the end and:
-            //  1. Not all of the contexts have been seen
-            //  2. Any of them have a state other than 'success'
-            // Then the status checks have failed and we throw an error.
-            _.each(statuses.statuses, (status) => {
-                if (_.includes(contexts, status.context)) {
-                    if (status.state === 'success') {
-                        foundStatuses.push(true);
-                    } else {
-                        foundStatuses.push(false);
+            // Contexts need to be checked specifically.
+            // Branch protection can include contexts that use prefixes which are then
+            // suffixed to create more statuses.
+            // For example, 'continuous-integration/travis-ci' contexts can end up as:
+            //  * continuous-integration/travis-ci/push
+            //  * continuous-integration/travis-ci/pr
+            // statuses, which mean there are actually two checks per context and not one.
+            //
+            // The simplest way to check the contexts are therefore to get a list of
+            // required status contexts (which we do anyway), then go through each
+            // actual status check from the combined, and try and match the prefix of a context
+            // with each status. If we get a hit, and the status is a failure, then we
+            // have failed. If we match and the status is a pass, we've passed.
+            // We can therefore assume that a pass has occurred if:
+            //  * We have seen one of every context in the protected status list at least once
+            //    AND
+            //  * Each of those seen has passed
+            // Should any protected context not be seen in the current status checks, then
+            // we have failed.
+            const statusResults: StatusResult[] = [];
+            _.each(protectedContexts, (proContext) => {
+                // We go through every status and see if the context prefixes the context
+                // of the status.
+                _.each(statuses.statuses, (status) => {
+                    if (_.startsWith(status.context, proContext)) {
+                        // Did the check pass?
+                        statusResults.push({
+                            name: status.context,
+                            passed: status.state === 'success'
+                        });
                     }
-                }
+                });
             });
-            if ((foundStatuses.length !== contexts.length) ||
-                _.includes(foundStatuses, false)) {
+
+            // Have a final list of results, if any of them have a failure state, we
+            // bail and log it so we can see what went wrong.
+            if (!_.every(statusResults, [ 'passed', true ])) {
+                this.log(ProcBot.LogLevel.WARN, `Status checks failed: ${JSON.stringify(statusResults)}`);
                 return false;
             }
 
