@@ -1,0 +1,264 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const Promise = require("bluebird");
+const bodyParser = require("body-parser");
+const crypto = require("crypto");
+const express = require("express");
+const GithubApi = require("github");
+const jwt = require("jsonwebtoken");
+const _ = require("lodash");
+const path = require("path");
+const request = require("request-promise");
+const worker_1 = require("../framework/worker");
+const worker_client_1 = require("../framework/worker-client");
+const logger_1 = require("../utils/logger");
+class GithubService extends worker_client_1.WorkerClient {
+    constructor(constObj) {
+        super();
+        this.eventTriggers = [];
+        this.ghApiAccept = 'application/vnd.github.loki-preview+json';
+        this._serviceName = path.basename(__filename.split('.')[0]);
+        this.logger = new logger_1.Logger();
+        this.handleGithubEvent = (event) => {
+            const labelHead = () => {
+                switch (event.cookedEvent.type) {
+                    case 'issue_comment':
+                    case 'issues':
+                        return {
+                            number: event.rawEvent.issue.number,
+                            repo: event.rawEvent.repository
+                        };
+                    case 'pull_request':
+                    case 'pull_request_review':
+                    case 'pull_request_review_comment':
+                        return {
+                            number: event.rawEvent.pull_request.number,
+                            repo: event.rawEvent.repository
+                        };
+                    default:
+                        return;
+                }
+            };
+            return Promise.map(this.eventTriggers, (registration) => {
+                if (_.includes(registration.events, event.cookedEvent.type)) {
+                    let labelEvent = labelHead();
+                    let labelPromise = Promise.resolve({ source: this._serviceName });
+                    if ((registration.triggerLabels || registration.suppressionLabels) && labelEvent) {
+                        const request = {
+                            contexts: {},
+                            source: this._serviceName
+                        };
+                        request.contexts[this._serviceName] = {
+                            data: {
+                                number: labelEvent.number,
+                                owner: labelEvent.repo.owner.login,
+                                repo: labelEvent.repo.name
+                            },
+                            method: this.githubApi.issues.getIssueLabels
+                        };
+                        labelPromise = this.sendData(request);
+                    }
+                    labelPromise.then((data) => {
+                        const labels = data.response;
+                        if (labels) {
+                            const foundLabels = labels.map((label) => {
+                                return label.name;
+                            });
+                            if (registration.suppressionLabels &&
+                                (_.intersection(registration.suppressionLabels, foundLabels).length ===
+                                    registration.suppressionLabels.length)) {
+                                this.logger.log(logger_1.LogLevel.DEBUG, `Dropping '${registration.name}' as suppression labels are all present`);
+                                return;
+                            }
+                            if (registration.triggerLabels &&
+                                (_.intersection(registration.triggerLabels, foundLabels).length !==
+                                    registration.triggerLabels.length)) {
+                                this.logger.log(logger_1.LogLevel.DEBUG, `Dropping '${registration.name}' as not all trigger labels are present`);
+                                return;
+                            }
+                        }
+                        return registration.listenerMethod(registration, event);
+                    }).catch((err) => {
+                        this.logger.alert(logger_1.AlertLevel.ERROR, 'Error thrown in main event/label filter loop:' +
+                            err.message);
+                    });
+                }
+            }).return();
+        };
+        if (constObj.loginType.type !== 'integration') {
+            throw new Error('Do not yet support non-Integration type clients');
+        }
+        constObj.loginType = constObj.loginType;
+        this.integrationId = constObj.loginType.integrationId;
+        this.pem = constObj.loginType.pem;
+        if (constObj.type === 'listener') {
+            const listenerConstructor = constObj;
+            this.getWorker = (event) => {
+                const repository = event.data.rawEvent.repository;
+                let context = '';
+                if (repository) {
+                    context = repository.full_name;
+                }
+                else {
+                    context = 'generic';
+                }
+                let worker = this.workers.get(context);
+                if (worker) {
+                    return worker;
+                }
+                worker = new worker_1.Worker(context, this.removeWorker);
+                this.workers.set(context, worker);
+                return worker;
+            };
+            function verifyWebhookToken(payload, hubSignature) {
+                const newHmac = crypto.createHmac('sha1', listenerConstructor.webhookSecret);
+                newHmac.update(payload);
+                if (('sha1=' + newHmac.digest('hex')) === hubSignature) {
+                    return true;
+                }
+                return false;
+            }
+            const app = express();
+            app.use(bodyParser.urlencoded({ extended: true }));
+            app.use(bodyParser.json());
+            app.post(listenerConstructor.path, (req, res) => {
+                const eventType = req.get('x-github-event');
+                const payload = req.body;
+                if (!verifyWebhookToken(JSON.stringify(payload), req.get('x-hub-signature'))) {
+                    res.sendStatus(401);
+                    return;
+                }
+                res.sendStatus(200);
+                this.queueEvent({
+                    data: {
+                        cookedEvent: {
+                            data: payload,
+                            githubApi: this.githubApi,
+                            githubAuthToken: this.authToken,
+                            type: eventType
+                        },
+                        rawEvent: payload,
+                        source: this._serviceName
+                    },
+                    workerMethod: this.handleGithubEvent
+                });
+            });
+            app.listen(listenerConstructor.port, () => {
+                this.logger.log(logger_1.LogLevel.INFO, `---> ${listenerConstructor.client}: Listening Github Service on ` +
+                    `':${listenerConstructor.port}/${listenerConstructor.path}'`);
+                this.authenticate();
+            });
+        }
+        this.githubApi = new GithubApi({
+            Promise: Promise,
+            headers: {
+                Accept: this.ghApiAccept
+            },
+            host: 'api.github.com',
+            protocol: 'https',
+            timeout: 5000
+        });
+    }
+    registerEvent(registration) {
+        this.eventTriggers.push(registration);
+    }
+    sendData(data) {
+        const emitContext = _.pickBy(data.contexts, (_val, key) => {
+            return key === this._serviceName;
+        });
+        const githubContext = emitContext.github;
+        let retriesLeft = 3;
+        const runApi = () => {
+            retriesLeft -= 1;
+            return githubContext.method(githubContext.data).then((resData) => {
+                return {
+                    response: resData,
+                    source: this._serviceName
+                };
+            }).catch((err) => {
+                console.log(err.message);
+                if (err.message.indexOf('504: Gateway Timeout') !== -1) {
+                    return {
+                        err: new Error('Github API timed out, could not complete'),
+                        source: this._serviceName
+                    };
+                }
+                else {
+                    const ghError = JSON.parse(err.message);
+                    if ((retriesLeft < 1) || (ghError.message === 'Not Found')) {
+                        return {
+                            err,
+                            source: this._serviceName
+                        };
+                    }
+                    else {
+                        if (ghError.message === 'Bad credentials') {
+                            return this.authenticate().then(runApi);
+                        }
+                        else {
+                            return Promise.delay(5000).then(runApi);
+                        }
+                    }
+                }
+            });
+        };
+        return runApi();
+    }
+    get serviceName() {
+        return this._serviceName;
+    }
+    authenticate() {
+        const privatePem = new Buffer(this.pem, 'base64').toString();
+        const payload = {
+            exp: Math.floor((Date.now() / 1000)) + (10 * 60),
+            iat: Math.floor((Date.now() / 1000)),
+            iss: this.integrationId
+        };
+        const jwToken = jwt.sign(payload, privatePem, { algorithm: 'RS256' });
+        const installationsOpts = {
+            headers: {
+                'Accept': 'application/vnd.github.machine-man-preview+json',
+                'Authorization': `Bearer ${jwToken}`,
+                'User-Agent': 'request'
+            },
+            json: true,
+            url: 'https://api.github.com/integration/installations'
+        };
+        return request.get(installationsOpts).then((installations) => {
+            const tokenUrl = installations[0].access_tokens_url;
+            const tokenOpts = {
+                headers: {
+                    'Accept': 'application/vnd.github.machine-man-preview+json',
+                    'Authorization': `Bearer ${jwToken}`,
+                    'User-Agent': 'request'
+                },
+                json: true,
+                method: 'POST',
+                url: tokenUrl
+            };
+            return request.post(tokenOpts);
+        }).then((tokenDetails) => {
+            this.authToken = tokenDetails.token;
+            this.githubApi.authenticate({
+                token: this.authToken,
+                type: 'token'
+            });
+            this.logger.log(logger_1.LogLevel.INFO, `token for manual fiddling is: ${tokenDetails.token}`);
+            this.logger.log(logger_1.LogLevel.INFO, `token expires at: ${tokenDetails.expires_at}`);
+            this.logger.log(logger_1.LogLevel.INFO, 'Base curl command:');
+            this.logger.log(logger_1.LogLevel.INFO, `curl -XGET -H "Authorisation: token ${tokenDetails.token}" ` +
+                `-H "Accept: ${this.ghApiAccept}" https://api.github.com/`);
+        });
+    }
+}
+exports.GithubService = GithubService;
+function createServiceListener(constObj) {
+    return new GithubService(constObj);
+}
+exports.createServiceListener = createServiceListener;
+function createServiceEmitter(constObj) {
+    return new GithubService(constObj);
+}
+exports.createServiceEmitter = createServiceEmitter;
+
+//# sourceMappingURL=github.js.map

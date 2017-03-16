@@ -15,7 +15,10 @@
     "include": [
         "typings/**/*.d.ts",
         "lib/**/*.ts",
+        "lib/apis/**/*.ts",
         "lib/bots/**/*.ts",
-        "lib/mixins/**/*.ts"
+        "lib/framework/**/*.ts",
+        "lib/services/**/*.ts",
+        "lib/utils/**/*.ts"
     ]
 }

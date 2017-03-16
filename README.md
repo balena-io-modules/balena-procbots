@@ -14,8 +14,7 @@ Currently only the `VersionBot` exists. `VersionBot` will:
     4. Merge the branch back into the head
     5. Delete the PR branch
 
-If a PR branch is out of step with the `master` branch, `VersionBot` will refuse to merge (and will
-not update the versions of files).
+If a PR branch is out of step with the `master` branch, `VersionBot` will refuse to merge (and will not update the versions of files).
 
 Merges and checks can be suppressed using the `procbots/versionbot/no-checks` label on a PR.
 
@@ -59,6 +58,7 @@ Appropriate environment variables are required before execution. See below.
 Set the following permissions in 'Permissions & events':
 
     * Settings:
+        - Repository metadata: R/O
         - Repository administration: R/O
         - Commit statues: R/W
             # Status
@@ -88,18 +88,14 @@ Download the key and then create a Base64 string from it. It will be required la
 
 ## Secret Key, Webhook Token and Integration ID
 
-You'll need the right private key to run the Integration. It is not supplied here. `ProcBot` requires the following environment variables:
-
-    `WEBHOOK_SECRET`: The 20 digit hex key used to authenticate messages.
-    `INTEGRATION_ID`: The ID given on Integration creation, a unique identifier.
-    `PROCBOTS_PEM`: The Base64 encoded private key generated on Integration creation.
-
 `VersionBot` requires the following environment variables:
 
+    `VERSIONBOT_WEBHOOK_SECRET`: The 20 digit hex key used to authenticate messages.
+    `VERSIONBOT_INTEGRATION_ID`: The ID given on Integration creation, a unique identifier.
+    `VERSIONBOT_PROCBOTS_PEM`: The Base64 encoded private key generated on Integration creation.
     `VERSIONBOT_NAME`: The name shown in commits and merges for PRs by the Integration.
     `VERSIONBOT_EMAIL`: Email address for the bot, (can be an empty string).
     `VERSIONBOT_FLOWDOCK_ROOM`: The room ID whose inbox will be posted to. If not present, Flowdock will not be used.
-
 
 You'll need to fill these fields out in `.vscode/launch.json` before debugging (if you're running this on the CLI, set envvars accordingly). If you're running on Resin, these must be set as Application envvars.
 
@@ -121,7 +117,7 @@ Finally you need to install the Integration into the repo. Do this by going to y
 
 ### Tailoring ProcBots for a Repo via Configuration File
 
-ProcBots now also respond to a configuration file. This is a file with the name `.procbots.yml` in a relative location for the ProcBot running. In the case of the GithubBot (and any other child bot derived from it, such as VersionBot), this is in the root of the repository that it is working on, on the `master` branch.
+ProcBots now also respond to a configuration file. This is a file with the name `.procbots.yml` in a relative location for the ProcBot running. In the case of ProcBots operating on a Github repository (such as VersionBot), this is in the root of the repository that it is working on, on the `master` branch.
 
 The configuration file uses a set of nested properties based on the class hierarchy of the ProcBots, with each class able to modify variables at run time from the configuration file.
 
@@ -152,18 +148,17 @@ Currently, `VersionBot` will:
 
 VersionBot can be configured via a `.procbots.yml` file present in any repository that it operates on. This alters the settings for it for working on that repository. Currently the configuration for VersionBot consists of the following properties:
 
-    `procbot.githubbot.versionbot.maintainers` - A list of Github user names that are authorised maintainers of the repository. The `procbots/versionbot/ready-to-merge` label will only be acted upon should a maintainer in this list have added the label.
+    `procbot.versionbot.maintainers` - A list of Github user names that are authorised maintainers of the repository. The `procbots/versionbot/ready-to-merge` label will only be acted upon should a maintainer in this list have added the label.
 
 Example:
 
 ```
 procbot:
     minimum_version: 0.5
-    githubbot:
-        versionbot:
-            maintainers:
-                - lekkas
-                - hedss
+    versionbot:
+        maintainers:
+            - lekkas
+            - hedss
 ```
 
 **Some Notes:**
