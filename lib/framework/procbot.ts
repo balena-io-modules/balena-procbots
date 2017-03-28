@@ -1,0 +1,184 @@
+/*
+Copyright 2016-2017 Resin.io
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+import * as Promise from 'bluebird';
+import * as FS from 'fs';
+import * as yaml from 'js-yaml';
+import * as _ from 'lodash';
+import { ServiceEmitContext, ServiceEmitRequest, ServiceEmitResponse, ServiceEmitter,
+    ServiceFactory, ServiceListener } from '../services/service-types';
+import { Logger, LogLevel } from '../utils/logger';
+import { ProcBotConfiguration } from './procbot-types';
+const fsReadFile = Promise.promisify(FS.readFile);
+
+// The ProcBot class is a parent class that can be used for some top-level tasks:
+//  * Schedule the processing of events clustered by a given context
+//  * Support the addition of listeners or emitters by the child class, and dispatch events
+//    to emitters
+//  * Retrieve configuration file from either the local FS or a ServiceEmitter
+export class ProcBot {
+    protected _botname: string;
+    protected logger = new Logger();
+    private emitters: ServiceEmitter[] = [];
+    private listeners: ServiceListener[] = [];
+
+    constructor(name = 'ProcBot') {
+        this._botname = name;
+    }
+
+    // Process a configuration file from YAML into a nested object.
+    protected processConfiguration(configFile: string): ProcBotConfiguration | void {
+        const config: ProcBotConfiguration = yaml.safeLoad(configFile);
+
+        if (!config) {
+            return;
+        }
+
+        // Swap out known tags that become booleans.
+        const minimumVersion = ((config || {}).procbot || {}).minimum_version;
+        if (minimumVersion && process.env.npm_package_version) {
+            if (process.env.npm_package_version < minimumVersion) {
+                throw new Error('Current ProcBot implementation does not meet minimum required version to run ');
+            }
+        }
+
+        return config;
+    }
+
+    // Retrieve a configuration file.
+    // This default implementation assumes a pathname.
+    // We should really pass in string | ServiceEmitRequest, the FS module should be a type of emmitter.
+    protected retrieveConfiguration(source: string, location: string | ServiceEmitRequest):
+    Promise<ProcBotConfiguration | ServiceEmitResponse | void> {
+        // If the path is a string, then we simply try and get from the filesystem,
+        // else we try and get the emitter passed in to read it.
+        let retrievePromise: Promise<any>;
+        if (source === 'fs') {
+            retrievePromise = fsReadFile(<string>location).call('toString');
+        } else {
+            retrievePromise = this.dispatchToEmitter(source, <ServiceEmitRequest>location);
+        }
+        return retrievePromise.then((contents) => {
+            if (source === 'fs') {
+                return this.processConfiguration(contents);
+            }
+
+            return contents;
+        }).catch(() => {
+            this.logger.log(LogLevel.INFO, 'No config file was found');
+        });
+    }
+
+    // Add a new listener.
+    // If it already exists, we just ignore it.
+    protected addServiceListener(name: string, data: any): ServiceListener | void {
+        const service = this.getService(name);
+        let listener;
+
+        if (service && !_.find(this.listeners, [ 'serviceName', name ])) {
+            listener = service.createServiceListener(data);
+            this.listeners.push(listener);
+        }
+
+        return listener;
+    }
+
+    // Add a new emitter.
+    // If it already exists, we just ignore it.
+    protected addServiceEmitter(name: string, data?: any): ServiceEmitter | void {
+        const service = this.getService(name);
+        let emitter;
+
+        if (service && !_.find(this.emitters, [ 'serviceName', name ])) {
+            emitter = service.createServiceEmitter(data);
+            this.emitters.push(emitter);
+        }
+
+        return emitter;
+    }
+
+    // Find a particular emitter based upon its name.
+    protected getListener(name: string): ServiceListener | void {
+        return _.find(this.listeners, (listener) => listener.serviceName === name);
+    }
+
+    // Find a particular emitter based upon its name.
+    protected getEmitter(name: string): ServiceEmitter | void {
+        return _.find(this.emitters, (emitter) => emitter.serviceName === name);
+    }
+
+    // Dispatch to the specified emitter. The wildcard name 'all' means
+    // dispatch to *all* emitters attached. This occurs in a non-defined
+    // order so care should be taken.
+    // This method exists as a shortcut to avoid having to retrieve a specific
+    // emitter before sending to it.
+    // Returns a promise containing the results of all final send statuses.
+    protected dispatchToAllEmitters(data: ServiceEmitRequest) {
+        // If throwError is true, then any error is returned to the caller as soon as it
+        // occurs, else it's stored in a response structure.
+        let results: ServiceEmitResponse[] = [];
+
+        // If there's not a context for a particular emmiter, it will result in a response
+        // with an error contained with in specifying as such. It is up to clients to determine
+        // whether this is an issue or not
+        return Promise.map(this.emitters, (emitter) => {
+            return emitter.sendData(data)
+            .then((result) => { results.push(result); })
+            .catch((error) => { results.push(error); });
+        }).return(results);
+    }
+
+    // Dispatch to a named emitter.
+    // This method exists as a shortcut to avoid having to retrieve a specific
+    // emitter before sending to it.
+    // Returns a promise containing the results of all final send statuses.
+    protected dispatchToEmitter(name: string, data: ServiceEmitRequest): Promise<ServiceEmitResponse> {
+        // If emitter not found, this is an error
+        const emitInstance = _.find(this.emitters, (emitter) => emitter.serviceName === name);
+
+        if (!emitInstance) {
+            throw new Error(`${name} emitter is not attached`);
+        }
+
+        // Ensure the right service context exists for the emitter.
+        const emitContext: ServiceEmitContext = _.pickBy(data.contexts, (_val, key) => {
+            return key === name;
+        });
+
+        if (!emitContext) {
+            console.log('No emit context, fail');
+            return Promise.resolve({
+                err: new Error('No emitter context'),
+                source: name
+            });
+        }
+
+        return emitInstance.sendData(data);
+    }
+
+    // Find a dynamic service based upon its name.
+    private getService(name: string): ServiceFactory {
+        // Actually what we could do is just do a require, where the Service
+        // exports a newly made object. We know that this always has a
+        // `registerAction`, so that's all we care about.
+        const service: ServiceFactory = require(`../services/${name}`);
+        if (!service) {
+            throw new Error(`Couldn't find Service: ${name}`);
+        }
+
+        return service;
+    }
+}

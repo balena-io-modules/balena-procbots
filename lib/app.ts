@@ -1,5 +1,5 @@
 /*
-Copyright 2016 Resin.io
+Copyright 2016-2017 Resin.io
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -15,12 +15,10 @@ limitations under the License.
 */
 
 // Import most things with types if possible.
-import * as bodyParser from 'body-parser';
-import * as crypto from 'crypto';
 import * as express from 'express';
-import * as GithubBot from './bots/githubbot';
 import Opts = require('node-getopt');
-import * as _ from 'lodash';
+import { ProcBot } from './framework/procbot';
+import { Logger, LogLevel } from './utils/logger';
 
 // Arguments determine which bot type we want to use.
 const getopt = new Opts([
@@ -28,6 +26,10 @@ const getopt = new Opts([
     [ 'h',    'help',             'This help message'],
 ]);
 
+// Create a new Logger.
+const logger = new Logger();
+
+// Set options help.
 getopt.setHelp(`
 Usage: ${process.argv[1].split('/').slice(-1)} [OPTION]
 [[OPTIONS]]
@@ -36,65 +38,33 @@ Usage: ${process.argv[1].split('/').slice(-1)} [OPTION]
 // No options, no run.
 const opt = getopt.parse(process.argv.slice(2));
 if (opt.options['help'] || Object.keys(opt.options).length === 0) {
-    console.log(getopt.getHelp());
+    logger.log(LogLevel.WARN, getopt.getHelp());
     process.exit(0);
 }
 
-// Verify that events being sent our way are valid and authenticated.
-function verifyWebhookToken(payload: string, hubSignature: string): boolean {
-    const newHmac: any = crypto.createHmac('sha1', process.env.WEBHOOK_SECRET);
-    newHmac.update(payload);
-    if (('sha1=' + newHmac.digest('hex')) === hubSignature) {
-        return true;
-    }
+// Startup text.
+logger.log(LogLevel.INFO, `---> ${process.env.npm_package_name}, Version ${process.env.npm_package_version} <---`);
 
-    return false;
-}
-
-// Standard Express installation.
+// Create Ping server.
 const app = express();
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
+app.get('/ping', (_req: any, res: any) => {
+    res.send('OK');
+});
+app.listen(8080, () => {
+    logger.log(LogLevel.INFO, `---> Started 'ping' service on port 8080`);
+});
 
 // Import any specified bots. These will all listen for webhooks.
-let botRegistry: GithubBot.GithubBot[] = [];
+let botRegistry: ProcBot[] = [];
 for (let bot of opt.options['bot-names']) {
     // Dynamically require the bots.
     try {
         let importedBot = require(`./bots/${bot}`);
         botRegistry.push(importedBot.createBot());
-        console.log(`Imported ${bot}...`);
+        logger.log(LogLevel.INFO, `---> Imported ${bot}...`);
     } catch (err) {
-        console.log(`Could not import bot type ${bot}`);
-        console.log(err);
+        logger.log(LogLevel.WARN, `---> Could not import bot type ${bot}`);
+        logger.log(LogLevel.WARN, err);
         throw err;
     }
 }
-
-// Run the hook listener now, and for each bot we've been asked to listen
-// to, wait for events. When we get an event, check against those bots
-// registered, and send filtered messages on to them for action.
-app.post('/webhooks', (req, res) => {
-    const eventType: string = req.get('x-github-event');
-    const payload = req.body;
-
-    // Ensure that the sender is authorised and uses our secret.
-    if (!verifyWebhookToken(JSON.stringify(payload), req.get('x-hub-signature'))) {
-        res.sendStatus(401);
-        return;
-    }
-
-    // Let the hook get on with it.
-    res.sendStatus(200);
-
-    // Go through all registered bots, and send them any appropriate hook.
-    _.forEach(botRegistry, (bot: GithubBot.GithubBot) => {
-        bot.firedEvent(eventType, payload);
-    });
-});
-
-// Listen on 4567 for the moment.
-app.listen(4567, () => {
-    console.log(`---> ${process.env.npm_package_name}, Version ${process.env.npm_package_version} <---`);
-    console.log('Listening for Github Integration hooks on port 4567.');
-});
