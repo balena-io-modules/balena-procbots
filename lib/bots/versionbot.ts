@@ -36,6 +36,7 @@ import { AlertLevel, LogLevel } from '../utils/logger';
 // the optional object (we need for CWD). So we need to special case it.
 const exec: (command: string, options?: any) => Promise<{}> = Promise.promisify(ChildProcess.exec);
 const fsReadFile = Promise.promisify(FS.readFile);
+const fsWriteFile: (path: string, contents: string) => Promise<{}> = Promise.promisify(FS.writeFile);
 const fsFileExists = Promise.promisify(FS.stat);
 const tempMkdir = Promise.promisify(track().mkdir);
 const tempCleanup = Promise.promisify(cleanup);
@@ -62,9 +63,10 @@ interface RepoFileData {
 interface VersionistData {
     authToken: string;
     branchName: string;
-    fullPath: string;
-    repoFullName: string;
     files?: string[];
+    fullPath: string;
+    number: number;
+    repoFullName: string;
     version?: string;
 }
 
@@ -168,7 +170,7 @@ export class VersionBot extends ProcBot {
                 type: 'integration'
             },
             path: '/webhooks',
-            port: 4567,
+            port: 8399,
             type: 'listener',
             webhookSecret: webhook
         });
@@ -409,8 +411,9 @@ export class VersionBot extends ProcBot {
      * @returns             A void Promise once execution has finished.
      */
     protected checkVersioning = (_registration: GithubRegistration, event: ServiceEvent): Promise<void> => {
-        const pr = event.cookedEvent.data.pull_request;
-        const head = event.cookedEvent.data.pull_request.head;
+        const githubEvent = <GithubCookedData>event.cookedEvent;
+        const pr = githubEvent.data.pull_request;
+        const head = githubEvent.data.pull_request.head;
         const owner = head.repo.owner.login;
         const name = head.repo.name;
 
@@ -698,6 +701,7 @@ export class VersionBot extends ProcBot {
                 authToken: cookedData.githubAuthToken,
                 branchName,
                 fullPath,
+                number: pr.number,
                 repoFullName
             });
         }).then((versionData: VersionistData) => {
@@ -828,16 +832,39 @@ export class VersionBot extends ProcBot {
             moddedFiles.push(`CHANGELOG.md`);
 
             // Now we get the new version from the CHANGELOG (*not* the package.json, it may not exist).
-            return exec(`cat ${versionData.fullPath}${_.last(moddedFiles)}`).then((contents: string) => {
+            return fsReadFile(`${versionData.fullPath}${_.last(moddedFiles)}`).call('toString')
+            .then((contents: string) => {
                 // Only interested in the first match for '## v...'
                 const match = contents.match(/^## (v[0-9]+\.[0-9]+\.[0-9]+).+$/m);
 
                 if (!match) {
-                    throw new Error('Cannot find new version for ${repoFullName}-#${pr.number}');
+                    throw new Error('Cannot find new version for ' +
+                        `${versionData.repoFullName}-#${versionData.number}`);
                 }
 
                 versionData.version = match[1];
                 versionData.files = moddedFiles;
+
+                // Now we have to add the PR number and URL to every log entry we've just added for
+                // the new version. This ensures that NotifyBot can apply release notes later on, if
+                // required.
+                const versions = contents.split('## ');
+
+                // Now find the right version entry.
+                for (let index = 0; index < versions.length; index += 1) {
+                    if (versions[index].startsWith(versionData.version)) {
+                        // Append the current PR number and URL for the PR after each
+                        // entry.
+                        versions[index] = versions[index].replace(/(\*[\s]+.*[\s]+)(\[.*])/gm,
+                            (_match, pattern1, pattern2) => {
+                                return `${pattern1}#${versionData.number} ${pattern2}`;
+                            });
+                    }
+                }
+                contents = versions.join('## ');
+
+                // Write modified contents back.
+                return fsWriteFile(`${versionData.fullPath}${_.last(moddedFiles)}`, contents);
             }).return(versionData);
         });
     }

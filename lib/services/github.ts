@@ -282,7 +282,9 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
      * @return      Promise that is fulfilled once all processing of the event has completed.
      */
     protected handleGithubEvent = (event: ServiceEvent): Promise<void> => {
-        // Determine the head to use based on the event.
+        // Determine the head to use based on the event, should it have an issue
+        // associated with it.
+        // Events without relevant issues should not have labels associated with them.
         const labelHead = (): LabelDetails | void => {
             // Note that a label event itself is not in itself a labelled type,
             // so we don't check for it.

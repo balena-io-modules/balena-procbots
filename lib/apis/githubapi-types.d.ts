@@ -58,6 +58,31 @@ export interface PullRequestReviewEvent {
     };
 }
 
+export interface PushEventCommit {
+    sha: string;
+    message: string;
+    added: string[];
+    removed: string[];
+    modified: string[];
+    timestamp: string;
+}
+
+export interface PushEvent {
+    type: 'push';
+    action: string;
+    before: string;
+    after: string;
+    commits: PushEventCommit[];
+    head_commit: PushEventCommit;
+    repository: {
+        name: string;
+        full_name: string;
+        owner: {
+            name: string;
+        }
+    };
+}
+
 export interface StatusEventBranch {
     name: string;
     commit: {
@@ -90,6 +115,16 @@ export interface Commit {
         message: string
     };
     files: CommitFile[];
+    sha: string;
+}
+
+export interface FileContent {
+    type: string;
+    encoding: string;
+    size: number;
+    name: string;
+    path: string;
+    content: string;
     sha: string;
 }
 
@@ -150,6 +185,17 @@ export interface RequiredStatusChecks {
     include_admins: boolean;
     strict: boolean;
     contexts: string[];
+}
+
+export interface Issue {
+    body: string;
+    comments: number;
+    state: string;
+    title: string;
+}
+
+export interface IssueComment {
+    body: string;
 }
 
 export interface IssueLabel {

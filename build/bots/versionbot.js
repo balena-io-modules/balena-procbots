@@ -10,6 +10,7 @@ const procbot_1 = require("../framework/procbot");
 const logger_1 = require("../utils/logger");
 const exec = Promise.promisify(ChildProcess.exec);
 const fsReadFile = Promise.promisify(FS.readFile);
+const fsWriteFile = Promise.promisify(FS.writeFile);
 const fsFileExists = Promise.promisify(FS.stat);
 const tempMkdir = Promise.promisify(temp_1.track().mkdir);
 const tempCleanup = Promise.promisify(temp_1.cleanup);
@@ -134,8 +135,9 @@ class VersionBot extends procbot_1.ProcBot {
             });
         };
         this.checkVersioning = (_registration, event) => {
-            const pr = event.cookedEvent.data.pull_request;
-            const head = event.cookedEvent.data.pull_request.head;
+            const githubEvent = event.cookedEvent;
+            const pr = githubEvent.data.pull_request;
+            const head = githubEvent.data.pull_request.head;
             const owner = head.repo.owner.login;
             const name = head.repo.name;
             if ((event.cookedEvent.data.action !== 'opened') && (event.cookedEvent.data.action !== 'synchronize') &&
@@ -301,6 +303,7 @@ class VersionBot extends procbot_1.ProcBot {
                     authToken: cookedData.githubAuthToken,
                     branchName,
                     fullPath,
+                    number: pr.number,
                     repoFullName
                 });
             }).then((versionData) => {
@@ -391,7 +394,7 @@ class VersionBot extends procbot_1.ProcBot {
                 type: 'integration'
             },
             path: '/webhooks',
-            port: 4567,
+            port: 8399,
             type: 'listener',
             webhookSecret: webhook
         });
@@ -511,13 +514,25 @@ class VersionBot extends procbot_1.ProcBot {
                 throw new Error(`Couldn't find the CHANGELOG.md file, abandoning version up`);
             }
             moddedFiles.push(`CHANGELOG.md`);
-            return exec(`cat ${versionData.fullPath}${_.last(moddedFiles)}`).then((contents) => {
+            return fsReadFile(`${versionData.fullPath}${_.last(moddedFiles)}`).call('toString')
+                .then((contents) => {
                 const match = contents.match(/^## (v[0-9]+\.[0-9]+\.[0-9]+).+$/m);
                 if (!match) {
-                    throw new Error('Cannot find new version for ${repoFullName}-#${pr.number}');
+                    throw new Error('Cannot find new version for ' +
+                        `${versionData.repoFullName}-#${versionData.number}`);
                 }
                 versionData.version = match[1];
                 versionData.files = moddedFiles;
+                const versions = contents.split('## ');
+                for (let index = 0; index < versions.length; index += 1) {
+                    if (versions[index].startsWith(versionData.version)) {
+                        versions[index] = versions[index].replace(/(\*[\s]+.*[\s]+)(\[.*])/gm, (_match, pattern1, pattern2) => {
+                            return `${pattern1}#${versionData.number} ${pattern2}`;
+                        });
+                    }
+                }
+                contents = versions.join('## ');
+                return fsWriteFile(`${versionData.fullPath}${_.last(moddedFiles)}`, contents);
             }).return(versionData);
         });
     }
