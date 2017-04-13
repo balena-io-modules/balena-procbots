@@ -16,6 +16,8 @@ limitations under the License.
 
 // Github Events --------------------------------------------------------------
 // These provide the current bare minimum definitions for child Procbots working with them.
+// For more details on the properties within them, see the Github Event docs here:
+// https://developer.github.com/v3/activity/events/types/
 
 export interface PullRequestEvent {
 	type: 'pull_request';
@@ -40,6 +42,31 @@ export interface StatusEvent {
 	sender: User;
 }
 
+export interface PushEventCommit {
+	sha: string;
+	message: string;
+	added: string[];
+	removed: string[];
+	modified: string[];
+	timestamp: string;
+}
+
+export interface PushEvent {
+	type: 'push';
+	action: string;
+	before: string;
+	after: string;
+	commits: PushEventCommit[];
+	head_commit: PushEventCommit;
+	repository: {
+		name: string;
+		full_name: string;
+		owner: {
+			name: string;
+		}
+	};
+}
+
 export interface StatusEventBranch {
 	name: string;
 	commit: {
@@ -52,6 +79,7 @@ export interface StatusEventBranch {
 
 // Github API -----------------------------------------------------------------
 // These provide the current bare minimum definitions for child Procbots working with them.
+// For more details on the properties within them, see the Github API docs here: https://developer.github.com/v3/
 
 export interface Blob {
 	sha: string;
@@ -86,6 +114,7 @@ export interface Commit {
 export interface CommitFile {
 	filename: string;
 }
+
 export interface Content {
 	type: string;
 	encoding: string;
@@ -94,6 +123,21 @@ export interface Content {
 	path: string;
 	content: string;
 	sha: string;
+}
+
+export interface GitDataTag {
+	sha: string;
+}
+
+export interface Issue {
+	body: string;
+	comments: number;
+	state: string;
+	title: string;
+}
+
+export interface IssueComment {
+	body: string;
 }
 
 export interface IssueLabel {
@@ -115,6 +159,7 @@ export interface Merge {
 export interface PullRequest {
 	head: RepoBranch;
 	base: RepoBranch;
+	body: string;
 	html_url: string;
 	mergeable: boolean;
 	mergeable_state: string;
@@ -169,7 +214,10 @@ export interface Status {
 }
 
 export interface Tag {
-	sha: string;
+	name: string;
+	commit: {
+		sha: string
+	};
 }
 
 export interface Tree {

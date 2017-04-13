@@ -854,7 +854,7 @@ export class VersionBot extends ProcBot {
 			return Promise.resolve();
 		}
 
-		// If there's an unlabeling event, but it wasn't the IgnoreLabel being removed, then we
+		// If there's an unlabeling event, but it wasn't the IgnoreLabel being removed or the WIP label, then we
 		// just return.
 		if ((prAction === 'unlabeled') && ((prLabel.name !== IgnoreLabel) && (prLabel.name !== WIPLabel))) {
 			return Promise.resolve();
@@ -1461,7 +1461,7 @@ export class VersionBot extends ProcBot {
 				},
 				method: this.githubApi.gitdata.createTag
 			});
-		}).then((newTag: GithubApiTypes.Tag) => {
+		}).then((newTag: GithubApiTypes.GitDataTag) => {
 			// We now have a SHA back that contains the tag object.
 			// Create a new reference based on it.
 			return this.dispatchToEmitter(this.githubEmitterName, {

@@ -77,7 +77,6 @@
 						<section class="tsd-index-section ">
 							<h3>Functions</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_services_front_.html#createmessageservice" class="tsd-kind-icon">create<wbr>Message<wbr>Service</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_services_front_.html#createserviceemitter" class="tsd-kind-icon">create<wbr>Service<wbr>Emitter</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_services_front_.html#createservicelistener" class="tsd-kind-icon">create<wbr>Service<wbr>Listener</a></li>
 							</ul>
@@ -88,45 +87,16 @@
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Functions</h2>
 				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-external-module">
-					<a name="createmessageservice" class="tsd-anchor"></a>
-					<h3>create<wbr>Message<wbr>Service</h3>
-					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-external-module">
-						<li class="tsd-signature tsd-kind-icon">create<wbr>Message<wbr>Service<span class="tsd-signature-symbol">(</span>data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">FrontConstructor</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../classes/_services_messenger_.messenger.html" class="tsd-signature-type">Messenger</a></li>
-					</ul>
-					<ul class="tsd-descriptions">
-						<li class="tsd-description">
-							<aside class="tsd-sources">
-								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/front.ts#L387">services/front.ts:387</a></li>
-								</ul>
-							</aside>
-							<div class="tsd-comment tsd-typography">
-								<div class="lead">
-									<p>Build this class, typed as a message service.</p>
-								</div>
-							</div>
-							<h4 class="tsd-parameters-title">Parameters</h4>
-							<ul class="tsd-parameters">
-								<li>
-									<h5>data: <span class="tsd-signature-type">FrontConstructor</span></h5>
-								</li>
-							</ul>
-							<h4 class="tsd-returns-title">Returns <a href="../classes/_services_messenger_.messenger.html" class="tsd-signature-type">Messenger</a></h4>
-							<p>Message Service object, ready to convert events.</p>
-						</li>
-					</ul>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-external-module">
 					<a name="createserviceemitter" class="tsd-anchor"></a>
 					<h3>create<wbr>Service<wbr>Emitter</h3>
 					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-external-module">
-						<li class="tsd-signature tsd-kind-icon">create<wbr>Service<wbr>Emitter<span class="tsd-signature-symbol">(</span>data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">FrontConstructor</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ServiceEmitter</span></li>
+						<li class="tsd-signature tsd-kind-icon">create<wbr>Service<wbr>Emitter<span class="tsd-signature-symbol">(</span>data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">FrontConnectionDetails</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ServiceEmitter</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/front.ts#L379">services/front.ts:379</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/front.ts#L104">services/front.ts:104</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -137,7 +107,7 @@
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>data: <span class="tsd-signature-type">FrontConstructor</span></h5>
+									<h5>data: <span class="tsd-signature-type">FrontConnectionDetails</span></h5>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">ServiceEmitter</span></h4>
@@ -149,13 +119,13 @@
 					<a name="createservicelistener" class="tsd-anchor"></a>
 					<h3>create<wbr>Service<wbr>Listener</h3>
 					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-external-module">
-						<li class="tsd-signature tsd-kind-icon">create<wbr>Service<wbr>Listener<span class="tsd-signature-symbol">(</span>data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">FrontConstructor</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ServiceListener</span></li>
+						<li class="tsd-signature tsd-kind-icon">create<wbr>Service<wbr>Listener<span class="tsd-signature-symbol">(</span>data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">FrontConnectionDetails</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ServiceListener</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/front.ts#L371">services/front.ts:371</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/front.ts#L96">services/front.ts:96</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -166,7 +136,7 @@
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>data: <span class="tsd-signature-type">FrontConstructor</span></h5>
+									<h5>data: <span class="tsd-signature-type">FrontConnectionDetails</span></h5>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">ServiceListener</span></h4>
@@ -187,6 +157,9 @@
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="_bots_keyframebot_.html">"bots/keyframebot"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="_bots_notifybot_.html">"bots/notifybot"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="_bots_syncbot_.html">"bots/syncbot"</a>
@@ -222,6 +195,9 @@
 						<a href="_services_messenger_types_.html">"services/messenger-<wbr>types"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
+						<a href="_services_service_utilities_.html">"services/service-<wbr>utilities"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
 						<a href="_utils_environment_.html">"utils/environment"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
@@ -233,9 +209,6 @@
 				<ul class="before-current">
 					<li class=" tsd-kind-class tsd-parent-kind-external-module">
 						<a href="../classes/_services_front_.frontservice.html" class="tsd-kind-icon">Front<wbr>Service</a>
-					</li>
-					<li class=" tsd-kind-function tsd-parent-kind-external-module">
-						<a href="_services_front_.html#createmessageservice" class="tsd-kind-icon">create<wbr>Message<wbr>Service</a>
 					</li>
 					<li class=" tsd-kind-function tsd-parent-kind-external-module">
 						<a href="_services_front_.html#createserviceemitter" class="tsd-kind-icon">create<wbr>Service<wbr>Emitter</a>

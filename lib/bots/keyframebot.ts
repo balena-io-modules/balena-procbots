@@ -685,7 +685,7 @@ export class KeyframeBot extends ProcBot {
 				},
 				method: this.githubApi.gitdata.createTag
 			});
-		}).then((newTag: GithubApiTypes.Tag) => {
+		}).then((newTag: GithubApiTypes.GitDataTag) => {
 			// Finally tag this with the version of the keyframe.
 			return this.dispatchToEmitter(this.githubEmitterName, {
 				data: {

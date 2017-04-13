@@ -15,16 +15,15 @@ limitations under the License.
 */
 
 import * as Promise from 'bluebird';
-import * as ChildProcess from 'child_process';
 import * as FS from 'fs';
 import * as yaml from 'js-yaml';
 import * as _ from 'lodash';
 import { ServiceConstructor, ServiceEmitRequest, ServiceEmitter, ServiceFactory,
 	ServiceListener, ServiceType } from '../services/service-types';
+import { BuildCommand, ExecuteCommand } from '../utils/environment';
 import { Logger } from '../utils/logger';
 import { ConfigurationLocation, ProcBotConfiguration } from './procbot-types';
 const fsReadFile = Promise.promisify(FS.readFile);
-const exec: (command: string, options?: any) => Promise<{}> = Promise.promisify(ChildProcess.exec);
 
 /**
  * The ServiceMap keeps information about all Services used by the Client.
@@ -45,34 +44,31 @@ interface ServiceMap<T> {
  * * Retrieve configuration file from either the local FS or a ServiceEmitter
  */
 export class ProcBot {
+	/** The Client Bot name. */
 	protected _botname: string;
+	/** A logging instance for logging internal messages. */
 	protected logger = new Logger();
+	/** A map of ServiceListeners used by the Client Bot. */
 	private listeners = new Map<string, ServiceMap<ServiceListener>>();
+	/** A map of ServiceEmitters used by the Client Bot. */
 	private emitters = new Map<string, ServiceMap<ServiceEmitter>>();
-	private nodeBinPath: string;
 
 	constructor(name = 'ProcBot') {
 		this._botname = name;
 	}
+
 	/**
 	 * Retrieve the binary path for the Node dependencies.
-	 * @return  A string containing the absolute path.
+	 * @returns Promise containing a string denoting the absolute path.
 	 */
 	public getNodeBinPath(): Promise<string> {
-		if (this.nodeBinPath) {
-			return Promise.resolve(this.nodeBinPath);
-		}
-
-		return exec('npm bin').then((binPath: string) => {
-			this.nodeBinPath = binPath.trim();
-			return this.nodeBinPath;
-		});
+		return ExecuteCommand(BuildCommand('npm', [ 'bin' ])) as Promise<string>;
 	}
 
 	/**
 	 * Process a configuration file from YAML into a nested object.
 	 * @param configFile  The configuration file as a string.
-	 * @return            The configuration object or void.
+	 * @returns           The configuration object or void.
 	 */
 	protected processConfiguration(configFile: string): ProcBotConfiguration | void {
 		const config: ProcBotConfiguration = yaml.safeLoad(configFile);
@@ -95,7 +91,7 @@ export class ProcBot {
 	/**
 	 * Retrieve a ProcBotConfiguration file from a ServiceEmitter or inbuilt route.
 	 * @param details  An object detailing the service to retrieve the configuration file from, and its location.
-	 * @return         A Promise containing configuration object should one have been found, or void.
+	 * @returns        A Promise containing configuration object should one have been found, or void.
 	 */
 	protected retrieveConfiguration(details: ConfigurationLocation): Promise<ProcBotConfiguration | void> {
 		let retrievePromise: Promise<string | void>;
@@ -122,7 +118,7 @@ export class ProcBot {
 	 *
 	 * @param name   The name of the ServiceListener to add.
 	 * @param data?  A ServiceConstructor extended constructor, should data be passed to a Service constructor.
-	 * @return       The constructed or pre-existing ServiceListener or void on failure.
+	 * @returns      The constructed or pre-existing ServiceListener or void on failure.
 	 */
 	protected addServiceListener(name: string, data?: any): ServiceListener | void {
 		return this.addService(ServiceType.Listener, name, data) as ServiceListener;
@@ -134,7 +130,7 @@ export class ProcBot {
 	 *
 	 * @param name   The name of the ServiceEmitter to add.
 	 * @param data?  A ServiceConstructor extended constructor, should data be passed to a Service constructor.
-	 * @return       The constructed or pre-existing ServiceEmitter or void on failure.
+	 * @returns      The constructed or pre-existing ServiceEmitter or void on failure.
 	 */
 	protected addServiceEmitter(name: string, data?: any): ServiceEmitter | void {
 		return this.addService(ServiceType.Emitter, name, data) as ServiceEmitter;
@@ -144,7 +140,7 @@ export class ProcBot {
 	 * Find a particular attached ServiceListener based upon its handle.
 	 *
 	 * @param handle  Handle of the ServiceListener instance to find (name if no handle was set).
-	 * @return        Instance of the ServiceListener found, or void if not found.
+	 * @returns       Instance of the ServiceListener found, or void if not found.
 	 */
 	protected getListener(handle: string): ServiceListener | void {
 		// Attempt to find the required ServiceListener. The handle's either the given
@@ -157,7 +153,7 @@ export class ProcBot {
 	 * Find a particular attached ServiceEmitter based upon its name.
 	 *
 	 * @param handle  Handle of the ServiceEmitter instance to find (name if no handle was set).
-	 * @return        Instance of the ServiceEmitter found, or void if not found.
+	 * @returns       Instance of the ServiceEmitter found, or void if not found.
 	 */
 	protected getEmitter(handle: string): ServiceEmitter | void {
 		// Attempt to find the required ServiceEmitter. The handle's either the given
@@ -171,7 +167,7 @@ export class ProcBot {
 	 * This method exists as a shortcut to avoid having to retrieve a specific
 	 * emitter before sending to it.
 	 * @param data  The ServiceEmitRequest to use. This will be dispatched to all ServiceEmitters.
-	 * @return      An array of ServiceEmitResponses from all the ServiceEmitters.
+	 * @returns     An array of ServiceEmitResponses from all the ServiceEmitters.
 	 */
 	protected dispatchToAllEmitters(data: ServiceEmitRequest): Promise<any[]> {
 		// If there's not a context for a particular emmiter, it will result in a response
@@ -189,7 +185,7 @@ export class ProcBot {
 	 *
 	 * @param handle  The handle of the ServiceEmitter to dispatch to.
 	 * @param data    Emitter appropriate data to send.
-	 * @return        Data returned from the service represented by the ServiceEmitter.
+	 * @returns       Data returned from the service represented by the ServiceEmitter.
 	 * @throws        Any error returned from the service represented by the ServiceEmitter.
 	 */
 	protected dispatchToEmitter(handle: string, data: any): Promise<any> {
@@ -222,7 +218,7 @@ export class ProcBot {
 	/**
 	 * Retrieves and loads a ServiceListener or ServiceEmitter by name.
 	 * @param name  The name of the ServiceListener or ServiceEmitter to load.
-	 * @return      The relevant ServiceFactory for the service.
+	 * @returns     The relevant ServiceFactory for the service.
 	 */
 	private getService(name: string): ServiceFactory {
 		// Actually what we could do is just do a require, where the Service
@@ -244,7 +240,7 @@ export class ProcBot {
 	 * @param type  Type of Service to create.
 	 * @param name  Name of the service to create.
 	 * @param data  ServiceBase extended constructor, giving an optional handle and constructor data.
-	 * @return      A ServiceListener, ServiceEmitter or void value.
+	 * @returns     A ServiceListener, ServiceEmitter or void value.
 	 */
 	private addService(type: ServiceType, name: string, data?: ServiceConstructor):
 	ServiceListener | ServiceEmitter | void {
