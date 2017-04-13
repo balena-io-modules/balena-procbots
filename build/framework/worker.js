@@ -17,15 +17,15 @@ class Worker {
         }
     }
     runWorker() {
-        const entry = this.queue.shift();
-        const self = this;
+        const entry = this.queue[0];
         entry.workerMethod(entry.data)
             .then(() => {
+            this.queue.shift();
             if (this.queue.length > 0) {
-                process.nextTick(this.runWorker);
+                this.runWorker();
             }
             else {
-                self.onDone(self.context);
+                this.onDone(this.context);
             }
         });
     }
