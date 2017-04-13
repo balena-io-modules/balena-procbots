@@ -118,17 +118,17 @@ export class Worker<T> {
      */
     private runWorker(): void {
         // Get the next thing from the queue.
-        const entry = <WorkerEvent>this.queue.shift();
-        const self: this = this;
+        const entry = <WorkerEvent>this.queue[0];
 
         // Run worker, proceed to next worker.
         entry.workerMethod(entry.data)
         .then(() => {
+            this.queue.shift();
             if (this.queue.length > 0) {
-                process.nextTick(this.runWorker);
+                this.runWorker();
             } else {
                 // Unlink ourselves from our parent list.
-                self.onDone(self.context);
+                this.onDone(this.context);
             }
         });
     }
