@@ -15,6 +15,19 @@ limitations under the License.
 */
 
 // Emit request for Flowdock.
+import {
+    ServiceEmitContext
+} from './service-types';
+
+export interface FlowdockMessageEmitContext extends ServiceEmitContext {
+    content: string;
+    event: 'message';
+    external_user_name?: string;
+    flow: string;
+    tags?: string[];
+    thread_id?: string;
+}
+
 export interface FlowdockEmitRequestContext {
     content: string;
     from_address: string;
@@ -22,4 +35,9 @@ export interface FlowdockEmitRequestContext {
     subject: string;
     tags?: string[];
     roomId: string;
+}
+
+export interface FlowdockMessage {
+    content: string;
+    [key: string]: string;
 }

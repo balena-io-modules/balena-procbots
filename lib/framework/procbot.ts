@@ -98,7 +98,7 @@ export class ProcBot {
 
     // Add a new listener.
     // If it already exists, we just ignore it.
-    protected addServiceListener(name: string, data: any): ServiceListener | void {
+    protected addServiceListener(name: string, data?: any): ServiceListener | void {
         const service = this.getService(name);
         let listener;
 
