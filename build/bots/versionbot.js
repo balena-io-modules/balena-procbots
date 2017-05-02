@@ -552,7 +552,7 @@ class VersionBot extends procbot_1.ProcBot {
     mergeToMaster(data, githubApiInstance) {
         return this.githubCall({
             data: {
-                commit_title: `Auto-merge for PR ${data.prNumber} via ${process.env.VERSIONBOT_NAME}`,
+                commit_title: `Auto-merge for PR #${data.prNumber} via ${process.env.VERSIONBOT_NAME}`,
                 number: data.prNumber,
                 owner: data.owner,
                 repo: data.repoName
