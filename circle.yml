@@ -12,8 +12,10 @@ dependencies:
     - docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD" -e="${DOCKER_EMAIL}"
 compile:
   override:
-    - docker pull ${DOCKER_IMAGE}:${CIRCLE_SHA1} || true
-    - docker build --rm=false --pull --tag ${DOCKER_IMAGE}:${CIRCLE_SHA1} .
+    - |
+      set -ex
+      docker pull ${DOCKER_IMAGE}:${CIRCLE_BRANCH} || true
+      docker build --rm=false --pull --tag ${DOCKER_IMAGE}:${CIRCLE_SHA1} .
 test:
   override:
     - echo true
@@ -22,8 +24,13 @@ deployment:
     branch: /.*/
     commands:
       - docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD" -e="${DOCKER_EMAIL}"
-      - docker tag ${DOCKER_IMAGE}:${CIRCLE_SHA1} ${DOCKER_IMAGE}:${CIRCLE_BRANCH}
-      - docker tag ${DOCKER_IMAGE}:${CIRCLE_SHA1} ${DOCKER_IMAGE}:${CIRCLE_TAG}
-      - docker push ${DOCKER_IMAGE}:${CIRCLE_SHA1}
-      - docker push ${DOCKER_IMAGE}:${CIRCLE_BRANCH}
-      - docker push ${DOCKER_IMAGE}:${CIRCLE_TAG}
+      - |
+        set -ex
+        docker push ${DOCKER_IMAGE}:${CIRCLE_SHA1}
+        docker tag -f ${DOCKER_IMAGE}:${CIRCLE_SHA1} ${DOCKER_IMAGE}:${CIRCLE_BRANCH}
+        docker push ${DOCKER_IMAGE}:${CIRCLE_BRANCH}
+        if [ "${CIRCLE_TAG}" != "" ]; then
+          docker tag -f ${DOCKER_IMAGE}:${CIRCLE_SHA1} ${DOCKER_IMAGE}:${CIRCLE_TAG}
+          docker push ${DOCKER_IMAGE}:${CIRCLE_TAG}
+        fi
+
