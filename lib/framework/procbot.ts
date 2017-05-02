@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 import * as Promise from 'bluebird';
+import * as ChildProcess from 'child_process';
 import * as FS from 'fs';
 import * as yaml from 'js-yaml';
 import * as _ from 'lodash';
@@ -23,6 +24,7 @@ import { ServiceEmitContext, ServiceEmitRequest, ServiceEmitResponse, ServiceEmi
 import { Logger, LogLevel } from '../utils/logger';
 import { ProcBotConfiguration } from './procbot-types';
 const fsReadFile = Promise.promisify(FS.readFile);
+const exec: (command: string, options?: any) => Promise<{}> = Promise.promisify(ChildProcess.exec);
 
 // The ProcBot class is a parent class that can be used for some top-level tasks:
 //  * Schedule the processing of events clustered by a given context
@@ -34,9 +36,21 @@ export class ProcBot {
     protected logger = new Logger();
     private emitters: ServiceEmitter[] = [];
     private listeners: ServiceListener[] = [];
+    private nodeBinPath: string;
 
     constructor(name = 'ProcBot') {
         this._botname = name;
+    }
+
+    public getNodeBinPath(): Promise<string> {
+        if (this.nodeBinPath) {
+            return Promise.resolve(this.nodeBinPath);
+        }
+
+        return exec('npm bin').then((binPath: string) => {
+            this.nodeBinPath = binPath.trim();
+            return this.nodeBinPath;
+        });
     }
 
     // Process a configuration file from YAML into a nested object.

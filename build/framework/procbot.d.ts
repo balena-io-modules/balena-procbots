@@ -7,7 +7,9 @@ export declare class ProcBot {
     protected logger: Logger;
     private emitters;
     private listeners;
+    private nodeBinPath;
     constructor(name?: string);
+    getNodeBinPath(): Promise<string>;
     protected processConfiguration(configFile: string): ProcBotConfiguration | void;
     protected retrieveConfiguration(source: string, location: string | ServiceEmitRequest): Promise<ProcBotConfiguration | ServiceEmitResponse | void>;
     protected addServiceListener(name: string, data: any): ServiceListener | void;
