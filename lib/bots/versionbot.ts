@@ -650,17 +650,20 @@ export class VersionBot extends ProcBot {
                 return false;
             });
         }).then((exists: boolean) => {
-            let versionistCommand = 'versionist';
-            if (exists) {
-                versionistCommand = `${versionistCommand} -c versionist.conf.js`;
-                this.logger.log(LogLevel.INFO, 'Found an overriding versionist config ' +
-                    `for ${versionData.repoFullName}, using that`);
-            }
-
-            return Promise.mapSeries([
-                versionistCommand,
-                'git status -s'
-            ], cliCommand);
+            let versionistCommand: string;
+            return this.getNodeBinPath().then((nodePath: string) => {
+                versionistCommand = path.join(nodePath, 'versionist');
+                if (exists) {
+                    versionistCommand = `${versionistCommand} -c versionist.conf.js`;
+                    this.logger.log(LogLevel.INFO, 'Found an overriding versionist config ' +
+                        `for ${versionData.repoFullName}, using that`);
+                }
+            }).then(() => {
+                return Promise.mapSeries([
+                    versionistCommand,
+                    'git status -s'
+                ], cliCommand);
+            });
         }).get(1).then((status: string) => {
             const moddedFiles: string[] = [];
             let changeLines = status.split('\n');

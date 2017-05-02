@@ -1,17 +1,28 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const Promise = require("bluebird");
+const ChildProcess = require("child_process");
 const FS = require("fs");
 const yaml = require("js-yaml");
 const _ = require("lodash");
 const logger_1 = require("../utils/logger");
 const fsReadFile = Promise.promisify(FS.readFile);
+const exec = Promise.promisify(ChildProcess.exec);
 class ProcBot {
     constructor(name = 'ProcBot') {
         this.logger = new logger_1.Logger();
         this.emitters = [];
         this.listeners = [];
         this._botname = name;
+    }
+    getNodeBinPath() {
+        if (this.nodeBinPath) {
+            return Promise.resolve(this.nodeBinPath);
+        }
+        return exec('npm bin').then((binPath) => {
+            this.nodeBinPath = binPath.trim();
+            return this.nodeBinPath;
+        });
     }
     processConfiguration(configFile) {
         const config = yaml.safeLoad(configFile);
