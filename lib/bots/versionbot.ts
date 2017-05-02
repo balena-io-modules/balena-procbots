@@ -652,13 +652,12 @@ export class VersionBot extends ProcBot {
         }).then((exists: boolean) => {
             let versionistCommand: string;
             return this.getNodeBinPath().then((nodePath: string) => {
-                versionistCommand = `${nodePath}${path.sep}versionist`;
+                versionistCommand = path.join(nodePath, 'versionist');
                 if (exists) {
                     versionistCommand = `${versionistCommand} -c versionist.conf.js`;
                     this.logger.log(LogLevel.INFO, 'Found an overriding versionist config ' +
                         `for ${versionData.repoFullName}, using that`);
                 }
-                console.log(versionistCommand);
             }).then(() => {
                 return Promise.mapSeries([
                     versionistCommand,
