@@ -22,7 +22,7 @@ import * as FS from 'fs';
 import * as GithubApi from 'github';
 import * as _ from 'lodash';
 import * as path from 'path';
-import { mkdir, track } from 'temp';
+import { cleanup, track } from 'temp';
 import * as GithubApiTypes from '../apis/githubapi-types';
 import { ProcBot } from '../framework/procbot';
 import { ProcBotConfiguration } from '../framework/procbot-types';
@@ -36,8 +36,8 @@ import { AlertLevel, LogLevel } from '../utils/logger';
 const exec: (command: string, options?: any) => Promise<{}> = Promise.promisify(ChildProcess.exec);
 const fsReadFile = Promise.promisify(FS.readFile);
 const fsFileExists = Promise.promisify(FS.stat);
-const tempMkdir = Promise.promisify(mkdir);
-const tempCleanup = Promise.promisify(track);
+const tempMkdir = Promise.promisify(track().mkdir);
+const tempCleanup = Promise.promisify(cleanup);
 
 // Specific to VersionBot
 interface FileMapping {
@@ -596,10 +596,6 @@ export class VersionBot extends ProcBot {
                 version: newVersion
             }, ghApiCalls);
         }).then(() => {
-            // Clean up the working directory to free up space.
-            // We purposefully don't clean this up on failure, as we can then inspect it.
-            return tempCleanup();
-        }).then(() => {
             this.logger.log(LogLevel.INFO, `Upped version of ${repoFullName}#${pr.number} to ` +
                 `${newVersion}; tagged and pushed.`);
         }).catch((err: Error) => {
@@ -617,7 +613,7 @@ export class VersionBot extends ProcBot {
                     repo
                 });
             }
-        });
+        }).finally(tempCleanup);
     }
 
     // Runs versionist and returns the changed files

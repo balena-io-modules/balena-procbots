@@ -11,8 +11,8 @@ const logger_1 = require("../utils/logger");
 const exec = Promise.promisify(ChildProcess.exec);
 const fsReadFile = Promise.promisify(FS.readFile);
 const fsFileExists = Promise.promisify(FS.stat);
-const tempMkdir = Promise.promisify(temp_1.mkdir);
-const tempCleanup = Promise.promisify(temp_1.track);
+const tempMkdir = Promise.promisify(temp_1.track().mkdir);
+const tempCleanup = Promise.promisify(temp_1.cleanup);
 ;
 const MergeLabel = 'procbots/versionbot/ready-to-merge';
 const IgnoreLabel = 'procbots/versionbot/no-checks';
@@ -279,8 +279,6 @@ class VersionBot extends procbot_1.ProcBot {
                     version: newVersion
                 }, ghApiCalls);
             }).then(() => {
-                return tempCleanup();
-            }).then(() => {
                 this.logger.log(logger_1.LogLevel.INFO, `Upped version of ${repoFullName}#${pr.number} to ` +
                     `${newVersion}; tagged and pushed.`);
             }).catch((err) => {
@@ -296,7 +294,7 @@ class VersionBot extends procbot_1.ProcBot {
                         repo
                     });
                 }
-            });
+            }).finally(tempCleanup);
         };
         this.finaliseMerge = (data, prInfo, githubApiInstance) => {
             const owner = prInfo.head.repo.owner.login;
