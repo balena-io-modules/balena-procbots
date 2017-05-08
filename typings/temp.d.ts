@@ -1,4 +1,13 @@
+interface TempInterface {
+    mkdir: (prefix: string, cb: (err: Error, dirPath: string) => void) => void;
+}
+
 declare module 'temp' {
-    function track(): void;
-    function mkdir(prefix: string, cb: (err: Error, dirPath: string) => void): void;
+    export interface CleanupStats {
+        files: number;
+        dirs?: number;
+    }
+
+    function track(): TempInterface;
+    function cleanup(cb: (err: Error, stats: CleanupStats) => void): void;
 }
