@@ -1,6 +1,6 @@
 {
   "name": "resin-procbots",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "description": "Process robots for automating CI pipelines",
   "homepage": "https://github.com/resin-io-modules/resin-procbots#readme",
   "preferGlobal": true,
@@ -9,6 +9,9 @@
     "process"
   ],
   "author": "Heds Simons <hedley@resin.io>",
+  "contributors": [
+    "Andrew Lucas <andrewl@resin.io> <sqweelygig@googlemail.com>"
+  ],
   "license": "Apache-2.0",
   "main": "./build/app.js",
   "bin": {
@@ -23,7 +26,7 @@
   },
   "scripts": {
     "build": "gulp build",
-    "start": "node ./bin/procbots -b versionbot"
+    "start": "node ./bin/procbots -b ${PROCBOT_BOTS_TO_LOAD}"
   },
   "devDependencies": {
     "@types/bluebird-global": "^3.0.1",
@@ -48,18 +51,21 @@
   },
   "dependencies": {
     "bluebird": "^3.5.0",
-    "body-parser": "^1.9.2",
+    "body-parser": "^1.17.1",
+    "colors": "^1.1.2",
     "express": "^4.0.34",
+    "flowdock": "^0.9.0",
     "github": "^8.0.0",
     "github-webhook-handler": "^0.6.0",
     "hmac": "^1.0.1",
-    "jsonwebtoken": "^7.2.1",
     "js-yaml": "^3.8.1",
+    "jsonwebtoken": "^7.2.1",
     "lodash": "^4.17.2",
-    "node-getopt": "^0.2.3",
     "mkdirp": "^0.5.1",
-    "request-promise": "^4.1.1",
+    "moment": "^2.18.1",
+    "node-getopt": "^0.2.3",
     "request": "^2.79.0",
+    "request-promise": "^4.1.1",
     "rmdir": "^1.2.0",
     "temp": "^0.8.3",
     "versionist": "^2.8.0"

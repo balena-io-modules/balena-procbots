@@ -31,6 +31,7 @@ node_modules
 
 # Secrets
 procbots.pem
+_dev_notes
 
 # tmp files
 *.swo
