@@ -100,8 +100,10 @@ interface VersionBotConfiguration extends ProcBotConfiguration {
 
 interface StatusResult {
     name: string;
-    passed: boolean;
+    state: StatusChecks;
 }
+
+enum StatusChecks { Passed, Pending, Failed };
 
 type GenericPullRequestEvent = GithubApiTypes.PullRequestEvent | GithubApiTypes.PullRequestReviewEvent;
 
@@ -538,13 +540,11 @@ export class VersionBot extends ProcBot {
             // Ensure that all the statuses required have passed.
             // If not, an error will be thrown and not proceed any further.
             return this.checkStatuses(prInfo, ghApiCalls);
-        }).then((statusesPassed) => {
+        }).then((checkStatus) => {
             // Finally we have an array of booleans. If any of them are false,
             // statuses aren't valid.
-            if (!statusesPassed) {
-                throw new Error(`At least one status check has failed; ${process.env.VERSIONBOT_NAME} will not ` +
-                    'proceed to update this PR unless forced by re-applying the ' +
-                    `\`${MergeLabel}\` label`);
+            if ((checkStatus === StatusChecks.Failed) || (checkStatus === StatusChecks.Pending)) {
+                throw new Error('checksPendingOrFailed');
             }
 
             // Ensure we've not already committed. If we have, we don't wish to do so again.
@@ -601,7 +601,7 @@ export class VersionBot extends ProcBot {
         }).catch((err: Error) => {
             // Call the VersionBot error specific method if this wasn't the short circuit for
             // committed code.
-            if (err.message !== 'alreadyCommitted') {
+            if ((err.message !== 'alreadyCommitted') && (err.message !== 'checksPendingOrFailed')) {
                 this.reportError({
                     brief: `${process.env.VERSIONBOT_NAME} failed to merge ${repoFullName}#${pr.number}`,
                     githubApiCalls: ghApiCalls,
@@ -905,13 +905,18 @@ export class VersionBot extends ProcBot {
     // It goes through all the checks and should it find that the
     // last checks for each context have failed, then it will return false
     // else true if all have passed.
-    private checkStatuses(prInfo: GithubApiTypes.PullRequest, githubApiInstance: GithubApi): Promise<boolean> {
+    private checkStatuses(prInfo: GithubApiTypes.PullRequest, githubApiInstance: GithubApi): Promise<StatusChecks> {
         // We need to check the branch protection for this repo.
         // Get all the statuses that need to have been satisfied.
         const owner = prInfo.head.repo.owner.login;
         const repo = prInfo.head.repo.name;
         const branch = prInfo.head.ref;
         let protectedContexts: string[] = [];
+        const statusLUT: { [key: string]: StatusChecks; } = {
+            failure: StatusChecks.Failed,
+            pending: StatusChecks.Pending,
+            success: StatusChecks.Passed,
+        };
 
         return this.githubCall({
             data: {
@@ -961,20 +966,25 @@ export class VersionBot extends ProcBot {
                         // Did the check pass?
                         statusResults.push({
                             name: status.context,
-                            passed: status.state === 'success'
+                            state: statusLUT[status.state]
                         });
                     }
                 });
             });
 
-            // Have a final list of results, if any of them have a failure state, we
-            // bail and log it so we can see what went wrong.
-            if (!_.every(statusResults, [ 'passed', true ])) {
-                this.logger.log(LogLevel.WARN, `Status checks failed: ${JSON.stringify(statusResults)}`);
-                return false;
+            // If any of the checks are pending, we wait.
+            if (_.some(statusResults, [ 'state', StatusChecks.Pending ])) {
+                return StatusChecks.Pending;
             }
 
-            return true;
+            // If any of the checks didn't pass, we fail.
+            if (_.some(statusResults, [ 'state', StatusChecks.Failed ])) {
+                this.logger.log(LogLevel.WARN, `Status checks failed: ${JSON.stringify(statusResults)}`);
+                return StatusChecks.Failed;
+            }
+
+            // Else everything passed.
+            return StatusChecks.Passed;
         });
     }
 
@@ -1016,8 +1026,8 @@ export class VersionBot extends ProcBot {
         const owner = prInfo.head.repo.owner.login;
         const repo = prInfo.head.repo.name;
 
-        return this.checkStatuses(prInfo, githubApiInstance).then((statusesPassed) => {
-            if (statusesPassed) {
+        return this.checkStatuses(prInfo, githubApiInstance).then((checkStatus) => {
+            if (checkStatus === StatusChecks.Passed) {
                 // Get the list of commits for the PR, then get the very last commit SHA.
                 return this.getVersionBotCommits(prInfo, githubApiInstance).then((commitMessage: string | null) => {
                     if (commitMessage) {
@@ -1054,6 +1064,17 @@ export class VersionBot extends ProcBot {
                                 this.flowdockCall(flowdockMessage);
                             }
                             this.logger.log(LogLevel.INFO, `MergePR: Merged ${owner}/${repo}#${prInfo.number}`);
+                        }).catch((err: Error) => {
+                            // It's possible in some cases that we have to wait for a service that doesn't actually
+                            // present itself with status info until it's started. Jenkins is an example of this
+                            // which, when queried only responds 'pending' when the build's started.
+                            // In these cases, the compulsory status list won't include the particular service,
+                            // but the merge will notice that not every status on the branch protection has occurred.
+                            // We really don't want to a load of extra calls here, so we instead believe Github and
+                            // check for the standard return message and silently ignore it if present.
+                            if (!_.startsWith(err.message, 'Required status check')) {
+                                throw err;
+                            }
                         });
                     }
                 });
@@ -1162,7 +1183,9 @@ export class VersionBot extends ProcBot {
         return this.dispatchToEmitter(this.githubEmitterName, request).then((data: ServiceEmitResponse) => {
             // On an error, throw.
             if (data.err) {
-                throw data.err;
+                // Specifically throw the error message.
+                const ghError = JSON.parse(data.err.message);
+                throw new Error(ghError.message);
             }
 
             return data.response;

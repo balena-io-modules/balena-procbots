@@ -207,7 +207,6 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
             }).catch((err: Error) => {
                 // Sometimes the gateway can time out if we don't respond quickly enough.
                 // This will destroy the ability to continue for this callset, so we exit.
-                console.log(err.message);
                 if (err.message.indexOf('504: Gateway Timeout') !== -1) {
                     return {
                         err: new Error('Github API timed out, could not complete'),

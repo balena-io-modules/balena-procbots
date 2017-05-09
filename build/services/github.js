@@ -176,7 +176,6 @@ class GithubService extends worker_client_1.WorkerClient {
                     source: this._serviceName
                 };
             }).catch((err) => {
-                console.log(err.message);
                 if (err.message.indexOf('504: Gateway Timeout') !== -1) {
                     return {
                         err: new Error('Github API timed out, could not complete'),
