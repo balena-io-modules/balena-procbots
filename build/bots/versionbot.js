@@ -14,6 +14,13 @@ const fsFileExists = Promise.promisify(FS.stat);
 const tempMkdir = Promise.promisify(temp_1.track().mkdir);
 const tempCleanup = Promise.promisify(temp_1.cleanup);
 ;
+var StatusChecks;
+(function (StatusChecks) {
+    StatusChecks[StatusChecks["Passed"] = 0] = "Passed";
+    StatusChecks[StatusChecks["Pending"] = 1] = "Pending";
+    StatusChecks[StatusChecks["Failed"] = 2] = "Failed";
+})(StatusChecks || (StatusChecks = {}));
+;
 const MergeLabel = 'procbots/versionbot/ready-to-merge';
 const IgnoreLabel = 'procbots/versionbot/no-checks';
 class VersionBot extends procbot_1.ProcBot {
@@ -232,11 +239,9 @@ class VersionBot extends procbot_1.ProcBot {
                         `\`${prInfo.mergeable_state}\``);
                 }
                 return this.checkStatuses(prInfo, ghApiCalls);
-            }).then((statusesPassed) => {
-                if (!statusesPassed) {
-                    throw new Error(`At least one status check has failed; ${process.env.VERSIONBOT_NAME} will not ` +
-                        'proceed to update this PR unless forced by re-applying the ' +
-                        `\`${MergeLabel}\` label`);
+            }).then((checkStatus) => {
+                if ((checkStatus === StatusChecks.Failed) || (checkStatus === StatusChecks.Pending)) {
+                    throw new Error('checksPendingOrFailed');
                 }
                 return this.getVersionBotCommits(prInfo, ghApiCalls);
             }).then((commitMessage) => {
@@ -282,7 +287,7 @@ class VersionBot extends procbot_1.ProcBot {
                 this.logger.log(logger_1.LogLevel.INFO, `Upped version of ${repoFullName}#${pr.number} to ` +
                     `${newVersion}; tagged and pushed.`);
             }).catch((err) => {
-                if (err.message !== 'alreadyCommitted') {
+                if ((err.message !== 'alreadyCommitted') && (err.message !== 'checksPendingOrFailed')) {
                     this.reportError({
                         brief: `${process.env.VERSIONBOT_NAME} failed to merge ${repoFullName}#${pr.number}`,
                         githubApiCalls: ghApiCalls,
@@ -299,8 +304,8 @@ class VersionBot extends procbot_1.ProcBot {
         this.finaliseMerge = (data, prInfo, githubApiInstance) => {
             const owner = prInfo.head.repo.owner.login;
             const repo = prInfo.head.repo.name;
-            return this.checkStatuses(prInfo, githubApiInstance).then((statusesPassed) => {
-                if (statusesPassed) {
+            return this.checkStatuses(prInfo, githubApiInstance).then((checkStatus) => {
+                if (checkStatus === StatusChecks.Passed) {
                     return this.getVersionBotCommits(prInfo, githubApiInstance).then((commitMessage) => {
                         if (commitMessage) {
                             return this.getConfiguration(owner, repo, githubApiInstance)
@@ -327,6 +332,10 @@ class VersionBot extends procbot_1.ProcBot {
                                     this.flowdockCall(flowdockMessage);
                                 }
                                 this.logger.log(logger_1.LogLevel.INFO, `MergePR: Merged ${owner}/${repo}#${prInfo.number}`);
+                            }).catch((err) => {
+                                if (!_.startsWith(err.message, 'Required status check')) {
+                                    throw err;
+                                }
                             });
                         }
                     });
@@ -622,6 +631,11 @@ class VersionBot extends procbot_1.ProcBot {
         const repo = prInfo.head.repo.name;
         const branch = prInfo.head.ref;
         let protectedContexts = [];
+        const statusLUT = {
+            failure: StatusChecks.Failed,
+            pending: StatusChecks.Pending,
+            success: StatusChecks.Passed,
+        };
         return this.githubCall({
             data: {
                 branch: 'master',
@@ -646,16 +660,19 @@ class VersionBot extends procbot_1.ProcBot {
                     if (_.startsWith(status.context, proContext)) {
                         statusResults.push({
                             name: status.context,
-                            passed: status.state === 'success'
+                            state: statusLUT[status.state]
                         });
                     }
                 });
             });
-            if (!_.every(statusResults, ['passed', true])) {
-                this.logger.log(logger_1.LogLevel.WARN, `Status checks failed: ${JSON.stringify(statusResults)}`);
-                return false;
+            if (_.some(statusResults, ['state', StatusChecks.Pending])) {
+                return StatusChecks.Pending;
             }
-            return true;
+            if (_.some(statusResults, ['state', StatusChecks.Failed])) {
+                this.logger.log(logger_1.LogLevel.WARN, `Status checks failed: ${JSON.stringify(statusResults)}`);
+                return StatusChecks.Failed;
+            }
+            return StatusChecks.Passed;
         });
     }
     getVersionBotCommits(prInfo, githubApiInstance) {
@@ -753,7 +770,8 @@ class VersionBot extends procbot_1.ProcBot {
         request.contexts[this.githubEmitterName] = context;
         return this.dispatchToEmitter(this.githubEmitterName, request).then((data) => {
             if (data.err) {
-                throw data.err;
+                const ghError = JSON.parse(data.err.message);
+                throw new Error(ghError.message);
             }
             return data.response;
         });
