@@ -36,13 +36,12 @@ class MessageService extends worker_client_1.WorkerClient {
     static get app() {
         const port = process.env.MESSAGE_SERVICE_PORT || process.env.PORT;
         if (!port) {
-            throw new Error('No inbound port specified for listener');
+            throw new Error('No inbound port specified for express server');
         }
         if (!MessageService._app) {
             MessageService._app = express();
             MessageService._app.use(bodyParser.json());
             MessageService._app.listen(port);
-            MessageService.logger.log(logger_1.LogLevel.INFO, `---> Started 'webhook' service on ${port}`);
         }
         return MessageService._app;
     }
@@ -50,6 +49,7 @@ class MessageService extends worker_client_1.WorkerClient {
         if (!this.listening) {
             this.listening = true;
             this.activateMessageListener();
+            MessageService.logger.log(logger_1.LogLevel.INFO, `---> Started '${this.serviceName}' listener`);
         }
     }
     registerEvent(registration) {

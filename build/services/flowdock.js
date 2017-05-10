@@ -94,6 +94,9 @@ class FlowdockService extends message_service_1.MessageService {
                 }
             });
         });
+        message_service_1.MessageService.app.get(`/${this.serviceName}/`, (_formData, response) => {
+            response.send('ok');
+        });
     }
     getWorkerContextFromMessage(event) {
         return event.data.cookedEvent.context;
