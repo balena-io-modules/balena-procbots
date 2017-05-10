@@ -170,6 +170,10 @@ export class FlowdockService extends MessageService implements ServiceEmitter, S
                 }
             });
         });
+        // Create a keep-alive endpoint
+        MessageService.app.get(`/${this.serviceName}/`, (_formData, response) => {
+            response.send('ok');
+        });
     }
 
     /**

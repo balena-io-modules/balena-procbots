@@ -39,16 +39,12 @@ implements ServiceListener, ServiceEmitter {
         // Heroku uses process.env.PORT to indicate which local area port the edge NAT maps down to
         const port = process.env.MESSAGE_SERVICE_PORT || process.env.PORT;
         if (!port) {
-            throw new Error('No inbound port specified for listener');
+            throw new Error('No inbound port specified for express server');
         }
         if (!MessageService._app) {
             MessageService._app = express();
             MessageService._app.use(bodyParser.json());
             MessageService._app.listen(port);
-            MessageService.logger.log(
-                LogLevel.INFO,
-                `---> Started 'webhook' service on ${port}`
-            );
         }
         return MessageService._app;
     }
@@ -70,6 +66,7 @@ implements ServiceListener, ServiceEmitter {
         if (!this.listening) {
             this.listening = true;
             this.activateMessageListener();
+            MessageService.logger.log(LogLevel.INFO, `---> Started '${this.serviceName}' listener`);
         }
     }
 
