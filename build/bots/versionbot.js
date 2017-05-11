@@ -624,6 +624,22 @@ class VersionBot extends procbot_1.ProcBot {
                 },
                 method: githubApiInstance.gitdata.deleteReference
             });
+        }).catch((err) => {
+            if (err.message !== 'Pull Request is not mergeable') {
+                throw err;
+            }
+            return this.githubCall({
+                data: {
+                    number: data.prNumber,
+                    owner: data.owner,
+                    repo: data.repoName
+                },
+                method: githubApiInstance.pullRequests.get
+            }).then((mergePr) => {
+                if (mergePr.state === 'open') {
+                    throw err;
+                }
+            });
         });
     }
     checkStatuses(prInfo, githubApiInstance) {
