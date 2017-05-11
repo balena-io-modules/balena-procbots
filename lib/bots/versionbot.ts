@@ -898,6 +898,31 @@ export class VersionBot extends ProcBot {
                 },
                 method: githubApiInstance.gitdata.deleteReference
             });
+        }).catch((err: Error) => {
+            // Sometimes a state can occur where a label attach occurs at the same time as a final status
+            // check finishes. This actually causes two merge events to occur.
+            // We supress the error in this event, as all previous checks have passed.
+            // Any other issue will show up as a problem in the UI.
+            if (err.message !== 'Pull Request is not mergeable') {
+                throw err;
+            }
+
+            // Confidence check. We should see any issue that causes a PR to not be
+            // mergeable show up as some sort of status in the UI. However, just in case,
+            // here's a check to ensure the PR is still open. If it is, raise a
+            // flag regardless of why.
+            return this.githubCall({
+                data: {
+                    number: data.prNumber,
+                    owner: data.owner,
+                    repo: data.repoName
+                },
+                method: githubApiInstance.pullRequests.get
+            }).then((mergePr: GithubApiTypes.PullRequest) => {
+                if (mergePr.state === 'open') {
+                    throw err;
+                }
+            });
         });
     }
 
