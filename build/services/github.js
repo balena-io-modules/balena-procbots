@@ -133,7 +133,6 @@ class GithubService extends worker_client_1.WorkerClient {
                     data: {
                         cookedEvent: {
                             data: payload,
-                            githubApi: this.githubApi,
                             githubAuthToken: this.authToken,
                             type: eventType
                         },
@@ -145,7 +144,7 @@ class GithubService extends worker_client_1.WorkerClient {
             });
             app.listen(listenerConstructor.port, () => {
                 this.logger.log(logger_1.LogLevel.INFO, `---> ${listenerConstructor.client}: Listening Github Service on ` +
-                    `':${listenerConstructor.port}/${listenerConstructor.path}'`);
+                    `':${listenerConstructor.port}${listenerConstructor.path}'`);
                 this.authenticate();
             });
         }
@@ -205,6 +204,11 @@ class GithubService extends worker_client_1.WorkerClient {
     }
     get serviceName() {
         return this._serviceName;
+    }
+    get apiHandle() {
+        return {
+            github: this.githubApi
+        };
     }
     authenticate() {
         const privatePem = new Buffer(this.pem, 'base64').toString();

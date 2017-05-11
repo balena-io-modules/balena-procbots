@@ -14,10 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import * as Promise from 'bluebird';
 import * as GithubApi from 'github';
 import { ProcBotConfiguration } from '../framework/procbot-types';
-import { ServiceEmitContext, ServiceEvent, ServiceListenerMethod, ServiceRegistration,
-    ServiceType} from './service-types';
+import { ServiceAPIHandle, ServiceEmitContext, ServiceEvent, ServiceListenerMethod, ServiceRegistration,
+    ServiceType } from './service-types';
 
 /** The Github service can be used as either an Integration or a User. */
 type GithubLoginType = 'integration' | 'user';
@@ -60,6 +61,12 @@ export interface GithubListenerConstructor extends GithubConstructor {
     port: number;
     /** Github Webhook secret string for the Integration, authenticating events sent by Github. */
     webhookSecret: string;
+}
+
+// Handle type allowing Github API instance to be exported.
+/** The GithubHandle extends the normal ServiceAPIHandle to include the Github API instance. */
+export interface GithubHandle extends ServiceAPIHandle {
+    github: GithubApi;
 }
 
 /** Github registration object detailing events, triggers and supressions for a worker. */

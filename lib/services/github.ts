@@ -26,9 +26,9 @@ import * as request from 'request-promise';
 import * as GithubApiTypes from '../apis/githubapi-types';
 import { Worker, WorkerEvent } from '../framework/worker';
 import { WorkerClient } from '../framework/worker-client';
-import { GithubConstructor, GithubEmitRequestContext, GithubIntegration,
-    GithubListenerConstructor, GithubRegistration } from '../services/github-types';
 import { AlertLevel, Logger, LogLevel } from '../utils/logger';
+import { GithubConstructor, GithubEmitRequestContext, GithubHandle, GithubIntegration,
+    GithubListenerConstructor, GithubRegistration } from './github-types';
 import { ServiceEmitContext, ServiceEmitRequest, ServiceEmitResponse, ServiceEmitter,
     ServiceEvent, ServiceListener } from './service-types';
 
@@ -154,7 +154,6 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
                     data: {
                         cookedEvent: {
                             data: payload,
-                            githubApi: this.githubApi,
                             githubAuthToken: this.authToken,
                             type: eventType
                         },
@@ -168,7 +167,7 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
             // Listen on the specified port.
             app.listen(listenerConstructor.port, () => {
                 this.logger.log(LogLevel.INFO, `---> ${listenerConstructor.client}: Listening Github Service on ` +
-                    `':${listenerConstructor.port}/${listenerConstructor.path}'`);
+                    `':${listenerConstructor.port}${listenerConstructor.path}'`);
                 this.authenticate();
             });
         }
@@ -260,6 +259,13 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
      */
     get serviceName(): string {
         return this._serviceName;
+    }
+
+    // Return the API handle.
+    get apiHandle(): GithubHandle {
+        return {
+            github: this.githubApi
+        };
     }
 
     /**

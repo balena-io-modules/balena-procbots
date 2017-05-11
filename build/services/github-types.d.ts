@@ -14,10 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import * as Promise from 'bluebird';
 import * as GithubApi from 'github';
 import { ProcBotConfiguration } from '../framework/procbot-types';
+<<<<<<< HEAD
 import { ServiceEmitContext, ServiceEvent, ServiceListenerMethod, ServiceRegistration,
     ServiceType} from './service-types';
+=======
+import { ServiceAPIHandle, ServiceEvent, ServiceListenerMethod, ServiceRegistration,
+    ServiceType } from './service-types';
+>>>>>>> ProcBots: Add ability to retrieve underlying SDK API instance object/handle for a service.
 
 /** The Github service can be used as either an Integration or a User. */
 type GithubLoginType = 'integration' | 'user';
@@ -62,7 +68,17 @@ export interface GithubListenerConstructor extends GithubConstructor {
     webhookSecret: string;
 }
 
+<<<<<<< HEAD
 /** Github registration object detailing events, triggers and supressions for a worker. */
+=======
+// Handle type allowing Github API instance to be exported.
+export interface GithubHandle extends ServiceAPIHandle {
+    github: GithubApi;
+}
+
+// Github registration object detailing events, triggers and supressions for a
+// worker.
+>>>>>>> ProcBots: Add ability to retrieve underlying SDK API instance object/handle for a service.
 export interface GithubRegistration extends ServiceRegistration {
     /** Client's listener method to call when events are ready for processing. */
     listenerMethod: GithubListenerMethod;

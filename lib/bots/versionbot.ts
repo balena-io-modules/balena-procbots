@@ -27,7 +27,8 @@ import * as GithubApiTypes from '../apis/githubapi-types';
 import { ProcBot } from '../framework/procbot';
 import { ProcBotConfiguration } from '../framework/procbot-types';
 import { FlowdockEmitRequestContext } from '../services/flowdock-types';
-import { GithubCookedData, GithubEmitRequestContext, GithubRegistration } from '../services/github-types';
+import { GithubCookedData, GithubEmitRequestContext, GithubHandle,
+    GithubRegistration } from '../services/github-types';
 import { ServiceEmitRequest, ServiceEmitResponse, ServiceEvent } from '../services/service-types';
 import { AlertLevel, LogLevel } from '../utils/logger';
 
@@ -75,7 +76,6 @@ interface MergeData {
 }
 
 interface VersionBotError {
-    githubApiCalls: GithubApi;
     brief: string;
     message: string;
     number: number;
@@ -118,6 +118,7 @@ export class VersionBot extends ProcBot {
     private githubListenerName: string;
     private githubEmitterName: string;
     private flowdockEmitterName: string;
+    private githubApi: GithubApi;
 
     // Name ourself and register the events and labels we're interested in.
     constructor(integration: number, name: string, pemString: string, webhook: string) {
@@ -158,6 +159,12 @@ export class VersionBot extends ProcBot {
         }
         this.githubListenerName = ghListener.serviceName;
         this.githubEmitterName = ghEmitter.serviceName;
+
+        // Github API handle
+        this.githubApi = (<GithubHandle>ghEmitter.apiHandle).github;
+        if (this.githubApi) {
+            throw new Error('No Github API instance found');
+        }
 
         // Create a new Flowdock emitter, should we need one.
         if (process.env.VERSIONBOT_FLOWDOCK_ROOM) {
@@ -210,11 +217,6 @@ export class VersionBot extends ProcBot {
         const commitSha = event.cookedEvent.data.sha;
         const branches = event.cookedEvent.data.branches;
 
-        if (!event.cookedEvent.githubApi) {
-            throw new Error('No Github API instance found');
-        }
-        const ghApiCalls: GithubApi = event.cookedEvent.githubApi;
-
         // If we made the status change, we stop now!
         if (event.cookedEvent.data.context === 'Versionist') {
             return Promise.resolve();
@@ -230,7 +232,7 @@ export class VersionBot extends ProcBot {
                     repo,
                     state: 'open'
                 },
-                method: ghApiCalls.pullRequests.getAll
+                method: this.githubApi.pullRequests.getAll
             });
         }).then((prs: GithubApiTypes.PullRequest[]) => {
             let prEvents: ServiceEvent[] = [];
@@ -280,11 +282,6 @@ export class VersionBot extends ProcBot {
         const owner = head.repo.owner.login;
         const name = head.repo.name;
 
-        if (!event.cookedEvent.githubApi) {
-            throw new Error('No Github API instance found');
-        }
-        const ghApiCalls: GithubApi = event.cookedEvent.githubApi;
-
         // Only for opened or synced actions.
         if ((event.cookedEvent.data.action !== 'opened') && (event.cookedEvent.data.action !== 'synchronize') &&
             (event.cookedEvent.data.action !== 'labeled')) {
@@ -298,7 +295,7 @@ export class VersionBot extends ProcBot {
                 number: pr.number,
                 repo: name,
             },
-            method: ghApiCalls.pullRequests.getCommits
+            method: this.githubApi.pullRequests.getCommits
         }).then((commits: GithubApiTypes.Commit[]) => {
             let changetypeFound: boolean = false;
             // Go through all the commits. We're looking for, at a minimum, a 'change-type:' tag.
@@ -346,7 +343,7 @@ export class VersionBot extends ProcBot {
                         sha: head.sha,
                         state: 'success'
                     },
-                    method: ghApiCalls.repos.createStatus
+                    method: this.githubApi.repos.createStatus
                 });
             }
 
@@ -362,7 +359,7 @@ export class VersionBot extends ProcBot {
                     sha: head.sha,
                     state: 'failure'
                 },
-                method: ghApiCalls.repos.createStatus,
+                method: this.githubApi.repos.createStatus,
             }).then(() => {
                 // We only complain on opening. Either at that point it'll be fixed, or we
                 // simply don't pass it in future. This stops the PR being spammed on status changes.
@@ -375,7 +372,7 @@ export class VersionBot extends ProcBot {
                             number: pr.number,
                             repo: name,
                         },
-                        method: ghApiCalls.issues.createComment,
+                        method: this.githubApi.issues.createComment,
                     });
                 }
             });
@@ -387,7 +384,7 @@ export class VersionBot extends ProcBot {
                     owner,
                     repo: name
                 },
-                method: ghApiCalls.issues.getIssueLabels
+                method: this.githubApi.issues.getIssueLabels
             });
         }).then((labels: GithubApiTypes.IssueLabel[]) => {
             // If we don't have a relevant label for merging, we don't proceed.
@@ -398,10 +395,10 @@ export class VersionBot extends ProcBot {
                         owner,
                         repo: name
                     },
-                    method: ghApiCalls.pullRequests.get
+                    method: this.githubApi.pullRequests.get
                 }).then((mergePr: GithubApiTypes.PullRequest) => {
                     if (mergePr.state === 'open') {
-                        return this.finaliseMerge(event.cookedEvent.data, mergePr, ghApiCalls);
+                        return this.finaliseMerge(event.cookedEvent.data, mergePr);
                     }
                 });
             }
@@ -409,7 +406,6 @@ export class VersionBot extends ProcBot {
             // Call the VersionBot error specific method.
             this.reportError({
                 brief: `${process.env.VERSIONBOT_NAME} check failed for ${owner}/${name}#${pr.number}`,
-                githubApiCalls: ghApiCalls,
                 message: `${process.env.VERSIONBOT_NAME} failed to carry out a status check for the above pull ` +
                     `request here: ${pr.html_url}. The reason for this is:\r\n${err.message}\r\n` +
                     'Please carry out relevant changes or alert an appropriate admin.',
@@ -452,11 +448,6 @@ export class VersionBot extends ProcBot {
         let branchName: string;
         let prInfo: GithubApiTypes.PullRequest;
         let botConfig: VersionBotConfiguration;
-
-        if (!event.cookedEvent.githubApi) {
-            throw new Error('No Github API instance found');
-        }
-        const ghApiCalls: GithubApi = event.cookedEvent.githubApi;
 
         // Check the action on the event to see what we're dealing with.
         switch (cookedData.data.action) {
@@ -513,7 +504,7 @@ export class VersionBot extends ProcBot {
         // 7. Finish
         this.logger.log(LogLevel.INFO, `PR is ready to merge, attempting to carry out a ` +
             `version up for ${owner}/${repo}#${pr.number}`);
-        return this.getConfiguration(owner, repo, ghApiCalls).then((config: VersionBotConfiguration) => {
+        return this.getConfiguration(owner, repo).then((config: VersionBotConfiguration) => {
             botConfig = config;
 
             // Get the branch for this PR.
@@ -523,7 +514,7 @@ export class VersionBot extends ProcBot {
                     owner,
                     repo
                 },
-                method: ghApiCalls.pullRequests.get
+                method: this.githubApi.pullRequests.get
             });
         }).then((prData: GithubApiTypes.PullRequest) => {
             // Get the relevant branch.
@@ -539,7 +530,7 @@ export class VersionBot extends ProcBot {
 
             // Ensure that all the statuses required have passed.
             // If not, an error will be thrown and not proceed any further.
-            return this.checkStatuses(prInfo, ghApiCalls);
+            return this.checkStatuses(prInfo);
         }).then((checkStatus) => {
             // Finally we have an array of booleans. If any of them are false,
             // statuses aren't valid.
@@ -548,7 +539,7 @@ export class VersionBot extends ProcBot {
             }
 
             // Ensure we've not already committed. If we have, we don't wish to do so again.
-            return this.getVersionBotCommits(prInfo, ghApiCalls);
+            return this.getVersionBotCommits(prInfo);
         }).then((commitMessage: string | null) => {
             if (commitMessage) {
                 throw new Error(`alreadyCommitted`);
@@ -594,7 +585,7 @@ export class VersionBot extends ProcBot {
                 owner,
                 repo,
                 version: newVersion
-            }, ghApiCalls);
+            });
         }).then(() => {
             this.logger.log(LogLevel.INFO, `Upped version of ${repoFullName}#${pr.number} to ` +
                 `${newVersion}; tagged and pushed.`);
@@ -604,7 +595,6 @@ export class VersionBot extends ProcBot {
             if ((err.message !== 'alreadyCommitted') && (err.message !== 'checksPendingOrFailed')) {
                 this.reportError({
                     brief: `${process.env.VERSIONBOT_NAME} failed to merge ${repoFullName}#${pr.number}`,
-                    githubApiCalls: ghApiCalls,
                     message: `${process.env.VERSIONBOT_NAME} failed to commit a new version to prepare a merge for ` +
                         `the above pull request here: ${pr.html_url}. The reason for this is:\r\n${err.message}\r\n` +
                         'Please carry out relevant changes or alert an appropriate admin.',
@@ -709,7 +699,7 @@ export class VersionBot extends ProcBot {
     }
 
     // Given files, a tree and repo date, commits the new blobs and updates the head of the branch
-    private createCommitBlobs(repoData: RepoFileData, githubApi: GithubApi): Promise<void> {
+    private createCommitBlobs(repoData: RepoFileData): Promise<void> {
         // We use the Github API to now update every file in our list, ending with the CHANGELOG.md
         // We need this to be the final file updated, as it'll kick off our actual merge.
         //
@@ -724,7 +714,7 @@ export class VersionBot extends ProcBot {
                 repo: repoData.repo,
                 sha: repoData.branchName
             },
-            method: githubApi.gitdata.getTree
+            method: this.githubApi.gitdata.getTree
         }).then((treeData: GithubApiTypes.Tree) => {
             // We need to save the tree data, we'll be modifying it for updates in a moment.
 
@@ -748,7 +738,7 @@ export class VersionBot extends ProcBot {
                         owner: repoData.owner,
                         repo: repoData.repo
                     },
-                    method: githubApi.gitdata.createBlob
+                    method: this.githubApi.gitdata.createBlob
                 }).then((blob: GithubApiTypes.Blob) => {
                     if (file.treeEntry) {
                         file.treeEntry.sha = blob.sha;
@@ -776,7 +766,7 @@ export class VersionBot extends ProcBot {
                         repo: repoData.repo,
                         tree: newTree
                     },
-                    method: githubApi.gitdata.createTree
+                    method: this.githubApi.gitdata.createTree
                 });
             }).then((newTree: GithubApiTypes.Tree) => {
                 newTreeSha = newTree.sha;
@@ -788,7 +778,7 @@ export class VersionBot extends ProcBot {
                         repo: repoData.repo,
                         sha: `${repoData.branchName}`
                     },
-                    method: githubApi.repos.getCommit
+                    method: this.githubApi.repos.getCommit
                 });
             }).then((lastCommit: GithubApiTypes.Commit) => {
                 // We have new tree object, we now want to create a new commit referencing it.
@@ -804,7 +794,7 @@ export class VersionBot extends ProcBot {
                         repo: repoData.repo,
                         tree: newTreeSha
                     },
-                    method: githubApi.gitdata.createCommit
+                    method: this.githubApi.gitdata.createCommit
                 });
             }).then((commit: GithubApiTypes.Commit) => {
                 // Finally, we now update the reference to the branch that's changed.
@@ -817,14 +807,14 @@ export class VersionBot extends ProcBot {
                         repo: repoData.repo,
                         sha: commit.sha
                     },
-                    method: githubApi.gitdata.updateReference
+                    method: this.githubApi.gitdata.updateReference
                 });
             });
         });
     }
 
     // Merges the given PR branch to master, given a commit and repo details.
-    private mergeToMaster(data: MergeData, githubApiInstance: GithubApi): Promise<void> {
+    private mergeToMaster(data: MergeData): Promise<void> {
         return this.githubCall({
             data: {
                 commit_title: `Auto-merge for PR #${data.prNumber} via ${process.env.VERSIONBOT_NAME}`,
@@ -832,7 +822,7 @@ export class VersionBot extends ProcBot {
                 owner: data.owner,
                 repo: data.repoName
             },
-            method: githubApiInstance.pullRequests.merge
+            method: this.githubApi.pullRequests.merge
         }).then((mergedData: GithubApiTypes.Merge) => {
             // We get an SHA back when the merge occurs, and we use this for a tag.
             // Note date gets filed in automatically by API.
@@ -849,7 +839,7 @@ export class VersionBot extends ProcBot {
                     },
                     type: 'commit'
                 },
-                method: githubApiInstance.gitdata.createTag
+                method: this.githubApi.gitdata.createTag
             });
         }).then((newTag: GithubApiTypes.Tag) => {
             // We now have a SHA back that contains the tag object.
@@ -861,7 +851,7 @@ export class VersionBot extends ProcBot {
                     repo: data.repoName,
                     sha: newTag.sha
                 },
-                method: githubApiInstance.gitdata.createReference
+                method: this.githubApi.gitdata.createReference
             });
         }).then(() => {
             // Delete the merge label. This will ensure future updates to the PR are
@@ -873,7 +863,7 @@ export class VersionBot extends ProcBot {
                     owner: data.owner,
                     repo: data.repoName
                 },
-                method: githubApiInstance.issues.removeLabel
+                method: this.githubApi.issues.removeLabel
             });
         }).then(() => {
             // Get the branch for this PR.
@@ -883,7 +873,7 @@ export class VersionBot extends ProcBot {
                     owner: data.owner,
                     repo: data.repoName
                 },
-                method: githubApiInstance.pullRequests.get
+                method: this.githubApi.pullRequests.get
             });
         }).then((prInfo: GithubApiTypes.PullRequest) => {
             // Get the relevant branch.
@@ -896,7 +886,7 @@ export class VersionBot extends ProcBot {
                     ref: `heads/${branchName}`,
                     repo: data.repoName
                 },
-                method: githubApiInstance.gitdata.deleteReference
+                method: this.githubApi.gitdata.deleteReference
             });
         }).catch((err: Error) => {
             // Sometimes a state can occur where a label attach occurs at the same time as a final status
@@ -917,7 +907,7 @@ export class VersionBot extends ProcBot {
                     owner: data.owner,
                     repo: data.repoName
                 },
-                method: githubApiInstance.pullRequests.get
+                method: this.githubApi.pullRequests.get
             }).then((mergePr: GithubApiTypes.PullRequest) => {
                 if (mergePr.state === 'open') {
                     throw err;
@@ -930,7 +920,7 @@ export class VersionBot extends ProcBot {
     // It goes through all the checks and should it find that the
     // last checks for each context have failed, then it will return false
     // else true if all have passed.
-    private checkStatuses(prInfo: GithubApiTypes.PullRequest, githubApiInstance: GithubApi): Promise<StatusChecks> {
+    private checkStatuses(prInfo: GithubApiTypes.PullRequest): Promise<StatusChecks> {
         // We need to check the branch protection for this repo.
         // Get all the statuses that need to have been satisfied.
         const owner = prInfo.head.repo.owner.login;
@@ -949,7 +939,7 @@ export class VersionBot extends ProcBot {
                 owner,
                 repo
             },
-            method: githubApiInstance.repos.getProtectedBranchRequiredStatusChecks
+            method: this.githubApi.repos.getProtectedBranchRequiredStatusChecks
         }).then((statusContexts: GithubApiTypes.RequiredStatusChecks) => {
             protectedContexts = statusContexts.contexts;
 
@@ -960,7 +950,7 @@ export class VersionBot extends ProcBot {
                     ref: branch,
                     repo
                 },
-                method: githubApiInstance.repos.getCombinedStatus
+                method: this.githubApi.repos.getCombinedStatus
             });
         }).then((statuses: GithubApiTypes.CombinedStatus) => {
             // Contexts need to be checked specifically.
@@ -1014,8 +1004,7 @@ export class VersionBot extends ProcBot {
     }
 
     // Has VersionBot already made commits to the branch.
-    private getVersionBotCommits(prInfo: GithubApiTypes.PullRequest, githubApiInstance: GithubApi):
-    Promise<string | null> {
+    private getVersionBotCommits(prInfo: GithubApiTypes.PullRequest): Promise<string | null> {
         const owner = prInfo.head.repo.owner.login;
         const repo = prInfo.head.repo.name;
 
@@ -1026,7 +1015,7 @@ export class VersionBot extends ProcBot {
                 repo,
                 sha: prInfo.head.sha
             },
-            method: githubApiInstance.repos.getCommit
+            method: this.githubApi.repos.getCommit
         }).then((headCommit: GithubApiTypes.Commit) => {
             const commit = headCommit.commit;
             const files = headCommit.files;
@@ -1044,22 +1033,21 @@ export class VersionBot extends ProcBot {
 
     // Actually carry out a merge.
     private finaliseMerge = (data: GithubApiTypes.PullRequestEvent,
-    prInfo: GithubApiTypes.PullRequest, githubApiInstance: GithubApi): Promise<void> => {
+    prInfo: GithubApiTypes.PullRequest): Promise<void> => {
         // We will go ahead and perform a merge if we see VersionBot has:
         // 1. All of the status checks have passed on the repo
         // 2. VersionBot has committed something with 'CHANGELOG.md' in it
         const owner = prInfo.head.repo.owner.login;
         const repo = prInfo.head.repo.name;
 
-        return this.checkStatuses(prInfo, githubApiInstance).then((checkStatus) => {
+        return this.checkStatuses(prInfo).then((checkStatus) => {
             if (checkStatus === StatusChecks.Passed) {
                 // Get the list of commits for the PR, then get the very last commit SHA.
-                return this.getVersionBotCommits(prInfo, githubApiInstance).then((commitMessage: string | null) => {
+                return this.getVersionBotCommits(prInfo).then((commitMessage: string | null) => {
                     if (commitMessage) {
                         // Ensure that the labeler was authorised. We do this here, else we could
                         // end up spamming the PR with errors.
-                        return this.getConfiguration(owner, repo, githubApiInstance)
-                        .then((config: VersionBotConfiguration) => {
+                        return this.getConfiguration(owner, repo).then((config: VersionBotConfiguration) => {
                             // If this was a labeling action and there's a config, check to see if there's a maintainers
                             // list and ensure the labeler was on it.
                             // This throws an error if not.
@@ -1073,7 +1061,7 @@ export class VersionBot extends ProcBot {
                                 owner,
                                 prNumber: prInfo.number,
                                 repoName: repo
-                            }, githubApiInstance);
+                            });
                         }).then(() => {
                             // No tags here, just mention it in Flowdock so its searchable.
                             // It's not an error so doesn't need logging.
@@ -1122,8 +1110,7 @@ export class VersionBot extends ProcBot {
         }
     }
 
-    private getConfiguration(owner: string, repo: string, githubApiInstance: GithubApi):
-    Promise<VersionBotConfiguration | void> {
+    private getConfiguration(owner: string, repo: string): Promise<VersionBotConfiguration | void> {
         const request: ServiceEmitRequest = {
             contexts: {},
             source: process.env.VERSIONBOT_NAME
@@ -1134,7 +1121,7 @@ export class VersionBot extends ProcBot {
                 repo,
                 path: '.procbots.yml'
             },
-            method: githubApiInstance.repos.getContent
+            method: this.githubApi.repos.getContent
         };
 
         // Use the parent method to get the configuration via the GH emitter, but then
@@ -1190,7 +1177,7 @@ export class VersionBot extends ProcBot {
                 owner: error.owner,
                 repo: error.repo
             },
-            method: error.githubApiCalls.issues.createComment
+            method: this.githubApi.issues.createComment
         });
 
         this.logger.alert(AlertLevel.ERROR, error.message);

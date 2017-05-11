@@ -4,7 +4,7 @@ import { Worker } from '../framework/worker';
 import { WorkerClient } from '../framework/worker-client';
 import { Logger } from '../utils/logger';
 import { MessageEmitResponse, MessageEvent, MessageWorkerEvent, ReceiptContext } from '../utils/message-types';
-import { ServiceEmitContext, ServiceEmitRequest, ServiceEmitter, ServiceListener, ServiceRegistration } from './service-types';
+import { ServiceAPIHandle, ServiceEmitContext, ServiceEmitRequest, ServiceEmitter, ServiceListener, ServiceRegistration } from './service-types';
 export declare abstract class MessageService extends WorkerClient<string | null> implements ServiceListener, ServiceEmitter {
     protected static logger: Logger;
     private static _app;
@@ -25,4 +25,5 @@ export declare abstract class MessageService extends WorkerClient<string | null>
     protected handleEvent: (event: MessageEvent) => Promise<void>;
     protected getWorker: (event: MessageWorkerEvent) => Worker<string | null>;
     readonly abstract serviceName: string;
+    readonly abstract apiHandle: ServiceAPIHandle | void;
 }

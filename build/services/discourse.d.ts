@@ -14,6 +14,7 @@ export declare class DiscourseService extends MessageService implements ServiceL
     protected getEventTypeFromMessage(event: MessageEvent): string;
     private fetchTopic(topicId);
     readonly serviceName: string;
+    readonly apiHandle: void;
 }
 export declare function createServiceListener(): ServiceListener;
 export declare function createServiceEmitter(): ServiceEmitter;

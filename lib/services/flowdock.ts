@@ -22,6 +22,7 @@ import * as _ from 'lodash';
 import * as path from 'path';
 import * as request from 'request-promise';
 import {
+    FlowdockHandle,
     FlowdockMessage,
     FlowdockMessageEmitContext,
 } from '../services/flowdock-types';
@@ -229,6 +230,13 @@ export class FlowdockService extends MessageService implements ServiceEmitter, S
      */
     get serviceName(): string {
         return FlowdockService._serviceName;
+    }
+
+    // Retrieve the API handle for Flowdock.
+    get apiHandle(): FlowdockHandle {
+        return {
+            flowdock: FlowdockService.session
+        };
     }
 }
 

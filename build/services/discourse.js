@@ -136,6 +136,9 @@ class DiscourseService extends message_service_1.MessageService {
     get serviceName() {
         return DiscourseService._serviceName;
     }
+    get apiHandle() {
+        return;
+    }
 }
 DiscourseService._serviceName = path.basename(__filename.split('.')[0]);
 exports.DiscourseService = DiscourseService;

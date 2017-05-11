@@ -199,6 +199,11 @@ export class DiscourseService extends MessageService implements ServiceListener,
     get serviceName(): string {
         return DiscourseService._serviceName;
     }
+
+    // There is no API handle for discourse.
+    get apiHandle(): void {
+        return;
+    }
 }
 
 /**

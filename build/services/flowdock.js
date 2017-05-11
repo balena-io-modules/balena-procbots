@@ -131,6 +131,11 @@ class FlowdockService extends message_service_1.MessageService {
     get serviceName() {
         return FlowdockService._serviceName;
     }
+    get apiHandle() {
+        return {
+            flowdock: FlowdockService.session
+        };
+    }
 }
 FlowdockService.session = new flowdock_1.Session(process.env.FLOWDOCK_LISTENER_ACCOUNT_API_TOKEN);
 FlowdockService._serviceName = path.basename(__filename.split('.')[0]);
