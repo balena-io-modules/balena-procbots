@@ -14,9 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// ProcBot configuration format.
+/** The ProcBotConfiguration interface holds per-bot configuration information. */
 export interface ProcBotConfiguration {
     procbot: {
+        /**
+         * The minimum version of the ProcBots framework that should be used for execution in
+         * the context of the configuration file.
+         */
         minimum_version?: number;
     };
 }
