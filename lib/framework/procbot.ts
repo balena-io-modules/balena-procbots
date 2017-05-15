@@ -26,11 +26,13 @@ import { ProcBotConfiguration } from './procbot-types';
 const fsReadFile = Promise.promisify(FS.readFile);
 const exec: (command: string, options?: any) => Promise<{}> = Promise.promisify(ChildProcess.exec);
 
-// The ProcBot class is a parent class that can be used for some top-level tasks:
-//  * Schedule the processing of events clustered by a given context
-//  * Support the addition of listeners or emitters by the child class, and dispatch events
-//    to emitters
-//  * Retrieve configuration file from either the local FS or a ServiceEmitter
+/**
+ * The ProcBot class is a parent class that can be used for some top-level tasks:
+ * * Schedule the processing of events clustered by a given context
+ * * Support the addition of listeners or emitters by the child class, and dispatch events
+ *   to emitters
+ * * Retrieve configuration file from either the local FS or a ServiceEmitter
+ */
 export class ProcBot {
     protected _botname: string;
     protected logger = new Logger();
@@ -42,6 +44,10 @@ export class ProcBot {
         this._botname = name;
     }
 
+    /**
+     * Retrieve the binary path for the Node dependencies.
+     * @return  A string containing the absolute path.
+     */
     public getNodeBinPath(): Promise<string> {
         if (this.nodeBinPath) {
             return Promise.resolve(this.nodeBinPath);
@@ -53,7 +59,11 @@ export class ProcBot {
         });
     }
 
-    // Process a configuration file from YAML into a nested object.
+    /**
+     * Process a configuration file from YAML into a nested object.
+     * @param configFile    The configuration file as a string.
+     * @return              The configuration object or void.
+     */
     protected processConfiguration(configFile: string): ProcBotConfiguration | void {
         const config: ProcBotConfiguration = yaml.safeLoad(configFile);
 
@@ -72,8 +82,13 @@ export class ProcBot {
         return config;
     }
 
-    // Retrieve a configuration file.
-    // This default implementation assumes a pathname.
+    /**
+     * Retrieve a configuration file.
+     * This default implementation assumes a pathname.
+     * @param source    The media where the configuration file resides.
+     * @param location  The media relative location of the file (eg. file path, HTTP URL, etc.)
+     * @return          The configuration object, service reponse or void should it fail.
+     */
     // We should really pass in string | ServiceEmitRequest, the FS module should be a type of emmitter.
     protected retrieveConfiguration(source: string, location: string | ServiceEmitRequest):
     Promise<ProcBotConfiguration | ServiceEmitResponse | void> {
@@ -96,8 +111,13 @@ export class ProcBot {
         });
     }
 
-    // Add a new listener.
-    // If it already exists, we just ignore it.
+    /**
+     * Add a new type of ServiceListener to the client.
+     * Should the ServiceListener already exist on the client, this will do nothing.
+     * @param name  The name of the ServiceListener to add.
+     * @param data? Any relevant data required to construct the ServiceListener.
+     * @return      The constructed ServiceListener or void should it already exist or fail.
+     */
     protected addServiceListener(name: string, data?: any): ServiceListener | void {
         const service = this.getService(name);
         let listener;
@@ -112,6 +132,13 @@ export class ProcBot {
 
     // Add a new emitter.
     // If it already exists, we just ignore it.
+    /**
+     * Add a new type of ServiceEmitter to the client.
+     * Should the ServiceEmitter already exist on the client, this will do nothing.
+     * @param name  The name of the ServiceEmitter to add.
+     * @param data? Any relevant data required to construct the ServiceListener.
+     * @return      The constructed ServiceEmitter or void should it already exist or fail.
+     */
     protected addServiceEmitter(name: string, data?: any): ServiceEmitter | void {
         const service = this.getService(name);
         let emitter;
@@ -124,25 +151,33 @@ export class ProcBot {
         return emitter;
     }
 
-    // Find a particular emitter based upon its name.
+    /**
+     * Find a particular attached ServiceListener based upon its name.
+     * @param name  Name of the ServiceListener instance to find.
+     * @return      Instance of the ServiceListener found, or void if not found.
+     */
     protected getListener(name: string): ServiceListener | void {
         return _.find(this.listeners, (listener) => listener.serviceName === name);
     }
 
-    // Find a particular emitter based upon its name.
+    /**
+     * Find a particular attached ServiceEmitter based upon its name.
+     * @param name  Name of the ServiceEmitter instance to find.
+     * @return      Instance of the ServiceEmitter found, or void if not found.
+     */
     protected getEmitter(name: string): ServiceEmitter | void {
         return _.find(this.emitters, (emitter) => emitter.serviceName === name);
     }
 
-    // Dispatch to the specified emitter. The wildcard name 'all' means
-    // dispatch to *all* emitters attached. This occurs in a non-defined
-    // order so care should be taken.
-    // This method exists as a shortcut to avoid having to retrieve a specific
-    // emitter before sending to it.
     // Returns a promise containing the results of all final send statuses.
-    protected dispatchToAllEmitters(data: ServiceEmitRequest) {
-        // If throwError is true, then any error is returned to the caller as soon as it
-        // occurs, else it's stored in a response structure.
+    /**
+     * Dispatch to the specified emitter.
+     * This method exists as a shortcut to avoid having to retrieve a specific
+     * emitter before sending to it.
+     * @param data  The ServiceEmitRequest to use. This will be dispatched to all ServiceEmitters.
+     * @return      An array of ServiceEmitResponses from all the ServiceEmitters.
+     */
+    protected dispatchToAllEmitters(data: ServiceEmitRequest): Promise<ServiceEmitResponse[]> {
         let results: ServiceEmitResponse[] = [];
 
         // If there's not a context for a particular emmiter, it will result in a response
@@ -155,10 +190,14 @@ export class ProcBot {
         }).return(results);
     }
 
-    // Dispatch to a named emitter.
-    // This method exists as a shortcut to avoid having to retrieve a specific
-    // emitter before sending to it.
-    // Returns a promise containing the results of all final send statuses.
+    /**
+     * Dispatch to a specific ServiceEmitter.
+     * This method exists as a shortcut to avoid having to retrieve a specific
+     * emitter before sending to it.
+     * @param name  The name of the ServiceEmitter to dispatch to.
+     * @param data  A ServiceEmitRequest object to send to the specified ServiceEmitter.
+     * @return      The response from the ServiceEmitter.
+     */
     protected dispatchToEmitter(name: string, data: ServiceEmitRequest): Promise<ServiceEmitResponse> {
         // If emitter not found, this is an error
         const emitInstance = _.find(this.emitters, (emitter) => emitter.serviceName === name);
@@ -183,7 +222,11 @@ export class ProcBot {
         return emitInstance.sendData(data);
     }
 
-    // Find a dynamic service based upon its name.
+    /**
+     * Retrieves and loads a ServiceListener or ServiceEmitter by name.
+     * @param name  The name of the ServiceListener or ServiceEmitter to load.
+     * @return      The relevant ServiceFactory for the service.
+     */
     private getService(name: string): ServiceFactory {
         // Actually what we could do is just do a require, where the Service
         // exports a newly made object. We know that this always has a

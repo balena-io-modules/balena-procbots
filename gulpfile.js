@@ -4,6 +4,7 @@ const typescript = require('gulp-typescript');
 const sourcemaps = require('gulp-sourcemaps');
 const tslint = require('gulp-tslint');
 const tsProject = typescript.createProject('tsconfig.json');
+const exec = require('child_process').exec;
 
 const OPTIONS = {
     files: {
@@ -37,5 +38,11 @@ gulp.task('tslint', () =>
         .pipe(tslint.report())
 );
 
-gulp.task('build', [ 'typescript', 'copydecs' ]);
+gulp.task('typedoc', () => {
+    exec('`npm bin`/typedoc --name "Resin ProcBots" --module commonjs --target ES6 --excludeExternals ' +
+        '--externalPattern **/typings/*.d.ts --includes docresources/Architecture --media docresources/Architecture ' +
+        '--out docs/ lib/');
+});
+
+gulp.task('build', [ 'tslint', 'typescript', 'copydecs', 'typedoc' ]);
 

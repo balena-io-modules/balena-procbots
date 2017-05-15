@@ -16,16 +16,26 @@ limitations under the License.
 
 import { Worker, WorkerEvent, WorkerMap } from './worker';
 
-// The WorkerClient class is extended by Service implementations to allow queueing of
-// incoming events.
+/**
+ * The WorkerClient class is extended by Service implementations to allow queueing of
+ * incoming events.
+ * It allows the use of generic contexts, to suit the service using it.
+ */
 export class WorkerClient<T> {
     protected workers: WorkerMap<T> = new Map<T, Worker<T>>();
 
-    // This generic method must be implemented in children extended from a ProcBot.
-    // It defines the context type used for Workers.
+    /**
+     * This generic method must be implemented in children extended from a ProcBot.
+     * It defines the context type used for Workers.
+     * @param event The WorkerEvent to retrieve a valid Worker for.
+     * @return      Returns a Worker that should be used to process the event.
+     */
     protected getWorker: (event: WorkerEvent) => Worker<T>;
 
-    // Queue an event ready for running in a child.
+    /**
+     * Queue an event ready for running in a child.
+     * @param event The WorkerEvent to add to the queue for processing.
+     */
     protected queueEvent(event: WorkerEvent): void {
         let entry: Worker<T> | undefined;
 
@@ -46,7 +56,10 @@ export class WorkerClient<T> {
         entry.addEvent(event);
     }
 
-    // Remove a worker from a context post-action.
+    /**
+     * Remove a worker from a context post-action.
+     * @param context   The context in which the Worker must be removed.
+     */
     protected removeWorker = (context: T): void => {
         this.workers.delete(context);
     }

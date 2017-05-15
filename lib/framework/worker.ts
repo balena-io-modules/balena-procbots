@@ -17,47 +17,31 @@ limitations under the License.
 import * as Promise from 'bluebird';
 import { ServiceEvent } from '../services/service-types';
 
-// Worker ---------------------------------------------------------------------
-
-// Standard worker method type that all other bots must implement.
 /**
  * A method called by the Worker class to process an event.
- * @typedef {function} WorkerMethod
- * @param {string} - The event sent.
- * @param {T} - Generic type data.
- * @param {PromiseLike<void>} - A Promise resolving once processing is complete.
+ * @param data  The ServiceEvent to process.
  */
 export type WorkerMethod = (data: ServiceEvent) => Promise<void>;
 
-// Remove a worker from a context.
+/**
+ * Remove a worker from a context.
+ * @param context   The context in which the Worker should be removed.
+ */
 export type WorkerRemove = <T>(context: T) => void;
 
-// An event passed from a derived Bot, detailing the event it wishes to work on,
-// the data to work on and the method to use for that data.
-/**
- * An event that has fired and needs to be processed.
- * @typedef {Object} ProcBot.WorkerEvent
- * @property {string} event - A string denoting the event; context dependent.
- * @property {any} data - The data arising from the event.
- * @property {WorkerMethod} - The method to call that will process the event.
- */
+/** An event that has fired and needs to be processed. */
 export interface WorkerEvent {
+    /** The data arising from the event. */
     data: ServiceEvent;
+    /** The WorkerMethod to use to process the event. */
     workerMethod: WorkerMethod;
 };
 
-/**
- * A map linking contexts to Worker instances.
- * @typedef {Object} ProcBot.WorkerMap
- * @property {generic} - A generic context for the Worker.
- * @property {Worker}
- */
+/** Map linking contexts to Worker instances. */
 export type WorkerMap<T> = Map<T, Worker<T>>;
 
 /**
  * The Worker class is responsible for the execution of scheduling tasks based on events.
- * @class ProcBot.Worker
- * @classdesc
  * Each Worker instance is bound to a context. This context could be, for example, a
  * unique Github repository, or a directory in a file system, a specific customer service
  * in a set, etc. It is also generic, and can therefore be of any type.
@@ -65,27 +49,17 @@ export type WorkerMap<T> = Map<T, Worker<T>>;
  * in the next tick of event loop.
  */
 export class Worker<T> {
-    /**
-     * Holds the context for the Worker.
-     * @member Worker._context
-     * @private
-     * @type {generic}
-     */
+    /** Holds the context for the Worker. */
     private _context: T;
-    /**
-     * Holds the queue of events to work on.
-     * @member Worker.queue
-     * @private
-     * @type {ProcBot.WorkerEvent[]}
-     */
+    /** Holds the queue of events to work on. */
     private queue: WorkerEvent[] = [];
-
+    /** Method to call when a Worker is to be removed. */
     private onDone: WorkerRemove;
 
     /**
      * Creates the Worker class, specifying a context and the parent Map.
-     * @param {generic} context - The context to use for hashing.
-     * @param {ProcBot.WorkerMap} parentMap - The parent Map containing all Workers.
+     * @param context   The context to use for hashing.
+     * @param onDone    The method to use to remove a Worker post-event processing.
      */
     constructor(context: T, onDone: WorkerRemove) {
         this._context = context;
@@ -94,7 +68,7 @@ export class Worker<T> {
 
     /**
      * Retrieve the context for the Worker.
-     * @return {generic} - The context.
+     * @return The context for the Worker.
      */
     get context(): T {
         return this._context;
@@ -102,7 +76,7 @@ export class Worker<T> {
 
     /**
      * Add a new event to the Worker's event queue.
-     * @param {ProcBot.WorkerEvent} worker - The event to add to the queue.
+     * @param worker    The event to add to the queue.
      */
     public addEvent(event: WorkerEvent): void {
         this.queue.push(event);

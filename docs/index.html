@@ -1,0 +1,307 @@
+<!doctype html>
+<html class="default no-js">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>Resin ProcBots</title>
+	<meta name="description" content="">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+<header>
+	<div class="tsd-page-toolbar">
+		<div class="container">
+			<div class="table-wrap">
+				<div class="table-cell" id="tsd-search" data-index="assets/js/search.js" data-base=".">
+					<div class="field">
+						<label for="tsd-search-field" class="tsd-widget search no-caption">Search</label>
+						<input id="tsd-search-field" type="text" />
+					</div>
+					<ul class="results">
+						<li class="state loading">Preparing search index...</li>
+						<li class="state failure">The search index is not available</li>
+					</ul>
+					<a href="index.html" class="title">Resin ProcBots</a>
+				</div>
+				<div class="table-cell" id="tsd-widgets">
+					<div id="tsd-filter">
+						<a href="#" class="tsd-widget options no-caption" data-toggle="options">Options</a>
+						<div class="tsd-filter-group">
+							<div class="tsd-select" id="tsd-filter-visibility">
+								<span class="tsd-select-label">All</span>
+								<ul class="tsd-select-list">
+									<li data-value="public">Public</li>
+									<li data-value="protected">Public/Protected</li>
+									<li data-value="private" class="selected">All</li>
+								</ul>
+							</div>
+							<input type="checkbox" id="tsd-filter-inherited" checked />
+							<label class="tsd-widget" for="tsd-filter-inherited">Inherited</label>
+							<input type="checkbox" id="tsd-filter-only-exported" />
+							<label class="tsd-widget" for="tsd-filter-only-exported">Only exported</label>
+						</div>
+					</div>
+					<a href="#" class="tsd-widget menu no-caption" data-toggle="menu">Menu</a>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="tsd-page-title">
+		<div class="container">
+			<ul class="tsd-breadcrumb">
+				<li>
+					<a href="globals.html">Globals</a>
+				</li>
+			</ul>
+			<h1> Resin ProcBots</h1>
+		</div>
+	</div>
+</header>
+<div class="container container-main">
+	<div class="row">
+		<div class="col-8 col-content">
+			<div class="tsd-panel tsd-typography">
+				<h1 id="procbots">procbots</h1>
+				<p>Process bots used for automating the development and deployment CI pipeline.</p>
+				<p>Currently only the <code>VersionBot</code> exists. <code>VersionBot</code> will:</p>
+				<ul>
+					<li>Look for new PRs and check that there is at least one commit in the PR which features a suitable <code>Change-Type:</code> tag</li>
+					<li>Look for PR review approval <strong><em>and</em></strong> a label applied to the PR to mark it ready for merge (<code>procbots/versionbot/ready-to-merge</code>)</li>
+					<li>On seeing appropriate label and review, will automatically:<ol>
+							<li>Clone the PR branch for the repo</li>
+							<li>Run <code>versionist</code> upon it. Should a <code>versionist.conf.js</code> config file exist in the root of
+							the repo, then this is used in preference to the in-built default config.</li>
+							<li>Should a new version be generated, commit any appropriate files (eg. <code>CHANGELOG.md</code>, <code>package.json</code>) to the branch</li>
+							<li>Merge the branch back into the head</li>
+							<li>Delete the PR branch</li>
+						</ol>
+					</li>
+				</ul>
+				<p>If a PR branch is out of step with the <code>master</code> branch, <code>VersionBot</code> will refuse to merge (and will not update the versions of files).</p>
+				<p>Merges and checks can be suppressed using the <code>procbots/versionbot/no-checks</code> label on a PR.</p>
+				<h2 id="installation">Installation</h2>
+				<p><code>VersionBot</code> can be run either on a development machine (with suitable forwarding of a chosen callback URL to it&#39;s IP address) or in a <code>resin-on-resin</code> configuration.</p>
+				<h3 id="host-development">Host Development</h3>
+				<p><code>npm install</code> in root repo. You&#39;ll need to install modules before opening Visual Code (if using it) else it won&#39;t find the TypeScript defs it needs, and will moan at you.</p>
+				<p><code>gulp build</code> or run Visual Code and build as per normal. There is an extra task for VC which will build the code before debugging.</p>
+				<p>Ensure your Internet router forwards traffic appropriately for any callback URL you use in the Integration setup to your host.</p>
+				<p>Appropriate environment variables are required before execution. See below.</p>
+				<h3 id="-resin-on-resin-deployment"><code>resin-on-resin</code> Deployment</h3>
+				<p>Create new app, add appropriate git remote for resin.io.</p>
+				<pre><code><span class="hljs-symbol">gulp</span> <span class="hljs-keyword">build
+</span><span class="hljs-symbol">git</span> <span class="hljs-keyword">push </span>resin master
+</code></pre><p>Appropriate environment variables are required before execution. See below.</p>
+				<h2 id="creating-a-github-integration">Creating a Github Integration</h2>
+				<p><code>VersionBot</code> runs as an Integration in the Github scope. For development, you can create an Integration on your personal Github account by going to your Settings page (from your profile avatar icon) and selecting &#39;Integrations -&gt; Register New Integration` from the &#39;Developer Settings&#39; sidebar.</p>
+				<pre><code>* Give Integration <span class="hljs-keyword">a</span> name
+* Set <span class="hljs-keyword">a</span> Homepage <span class="hljs-built_in">URL</span> (required but <span class="hljs-keyword">not</span> used)
+* Set <span class="hljs-keyword">a</span> callback <span class="hljs-built_in">URL</span> (this is where all callbacks will go <span class="hljs-built_in">to</span>, eg: `<span class="hljs-keyword">http</span>://myurl.com:<span class="hljs-number">4567</span>/webhooks`). Currently `VersionBot` expects webhooks <span class="hljs-built_in">to</span> be sent <span class="hljs-built_in">to</span> <span class="hljs-keyword">the</span> `/webhooks` path when running, <span class="hljs-keyword">and</span> listens <span class="hljs-keyword">on</span> <span class="hljs-title">port</span> `<span class="hljs-title">4567</span>`
+* Create <span class="hljs-keyword">a</span> <span class="hljs-built_in">new</span> Webhook Secret (see [here](<span class="hljs-keyword">https</span>://developer.github.com/webhooks/securing/)). You will <span class="hljs-built_in">require</span> this secret later
+
+* Set up secure Webhooks:
+    - Go <span class="hljs-built_in">to</span> repository you want Integration <span class="hljs-keyword">on</span>
+    - Add <span class="hljs-keyword">a</span> <span class="hljs-built_in">new</span> secret
+    - Add relevant code <span class="hljs-keyword">for</span> HMAC digest <span class="hljs-keyword">in</span> <span class="hljs-built_in">version</span> bot <span class="hljs-keyword">and</span> check again <span class="hljs-string">'x-hub-signature'</span> header entry <span class="hljs-keyword">for</span> matching digest
+</code></pre><p>Set the following permissions in &#39;Permissions &amp; events&#39;:</p>
+				<pre><code><span class="hljs-string">*</span> <span class="hljs-attr">Settings:</span>
+<span class="hljs-bullet">    -</span> <span class="hljs-string">Repository</span> <span class="hljs-attr">metadata:</span> <span class="hljs-string">R/O</span>
+<span class="hljs-bullet">    -</span> <span class="hljs-string">Repository</span> <span class="hljs-attr">administration:</span> <span class="hljs-string">R/O</span>
+<span class="hljs-bullet">    -</span> <span class="hljs-string">Commit</span> <span class="hljs-attr">statues:</span> <span class="hljs-string">R/W</span>
+        <span class="hljs-comment"># Status</span>
+<span class="hljs-attr">    - Deployments:</span> <span class="hljs-string">R/W</span>
+        <span class="hljs-comment"># Deployment</span>
+        <span class="hljs-comment"># Deployment status</span>
+<span class="hljs-attr">    - Issues:</span>
+        <span class="hljs-comment"># Issue comment: R/W</span>
+        <span class="hljs-comment"># Issues: R/W</span>
+<span class="hljs-bullet">    -</span> <span class="hljs-string">Pull</span> <span class="hljs-attr">Requests:</span> <span class="hljs-string">R/W</span>
+        <span class="hljs-comment"># Pull request</span>
+        <span class="hljs-comment"># Pull request review</span>
+        <span class="hljs-comment"># Pull request review comment</span>
+<span class="hljs-bullet">    -</span> <span class="hljs-string">Repository</span> <span class="hljs-attr">contents:</span> <span class="hljs-string">R/W</span>
+        <span class="hljs-comment"># Commit comment</span>
+        <span class="hljs-comment"># Create</span>
+        <span class="hljs-comment"># Delete</span>
+        <span class="hljs-comment"># Fork</span>
+        <span class="hljs-comment"># Push</span>
+        <span class="hljs-comment"># Release</span>
+</code></pre><p>Now hit &#39;Save&#39;. The Integration will be created and you&#39;ll be given an Integration ID (note it down, it will be required later).</p>
+				<p>Finally you need to create a new private key for your Integration. Hit the &#39;Generate Private Key&#39; in the &#39;Private Key&#39; section.</p>
+				<p>Download the key and then create a Base64 string from it. It will be required later.</p>
+				<h2 id="secret-key-webhook-token-and-integration-id">Secret Key, Webhook Token and Integration ID</h2>
+				<p><code>VersionBot</code> requires the following environment variables:</p>
+				<pre><code>`VERSIONBOT_WEBHOOK_SECRET`: The <span class="hljs-number">20</span> digit hex key used <span class="hljs-built_in">to</span> authenticate messages.
+`VERSIONBOT_INTEGRATION_ID`: The ID given <span class="hljs-keyword">on</span> <span class="hljs-title">Integration</span> <span class="hljs-title">creation</span>, <span class="hljs-title">a</span> <span class="hljs-title">unique</span> <span class="hljs-title">identifier</span>.
+`VERSIONBOT_PROCBOTS_PEM`: The Base64 encoded <span class="hljs-keyword">private</span> key generated <span class="hljs-keyword">on</span> <span class="hljs-title">Integration</span> <span class="hljs-title">creation</span>.
+`VERSIONBOT_NAME`: The name shown <span class="hljs-keyword">in</span> commits <span class="hljs-keyword">and</span> merges <span class="hljs-keyword">for</span> PRs <span class="hljs-keyword">by</span> <span class="hljs-keyword">the</span> Integration.
+`VERSIONBOT_EMAIL`: Email address <span class="hljs-keyword">for</span> <span class="hljs-keyword">the</span> bot, (can be <span class="hljs-keyword">an</span> <span class="hljs-literal">empty</span> <span class="hljs-keyword">string</span>).
+`VERSIONBOT_FLOWDOCK_ROOM`: The room ID whose inbox will be posted <span class="hljs-built_in">to</span>. If <span class="hljs-keyword">not</span> present, Flowdock will <span class="hljs-keyword">not</span> be used.
+</code></pre><p>You&#39;ll need to fill these fields out in <code>.vscode/launch.json</code> before debugging (if you&#39;re running this on the CLI, set envvars accordingly). If you&#39;re running on Resin, these must be set as Application envvars.</p>
+				<p>Ask Heds how this works if unsure.</p>
+				<h2 id="initialising-a-repo">Initialising a Repo</h2>
+				<p>Before the Versionist ProcBot can deal with a repository, the repo itself needs to be updated to support it.</p>
+				<p>Use the tool in <code>tools/initRepo</code> to setup the repository in such a way that the <code>master</code> branch is guarded and merges can only occur post-review and with a <code>procbots/versionbot/ready-to-merge</code> label:</p>
+				<pre><code>./tools/initRepo/<span class="hljs-keyword">bin/initRepo </span>-u <span class="hljs-keyword">bob </span>-p <span class="hljs-keyword">bobspassword </span>-r <span class="hljs-keyword">bob/bobsrepo</span>
+</code></pre><p><strong>Note:</strong> This must be carried out by an admin user of the repo, in this case <code>bob</code>.</p>
+				<p>Ensure you also create the <code>procbots/versionbot/ready-to-merge</code> label type in the &#39;Issues&#39; section of the repo (this will be added to the tool).</p>
+				<p>Finally you need to install the Integration into the repo. Do this by going to your &#39;Settings&#39; page, selecting &#39;Installed Integrations&#39;, selecting your Integration and then selecting the repos you want it installed in in the &#39;Repository access&#39; section.</p>
+				<h3 id="tailoring-procbots-for-a-repo-via-configuration-file">Tailoring ProcBots for a Repo via Configuration File</h3>
+				<p>ProcBots now also respond to a configuration file. This is a file with the name <code>.procbots.yml</code> in a relative location for the ProcBot running. In the case of ProcBots operating on a Github repository (such as VersionBot), this is in the root of the repository that it is working on, on the <code>master</code> branch.</p>
+				<p>The configuration file uses a set of nested properties based on the class hierarchy of the ProcBots, with each class able to modify variables at run time from the configuration file.</p>
+				<p>ProcBots itself has a single property, <code>minimum_version</code>, which is checked to ensure that operations only get carried out should that version be satisfied. Should it not find itself to be of at least the minimum version, an error is thrown.</p>
+				<p>Example:</p>
+				<pre><code><span class="hljs-symbol">procbot:</span>
+<span class="hljs-symbol">    minimum_version:</span> <span class="hljs-number">0.5</span>
+</code></pre><p>Other bots are free to add any properties they require. It should be noted that all derived bots are able to view the entire configuration file on request.</p>
+				<h2 id="running-versionbot">Running VersionBot</h2>
+				<p>Currently there is only one ProcBot, VersionBot. You can run this from within Visual Code by building and then debugging in the usual way, or you can run it from the command line:</p>
+				<p><code>./bin/procbot -b versionbot</code></p>
+				<p>This allows the checking of commits for a PR and merging them when the right labels/conditions are met.</p>
+				<p><code>VersionBot</code> will ignore any status checks and not attempt to merge should the <code>procbots/versionbot/no-checks</code> label be present on any PR it would otherwise operate on when a PR is opened.</p>
+				<p>Currently, <code>VersionBot</code> will:</p>
+				<ul>
+					<li>Version up only once all status checks set as &#39;Required&#39; on protected branches for &#39;master&#39; are successful</li>
+					<li>The <code>procbots/versionbot/ready-to-merge</code> label is present</li>
+				</ul>
+				<p>VersionBot can be configured via a <code>.procbots.yml</code> file present in any repository that it operates on. This alters the settings for it for working on that repository. Currently the configuration for VersionBot consists of the following properties:</p>
+				<pre><code>`procbot<span class="hljs-selector-class">.versionbot</span><span class="hljs-selector-class">.maintainers</span>` - A list of Github user names that are authorised maintainers of the repository. The `procbots/versionbot/ready-to-merge` <span class="hljs-selector-tag">label</span> will only be acted upon should <span class="hljs-selector-tag">a</span> maintainer <span class="hljs-keyword">in</span> this list have added the <span class="hljs-selector-tag">label</span>.
+</code></pre><p>Example:</p>
+				<pre><code><span class="hljs-symbol">procbot:</span>
+<span class="hljs-symbol">    minimum_version:</span> <span class="hljs-number">0.5</span>
+<span class="hljs-symbol">    versionbot:</span>
+<span class="hljs-symbol">        maintainers:</span>
+            - lekkas
+            - hedss
+</code></pre><p><strong>Some Notes:</strong></p>
+				<ul>
+					<li>There is currently an issue with the Github API where private repositories do not correctly return PR reviews. Therefore there is no safety check for this although the code is present but disabled in <code>VersionBot</code>.</li>
+					<li>Should <code>VersionBot</code> come across a situation where it does not know how to proceed, it will comment on the PR as such. This can include instances where the <code>procbot/versionbot/ready-to-merge</code> label has been added without checks completing. In this case, await the checks to be successful and then reapply the label.</li>
+				</ul>
+				<h2 id="architecture">Architecture</h2>
+				<p>The full architecture documentation can be read <a href="media/procbot-architecture.md">here</a>.</p>
+				<h2 id="tbd">TBD</h2>
+				<ul>
+					<li>TypeScript review and style.</li>
+					<li>Addition of logging and alerting.</li>
+				</ul>
+			</div>
+		</div>
+		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
+			<nav class="tsd-navigation primary">
+				<ul>
+					<li class="globals  ">
+						<a href="globals.html"><em>Globals</em></a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_app_.html">"app"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_bots_syncbot_.html">"bots/syncbot"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_bots_versionbot_.html">"bots/versionbot"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_framework_procbot_.html">"framework/procbot"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_framework_worker_.html">"framework/worker"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_framework_worker_client_.html">"framework/worker-<wbr>client"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_services_discourse_.html">"services/discourse"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_services_flowdock_.html">"services/flowdock"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_services_github_.html">"services/github"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_services_message_service_.html">"services/message-<wbr>service"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_utils_logger_.html">"utils/logger"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_utils_message_converters_.html">"utils/message-<wbr>converters"</a>
+					</li>
+				</ul>
+			</nav>
+			<nav class="tsd-navigation secondary menu-sticky">
+				<ul class="before-current">
+				</ul>
+			</nav>
+		</div>
+	</div>
+</div>
+<footer class="with-border-bottom">
+	<div class="container">
+		<h2>Legend</h2>
+		<div class="tsd-legend-group">
+			<ul class="tsd-legend">
+				<li class="tsd-kind-module"><span class="tsd-kind-icon">Module</span></li>
+				<li class="tsd-kind-object-literal"><span class="tsd-kind-icon">Object literal</span></li>
+				<li class="tsd-kind-variable"><span class="tsd-kind-icon">Variable</span></li>
+				<li class="tsd-kind-function"><span class="tsd-kind-icon">Function</span></li>
+				<li class="tsd-kind-function tsd-has-type-parameter"><span class="tsd-kind-icon">Function with type parameter</span></li>
+				<li class="tsd-kind-index-signature"><span class="tsd-kind-icon">Index signature</span></li>
+				<li class="tsd-kind-type-alias"><span class="tsd-kind-icon">Type alias</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-enum"><span class="tsd-kind-icon">Enumeration</span></li>
+				<li class="tsd-kind-enum-member"><span class="tsd-kind-icon">Enumeration member</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-enum"><span class="tsd-kind-icon">Property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-enum"><span class="tsd-kind-icon">Method</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-interface"><span class="tsd-kind-icon">Interface</span></li>
+				<li class="tsd-kind-interface tsd-has-type-parameter"><span class="tsd-kind-icon">Interface with type parameter</span></li>
+				<li class="tsd-kind-constructor tsd-parent-kind-interface"><span class="tsd-kind-icon">Constructor</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-interface"><span class="tsd-kind-icon">Property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-interface"><span class="tsd-kind-icon">Method</span></li>
+				<li class="tsd-kind-index-signature tsd-parent-kind-interface"><span class="tsd-kind-icon">Index signature</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-class"><span class="tsd-kind-icon">Class</span></li>
+				<li class="tsd-kind-class tsd-has-type-parameter"><span class="tsd-kind-icon">Class with type parameter</span></li>
+				<li class="tsd-kind-constructor tsd-parent-kind-class"><span class="tsd-kind-icon">Constructor</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-class"><span class="tsd-kind-icon">Property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class"><span class="tsd-kind-icon">Method</span></li>
+				<li class="tsd-kind-accessor tsd-parent-kind-class"><span class="tsd-kind-icon">Accessor</span></li>
+				<li class="tsd-kind-index-signature tsd-parent-kind-class"><span class="tsd-kind-icon">Index signature</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-constructor tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited constructor</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited method</span></li>
+				<li class="tsd-kind-accessor tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited accessor</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><span class="tsd-kind-icon">Protected property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-protected"><span class="tsd-kind-icon">Protected method</span></li>
+				<li class="tsd-kind-accessor tsd-parent-kind-class tsd-is-protected"><span class="tsd-kind-icon">Protected accessor</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private method</span></li>
+				<li class="tsd-kind-accessor tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private accessor</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static property</span></li>
+				<li class="tsd-kind-call-signature tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static method</span></li>
+			</ul>
+		</div>
+	</div>
+</footer>
+<div class="container tsd-generator">
+	<p>Generated using <a href="http://typedoc.org/" target="_blank">TypeDoc</a></p>
+</div>
+<div class="overlay"></div>
+<script src="assets/js/main.js"></script>
+<script>if (location.protocol == 'file:') document.write('<script src="assets/js/search.js"><' + '/script>');</script>
+</body>
+</html>

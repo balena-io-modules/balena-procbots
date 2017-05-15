@@ -32,20 +32,26 @@ import { AlertLevel, Logger, LogLevel } from '../utils/logger';
 import { ServiceEmitContext, ServiceEmitRequest, ServiceEmitResponse, ServiceEmitter,
     ServiceEvent, ServiceListener } from './service-types';
 
-// Github Label details.
+/** Github label interface. */
 interface LabelDetails {
+    /** The PR or issue number. */
     number: string;
+    /** Repository information. */
     repo: {
+        /** Owner of the repository. */
         owner: {
             login: string;
         };
+        /** Name of the repository. */
         name: string;
     };
 }
 
-// The Github service allows all interaction with Github.
-// It implements both a Listener that will listen to webhooks and an emitter
-// that will communicate with GH via it's API.
+/**
+ * The Github service allows all interaction with Github.
+ * It implements both a ServiceListener that listens to webhooks and a ServiceEmitter
+ * that communicates with GH via its API.
+ */
 export class GithubService extends WorkerClient<string> implements ServiceListener, ServiceEmitter {
     protected getWorker: (event: WorkerEvent) => Worker<string>;
     protected authToken: string;
@@ -59,7 +65,10 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
     private _serviceName = path.basename(__filename.split('.')[0]);
     private logger = new Logger();
 
-    // The constructor is passed a specific data type.
+    /**
+     * Constructor for both the ServiceListener and ServiceEmitter.
+     * @param constObj  Construction object for either ServiceListener or ServiceEmitter.
+     */
     constructor(constObj: GithubListenerConstructor | GithubConstructor) {
         super();
 
@@ -178,14 +187,19 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
         });
     }
 
-    // Create a new event triggered action for the list. We don't check signatures, so someone
-    // could potentially register twice. If they do that, they get called twice.
-    // Currently we do not allow deregistering. Potentially there may be a need in the future,
-    // but any created bot has to have actions 'baked in' atm.
+    /**
+     * Create a new event triggered action for the list.
+     * @param registration  A GithubRegistration object detailing the events required by the client.
+     */
     public registerEvent(registration: GithubRegistration): void {
         this.eventTriggers.push(registration);
     }
 
+    /**
+     * Send data to Github.
+     * @param data  A ServiceEmitRequest detailling the call to make and associated data.
+     * @return      A ServiceEmitResponse comprised from the response from Github.
+     */
     public sendData(data: ServiceEmitRequest): Promise<ServiceEmitResponse> {
         // Try and find the context for the Github request.
         const emitContext: ServiceEmitContext = _.pickBy(data.contexts, (_val, key) => {
@@ -240,13 +254,19 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
         return runApi();
     }
 
-    // Get the name of this service.
+    /**
+     * Retrieve the name of the Github service.
+     * @return  The name of the service.
+     */
     get serviceName(): string {
         return this._serviceName;
     }
 
-    // Handles all Github events to trigger actions, should the parameters meet those
-    // registered.
+    /**
+     * Handles all Github events to trigger actions, should the parameters meet those registered.
+     * @param event A ServiceEvent created from the event sent by Github.
+     * @return      Promise that is fulfilled once all processing of the event has completed.
+     */
     protected handleGithubEvent = (event: ServiceEvent): Promise<void> => {
         // Determine the head to use based on the event.
         const labelHead = (): LabelDetails | void => {
@@ -333,7 +353,10 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
         }).return();
     }
 
-    // Authenticates against the Github API and Installation environment (for Integrations).
+    /**
+     * Authenticate against the Github API and Installation environment (for Integrations).
+     * @return  Promise fulfilled once authentication has occurred.
+     */
     protected authenticate(): Promise<void> {
         // Initialise JWTs
         const privatePem = new Buffer(this.pem, 'base64').toString();
@@ -389,12 +412,20 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
     }
 }
 
-// Create a new Github service Listener.
+/**
+ * Create a new Github ServiceListener.
+ * @param constObj  Constructor for the ServiceListener.
+ * @return          A new instance of the ServiceListener.
+ */
 export function createServiceListener(constObj: GithubListenerConstructor): ServiceListener {
     return new GithubService(constObj);
 }
 
-// Create a new Github service Emitter.
+/**
+ * Create a new Github ServiceEmitter.
+ * @param constObj  Constructor for the ServiceEmitter.
+ * @return          A new instance of the ServiceEmitter.
+ */
 export function createServiceEmitter(constObj: GithubConstructor): ServiceEmitter {
     return new GithubService(constObj);
 }
