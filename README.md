@@ -165,6 +165,10 @@ procbot:
 * There is currently an issue with the Github API where private repositories do not correctly return PR reviews. Therefore there is no safety check for this although the code is present but disabled in `VersionBot`.
 * Should `VersionBot` come across a situation where it does not know how to proceed, it will comment on the PR as such. This can include instances where the `procbot/versionbot/ready-to-merge` label has been added without checks completing. In this case, await the checks to be successful and then reapply the label.
 
+## Architecture
+
+The full architecture documentation can be read [here](media/procbot-architecture.md).
+
 ## TBD
 
 * TypeScript review and style.

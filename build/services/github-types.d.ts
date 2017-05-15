@@ -24,7 +24,7 @@ type GithubLoginType = 'integration' | 'user';
 
 /** Allows a service to login to Github as an Integration, using the ID. */
 export interface GithubIntegration {
-    /** Intergration ID of the Github Integration to run as. */
+    /** Integration ID of the Github Integration to run as. */
     integrationId: number;
     /** The Github PEM as an encoded Base64 value. */
     pem: string;

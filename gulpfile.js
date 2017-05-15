@@ -39,8 +39,9 @@ gulp.task('tslint', () =>
 );
 
 gulp.task('typedoc', () => {
-    exec('`npm bin`/typedoc --name "Resin ProcBots" --module commonjs --target ES6 --includeDeclarations ' +
-        '--excludeExternals --out docs/Typedoc lib/');
+    exec('`npm bin`/typedoc --name "Resin ProcBots" --module commonjs --target ES6 --excludeExternals ' +
+        '--externalPattern **/typings/*.d.ts --includes docresources/Architecture --media docresources/Architecture ' +
+        '--out docs/ lib/');
 });
 
 gulp.task('build', [ 'tslint', 'typescript', 'copydecs', 'typedoc' ]);
