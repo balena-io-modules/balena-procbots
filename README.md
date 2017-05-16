@@ -167,7 +167,11 @@ procbot:
 
 ## Architecture
 
-The full architecture documentation can be read [here](media/procbot-architecture.md).
+[The full architecture documentation.](media/Architecture/procbot-architecture.md)
+
+## SyncBot
+
+* [SyncBot getting started for users.](media/SyncBot/syncbot-readme.md)
 
 ## TBD
 
