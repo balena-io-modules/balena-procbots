@@ -115,11 +115,14 @@ export interface ServiceListener {
     registerEvent: (registration: ServiceRegistration) => void;
 }
 
-// A ServiceEmitter has a name and a `sendData()` method allowing client to send data
-// that is to be sent to the relevant service.
+/**
+ * A ServiceEmitter has a name and a `sendData()` method allowing client to send data
+ * that is to be sent to the relevant service.
+ */
 export interface ServiceEmitter {
-    /** Name of the ServiceEmitter. */
+    /** Getter for the SDK instance handle, if any. */
     apiHandle: ServiceAPIHandle | void;
+    /** Name of the ServiceEmitter. */
     serviceName: string;
     /**
      * The method by which a client sends data for the external service the ServiceEmitter represents.

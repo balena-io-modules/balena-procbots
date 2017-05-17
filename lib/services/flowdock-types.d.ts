@@ -40,7 +40,7 @@ export interface FlowdockMessage {
     [key: string]: string;
 }
 
-// Handle type allowing Github API instance to be exported.
+/** The Flowdock API SDK handle type. */
 export interface FlowdockHandle extends ServiceAPIHandle {
     flowdock: Session;
 }

@@ -226,13 +226,17 @@ export class FlowdockService extends MessageService implements ServiceEmitter, S
     }
 
     /**
-     * get the service name, as required by the framework
+     * Get the service name, as required by the framework
+     * @return  The specific service name for Flowdock.
      */
     get serviceName(): string {
         return FlowdockService._serviceName;
     }
 
-    // Retrieve the API handle for Flowdock.
+    /**
+     * Retrieve the SDK API handle for Flowdock.
+     * @return  The Flowdock SDK API handle.
+     */
     get apiHandle(): FlowdockHandle {
         return {
             flowdock: FlowdockService.session

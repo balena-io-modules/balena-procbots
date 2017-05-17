@@ -194,13 +194,17 @@ export class DiscourseService extends MessageService implements ServiceListener,
     }
 
     /**
-     * get the service name, as required by the framework
+     * Get the service name, as required by the framework
+     * @return  The service name for Discourse.
      */
     get serviceName(): string {
         return DiscourseService._serviceName;
     }
 
-    // There is no API handle for discourse.
+    /**
+     * Retrieve Discourse API SDK handle (currently none).
+     * @return  void (currently no Discourse SDK API handle)
+     */
     get apiHandle(): void {
         return;
     }

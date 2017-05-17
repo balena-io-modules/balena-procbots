@@ -185,10 +185,14 @@ export abstract class MessageService extends WorkerClient<string|null> implement
     }
 
     /**
-     * get the service name, as required by the framework
+     * Get the service name, as required by the framework.
+     * @return  Name of the service.
      */
     abstract get serviceName(): string
 
-    // Retrieve the API handle, if any.
+    /**
+     * Retrieve the SDK API instance handle for the service, should one exist.
+     * @return  Service SDK API handle or void.
+     */
     abstract get apiHandle(): ServiceAPIHandle | void;
 }

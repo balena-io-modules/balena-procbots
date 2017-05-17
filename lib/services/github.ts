@@ -254,14 +254,17 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
     }
 
     /**
-     * Retrieve the name of the Github service.
+     * Get the name of the Github service.
      * @return  The name of the service.
      */
     get serviceName(): string {
         return this._serviceName;
     }
 
-    // Return the API handle.
+    /**
+     * Retrieve the Github SDK API handle.
+     * @return  Github SDK handle.
+     */
     get apiHandle(): GithubHandle {
         return {
             github: this.githubApi

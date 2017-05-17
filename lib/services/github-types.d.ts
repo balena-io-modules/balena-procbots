@@ -63,7 +63,6 @@ export interface GithubListenerConstructor extends GithubConstructor {
     webhookSecret: string;
 }
 
-// Handle type allowing Github API instance to be exported.
 /** The GithubHandle extends the normal ServiceAPIHandle to include the Github API instance. */
 export interface GithubHandle extends ServiceAPIHandle {
     github: GithubApi;
