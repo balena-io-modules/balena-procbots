@@ -89,10 +89,23 @@ export interface ServiceRegistration {
 export type ServiceListenerMethod = (registration: ServiceRegistration, event: ServiceEvent) => Promise<void>;
 
 /**
+ * The ServiceAPIHandle is a set of instances of service interfaces (if any).
+ * These are used to allow, for example, the calling of specifically typed methods.
+ * These are intended to be handles directly to SDK instances used to make requests
+ * to/from a service. Comms going through interfaces such as HTTP(S) requests are not
+ * intended to return a handle.
+ */
+export interface ServiceAPIHandle {
+    [index: string]: object;
+}
+
+/**
  * A ServiceListener has a name and a method allowing a client to register interest in
  * an event along with service specific details.
  */
 export interface ServiceListener {
+    /** Getter for the SDK instance handle, if any. */
+    apiHandle: ServiceAPIHandle | void;
     /** Name of the ServiceListener. */
     serviceName: string;
     /**
@@ -102,9 +115,13 @@ export interface ServiceListener {
     registerEvent: (registration: ServiceRegistration) => void;
 }
 
-// A ServiceEmitter has a name and a `sendData()` method allowing client to send data
-// that is to be sent to the relevant service.
+/**
+ * A ServiceEmitter has a name and a `sendData()` method allowing client to send data
+ * that is to be sent to the relevant service.
+ */
 export interface ServiceEmitter {
+    /** Getter for the SDK instance handle, if any. */
+    apiHandle: ServiceAPIHandle | void;
     /** Name of the ServiceEmitter. */
     serviceName: string;
     /**

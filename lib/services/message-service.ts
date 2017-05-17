@@ -14,6 +14,7 @@ import {
     ReceiptContext,
 } from '../utils/message-types';
 import {
+    ServiceAPIHandle,
     ServiceEmitContext,
     ServiceEmitRequest,
     ServiceEmitter,
@@ -24,9 +25,7 @@ import {
 /**
  * Abstract class to define a common set of utilities and standards for all messenger classes
  */
-export abstract class MessageService
-extends WorkerClient<string|null>
-implements ServiceListener, ServiceEmitter {
+export abstract class MessageService extends WorkerClient<string|null> implements ServiceListener, ServiceEmitter {
     protected static logger = new Logger();
     private static _app: express.Express;
     private listening: boolean = false;
@@ -186,7 +185,14 @@ implements ServiceListener, ServiceEmitter {
     }
 
     /**
-     * get the service name, as required by the framework
+     * Get the service name, as required by the framework.
+     * @return  Name of the service.
      */
     abstract get serviceName(): string
+
+    /**
+     * Retrieve the SDK API instance handle for the service, should one exist.
+     * @return  Service SDK API handle or void.
+     */
+    abstract get apiHandle(): ServiceAPIHandle | void;
 }

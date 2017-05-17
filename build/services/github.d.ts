@@ -1,7 +1,7 @@
 import * as Promise from 'bluebird';
 import { Worker, WorkerEvent } from '../framework/worker';
 import { WorkerClient } from '../framework/worker-client';
-import { GithubConstructor, GithubListenerConstructor, GithubRegistration } from '../services/github-types';
+import { GithubConstructor, GithubHandle, GithubListenerConstructor, GithubRegistration } from './github-types';
 import { ServiceEmitRequest, ServiceEmitResponse, ServiceEmitter, ServiceEvent, ServiceListener } from './service-types';
 export declare class GithubService extends WorkerClient<string> implements ServiceListener, ServiceEmitter {
     protected getWorker: (event: WorkerEvent) => Worker<string>;
@@ -17,6 +17,7 @@ export declare class GithubService extends WorkerClient<string> implements Servi
     registerEvent(registration: GithubRegistration): void;
     sendData(data: ServiceEmitRequest): Promise<ServiceEmitResponse>;
     readonly serviceName: string;
+    readonly apiHandle: GithubHandle;
     protected handleGithubEvent: (event: ServiceEvent) => Promise<void>;
     protected authenticate(): Promise<void>;
 }

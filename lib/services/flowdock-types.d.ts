@@ -14,10 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Emit request for Flowdock.
-import {
-    ServiceEmitContext
-} from './service-types';
+import { Session } from 'flowdock';
+import { ServiceAPIHandle, ServiceEmitContext } from './service-types';
 
 export interface FlowdockMessageEmitContext extends ServiceEmitContext {
     content: string;
@@ -40,4 +38,9 @@ export interface FlowdockEmitRequestContext {
 export interface FlowdockMessage {
     content: string;
     [key: string]: string;
+}
+
+/** The Flowdock API SDK handle type. */
+export interface FlowdockHandle extends ServiceAPIHandle {
+    flowdock: Session;
 }
