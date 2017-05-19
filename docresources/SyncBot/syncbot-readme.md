@@ -5,19 +5,22 @@ A little Bot, using the ProcBot framework, that links communication services
 ## Main Configuration
 
 * Threads
-  * New topics in troubleshooting on forums.resin.io become new threads in r/support on flowdock
-  * New threads in r/support on flowdock go nowhere
+  * Public threads in linked rooms get synchronised
+    * Use a `%` or `💬` at the beginning of a line to indicate the topic is public
+  * Private thread remain private, but are synchronised
+    * Uses discourse's `unlisted`
+    * Without syntax, private is assumed
 * Comments
   * Public comments in linked threads get synchronised
-    * Use a `%` or `💬` at the beginning of the message to indicate it is public
+    * Use a `%` or `💬` at the beginning of a line to indicate the comment is public
   * Private comments remain private, but are synchronised
     * Uses discourse's `whisper`
+    * Uses front's `comment`
     * Without syntax, private is assumed
-  * Comments in unlinked threads are not synchronised
-    * Such as threads that began in flowdock
 
 ## Your Configuration
 
+* Ensure your Front, Discourse & Flowdock usernames match
 * Get your discourse details
   * Try:
     * Sign-in to forums.resin.io
@@ -25,11 +28,11 @@ A little Bot, using the ProcBot framework, that links communication services
     * Go to your admin page (top right spanner labelled admin)
     * Under permissions generate an API key
   * Catch:
-    * Become a Discourse Admin
-    * Log out and in
+    * Ask a Discourse admin to:
+      * Make you a moderator
+      * Generate an API key for you
 * Give your discourse details to SyncBot
   * Send the following PM's to the SyncBot account:
-    * `My discourse user is ...`
     * `My discourse token is ...`
   * Do not be surprised by the lack of response
     * Syncbot searches when required rather than constantly listening

@@ -1,21 +1,27 @@
 import * as Promise from 'bluebird';
-import { FlowdockHandle, FlowdockMessageEmitContext } from '../services/flowdock-types';
-import { MessageEmitResponse, MessageEvent, MessageWorkerEvent, ReceiptContext } from '../utils/message-types';
-import { MessageService } from './message-service';
+import { FlowdockConstructor, FlowdockEmitContext, FlowdockHandle } from './flowdock-types';
+import { Messenger } from './messenger';
+import { DataHub, MessengerEmitResponse, MessengerEvent, ReceiptContext, TransmitContext } from './messenger-types';
 import { ServiceEmitter, ServiceListener } from './service-types';
-export declare class FlowdockService extends MessageService implements ServiceEmitter, ServiceListener {
-    private static session;
+export declare class FlowdockService extends Messenger implements ServiceEmitter, ServiceListener, DataHub {
     private static _serviceName;
-    private flowIdToFlowName;
-    fetchThread(event: ReceiptContext, filter: RegExp): Promise<string[]>;
-    fetchPrivateMessages(event: ReceiptContext, filter: RegExp): Promise<string[]>;
-    protected activateMessageListener(): void;
-    protected getWorkerContextFromMessage(event: MessageWorkerEvent): string;
-    protected getEventTypeFromMessage(event: MessageEvent): string;
-    protected sendMessage(body: FlowdockMessageEmitContext): Promise<MessageEmitResponse>;
+    private session;
+    private data;
+    constructor(data: FlowdockConstructor, listen?: boolean);
+    makeGeneric: (data: MessengerEvent) => Promise<ReceiptContext>;
+    makeSpecific: (data: TransmitContext) => Promise<FlowdockEmitContext>;
+    translateEventName(eventType: string): string;
+    fetchNotes: (thread: string, room: string, filter: RegExp, search?: string | undefined) => Promise<string[]>;
+    fetchValue(user: string, key: string): Promise<string>;
+    protected activateMessageListener: () => void;
+    protected sendPayload: (data: FlowdockEmitContext) => Promise<MessengerEmitResponse>;
+    private fetchPrivateMessages(username, filter);
+    private fetchUserId;
+    private fetchFromSession;
     readonly serviceName: string;
     readonly apiHandle: FlowdockHandle;
 }
-export declare function createServiceListener(): ServiceListener;
-export declare function createServiceEmitter(): ServiceEmitter;
-export declare function createMessageService(): MessageService;
+export declare function createServiceListener(data: FlowdockConstructor): ServiceListener;
+export declare function createServiceEmitter(data: FlowdockConstructor): ServiceEmitter;
+export declare function createMessageService(data: FlowdockConstructor): Messenger;
+export declare function createDataHub(data: FlowdockConstructor): DataHub;
