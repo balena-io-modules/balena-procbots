@@ -82,6 +82,20 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
         this.integrationId = constObj.loginType.integrationId;
         this.pem = constObj.loginType.pem;
 
+        // The `github` module is a bit behind the preview API. We may have to override
+        // some of the methods here (PR review comments for a start).
+        // Both the listener and the emitter need access to the API.
+        this.githubApi = new GithubApi({
+            Promise: <any>Promise,
+            headers: {
+                Accept: this.ghApiAccept
+            },
+            host: 'api.github.com',
+            protocol: 'https',
+            timeout: 5000
+        });
+        this.authenticate();
+
         // Only the listener deals with events.
         if (constObj.type === 'listener') {
             const listenerConstructor = <GithubListenerConstructor>constObj;
@@ -168,22 +182,8 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
             app.listen(listenerConstructor.port, () => {
                 this.logger.log(LogLevel.INFO, `---> ${listenerConstructor.client}: Listening Github Service on ` +
                     `':${listenerConstructor.port}${listenerConstructor.path}'`);
-                this.authenticate();
             });
         }
-
-        // The `github` module is a bit behind the preview API. We may have to override
-        // some of the methods here (PR review comments for a start).
-        // Both the listener and the emitter need access to the API.
-        this.githubApi = new GithubApi({
-            Promise: <any>Promise,
-            headers: {
-                Accept: this.ghApiAccept
-            },
-            host: 'api.github.com',
-            protocol: 'https',
-            timeout: 5000
-        });
     }
 
     /**

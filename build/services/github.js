@@ -91,6 +91,16 @@ class GithubService extends worker_client_1.WorkerClient {
         constObj.loginType = constObj.loginType;
         this.integrationId = constObj.loginType.integrationId;
         this.pem = constObj.loginType.pem;
+        this.githubApi = new GithubApi({
+            Promise: Promise,
+            headers: {
+                Accept: this.ghApiAccept
+            },
+            host: 'api.github.com',
+            protocol: 'https',
+            timeout: 5000
+        });
+        this.authenticate();
         if (constObj.type === 'listener') {
             const listenerConstructor = constObj;
             this.getWorker = (event) => {
@@ -145,18 +155,8 @@ class GithubService extends worker_client_1.WorkerClient {
             app.listen(listenerConstructor.port, () => {
                 this.logger.log(logger_1.LogLevel.INFO, `---> ${listenerConstructor.client}: Listening Github Service on ` +
                     `':${listenerConstructor.port}${listenerConstructor.path}'`);
-                this.authenticate();
             });
         }
-        this.githubApi = new GithubApi({
-            Promise: Promise,
-            headers: {
-                Accept: this.ghApiAccept
-            },
-            host: 'api.github.com',
-            protocol: 'https',
-            timeout: 5000
-        });
     }
     registerEvent(registration) {
         this.eventTriggers.push(registration);
