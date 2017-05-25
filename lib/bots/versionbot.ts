@@ -162,7 +162,7 @@ export class VersionBot extends ProcBot {
 
         // Github API handle
         this.githubApi = (<GithubHandle>ghEmitter.apiHandle).github;
-        if (this.githubApi) {
+        if (!this.githubApi) {
             throw new Error('No Github API instance found');
         }
 

@@ -357,7 +357,7 @@ class VersionBot extends procbot_1.ProcBot {
         this.githubListenerName = ghListener.serviceName;
         this.githubEmitterName = ghEmitter.serviceName;
         this.githubApi = ghEmitter.apiHandle.github;
-        if (this.githubApi) {
+        if (!this.githubApi) {
             throw new Error('No Github API instance found');
         }
         if (process.env.VERSIONBOT_FLOWDOCK_ROOM) {
