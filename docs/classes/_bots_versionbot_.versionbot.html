@@ -67,6 +67,15 @@
 <div class="container container-main">
 	<div class="row">
 		<div class="col-8 col-content">
+			<section class="tsd-panel tsd-comment">
+				<div class="tsd-comment tsd-typography">
+					<div class="lead">
+						<p>The VersionBot is built on top of the ProcBot class, which does all the heavy lifting and scheduling.
+							It is designed to check for valid <code>versionist</code> commit semantics and alter (or merge) a PR
+						accordingly.</p>
+					</div>
+				</div>
+			</section>
 			<section class="tsd-panel tsd-hierarchy">
 				<h3>Hierarchy</h3>
 				<ul class="tsd-hierarchy">
@@ -110,6 +119,7 @@
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="_bots_versionbot_.versionbot.html#checkstatuses" class="tsd-kind-icon">check<wbr>Statuses</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="_bots_versionbot_.versionbot.html#checkvalidmaintainer" class="tsd-kind-icon">check<wbr>Valid<wbr>Maintainer</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-protected"><a href="_bots_versionbot_.versionbot.html#checkversioning" class="tsd-kind-icon">check<wbr>Versioning</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-protected"><a href="_bots_versionbot_.versionbot.html#checkwaffleflow" class="tsd-kind-icon">check<wbr>Waffle<wbr>Flow</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="_bots_versionbot_.versionbot.html#createcommitblobs" class="tsd-kind-icon">create<wbr>Commit<wbr>Blobs</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected"><a href="_bots_versionbot_.versionbot.html#dispatchtoallemitters" class="tsd-kind-icon">dispatch<wbr>ToAll<wbr>Emitters</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected"><a href="_bots_versionbot_.versionbot.html#dispatchtoemitter" class="tsd-kind-icon">dispatch<wbr>ToEmitter</a></li>
@@ -145,22 +155,47 @@
 							<aside class="tsd-sources">
 								<p>Overrides <a href="_framework_procbot_.procbot.html">ProcBot</a>.<a href="_framework_procbot_.procbot.html#constructor">constructor</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L121">bots/versionbot.ts:121</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L149">bots/versionbot.ts:149</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Constructs a new VersionBot instance.</p>
+								</div>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
 									<h5>integration: <span class="tsd-signature-type">number</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<div class="lead">
+											<p>Github App ID.</p>
+										</div>
+									</div>
 								</li>
 								<li>
 									<h5>name: <span class="tsd-signature-type">string</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<div class="lead">
+											<p>Name of the VersionBot.</p>
+										</div>
+									</div>
 								</li>
 								<li>
 									<h5>pemString: <span class="tsd-signature-type">string</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<div class="lead">
+											<p>PEM for Github events and App login.</p>
+										</div>
+									</div>
 								</li>
 								<li>
 									<h5>webhook: <span class="tsd-signature-type">string</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<div class="lead">
+											<p>Secret webhook for validating events.</p>
+										</div>
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <a href="_bots_versionbot_.versionbot.html" class="tsd-signature-type">VersionBot</a></h4>
@@ -187,9 +222,14 @@
 					<div class="tsd-signature tsd-kind-icon">flowdock<wbr>Emitter<wbr>Name<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L120">bots/versionbot.ts:120</a></li>
+							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L147">bots/versionbot.ts:147</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Flowdock ServiceEmitter.</p>
+						</div>
+					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private">
 					<a name="githubapi" class="tsd-anchor"></a>
@@ -197,9 +237,14 @@
 					<div class="tsd-signature tsd-kind-icon">github<wbr>Api<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">GithubApi</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L121">bots/versionbot.ts:121</a></li>
+							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L149">bots/versionbot.ts:149</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Instance of Github SDK API in use.</p>
+						</div>
+					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private">
 					<a name="githubemittername" class="tsd-anchor"></a>
@@ -207,9 +252,14 @@
 					<div class="tsd-signature tsd-kind-icon">github<wbr>Emitter<wbr>Name<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L119">bots/versionbot.ts:119</a></li>
+							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L145">bots/versionbot.ts:145</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Github ServiceEmitter.</p>
+						</div>
+					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private">
 					<a name="githublistenername" class="tsd-anchor"></a>
@@ -217,9 +267,14 @@
 					<div class="tsd-signature tsd-kind-icon">github<wbr>Listener<wbr>Name<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L118">bots/versionbot.ts:118</a></li>
+							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L143">bots/versionbot.ts:143</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Github ServiceListener.</p>
+						</div>
+					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
 					<a name="logger" class="tsd-anchor"></a>
@@ -325,16 +380,25 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L610">bots/versionbot.ts:610</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L754">bots/versionbot.ts:754</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Clones a repository and runs <code>versionist</code> upon it, creating new change files.</p>
+								</div>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
 									<h5>versionData: <a href="../interfaces/_bots_versionbot_.versionistdata.html" class="tsd-signature-type">VersionistData</a></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Information on the repository and version.</p>
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/_bots_versionbot_.versionistdata.html" class="tsd-signature-type">VersionistData</a><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>Promise with added information on the repo.</p>
 						</li>
 					</ul>
 				</section>
@@ -348,16 +412,25 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L923">bots/versionbot.ts:923</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1080">bots/versionbot.ts:1080</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Retrieve all protected branch status requirements, and determine the state for each.</p>
+								</div>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
 									<h5>prInfo: <span class="tsd-signature-type">PullRequest</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The PR on which to check the current statuses.</p>
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../enums/_bots_versionbot_.statuschecks.html" class="tsd-signature-type">StatusChecks</a><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>Promise containing a StatusChecks object determining the state of each status.</p>
 						</li>
 					</ul>
 				</section>
@@ -371,16 +444,32 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1098">bots/versionbot.ts:1098</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1274">bots/versionbot.ts:1274</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Ensures that the merge label was added by a valid maintainer, should a list exist in the repo configuration.</p>
+								</div>
+								<dl class="tsd-comment-tags">
+									<dt>throws</dt>
+									<dd><p>Exception should the maintainer not be valid.</p>
+									</dd>
+								</dl>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
 									<h5>config: <a href="../interfaces/_bots_versionbot_.versionbotconfiguration.html" class="tsd-signature-type">VersionBotConfiguration</a></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The VersionBot configuration object.</p>
+									</div>
 								</li>
 								<li>
 									<h5>event: <span class="tsd-signature-type">PullRequestEvent</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The PR event that triggered this check.</p>
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -397,19 +486,84 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L279">bots/versionbot.ts:279</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L411">bots/versionbot.ts:411</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Checks the newly opened PR and its commits.</p>
+									<ol>
+										<li>Triggered by an &#39;opened&#39;, &#39;synchronize&#39; or &#39;labeled&#39; event.</li>
+										<li>If any PR commit has a &#39;Change-Type: <type>&#39; commit, we create a status approving the PR.</li>
+										<li>If no PR commit has a &#39;Change-Type: <type>&#39; commit, we create a status failing the PR.</li>
+										<li>If a version bump has occurred and everything is valid, merge the commit to <code>master</code>.</li>
+									</ol>
+								</div>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
 									<h5>_registration: <span class="tsd-signature-type">GithubRegistration</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<div class="lead">
+											<p>GithubRegistration object used to register the method</p>
+										</div>
+									</div>
 								</li>
 								<li>
 									<h5>event: <span class="tsd-signature-type">ServiceEvent</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<div class="lead">
+											<p>ServiceEvent containing the event information (&#39;pull_request&#39; event)</p>
+										</div>
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>A void Promise once execution has finished.</p>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-protected">
+					<a name="checkwaffleflow" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagProtected">Protected</span> check<wbr>Waffle<wbr>Flow</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-protected">
+						<li class="tsd-signature tsd-kind-icon">check<wbr>Waffle<wbr>Flow<span class="tsd-signature-symbol">(</span>_registration<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">GithubRegistration</span>, event<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ServiceEvent</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L328">bots/versionbot.ts:328</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Checks for tags which require extra functionality to allow Waffleboard to operate upon the PR.
+									Adds autogenerated text to the PR description for relevant tags.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>_registration: <span class="tsd-signature-type">GithubRegistration</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<div class="lead">
+											<p>GithubRegistration object used to register the method</p>
+										</div>
+									</div>
+								</li>
+								<li>
+									<h5>event: <span class="tsd-signature-type">ServiceEvent</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<div class="lead">
+											<p>ServiceEvent containing the event information (&#39;pull_request&#39; event)</p>
+										</div>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>A void Promise once execution has finished.</p>
 						</li>
 					</ul>
 				</section>
@@ -423,16 +577,25 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L702">bots/versionbot.ts:702</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L851">bots/versionbot.ts:851</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Updates all relevant repo files with altered version data.</p>
+								</div>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
 									<h5>repoData: <a href="../interfaces/_bots_versionbot_.repofiledata.html" class="tsd-signature-type">RepoFileData</a></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Repository and updated file information.</p>
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>Promise that resolves when git data has been updated.</p>
 						</li>
 					</ul>
 				</section>
@@ -522,9 +685,14 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1035">bots/versionbot.ts:1035</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1204">bots/versionbot.ts:1204</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Finalises a merge should all checks have passed.</p>
+								</div>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
@@ -535,6 +703,7 @@
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>Promise fulfilled when merging has finished.</p>
 						</li>
 					</ul>
 				</section>
@@ -548,16 +717,25 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1207">bots/versionbot.ts:1207</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1407">bots/versionbot.ts:1407</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>A utility method to simplify the calling of the Flowdock ServiceEmitter.</p>
+								</div>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
 									<h5>context: <span class="tsd-signature-type">FlowdockEmitRequestContext</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The object containing details required by the ServiceEmitter.</p>
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>A Promise containing any data returned by the Flowdock service.</p>
 						</li>
 					</ul>
 				</section>
@@ -571,19 +749,33 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1113">bots/versionbot.ts:1113</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1298">bots/versionbot.ts:1298</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Custom ProcBots configuration retrieval method.
+										This implementation retrieves the configuration file from a &#39;.procbots.yml&#39; in the repo,
+									should it exist.</p>
+								</div>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
 									<h5>owner: <span class="tsd-signature-type">string</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Owner of the repo.</p>
+									</div>
 								</li>
 								<li>
 									<h5>repo: <span class="tsd-signature-type">string</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The repo name.</p>
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../interfaces/_bots_versionbot_.versionbotconfiguration.html" class="tsd-signature-type">VersionBotConfiguration</a><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>Promise containing the configuration, if found, or void if not.</p>
 						</li>
 					</ul>
 				</section>
@@ -693,16 +885,26 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1007">bots/versionbot.ts:1007</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1170">bots/versionbot.ts:1170</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Determines if VersionBot has already made commits to the PR branch for a version bump.</p>
+								</div>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
 									<h5>prInfo: <span class="tsd-signature-type">PullRequest</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The PR to check.</p>
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">null</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>A Promise containing &#39;null&#39; should VersionBot have not already committed, else the commit
+							message itself.</p>
 						</li>
 					</ul>
 				</section>
@@ -716,16 +918,25 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1188">bots/versionbot.ts:1188</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1382">bots/versionbot.ts:1382</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>A utility method to simplify the calling of the Github ServiceEmitter.</p>
+								</div>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
 									<h5>context: <span class="tsd-signature-type">GithubEmitRequestContext</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The object containing details required by the ServiceEmitter.</p>
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>A Promise containing any data returned by the Github service.</p>
 						</li>
 					</ul>
 				</section>
@@ -739,19 +950,46 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L429">bots/versionbot.ts:429</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L568">bots/versionbot.ts:568</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Merges a PR.</p>
+									<ol>
+										<li>Triggered by a &#39;labeled&#39; event (&#39;procbots/versionbot/ready-to-merge&#39;) or a
+										&#39;pull_request_review_comment&#39;</li>
+										<li>Checks all review comments to ensure that at least one approves the PR (and that no comment
+										that may come after it includes a &#39;CHANGES_REQUESTED&#39; state).</li>
+										<li>Commit new version upped files to the branch, which will cause a &#39;synchronized&#39; event,
+										which will finalise the merge.</li>
+									</ol>
+								</div>
+								<p>It should be noted that this will, of course, result in a &#39;closed&#39; event on a PR, which
+								in turn will feed into the &#39;generateVersion&#39; method.</p>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
 									<h5>_registration: <span class="tsd-signature-type">GithubRegistration</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<div class="lead">
+											<p>GithubRegistration object used to register the method</p>
+										</div>
+									</div>
 								</li>
 								<li>
 									<h5>event: <span class="tsd-signature-type">ServiceEvent</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<div class="lead">
+											<p>ServiceEvent containing the event information (&#39;pull_request&#39; or &#39;pull_request_review&#39;
+											event)</p>
+										</div>
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>A void Promise once execution has finished.</p>
 						</li>
 					</ul>
 				</section>
@@ -765,16 +1003,26 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L817">bots/versionbot.ts:817</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L972">bots/versionbot.ts:972</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Carries out the merge to <code>master</code>, updating relevant references from prior commits.
+									Deletes the old branch after merge has occured.</p>
+								</div>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
 									<h5>data: <a href="../interfaces/_bots_versionbot_.mergedata.html" class="tsd-signature-type">MergeData</a></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Repo and commit data to be referenced.</p>
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>Promise that resolves when reference updates and merging has finalised.</p>
 						</li>
 					</ul>
 				</section>
@@ -824,13 +1072,21 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1155">bots/versionbot.ts:1155</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1345">bots/versionbot.ts:1345</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Reports an error to the console and Flowdock.</p>
+								</div>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
 									<h5>error: <a href="../interfaces/_bots_versionbot_.versionboterror.html" class="tsd-signature-type">VersionBotError</a></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The error to report.</p>
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
@@ -887,9 +1143,14 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L211">bots/versionbot.ts:211</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L256">bots/versionbot.ts:256</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Looks for status change events and creates relevant PR events for any PR whose codebase changes</p>
+								</div>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
@@ -897,9 +1158,15 @@
 								</li>
 								<li>
 									<h5>event: <span class="tsd-signature-type">ServiceEvent</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<div class="lead">
+											<p>ServiceEvent containing the event information (&#39;status&#39; event)</p>
+										</div>
+									</div>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>A void Promise once execution has finished.</p>
 						</li>
 					</ul>
 				</section>
@@ -997,6 +1264,9 @@
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-protected">
 								<a href="_bots_versionbot_.versionbot.html#checkversioning" class="tsd-kind-icon">check<wbr>Versioning</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-protected">
+								<a href="_bots_versionbot_.versionbot.html#checkwaffleflow" class="tsd-kind-icon">check<wbr>Waffle<wbr>Flow</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-private">
 								<a href="_bots_versionbot_.versionbot.html#createcommitblobs" class="tsd-kind-icon">create<wbr>Commit<wbr>Blobs</a>

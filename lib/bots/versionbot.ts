@@ -88,39 +88,73 @@ interface FSError {
     message: string;
 }
 
+/** The VersionBot specific ProcBot Configuration structure. */
 interface VersionBotConfiguration extends ProcBotConfiguration {
+    /** ProcBot entry. */
     procbot: {
+        /** VersionBot entry. */
         versionbot: {
+            /** Minimum number of review approvals required to satisfy a review. */
             minimum_approvals?: number;
+            /** A list of approves reviewers who count towards the minimum number of approvals. */
             approved_reviewers?: string[];
+            /** A list of approved maintainers (who also count as approved reviewers). */
             maintainers?: string[];
         };
     };
 }
 
+/** Interface for storing the result of each status check required on a PR and it's state. */
 interface StatusResult {
+    /** Name of the status check. */
     name: string;
+    /** State of the status check. */
     state: StatusChecks;
 }
 
-enum StatusChecks { Passed, Pending, Failed };
+/** State for the StatusResult interface. */
+enum StatusChecks {
+    /** Status check has passed. */
+    Passed,
+    /** Status check is currently being carried out. */
+    Pending,
+    /** Status check has failed. */
+    Failed
+};
 
+/** Pull request type event. */
 type GenericPullRequestEvent = GithubApiTypes.PullRequestEvent | GithubApiTypes.PullRequestReviewEvent;
 
+/** Label to be applied for triggering VersionBot to carry out a merge. */
 const MergeLabel = 'procbots/versionbot/ready-to-merge';
+/** Label to be applied for VersionBot to ignore the PR. */
 const IgnoreLabel = 'procbots/versionbot/no-checks';
 
 // The VersionBot is built on top of GithubBot, which does all the heavy lifting and scheduling.
 // It is designed to check for valid `versionist` commit semantics and alter (or merge) a PR
 // accordingly.
+/**
+ * The VersionBot is built on top of the ProcBot class, which does all the heavy lifting and scheduling.
+ * It is designed to check for valid `versionist` commit semantics and alter (or merge) a PR
+ * accordingly.
+ */
 export class VersionBot extends ProcBot {
-    // Listener and emitter handles
+    /** Github ServiceListener. */
     private githubListenerName: string;
+    /** Github ServiceEmitter. */
     private githubEmitterName: string;
+    /** Flowdock ServiceEmitter. */
     private flowdockEmitterName: string;
+    /** Instance of Github SDK API in use. */
     private githubApi: GithubApi;
 
-    // Name ourself and register the events and labels we're interested in.
+    /**
+     * Constructs a new VersionBot instance.
+     * @param integration Github App ID.
+     * @param name        Name of the VersionBot.
+     * @param pemString   PEM for Github events and App login.
+     * @param webhook     Secret webhook for validating events.
+     */
     constructor(integration: number, name: string, pemString: string, webhook: string) {
         // This is the VersionBot.
         super(name);
@@ -184,14 +218,19 @@ export class VersionBot extends ProcBot {
                 events: [ 'pull_request' ],
                 listenerMethod: this.checkVersioning,
                 name: 'CheckVersionistCommitStatus',
-                suppressionLabels: [ IgnoreLabel ]
+                suppressionLabels: [ IgnoreLabel ],
             },
             {
                 events: [ 'pull_request', 'pull_request_review' ],
                 listenerMethod: this.mergePR,
                 name: 'CheckForReadyMergeState',
                 suppressionLabels: [ IgnoreLabel ],
-                triggerLabels: [ MergeLabel ]
+                triggerLabels: [ MergeLabel ],
+            },
+            {
+                events: [ 'pull_request' ],
+                listenerMethod: this.checkWaffleFlow,
+                name: 'CheckForWaffleFlow',
             },
             // Should a status change occur (Jenkins, VersionBot, etc. all succeed)
             // then check versioning and potentially go to a merge to master.
@@ -207,7 +246,13 @@ export class VersionBot extends ProcBot {
         });
     }
 
-    // On a status change, we need to see if there's anything to merge.
+    /**
+     * Looks for status change events and creates relevant PR events for any PR whose codebase changes
+     *
+     * @param _registration GithubRegistration object used to register the method
+     * @param event         ServiceEvent containing the event information ('status' event)
+     * @returns             A void Promise once execution has finished.
+     */
     protected statusChange = (registration: GithubRegistration, event: ServiceEvent): Promise<void | void[]> => {
         // We now use the data from the StatusEvent to mock up a PullRequestEvent with enough
         // data to carry out the checks.
@@ -234,12 +279,12 @@ export class VersionBot extends ProcBot {
                 },
                 method: this.githubApi.pullRequests.getAll
             });
-        }).then((prs: GithubApiTypes.PullRequest[]) => {
+        }).then((foundPrs: GithubApiTypes.PullRequest[][]) => {
+            const prs = _.flatten(foundPrs);
             let prEvents: ServiceEvent[] = [];
 
             // For each PR, attempt to match the SHA to the head SHA. If we get a match
             // we create a new prInfo and then hand them all to another map.
-            prs = _.flatten(prs);
             _.each(prs, (pullRequest) => {
                 if (pullRequest.head.sha === commitSha) {
                     prEvents.push({
@@ -272,10 +317,97 @@ export class VersionBot extends ProcBot {
         });
     }
 
-    // Checks the newly opened PR and its commits.
-    //  1. Triggered by an 'opened' or 'synchronize' event.
-    //  2. If any PR commit has a 'Change-Type: <type>' commit, we create a status approving the PR.
-    //  3. If no PR commit has a 'Change-Type: <type>' commit, we create a status failing the PR.
+    /**
+     * Checks for tags which require extra functionality to allow Waffleboard to operate upon the PR.
+     * Adds autogenerated text to the PR description for relevant tags.
+     *
+     * @param _registration GithubRegistration object used to register the method
+     * @param event         ServiceEvent containing the event information ('pull_request' event)
+     * @returns             A void Promise once execution has finished.
+     */
+    protected checkWaffleFlow = (_registration: GithubRegistration, event: ServiceEvent): Promise<void> => {
+        const pr = event.cookedEvent.data.pull_request;
+        const head = event.cookedEvent.data.pull_request.head;
+        const owner = head.repo.owner.login;
+        const repo = head.repo.name;
+        const prNumber = pr.number;
+        const issues: string[] = [];
+        const waffleString = '---- Autogenerated Waffleboard Connection: Connects to #';
+        let body = pr.body;
+        const generateWaffleReference = (text: string): void => {
+            const regExp = /connects-to:\s+#([0-9]+)/gi;
+            let match = regExp.exec(text);
+            while (match) {
+                const issueNumber = match[1];
+                if (issues.indexOf(issueNumber) === -1) {
+                    issues.push(issueNumber);
+                }
+                match = regExp.exec(text);
+            }
+        };
+
+        this.logger.log(LogLevel.INFO, `Checking ${owner}/${repo}#${prNumber} for potential Waffleboard connection ` +
+            'comments');
+
+        // Look at the PR body. Does it have a `Connects-To: #<number>` tag?
+        // (We're only interested in local PRs and *not* cross-references).
+        generateWaffleReference(pr.body);
+
+        // Now look through all the commits in the PR. Do the same thing.
+        return this.githubCall({
+            data: {
+                number: prNumber,
+                owner,
+                repo,
+            },
+            method: this.githubApi.pullRequests.getCommits
+        }).then((commits: GithubApiTypes.Commit[]) => {
+            // Go through all the commits. We're looking for, at a minimum, a 'change-type:' tag.
+            for (let commit of commits) {
+                generateWaffleReference(commit.commit.message);
+            }
+
+            // Now search the body for an autogenerated Waffle line for each issue.
+            // For any we don't find, add one, next to the others.
+            // We need to add the autogenerated lines to the footer, so we just append
+            // these to the very end of the PR description.
+            _.each(issues, (issue) => {
+                if (body.indexOf(`${waffleString}${issue}`) === -1) {
+                    // Get last character of the body. If not a newline, we add one.
+                    let nlChar = '';
+                    if (body.charAt(body.length - 1) !== '\n') {
+                        nlChar = '\n';
+                    }
+                    body += `${nlChar}${waffleString}${issue}`;
+                }
+            });
+
+            // Now update the PR description if we have extra changes.
+            if (body !== pr.body) {
+                return this.githubCall({
+                    data: {
+                        body,
+                        number: prNumber,
+                        owner,
+                        repo,
+                    },
+                    method: this.githubApi.pullRequests.update
+                });
+            }
+        });
+    }
+
+    /**
+     * Checks the newly opened PR and its commits.
+     * 1. Triggered by an 'opened', 'synchronize' or 'labeled' event.
+     * 2. If any PR commit has a 'Change-Type: <type>' commit, we create a status approving the PR.
+     * 3. If no PR commit has a 'Change-Type: <type>' commit, we create a status failing the PR.
+     * 4. If a version bump has occurred and everything is valid, merge the commit to `master`.
+     *
+     * @param _registration GithubRegistration object used to register the method
+     * @param event         ServiceEvent containing the event information ('pull_request' event)
+     * @returns             A void Promise once execution has finished.
+     */
     protected checkVersioning = (_registration: GithubRegistration, event: ServiceEvent): Promise<void> => {
         const pr = event.cookedEvent.data.pull_request;
         const head = event.cookedEvent.data.pull_request.head;
@@ -416,16 +548,23 @@ export class VersionBot extends ProcBot {
         });
     }
 
-    // Merges a PR, if appropriate:
-    //  1. Triggered by a 'labeled' event ('procbots/versionbot/ready-to-merge') or a
-    //     'pull_request_review_comment'
-    //  2. Checks all review comments to ensure that at least one approves the PR (and that no comment
-    //     that may come after it includes a 'CHANGES_REQUESTED' state).
-    //  3. Commit new version upped files to the branch, which will cause a 'synchronized' event,
-    //     which will finalise the merge.
-    //
-    // It should be noted that this will, of course, result in a 'closed' event on a PR, which
-    // in turn will feed into the 'generateVersion' method below.
+    /**
+     * Merges a PR.
+     * 1. Triggered by a 'labeled' event ('procbots/versionbot/ready-to-merge') or a
+     *    'pull_request_review_comment'
+     * 2. Checks all review comments to ensure that at least one approves the PR (and that no comment
+     *    that may come after it includes a 'CHANGES_REQUESTED' state).
+     * 3. Commit new version upped files to the branch, which will cause a 'synchronized' event,
+     *    which will finalise the merge.
+     *
+     * It should be noted that this will, of course, result in a 'closed' event on a PR, which
+     * in turn will feed into the 'generateVersion' method.
+     *
+     * @param _registration GithubRegistration object used to register the method
+     * @param event         ServiceEvent containing the event information ('pull_request' or 'pull_request_review'
+     *                      event)
+     * @returns             A void Promise once execution has finished.
+     */
     protected mergePR = (_registration: GithubRegistration, event: ServiceEvent): Promise<void> => {
         // States for review comments are:
         //  * COMMENT
@@ -606,7 +745,12 @@ export class VersionBot extends ProcBot {
         }).finally(tempCleanup);
     }
 
-    // Runs versionist and returns the changed files
+    /**
+     * Clones a repository and runs `versionist` upon it, creating new change files.
+     *
+     * @param versionData   Information on the repository and version.
+     * @returns             Promise with added information on the repo.
+     */
     private applyVersionist(versionData: VersionistData): Promise<VersionistData> {
         // Clone the repository inside the directory using the commit name and the run versionist.
         // We only care about output from the git status.
@@ -698,7 +842,12 @@ export class VersionBot extends ProcBot {
         });
     }
 
-    // Given files, a tree and repo date, commits the new blobs and updates the head of the branch
+    /**
+     * Updates all relevant repo files with altered version data.
+     *
+     * @param repoData  Repository and updated file information.
+     * @returns         Promise that resolves when git data has been updated.
+     */
     private createCommitBlobs(repoData: RepoFileData): Promise<void> {
         // We use the Github API to now update every file in our list, ending with the CHANGELOG.md
         // We need this to be the final file updated, as it'll kick off our actual merge.
@@ -813,7 +962,13 @@ export class VersionBot extends ProcBot {
         });
     }
 
-    // Merges the given PR branch to master, given a commit and repo details.
+    /**
+     * Carries out the merge to `master`, updating relevant references from prior commits.
+     * Deletes the old branch after merge has occured.
+     *
+     * @param data  Repo and commit data to be referenced.
+     * @returns     Promise that resolves when reference updates and merging has finalised.
+     */
     private mergeToMaster(data: MergeData): Promise<void> {
         return this.githubCall({
             data: {
@@ -916,10 +1071,12 @@ export class VersionBot extends ProcBot {
         });
     }
 
-    // Checks the statuses for the given branch (that of a PR).
-    // It goes through all the checks and should it find that the
-    // last checks for each context have failed, then it will return false
-    // else true if all have passed.
+    /**
+     * Retrieve all protected branch status requirements, and determine the state for each.
+     *
+     * @param prInfo    The PR on which to check the current statuses.
+     * @returns         Promise containing a StatusChecks object determining the state of each status.
+     */
     private checkStatuses(prInfo: GithubApiTypes.PullRequest): Promise<StatusChecks> {
         // We need to check the branch protection for this repo.
         // Get all the statuses that need to have been satisfied.
@@ -1003,7 +1160,13 @@ export class VersionBot extends ProcBot {
         });
     }
 
-    // Has VersionBot already made commits to the branch.
+    /**
+     * Determines if VersionBot has already made commits to the PR branch for a version bump.
+     *
+     * @param prInfo    The PR to check.
+     * @returns         A Promise containing 'null' should VersionBot have not already committed, else the commit
+     *                  message itself.
+     */
     private getVersionBotCommits(prInfo: GithubApiTypes.PullRequest): Promise<string | null> {
         const owner = prInfo.head.repo.owner.login;
         const repo = prInfo.head.repo.name;
@@ -1031,7 +1194,13 @@ export class VersionBot extends ProcBot {
         });
     }
 
-    // Actually carry out a merge.
+    /**
+     * Finalises a merge should all checks have passed.
+     *
+     * @params data     A 'pull_request' event.
+     * @params prInfo   A pull request.
+     * @returns         Promise fulfilled when merging has finished.
+     */
     private finaliseMerge = (data: GithubApiTypes.PullRequestEvent,
     prInfo: GithubApiTypes.PullRequest): Promise<void> => {
         // We will go ahead and perform a merge if we see VersionBot has:
@@ -1095,6 +1264,13 @@ export class VersionBot extends ProcBot {
         });
     }
 
+    /**
+     * Ensures that the merge label was added by a valid maintainer, should a list exist in the repo configuration.
+     *
+     * @param config    The VersionBot configuration object.
+     * @param event     The PR event that triggered this check.
+     * @throws          Exception should the maintainer not be valid.
+     */
     private checkValidMaintainer(config: VersionBotConfiguration, event: GithubApiTypes.PullRequestEvent): void {
         // If we have a list of valid maintainers, then we need to ensure that if the `ready-to-merge` label
         // was added, that it was by one of these maintainers.
@@ -1110,6 +1286,15 @@ export class VersionBot extends ProcBot {
         }
     }
 
+    /**
+     * Custom ProcBots configuration retrieval method.
+     * This implementation retrieves the configuration file from a '.procbots.yml' in the repo,
+     * should it exist.
+     *
+     * @param owner Owner of the repo.
+     * @param repo  The repo name.
+     * @returns     Promise containing the configuration, if found, or void if not.
+     */
     private getConfiguration(owner: string, repo: string): Promise<VersionBotConfiguration | void> {
         const request: ServiceEmitRequest = {
             contexts: {},
@@ -1152,6 +1337,11 @@ export class VersionBot extends ProcBot {
         });
     }
 
+    /**
+     * Reports an error to the console and Flowdock.
+     *
+     * @param error The error to report.
+     */
     private reportError(error: VersionBotError): void {
         // We create several reports from this error:
         //  * Flowdock team inbox post in the relevant room
@@ -1183,8 +1373,12 @@ export class VersionBot extends ProcBot {
         this.logger.alert(AlertLevel.ERROR, error.message);
     }
 
-    // Allows simplified structures to be passed as a Github emitter call.
-    // This method fills in the blanks.
+    /**
+     * A utility method to simplify the calling of the Github ServiceEmitter.
+     *
+     * @param context   The object containing details required by the ServiceEmitter.
+     * @returns         A Promise containing any data returned by the Github service.
+     */
     private githubCall(context: GithubEmitRequestContext): Promise<any> {
         const request: ServiceEmitRequest = {
             contexts: {},
@@ -1204,6 +1398,12 @@ export class VersionBot extends ProcBot {
         });
     }
 
+    /**
+     * A utility method to simplify the calling of the Flowdock ServiceEmitter.
+     *
+     * @param context   The object containing details required by the ServiceEmitter.
+     * @returns         A Promise containing any data returned by the Flowdock service.
+     */
     private flowdockCall(context: FlowdockEmitRequestContext): Promise<any> {
         const request: ServiceEmitRequest = {
             contexts: {},
@@ -1221,8 +1421,9 @@ export class VersionBot extends ProcBot {
     }
 }
 
-// Export the VersionBot to the app.
-// We register the Github events we're interested in here.
+/**
+ * Creates a new instance of the VersionBot client.
+ */
 export function createBot(): VersionBot {
     if (!(process.env.VERSIONBOT_NAME && process.env.VERSIONBOT_EMAIL && process.env.VERSIONBOT_INTEGRATION_ID &&
     process.env.VERSIONBOT_PEM && process.env.VERSIONBOT_WEBHOOK_SECRET)) {
