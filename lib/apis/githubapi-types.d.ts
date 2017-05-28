@@ -17,6 +17,23 @@ limitations under the License.
 // Github Events --------------------------------------------------------------
 // These provide the current bare minimum definitions for child Procbots working with them.
 
+export interface IssueCommentEvent {
+    action: string;
+    issue: {
+        body: string;
+        number: number;
+        user: {
+            login: string;
+        }
+    };
+    repository: {
+        name: string;
+        owner: {
+            login: string;
+        }
+    };
+}
+
 export interface PullRequestEvent {
     type: 'pull_request';
     action: string;
@@ -78,6 +95,13 @@ export interface StatusEvent {
 
 // Github API -----------------------------------------------------------------
 // These provide the current bare minimum definitions for child Procbots working with them.
+export interface Comment {
+    body: string;
+    user: {
+        login: string;
+    };
+}
+
 export interface CommitFile {
     filename: string;
 }
