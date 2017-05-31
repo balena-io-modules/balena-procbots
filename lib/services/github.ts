@@ -227,18 +227,23 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
                     };
                 } else {
                     // Error message is actually JSON.
-                    const ghError: GithubApiTypes.GithubError = JSON.parse(err.message);
+                    let ghError: GithubApiTypes.GithubError | void;
+                    try {
+                        ghError = JSON.parse(err.message);
+                    } catch(_err) {
+                        this.logger.log(LogLevel.WARN, `Error thrown was not a Github Service error:\n${err.message}`);
+                    }
 
                     // If there are no more retries, or we couldn't find the required
                     // details, reject.
-                    if ((retriesLeft < 1) || (ghError.message === 'Not Found')) {
+                    if ((retriesLeft < 1) || (ghError && (ghError.message === 'Not Found'))) {
                         // No more retries, just reject.
                         return {
                             err,
                             source: this._serviceName
                         };
                     } else {
-                        if (ghError.message === 'Bad credentials') {
+                        if (ghError && (ghError.message === 'Bad credentials')) {
                             // Re-authenticate, then try again.
                             return this.authenticate().then(runApi);
                         } else {

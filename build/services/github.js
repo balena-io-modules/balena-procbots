@@ -182,15 +182,21 @@ class GithubService extends worker_client_1.WorkerClient {
                     };
                 }
                 else {
-                    const ghError = JSON.parse(err.message);
-                    if ((retriesLeft < 1) || (ghError.message === 'Not Found')) {
+                    let ghError;
+                    try {
+                        ghError = JSON.parse(err.message);
+                    }
+                    catch (_err) {
+                        this.logger.log(logger_1.LogLevel.WARN, `Error thrown was not a Github Service error:\n${err.message}`);
+                    }
+                    if ((retriesLeft < 1) || (ghError && (ghError.message === 'Not Found'))) {
                         return {
                             err,
                             source: this._serviceName
                         };
                     }
                     else {
-                        if (ghError.message === 'Bad credentials') {
+                        if (ghError && (ghError.message === 'Bad credentials')) {
                             return this.authenticate().then(runApi);
                         }
                         else {
