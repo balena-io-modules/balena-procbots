@@ -81,6 +81,16 @@ export interface Commit {
     sha: string;
 }
 
+export interface Content {
+    type: string;
+    encoding: string;
+    size: number;
+    name: string;
+    path: string;
+    content: string;
+    sha: string;
+}
+
 export interface Review {
     state: string;
 }
@@ -155,9 +165,4 @@ export interface CombinedStatus {
     state: string;
     total_count: number;
     statuses: Status[];
-}
-
-export interface GithubError {
-    message: string;
-    documentation_url: string;
 }

@@ -157,17 +157,12 @@ class SyncBot extends procbot_1.ProcBot {
     }
     create(event) {
         return this.getMessageService(event.to).makeSpecific(event).then((specific) => {
-            return this.dispatchToEmitter(event.to, {
-                contexts: {
-                    [event.to]: specific
-                },
-                source: event.source
-            })
+            return this.dispatchToEmitter(event.to, specific)
                 .then((retVal) => {
-                event.toIds.message = retVal.response.message;
-                event.toIds.thread = retVal.response.thread;
-                event.toIds.url = retVal.response.url;
-                return retVal.response.message;
+                event.toIds.message = retVal.message;
+                event.toIds.thread = retVal.thread;
+                event.toIds.url = retVal.url;
+                return retVal.message;
             });
         });
     }

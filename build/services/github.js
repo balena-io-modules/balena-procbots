@@ -9,9 +9,25 @@ const jwt = require("jsonwebtoken");
 const _ = require("lodash");
 const path = require("path");
 const request = require("request-promise");
+const TypedError = require("typed-error");
 const worker_1 = require("../framework/worker");
 const worker_client_1 = require("../framework/worker-client");
 const logger_1 = require("../utils/logger");
+class GithubError extends TypeError {
+    constructor(error) {
+        super(error);
+        try {
+            const data = JSON.parse(error.message);
+            this.message = data.message;
+            this.documentationUrl = data.documentation_url;
+        }
+        catch (_err) {
+            this.message = error.message;
+            this.documentationUrl = '';
+        }
+    }
+}
+exports.GithubError = GithubError;
 class GithubService extends worker_client_1.WorkerClient {
     constructor(constObj) {
         super();
@@ -79,8 +95,7 @@ class GithubService extends worker_client_1.WorkerClient {
                         }
                         return registration.listenerMethod(registration, event);
                     }).catch((err) => {
-                        this.logger.alert(logger_1.AlertLevel.ERROR, 'Error thrown in main event/label filter loop:' +
-                            err.message);
+                        this.logger.alert(logger_1.AlertLevel.ERROR, `Error thrown in main event/label filter loop:${err}`);
                     });
                 }
             }).return();
@@ -98,7 +113,7 @@ class GithubService extends worker_client_1.WorkerClient {
             },
             host: 'api.github.com',
             protocol: 'https',
-            timeout: 5000
+            timeout: 20000
         });
         this.authenticate();
         if (constObj.type === 'listener') {
@@ -193,29 +208,23 @@ class GithubService extends worker_client_1.WorkerClient {
                     response,
                     source: this._serviceName
                 };
-            }).catch((err) => {
+            }).catch((error) => {
+                let err = new GithubError(error);
                 if (err.message.indexOf('504: Gateway Timeout') !== -1) {
                     return {
-                        err: new Error('Github API timed out, could not complete'),
+                        err: new TypedError('Github API timed out, could not complete'),
                         source: this._serviceName
                     };
                 }
                 else {
-                    let ghError;
-                    try {
-                        ghError = JSON.parse(err.message);
-                    }
-                    catch (_err) {
-                        this.logger.log(logger_1.LogLevel.WARN, `Error thrown was not a Github Service error:\n${err.message}`);
-                    }
-                    if ((retriesLeft < 1) || (ghError && (ghError.message === 'Not Found'))) {
+                    if ((retriesLeft < 1) || (err.message === 'Not Found')) {
                         return {
-                            err,
+                            err: new TypedError(err),
                             source: this._serviceName
                         };
                     }
                     else {
-                        if (ghError && (ghError.message === 'Bad credentials')) {
+                        if (err.message === 'Bad credentials') {
                             return this.authenticate().then(runApi);
                         }
                         else {

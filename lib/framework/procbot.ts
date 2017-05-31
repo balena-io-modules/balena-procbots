@@ -19,9 +19,9 @@ import * as ChildProcess from 'child_process';
 import * as FS from 'fs';
 import * as yaml from 'js-yaml';
 import * as _ from 'lodash';
-import { ServiceEmitContext, ServiceEmitRequest, ServiceEmitResponse, ServiceEmitter,
-    ServiceFactory, ServiceListener } from '../services/service-types';
-import { Logger, LogLevel } from '../utils/logger';
+import { ServiceEmitRequest, ServiceEmitResponse, ServiceEmitter, ServiceFactory,
+    ServiceListener } from '../services/service-types';
+import { Logger } from '../utils/logger';
 import { ProcBotConfiguration } from './procbot-types';
 const fsReadFile = Promise.promisify(FS.readFile);
 const exec: (command: string, options?: any) => Promise<{}> = Promise.promisify(ChildProcess.exec);
@@ -90,15 +90,15 @@ export class ProcBot {
      * @return          The configuration object, service reponse or void should it fail.
      */
     // We should really pass in string | ServiceEmitRequest, the FS module should be a type of emmitter.
-    protected retrieveConfiguration(source: string, location: string | ServiceEmitRequest):
-    Promise<ProcBotConfiguration | ServiceEmitResponse | void> {
+    protected retrieveConfiguration(source: string, location: string | any):
+    Promise<ProcBotConfiguration | any | void> {
         // If the path is a string, then we simply try and get from the filesystem,
         // else we try and get the emitter passed in to read it.
         let retrievePromise: Promise<any>;
         if (source === 'fs') {
             retrievePromise = fsReadFile(<string>location).call('toString');
         } else {
-            retrievePromise = this.dispatchToEmitter(source, <ServiceEmitRequest>location);
+            retrievePromise = this.dispatchToEmitter(source, location);
         }
         return retrievePromise.then((contents) => {
             if (source === 'fs') {
@@ -106,8 +106,6 @@ export class ProcBot {
             }
 
             return contents;
-        }).catch(() => {
-            this.logger.log(LogLevel.INFO, 'No config file was found');
         });
     }
 
@@ -195,10 +193,11 @@ export class ProcBot {
      * This method exists as a shortcut to avoid having to retrieve a specific
      * emitter before sending to it.
      * @param name  The name of the ServiceEmitter to dispatch to.
-     * @param data  A ServiceEmitRequest object to send to the specified ServiceEmitter.
-     * @return      The response from the ServiceEmitter.
+     * @param data  Emitter appropriate data to send.
+     * @return      Data returned from the service represented by the ServiceEmitter.
+     * @throws      Any error returned from the service represented by the ServiceEmitter.
      */
-    protected dispatchToEmitter(name: string, data: ServiceEmitRequest): Promise<ServiceEmitResponse> {
+    protected dispatchToEmitter(name: string, data: any): Promise<any> {
         // If emitter not found, this is an error
         const emitInstance = _.find(this.emitters, (emitter) => emitter.serviceName === name);
 
@@ -206,20 +205,22 @@ export class ProcBot {
             throw new Error(`${name} emitter is not attached`);
         }
 
-        // Ensure the right service context exists for the emitter.
-        const emitContext: ServiceEmitContext = _.pickBy(data.contexts, (_val, key) => {
-            return key === name;
+        // Create a new ServiceEmitRequest based on the data passed, the name of the service
+        // to use and our name.
+        const request: ServiceEmitRequest = {
+            contexts: {},
+            source: this._botname
+        };
+        request.contexts[name] = data;
+
+        return emitInstance.sendData(request).then((result) => {
+            // If an error occured, throw it.
+            if (result.err) {
+                throw result.err;
+            }
+
+            return result.response;
         });
-
-        if (!emitContext) {
-            console.log('No emit context, fail');
-            return Promise.resolve({
-                err: new Error('No emitter context'),
-                source: name
-            });
-        }
-
-        return emitInstance.sendData(data);
     }
 
     /**

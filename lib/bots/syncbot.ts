@@ -270,19 +270,13 @@ export class SyncBot extends ProcBot {
     private create(event: TransmitContext): Promise<string> {
         // Pass the event to the emitter
         return this.getMessageService(event.to).makeSpecific(event).then((specific) => {
-            return this.dispatchToEmitter(event.to, {
-                contexts: {
-                    // Translating the message event into the specific form for the emitter
-                    [event.to]: specific
-                },
-                source: event.source
-            })
+            return this.dispatchToEmitter(event.to, specific)
             .then((retVal) => {
                 // Store and return the created id
-                event.toIds.message = retVal.response.message;
-                event.toIds.thread = retVal.response.thread;
-                event.toIds.url = retVal.response.url;
-                return retVal.response.message;
+                event.toIds.message = retVal.message;
+                event.toIds.thread = retVal.thread;
+                event.toIds.url = retVal.url;
+                return retVal.message;
             });
         });
     }

@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const Promise = require("bluebird");
 const bodyParser = require("body-parser");
 const express = require("express");
+const TypedError = require("typed-error");
 const _ = require("lodash");
 const worker_1 = require("../framework/worker");
 const worker_client_1 = require("../framework/worker-client");
@@ -124,7 +125,7 @@ class Messenger extends worker_client_1.WorkerClient {
             return this.sendPayload(data.contexts[this.serviceName]);
         }
         return Promise.resolve({
-            err: new Error(`No ${this.serviceName} context`),
+            err: new TypedError(`No ${this.serviceName} context`),
             source: this.serviceName,
         });
     }

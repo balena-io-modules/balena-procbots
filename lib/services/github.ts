@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
+/* tslint:disable: max-classes-per-file */
 import * as Promise from 'bluebird';
 import * as bodyParser from 'body-parser';
 import * as crypto from 'crypto';
@@ -23,7 +23,7 @@ import * as jwt from 'jsonwebtoken';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as request from 'request-promise';
-import * as GithubApiTypes from '../apis/githubapi-types';
+import TypedError = require('typed-error');
 import { Worker, WorkerEvent } from '../framework/worker';
 import { WorkerClient } from '../framework/worker-client';
 import { AlertLevel, Logger, LogLevel } from '../utils/logger';
@@ -45,6 +45,31 @@ interface LabelDetails {
         /** Name of the repository. */
         name: string;
     };
+}
+
+/** Github Error. */
+export class GithubError extends TypeError {
+    /** Message error from the Github API. */
+    public message: string;
+    /** Documentation URL pertaining to the error. */
+    public documentationUrl: string;
+
+    /** Should the error returned not be from the Github API but from the
+     * REST layer, then the message from it is used instead.
+     */
+    constructor(error: any) {
+        super(error);
+
+        // Attempt to parse from JSON.
+        try {
+            const data = JSON.parse(error.message);
+            this.message = data.message;
+            this.documentationUrl = data.documentation_url;
+        } catch (_err) {
+            this.message = error.message;
+            this.documentationUrl = '';
+        }
+    }
 }
 
 /**
@@ -92,7 +117,7 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
             },
             host: 'api.github.com',
             protocol: 'https',
-            timeout: 5000
+            timeout: 20000
         });
         this.authenticate();
 
@@ -255,33 +280,26 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
                     response,
                     source: this._serviceName
                 };
-            }).catch((err: Error) => {
+            }).catch((error: Error) => {
                 // Sometimes the gateway can time out if we don't respond quickly enough.
                 // This will destroy the ability to continue for this callset, so we exit.
+                let err = new GithubError(error);
                 if (err.message.indexOf('504: Gateway Timeout') !== -1) {
                     return {
-                        err: new Error('Github API timed out, could not complete'),
+                        err: new TypedError('Github API timed out, could not complete'),
                         source: this._serviceName
                     };
                 } else {
-                    // Error message is actually JSON.
-                    let ghError: GithubApiTypes.GithubError | void;
-                    try {
-                        ghError = JSON.parse(err.message);
-                    } catch(_err) {
-                        this.logger.log(LogLevel.WARN, `Error thrown was not a Github Service error:\n${err.message}`);
-                    }
-
                     // If there are no more retries, or we couldn't find the required
                     // details, reject.
-                    if ((retriesLeft < 1) || (ghError && (ghError.message === 'Not Found'))) {
+                    if ((retriesLeft < 1) || (err.message === 'Not Found')) {
                         // No more retries, just reject.
                         return {
-                            err,
+                            err: new TypedError(err),
                             source: this._serviceName
                         };
                     } else {
-                        if (ghError && (ghError.message === 'Bad credentials')) {
+                        if (err.message === 'Bad credentials') {
                             // Re-authenticate, then try again.
                             return this.authenticate().then(runApi);
                         } else {
@@ -398,8 +416,7 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
                     return registration.listenerMethod(registration, event);
                 }).catch((err: Error) => {
                     // We log the error, so that it's saved and matches up with any Alert.
-                    this.logger.alert(AlertLevel.ERROR, 'Error thrown in main event/label filter loop:' +
-                        err.message);
+                    this.logger.alert(AlertLevel.ERROR, `Error thrown in main event/label filter loop:${err}`);
                 });
             }
         }).return();

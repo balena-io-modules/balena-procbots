@@ -11,12 +11,12 @@ export declare class ProcBot {
     constructor(name?: string);
     getNodeBinPath(): Promise<string>;
     protected processConfiguration(configFile: string): ProcBotConfiguration | void;
-    protected retrieveConfiguration(source: string, location: string | ServiceEmitRequest): Promise<ProcBotConfiguration | ServiceEmitResponse | void>;
+    protected retrieveConfiguration(source: string, location: string | any): Promise<ProcBotConfiguration | any | void>;
     protected addServiceListener(name: string, data?: any): ServiceListener | void;
     protected addServiceEmitter(name: string, data?: any): ServiceEmitter | void;
     protected getListener(name: string): ServiceListener | void;
     protected getEmitter(name: string): ServiceEmitter | void;
     protected dispatchToAllEmitters(data: ServiceEmitRequest): Promise<ServiceEmitResponse[]>;
-    protected dispatchToEmitter(name: string, data: ServiceEmitRequest): Promise<ServiceEmitResponse>;
+    protected dispatchToEmitter(name: string, data: any): Promise<any>;
     private getService(name);
 }

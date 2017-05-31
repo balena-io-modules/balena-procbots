@@ -71,7 +71,6 @@ export interface MessengerEmitResponse extends ServiceEmitResponse {
         thread: string;
         url?: string;
     };
-    err?: Error;
 }
 export interface Metadata {
     genesis: string | null;

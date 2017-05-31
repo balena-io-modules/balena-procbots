@@ -3,6 +3,11 @@ import { Worker, WorkerEvent } from '../framework/worker';
 import { WorkerClient } from '../framework/worker-client';
 import { GithubConstructor, GithubHandle, GithubListenerConstructor, GithubRegistration } from './github-types';
 import { ServiceEmitRequest, ServiceEmitResponse, ServiceEmitter, ServiceEvent, ServiceListener } from './service-types';
+export declare class GithubError extends TypeError {
+    message: string;
+    documentationUrl: string;
+    constructor(error: any);
+}
 export declare class GithubService extends WorkerClient<string> implements ServiceListener, ServiceEmitter {
     protected getWorker: (event: WorkerEvent) => Worker<string>;
     protected authToken: string;

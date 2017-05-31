@@ -26,9 +26,9 @@ import { cleanup, track } from 'temp';
 import * as GithubApiTypes from '../apis/githubapi-types';
 import { ProcBot } from '../framework/procbot';
 import { ProcBotConfiguration } from '../framework/procbot-types';
-import { GithubCookedData, GithubEmitRequestContext, GithubHandle,
-    GithubRegistration } from '../services/github-types';
-import { ServiceEmitRequest, ServiceEmitResponse, ServiceEvent } from '../services/service-types';
+import { GithubError } from '../services/github';
+import { GithubCookedData, GithubHandle, GithubRegistration } from '../services/github-types';
+import { ServiceEvent } from '../services/service-types';
 import { AlertLevel, LogLevel } from '../utils/logger';
 
 // Exec technically has a binding because of it's Node typings, but promisify doesn't include
@@ -140,8 +140,6 @@ export class VersionBot extends ProcBot {
     private githubListenerName: string;
     /** Github ServiceEmitter. */
     private githubEmitterName: string;
-    /** Flowdock ServiceEmitter. */
-    private flowdockEmitterName: string;
     /** Instance of Github SDK API in use. */
     private githubApi: GithubApi;
 
@@ -195,16 +193,6 @@ export class VersionBot extends ProcBot {
         this.githubApi = (<GithubHandle>ghEmitter.apiHandle).github;
         if (!this.githubApi) {
             throw new Error('No Github API instance found');
-        }
-
-        // Create a new Flowdock emitter, should we need one.
-        if (process.env.VERSIONBOT_FLOWDOCK_ROOM) {
-            const fdEmitter = this.addServiceEmitter('flowdock');
-
-            if (!fdEmitter) {
-                throw new Error("Couldn't create a Flowdock emitter");
-            }
-            this.flowdockEmitterName = fdEmitter.serviceName;
         }
 
         // We have two different WorkerMethods here:
@@ -267,7 +255,7 @@ export class VersionBot extends ProcBot {
         // Get all PRs for each named branch.
         // We *only* work on open states.
         return Promise.map(branches, (branch: GithubApiTypes.StatusEventBranch) => {
-            return this.githubCall({
+            return this.dispatchToEmitter(this.githubEmitterName, {
                 data: {
                     head: `${owner}:${branch.name}`,
                     owner,
@@ -351,7 +339,7 @@ export class VersionBot extends ProcBot {
         generateWaffleReference(pr.body);
 
         // Now look through all the commits in the PR. Do the same thing.
-        return this.githubCall({
+        return this.dispatchToEmitter(this.githubEmitterName, {
             data: {
                 number: prNumber,
                 owner,
@@ -381,7 +369,7 @@ export class VersionBot extends ProcBot {
 
             // Now update the PR description if we have extra changes.
             if (body !== pr.body) {
-                return this.githubCall({
+                return this.dispatchToEmitter(this.githubEmitterName, {
                     data: {
                         body,
                         number: prNumber,
@@ -423,7 +411,7 @@ export class VersionBot extends ProcBot {
         }
 
         this.logger.log(LogLevel.INFO, `Checking version for ${owner}/${name}#${pr.number}`);
-        return this.githubCall({
+        return this.dispatchToEmitter(this.githubEmitterName, {
             data: {
                 owner,
                 number: pr.number,
@@ -474,7 +462,7 @@ export class VersionBot extends ProcBot {
 
             // If we found a change-type message, then mark this commit as ok.
             if (changetypeFound) {
-                return this.githubCall({
+                return this.dispatchToEmitter(this.githubEmitterName, {
                     data: {
                         context: 'Versionist',
                         description: 'Found a valid Versionist `Change-Type` tag',
@@ -490,7 +478,7 @@ export class VersionBot extends ProcBot {
             // Else we mark it as having failed and we inform the user directly in the PR.
             this.logger.log(LogLevel.INFO, "No valid 'Change-Type' tag found, failing last commit " +
                 `for ${owner}/${name}#${pr.number}`);
-            return this.githubCall({
+            return this.dispatchToEmitter(this.githubEmitterName, {
                 data: {
                     context: 'Versionist',
                     description: 'None of the commits in the PR have a `Change-Type` tag',
@@ -514,7 +502,7 @@ export class VersionBot extends ProcBot {
                 // comment telling the author of a failure. If there has, then
                 // it's implicit that we made a comment.
                 const lastCommitTimestamp = Date.parse(lastCommit.commit.committer.date);
-                return this.githubCall({
+                return this.dispatchToEmitter(this.githubEmitterName, {
                     data: {
                         owner,
                         repo: name,
@@ -537,7 +525,7 @@ export class VersionBot extends ProcBot {
                     if (author !== committer) {
                         warningUsers += `@${committer}, `;
                     }
-                    return this.githubCall({
+                    return this.dispatchToEmitter(this.githubEmitterName, {
                         data: {
                             body: `${warningUsers}status checks have failed for this PR. Please make appropriate `+
                                 'changes and recommit.',
@@ -551,7 +539,7 @@ export class VersionBot extends ProcBot {
             }
         }).then(() => {
             // Get the labels for the PR.
-            return this.githubCall({
+            return this.dispatchToEmitter(this.githubEmitterName, {
                 data: {
                     number: pr.number,
                     owner,
@@ -874,7 +862,7 @@ export class VersionBot extends ProcBot {
         let newTreeSha: string;
 
         // Get the top level hierarchy for the branch. It includes the files we need.
-        return this.githubCall({
+        return this.dispatchToEmitter(this.githubEmitterName, {
             data: {
                 owner: repoData.owner,
                 repo: repoData.repo,
@@ -897,7 +885,7 @@ export class VersionBot extends ProcBot {
                 }
 
                 file.treeEntry = treeEntry;
-                return this.githubCall({
+                return this.dispatchToEmitter(this.githubEmitterName, {
                     data: {
                         content: file.encoding,
                         encoding: 'base64',
@@ -925,7 +913,7 @@ export class VersionBot extends ProcBot {
                 });
 
                 // Now write this new tree and get back an SHA for it.
-                return this.githubCall({
+                return this.dispatchToEmitter(this.githubEmitterName, {
                     data: {
                         base_tree: treeData.sha,
                         owner: repoData.owner,
@@ -938,7 +926,7 @@ export class VersionBot extends ProcBot {
                 newTreeSha = newTree.sha;
 
                 // Get the last commit for the branch.
-                return this.githubCall({
+                return this.dispatchToEmitter(this.githubEmitterName, {
                     data: {
                         owner: repoData.owner,
                         repo: repoData.repo,
@@ -948,7 +936,7 @@ export class VersionBot extends ProcBot {
                 });
             }).then((lastCommit: GithubApiTypes.Commit) => {
                 // We have new tree object, we now want to create a new commit referencing it.
-                return this.githubCall({
+                return this.dispatchToEmitter(this.githubEmitterName, {
                     data: {
                         committer: {
                             email: process.env.VERSIONBOT_EMAIL,
@@ -965,7 +953,7 @@ export class VersionBot extends ProcBot {
             }).then((commit: GithubApiTypes.Commit) => {
                 // Finally, we now update the reference to the branch that's changed.
                 // This should kick off the change for status.
-                return this.githubCall({
+                return this.dispatchToEmitter(this.githubEmitterName, {
                     data: {
                         force: false, // Not that I'm paranoid...
                         owner: repoData.owner,
@@ -992,7 +980,7 @@ export class VersionBot extends ProcBot {
         const repo = pr.head.repo.name;
         const prNumber = pr.number;
 
-        return this.githubCall({
+        return this.dispatchToEmitter(this.githubEmitterName, {
             data: {
                 commit_title: `Auto-merge for PR #${prNumber} via ${process.env.VERSIONBOT_NAME}`,
                 number: prNumber,
@@ -1003,7 +991,7 @@ export class VersionBot extends ProcBot {
         }).then((mergedData: GithubApiTypes.Merge) => {
             // We get an SHA back when the merge occurs, and we use this for a tag.
             // Note date gets filed in automatically by API.
-            return this.githubCall({
+            return this.dispatchToEmitter(this.githubEmitterName, {
                 data: {
                     message: data.commitVersion,
                     object: mergedData.sha,
@@ -1021,7 +1009,7 @@ export class VersionBot extends ProcBot {
         }).then((newTag: GithubApiTypes.Tag) => {
             // We now have a SHA back that contains the tag object.
             // Create a new reference based on it.
-            return this.githubCall({
+            return this.dispatchToEmitter(this.githubEmitterName, {
                 data: {
                     owner,
                     ref: `refs/tags/${data.commitVersion}`,
@@ -1033,7 +1021,7 @@ export class VersionBot extends ProcBot {
         }).then(() => {
             // Delete the merge label. This will ensure future updates to the PR are
             // ignored by us.
-            return this.githubCall({
+            return this.dispatchToEmitter(this.githubEmitterName, {
                 data: {
                     name: MergeLabel,
                     number: prNumber,
@@ -1044,7 +1032,7 @@ export class VersionBot extends ProcBot {
             });
         }).then(() => {
             // Finally delete this branch.
-            return this.githubCall({
+            return this.dispatchToEmitter(this.githubEmitterName, {
                 data: {
                     owner,
                     ref: `heads/${pr.head.ref}`,
@@ -1065,7 +1053,7 @@ export class VersionBot extends ProcBot {
             // mergeable show up as some sort of status in the UI. However, just in case,
             // here's a check to ensure the PR is still open. If it is, raise a
             // flag regardless of why.
-            return this.githubCall({
+            return this.dispatchToEmitter(this.githubEmitterName, {
                 data: {
                     number: prNumber,
                     owner,
@@ -1099,7 +1087,7 @@ export class VersionBot extends ProcBot {
             success: StatusChecks.Passed,
         };
 
-        return this.githubCall({
+        return this.dispatchToEmitter(this.githubEmitterName, {
             data: {
                 branch: 'master',
                 owner,
@@ -1110,7 +1098,7 @@ export class VersionBot extends ProcBot {
             protectedContexts = statusContexts.contexts;
 
             // Now get all of the statuses for the master branch.
-            return this.githubCall({
+            return this.dispatchToEmitter(this.githubEmitterName, {
                 data: {
                     owner,
                     ref: branch,
@@ -1181,7 +1169,7 @@ export class VersionBot extends ProcBot {
         const repo = prInfo.head.repo.name;
 
         // Get the list of commits for the PR, then get the very last commit SHA.
-        return this.githubCall({
+        return this.dispatchToEmitter(this.githubEmitterName, {
             data: {
                 owner,
                 repo,
@@ -1291,35 +1279,16 @@ export class VersionBot extends ProcBot {
      * @returns     Promise containing the configuration, if found, or void if not.
      */
     private getConfiguration(owner: string, repo: string): Promise<VersionBotConfiguration | void> {
-        const request: ServiceEmitRequest = {
-            contexts: {},
-            source: process.env.VERSIONBOT_NAME
-        };
-        request.contexts[this.githubEmitterName] = {
-            data: {
-                owner,
-                repo,
-                path: '.procbots.yml'
-            },
-            method: this.githubApi.repos.getContent
-        };
-
         // Use the parent method to get the configuration via the GH emitter, but then
         // return it so we can decode it before processing it.
-        return this.retrieveConfiguration(this.githubEmitterName, request)
-        .then((configRes: ServiceEmitResponse) => {
-            // Decode the object.
-            if (configRes.err) {
-                // Error message is actually JSON.
-                const ghError: GithubApiTypes.GithubError = JSON.parse(configRes.err.message);
-
-                // This is because, annoyingly, it's a GH error.
-                if (ghError.message === 'Not Found') {
-                    return;
-                }
-            }
-
-            const configData = configRes.response;
+        return this.retrieveConfiguration(this.githubEmitterName, {
+                data: {
+                    owner,
+                    repo,
+                    path: '.procbots.yml'
+                },
+                method: this.githubApi.repos.getContent
+        }).then((configData: GithubApiTypes.Content) => {
             // Github API docs state a blob will *always* be encoded base64...
             if (configData.encoding !== 'base64') {
                 this.logger.log(LogLevel.WARN, `A config file exists for ${owner}/${repo} but is not ` +
@@ -1329,6 +1298,10 @@ export class VersionBot extends ProcBot {
 
             return <VersionBotConfiguration>this.processConfiguration(Buffer.from(configData.content, 'base64')
             .toString());
+        }).catch((err: GithubError) => {
+            if (err.message !== 'Not Found') {
+                throw err;
+            }
         });
     }
 
@@ -1339,7 +1312,7 @@ export class VersionBot extends ProcBot {
      */
     private reportError(error: VersionBotError): void {
         // Post a comment to the relevant PR, also detailing the issue.
-        this.githubCall({
+        this.dispatchToEmitter(this.githubEmitterName, {
             data: {
                 body: error.message,
                 number: error.number,
@@ -1349,32 +1322,8 @@ export class VersionBot extends ProcBot {
             method: this.githubApi.issues.createComment
         });
 
+        // Log to console.
         this.logger.alert(AlertLevel.ERROR, error.message);
-    }
-
-    /**
-     * A utility method to simplify the calling of the Github ServiceEmitter.
-     *
-     * @param context   The object containing details required by the ServiceEmitter.
-     * @returns         A Promise containing any data returned by the Github service.
-     */
-    private githubCall(context: GithubEmitRequestContext): Promise<any> {
-        const request: ServiceEmitRequest = {
-            contexts: {},
-            source: process.env.VERSIONBOT_NAME
-        };
-        request.contexts[this.githubEmitterName] = context;
-
-        return this.dispatchToEmitter(this.githubEmitterName, request).then((data: ServiceEmitResponse) => {
-            // On an error, throw.
-            if (data.err) {
-                // Specifically throw the error message.
-                const ghError = JSON.parse(data.err.message);
-                throw new Error(ghError.message);
-            }
-
-            return data.response;
-        });
     }
 }
 
