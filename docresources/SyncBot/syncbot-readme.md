@@ -28,7 +28,7 @@ A little Bot, using the ProcBot framework, that links communication services
     * Become a Discourse Admin
     * Log out and in
 * Give your discourse details to SyncBot
-  * Send the following PM's to the SyncBot account:
+  * Send the following PM's to the [SyncBot account](https://www.flowdock.com/app/private/281020) on Flowdock:
     * `My discourse user is ...`
     * `My discourse token is ...`
   * Do not be surprised by the lack of response
