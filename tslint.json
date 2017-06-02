@@ -1,8 +1,8 @@
 {
     "extends": "tslint:recommended",
     "rules": {
-        "indent": "spaces",
-        "jsdoc-format": false,
+        "indent": [ true, "spaces" ],
+        "jsdoc-format": true,
         "whitespace": [
             false,
             "check-type"

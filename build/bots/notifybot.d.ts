@@ -28,7 +28,6 @@ export declare class NotifyBot extends ProcBot {
     private getNewPRs(component);
     private retrieveFileFromHash(fileRequest);
     private retrieveTopics(topics);
-    private pagedGithubCall(callData, maxEntries);
     private emitterCall(target, context);
     private getRepoDetails(fullRepo);
     private reportError(error);

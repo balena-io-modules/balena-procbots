@@ -55,6 +55,7 @@ export class FrontService implements ServiceEmitter {
                 source: this._serviceName
             };
         }).catch((err: Error) => {
+            console.log(data.contexts.front);
             return {
                 err,
                 source: this._serviceName

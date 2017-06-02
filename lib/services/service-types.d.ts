@@ -20,8 +20,10 @@ import { WorkerMethod } from '../framework/worker';
 /** A Service is either a Listener or an Emitter. */
 export type ServiceType = 'listener' | 'emitter';
 
-/** The source is the name of the event service (in the case of an Listener) or the
-    client (in the case of an Emitter). */
+/**
+ * The source is the name of the event service (in the case of an Listener) or the
+ * client (in the case of an Emitter).
+ */
 export interface ServiceData {
     /** The source (name) of the ServiceListener or ServiceEmitter. */
     source: string;

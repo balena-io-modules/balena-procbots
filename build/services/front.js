@@ -37,6 +37,7 @@ class FrontService {
                 source: this._serviceName
             };
         }).catch((err) => {
+            console.log(data.contexts.front);
             return {
                 err,
                 source: this._serviceName

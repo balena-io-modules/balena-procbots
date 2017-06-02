@@ -165,7 +165,7 @@
 					<li>The <code>procbots/versionbot/ready-to-merge</code> label is present</li>
 				</ul>
 				<p>VersionBot can be configured via a <code>.procbots.yml</code> file present in any repository that it operates on. This alters the settings for it for working on that repository. Currently the configuration for VersionBot consists of the following properties:</p>
-				<pre><code>`procbot<span class="hljs-selector-class">.versionbot</span><span class="hljs-selector-class">.maintainers</span>` - A list of Github user names that are authorised maintainers of the repository. The `procbots/versionbot/ready-to-merge` <span class="hljs-selector-tag">label</span> will only be acted upon should <span class="hljs-selector-tag">a</span> maintainer <span class="hljs-keyword">in</span> this list have added the <span class="hljs-selector-tag">label</span>.
+				<pre><code>`procbot.versionbot.maintainers` - A list of Github<span class="hljs-built_in"> user </span>names that are authorised maintainers of the repository. The `procbots/versionbot/ready-to-merge` label will only be acted upon should a maintainer <span class="hljs-keyword">in</span> this list have added the label.
 </code></pre><p>Example:</p>
 				<pre><code><span class="hljs-symbol">procbot:</span>
 <span class="hljs-symbol">    minimum_version:</span> <span class="hljs-number">0.5</span>

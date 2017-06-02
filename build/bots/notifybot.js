@@ -6,6 +6,8 @@ const _ = require("lodash");
 const procbot_1 = require("../framework/procbot");
 const logger_1 = require("../utils/logger");
 const NotifyBotPort = 8399;
+const ConnectRE = /connects-to:[\s]+(#[0-9]+)/i;
+const HqRE = /hq:[\s]+https:\/\/github.com\/resin-io\/hq\/issues\/([0-9]+)/i;
 const KeyframeFile = 'keyframe.yml';
 const ChangelogFile = 'CHANGELOG.md';
 const VirginRef = '0000000000000000000000000000000000000000';
@@ -94,7 +96,8 @@ class NotifyBot extends procbot_1.ProcBot {
                         `for this is:\r\n${err.message}\r\n` +
                         'Please carry out relevant changes or alert an appropriate admin.',
                     owner,
-                    repo
+                    repo,
+                    version: 'unknown'
                 });
             });
         };
@@ -149,7 +152,6 @@ class NotifyBot extends procbot_1.ProcBot {
         });
     }
     tracePRAndNotify(prDetails) {
-        const connectRE = /connects[\s]+to[\s]+#([0-9]+)/i;
         const repoDetails = this.getRepoDetails(prDetails.repo);
         if (!repoDetails) {
             throw new Error(`Cannot find appropriate repo/owner for ${prDetails.repo}`);
@@ -163,11 +165,11 @@ class NotifyBot extends procbot_1.ProcBot {
             return Promise.join(this.emitterCall(this.githubEmitterName, {
                 data: prData,
                 method: this.githubApi.issues.getComments,
-            }), this.pagedGithubCall({
+            }), this.emitterCall(this.githubEmitterName, {
                 data: prData,
-                method: this.githubApi.pullRequests.getCommits,
-            }, 30), (comments, commits) => {
-                return _.concat(_.flatMap(comments, (comment) => this.matchIssue(comment.body, connectRE)), _.flatMap(commits, (commit) => this.matchIssue(commit.commit.message, connectRE)));
+                method: this.githubApi.pullRequests.get
+            }), (comments, pullRequest) => {
+                return _.concat(_.flatMap(comments, (comment) => this.matchIssue(comment.body, ConnectRE)), this.matchIssue(pullRequest.body, ConnectRE), _.flatMap(comments, (comment) => this.matchIssue(comment.body, HqRE)), this.matchIssue(pullRequest.body, HqRE));
             }).then((issueNumbers) => {
                 return Promise.mapSeries(issueNumbers, (issueNumber) => {
                     let topicIssues;
@@ -182,6 +184,8 @@ class NotifyBot extends procbot_1.ProcBot {
                             bodyMessage += `\n${issueURL}`;
                         });
                         return Promise.map(conversations, (conversation) => {
+                            this.logger.log(logger_1.LogLevel.INFO, `---> Commented on Front ${conversation} for ` +
+                                `${prData.owner}/${prData.repo}#${prData.number}:${prDetails.version}`);
                             return this.emitterCall(this.frontEmitterName, {
                                 data: {
                                     author_id: `alt:email:${this.frontUser}`,
@@ -198,6 +202,8 @@ class NotifyBot extends procbot_1.ProcBot {
                     data: prData,
                     method: this.githubApi.pullRequests.get
                 }).then((pullRequest) => {
+                    this.logger.log(logger_1.LogLevel.INFO, `--> Commented on PR ${prData.owner}/${prData.repo}#` +
+                        `${prData.number}:${prDetails.version}`);
                     return this.emitterCall(this.githubEmitterName, {
                         data: {
                             body: `Hi @${pullRequest.user.login}! This PR is now deployed as version ` +
@@ -207,16 +213,17 @@ class NotifyBot extends procbot_1.ProcBot {
                             owner: prData.owner,
                             repo: prData.repo,
                         },
-                        method: this.githubApi.pullRequests.createComment
+                        method: this.githubApi.issues.createComment
                     });
                 });
             });
         }).catch((err) => {
             this.reportError({
                 brief: 'IssueConversationUpdate',
-                message: `Couldn't post to the conversation for the specified issue: ${err}`,
+                message: `Couldn't post to the conversation or PR for the specified issue: ${err}`,
                 owner: repoDetails.owner,
                 repo: repoDetails.repo,
+                version: prDetails.version
             });
         }).return();
     }
@@ -232,6 +239,11 @@ class NotifyBot extends procbot_1.ProcBot {
     }
     ;
     getTopicsOnIssue(issueNumber, issueOwner, issueRepo) {
+        let followHqIssue = true;
+        if (_.startsWith(issueNumber, '#')) {
+            issueNumber = issueNumber.substring(1);
+            followHqIssue = false;
+        }
         const getIssueAndComments = (issue, owner, repo, method) => {
             return Promise.join(this.emitterCall(this.githubEmitterName, {
                 data: {
@@ -261,15 +273,13 @@ class NotifyBot extends procbot_1.ProcBot {
         const githubURL = `https://github.com`;
         const relatedIssues = [];
         return getIssueAndComments(issueNumber, issueOwner, issueRepo, (issue, comments) => {
-            const hqRE = /connects[\s]+to[\s]+resin-io\/hq#([0-9]+)/i;
-            const hqRefs = _.flatMap(comments, (comment) => this.matchIssue(comment.body, hqRE));
+            const hqRefs = _.concat(_.flatMap(comments, (comment) => this.matchIssue(comment.body, HqRE)), this.matchIssue(issue.body, HqRE));
             let frontTopics = matchfrontTopics(issue, comments);
             if (frontTopics.length > 0) {
                 relatedIssues.push(`${issue.title}: ${issueRepo}/issues/${issueNumber}`);
             }
-            frontTopics = _.concat(frontTopics, this.matchIssue(issue.body, hqRE));
-            if (hqRefs.length > 0) {
-                return Promise.map(hqRefs, (hqRef) => {
+            if (!followHqIssue && (hqRefs.length > 0)) {
+                return Promise.mapSeries(hqRefs, (hqRef) => {
                     return getIssueAndComments(hqRef, HqOwner, HqRepo, (hqIssue, hqComments) => {
                         const hqTopics = matchfrontTopics(hqIssue, hqComments);
                         if (hqTopics.length > 0) {
@@ -370,20 +380,6 @@ class NotifyBot extends procbot_1.ProcBot {
             });
         }).then(_.flatten);
     }
-    pagedGithubCall(callData, maxEntries) {
-        let results = [];
-        const getPage = (page) => {
-            callData.data.page = page;
-            return this.emitterCall(this.githubEmitterName, callData).then((response) => {
-                results = results.concat(response);
-                if (response.length >= maxEntries) {
-                    return getPage(page + 1);
-                }
-                return results;
-            });
-        };
-        return getPage(0);
-    }
     emitterCall(target, context) {
         const request = {
             contexts: {},
@@ -412,7 +408,7 @@ class NotifyBot extends procbot_1.ProcBot {
         };
     }
     reportError(error) {
-        this.logger.alert(logger_1.AlertLevel.ERROR, `${error.message}: ${error.owner}/${error.repo}`);
+        this.logger.alert(logger_1.AlertLevel.ERROR, `${error.message}: ${error.owner}/${error.repo}, v: ${error.version}`);
     }
 }
 exports.NotifyBot = NotifyBot;

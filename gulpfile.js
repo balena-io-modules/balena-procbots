@@ -44,4 +44,3 @@ gulp.task('typedoc', () => {
 });
 
 gulp.task('build', [ 'tslint', 'typescript', 'copydecs', 'typedoc' ]);
-

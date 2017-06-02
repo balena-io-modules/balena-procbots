@@ -147,7 +147,7 @@ export class SyncBot extends ProcBot {
                 .catch((error: Error) => this.handleError(error, event));
             })
             // Ignore errors when scrutinising threads without links
-            .catch(() => { /**/ });
+            .catch(() => { /* */ });
     }
 
     /**
@@ -264,7 +264,7 @@ export class SyncBot extends ProcBot {
             this.searchSystem(toEvent, 'user')
             .then(() => this.searchSystem(toEvent, 'token'))
             .then(() => this.create(toEvent as MessageTransmitContext, 'message'))
-        ]).reduce(() => { /**/ });
+        ]).reduce(() => { /* */ });
     }
 
     /**

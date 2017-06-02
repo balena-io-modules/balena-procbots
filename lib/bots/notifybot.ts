@@ -53,6 +53,7 @@ interface NotifyBotError {
     message: string;
     owner: string;
     repo: string;
+    version: string;
 }
 
 interface VersionTracker {
@@ -83,6 +84,9 @@ interface TopicIssues {
 }
 
 const NotifyBotPort = 8399; // Not a listed registered port
+
+const ConnectRE = /connects-to:[\s]+(#[0-9]+)/i;
+const HqRE = /hq:[\s]+https:\/\/github.com\/resin-io\/hq\/issues\/([0-9]+)/i;
 
 const KeyframeFile = 'keyframe.yml';
 const ChangelogFile = 'CHANGELOG.md';
@@ -293,7 +297,8 @@ export class NotifyBot extends ProcBot {
                     `for this is:\r\n${err.message}\r\n` +
                     'Please carry out relevant changes or alert an appropriate admin.',
                 owner,
-                repo
+                repo,
+                version: 'unknown'
             });
         });
 
@@ -304,13 +309,11 @@ export class NotifyBot extends ProcBot {
 
     private tracePRAndNotify(prDetails: DeployedPR): Promise<void> {
         // RegExp checking for issue cross referencing.
-        const connectRE = /connects[\s]+to[\s]+#([0-9]+)/i;
         const repoDetails = this.getRepoDetails(prDetails.repo);
 
         if (!repoDetails) {
             throw new Error(`Cannot find appropriate repo/owner for ${prDetails.repo}`);
         }
-
         return Promise.map(prDetails.prs, (pr) => {
             // Get comments and commits for the PR.
             // Look for 'Connects to #<x>' to get issue numbers. We *only* want local
@@ -320,19 +323,24 @@ export class NotifyBot extends ProcBot {
                 owner: repoDetails.owner,
                 repo: repoDetails.repo,
             };
+
+            // Get the PR. Get all comments. Look for links to issues in both,
+            // including links to HQ issues.
             return Promise.join(this.emitterCall(this.githubEmitterName, {
                     data: prData,
                     method: this.githubApi.issues.getComments,
                 }),
-                this.pagedGithubCall({
+                this.emitterCall(this.githubEmitterName, {
                     data: prData,
-                    method: this.githubApi.pullRequests.getCommits,
-                }, 30),
-                (comments: GithubApiTypes.IssueComment[], commits: GithubApiTypes.Commit[]) => {
+                    method: this.githubApi.pullRequests.get
+                }),
+                (comments: GithubApiTypes.IssueComment[], pullRequest: GithubApiTypes.PullRequest) => {
                     // Find reference to parent issues. We should not have any
                     // Front conversations in a PR.
-                    return _.concat(_.flatMap(comments, (comment) => this.matchIssue(comment.body, connectRE)),
-                        _.flatMap(commits, (commit) => this.matchIssue(commit.commit.message, connectRE)));
+                    return  _.concat(_.flatMap(comments, (comment) => this.matchIssue(comment.body, ConnectRE)),
+                        this.matchIssue(pullRequest.body, ConnectRE),
+                        _.flatMap(comments, (comment) => this.matchIssue(comment.body, HqRE)),
+                        this.matchIssue(pullRequest.body, HqRE));
                 }
             ).then((issueNumbers) => {
                 return Promise.mapSeries(issueNumbers, (issueNumber) => {
@@ -352,6 +360,9 @@ export class NotifyBot extends ProcBot {
                         });
 
                         return Promise.map(conversations, (conversation) => {
+                            this.logger.log(LogLevel.INFO, `---> Commented on Front ${conversation} for ` +
+                                `${prData.owner}/${prData.repo}#${prData.number}:${prDetails.version}`);
+
                             return this.emitterCall(this.frontEmitterName,{
                                 data: {
                                     author_id: `alt:email:${this.frontUser}`,
@@ -378,6 +389,8 @@ export class NotifyBot extends ProcBot {
                         method: this.githubApi.pullRequests.get
                     }
                 ).then((pullRequest) => {
+                    this.logger.log(LogLevel.INFO, `--> Commented on PR ${prData.owner}/${prData.repo}#` +
+                        `${prData.number}:${prDetails.version}`);
                     return this.emitterCall(this.githubEmitterName, {
                         data: {
                             body: `Hi @${pullRequest.user.login}! This PR is now deployed as version ` +
@@ -387,16 +400,17 @@ export class NotifyBot extends ProcBot {
                             owner: prData.owner,
                             repo: prData.repo,
                         },
-                        method: this.githubApi.pullRequests.createComment
+                        method: this.githubApi.issues.createComment
                     });
                 });
             });
         }).catch((err: Error) => {
             this.reportError({
                 brief: 'IssueConversationUpdate',
-                message: `Couldn't post to the conversation for the specified issue: ${err}`,
+                message: `Couldn't post to the conversation or PR for the specified issue: ${err}`,
                 owner: repoDetails.owner,
                 repo: repoDetails.repo,
+                version: prDetails.version
             });
         }).return();
     }
@@ -417,6 +431,13 @@ export class NotifyBot extends ProcBot {
     // This goes through an issue and associated HQ issues connected to find
     // the relevant Front topic URLs for it.
     private getTopicsOnIssue(issueNumber: string, issueOwner: string, issueRepo: string): Promise<TopicIssues> {
+        // Ensure that we don't follow indirect HQ issues from other HQ issues.
+        let followHqIssue = true;
+        if (_.startsWith(issueNumber, '#')) {
+            issueNumber = issueNumber.substring(1);
+            followHqIssue = false;
+        }
+
         // We need to look both at the issue body itself and all comments to
         // get potential Front conversations as well as links to HQ.
         const getIssueAndComments = (issue: string, owner: string, repo: string, method: object) => {
@@ -460,10 +481,11 @@ export class NotifyBot extends ProcBot {
         const githubURL = `https://github.com`;
         const relatedIssues: string[] = [];
 
+        // Get local issues. Might include HQ issues.
         return getIssueAndComments(issueNumber, issueOwner, issueRepo,
         (issue: GithubApiTypes.Issue, comments: GithubApiTypes.IssueComment[]) => {
-            const hqRE = /connects[\s]+to[\s]+resin-io\/hq#([0-9]+)/i;
-            const hqRefs = _.flatMap(comments, (comment) => this.matchIssue(comment.body, hqRE));
+            const hqRefs = _.concat(_.flatMap(comments, (comment) => this.matchIssue(comment.body, HqRE)),
+                this.matchIssue(issue.body, HqRE));
 
             // Match any Front conversations or HQ ref issues.
             let frontTopics = matchfrontTopics(issue, comments);
@@ -473,9 +495,8 @@ export class NotifyBot extends ProcBot {
 
             // If we have any HQ refs, we need to now do the same thing
             // with those.
-            frontTopics = _.concat(frontTopics, this.matchIssue(issue.body, hqRE));
-            if (hqRefs.length > 0) {
-                return Promise.map(hqRefs, (hqRef) => {
+            if (!followHqIssue && (hqRefs.length > 0)) {
+                return Promise.mapSeries(hqRefs, (hqRef) => {
                     return getIssueAndComments(hqRef, HqOwner, HqRepo,
                         (hqIssue: GithubApiTypes.Issue, hqComments: GithubApiTypes.IssueComment[]) => {
                             const hqTopics = matchfrontTopics(hqIssue, hqComments);
@@ -610,26 +631,6 @@ export class NotifyBot extends ProcBot {
         }).then(_.flatten);
     }
 
-    // A paged call will continue to make calls to githubCall with incremented pages
-    // until the response is either an empty list or less than the max number of entries.
-    private pagedGithubCall(callData: GithubEmitRequestContext, maxEntries: number): Promise<any[]> {
-        let results: any = [];
-
-        const getPage = (page: number): Promise<any[]> => {
-            callData.data.page = page;
-            return this.emitterCall(this.githubEmitterName, callData).then((response: any[]) => {
-                results = results.concat(response);
-                if (response.length >= maxEntries) {
-                    return getPage(page + 1);
-                }
-
-                return results;
-            });
-        };
-
-        return getPage(0);
-    }
-
     private emitterCall(target: string, context: GithubEmitRequestContext | FrontEmitRequestContext): Promise<any> {
         const request: ServiceEmitRequest = {
             contexts: {},
@@ -667,7 +668,7 @@ export class NotifyBot extends ProcBot {
     }
 
     private reportError(error: NotifyBotError): void {
-        this.logger.alert(AlertLevel.ERROR, `${error.message}: ${error.owner}/${error.repo}`);
+        this.logger.alert(AlertLevel.ERROR, `${error.message}: ${error.owner}/${error.repo}, v: ${error.version}`);
     }
 }
 

@@ -141,6 +141,7 @@ export interface Tag {
 }
 
 export interface PullRequest {
+    body: string;
     head: {
         ref: string;
         repo: {
