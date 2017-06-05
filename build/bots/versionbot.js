@@ -134,10 +134,14 @@ class VersionBot extends procbot_1.ProcBot {
             });
         };
         this.checkVersioning = (_registration, event) => {
-            const pr = event.cookedEvent.data.pull_request;
-            const head = event.cookedEvent.data.pull_request.head;
+            const prEvent = event.cookedEvent.data;
+            const pr = prEvent.pull_request;
+            const head = pr.head;
             const owner = head.repo.owner.login;
             const name = head.repo.name;
+            const author = prEvent.sender.login;
+            let committer = author;
+            let lastCommit;
             if ((event.cookedEvent.data.action !== 'opened') && (event.cookedEvent.data.action !== 'synchronize') &&
                 (event.cookedEvent.data.action !== 'labeled')) {
                 return Promise.resolve();
@@ -166,6 +170,12 @@ class VersionBot extends procbot_1.ProcBot {
                         }
                     }
                 }
+                if (commits.length > 0) {
+                    lastCommit = commits[commits.length - 1];
+                    if (lastCommit.committer) {
+                        committer = lastCommit.committer.login;
+                    }
+                }
                 if (changetypeFound) {
                     return this.githubCall({
                         data: {
@@ -191,20 +201,43 @@ class VersionBot extends procbot_1.ProcBot {
                         state: 'failure'
                     },
                     method: this.githubApi.repos.createStatus,
-                }).then(() => {
-                    if (event.cookedEvent.data.action === 'opened') {
+                });
+            }).then(() => {
+                return this.checkStatuses(pr);
+            }).then((checkStatus) => {
+                if (checkStatus === StatusChecks.Failed) {
+                    const lastCommitTimestamp = Date.parse(lastCommit.commit.committer.date);
+                    return this.githubCall({
+                        data: {
+                            owner,
+                            repo: name,
+                            number: pr.number,
+                        },
+                        method: this.githubApi.issues.getComments
+                    }).then((comments) => {
+                        if (_.some(comments, (comment) => {
+                            return ((comment.user.type === 'Bot') &&
+                                (lastCommitTimestamp < Date.parse(comment.created_at)));
+                        })) {
+                            return Promise.resolve();
+                        }
+                        let warningUsers = '';
+                        warningUsers = `@${author}, `;
+                        if (author !== committer) {
+                            warningUsers += `@${committer}, `;
+                        }
                         return this.githubCall({
                             data: {
-                                body: `@${event.cookedEvent.data.sender.login}, please ensure that at least one commit ` +
-                                    'contains a `Change-Type:` tag.',
+                                body: `${warningUsers}status checks have failed for this PR. Please make appropriate ` +
+                                    'changes and recommit.',
                                 owner,
                                 number: pr.number,
                                 repo: name,
                             },
                             method: this.githubApi.issues.createComment,
                         });
-                    }
-                });
+                    });
+                }
             }).then(() => {
                 return this.githubCall({
                     data: {
@@ -216,18 +249,9 @@ class VersionBot extends procbot_1.ProcBot {
                 });
             }).then((labels) => {
                 if (_.some(labels, (label) => label.name === MergeLabel)) {
-                    return this.githubCall({
-                        data: {
-                            number: pr.number,
-                            owner,
-                            repo: name
-                        },
-                        method: this.githubApi.pullRequests.get
-                    }).then((mergePr) => {
-                        if (mergePr.state === 'open') {
-                            return this.finaliseMerge(event.cookedEvent.data, mergePr);
-                        }
-                    });
+                    if (pr.state === 'open') {
+                        return this.finaliseMerge(event.cookedEvent.data, pr);
+                    }
                 }
             }).catch((err) => {
                 this.reportError({
@@ -251,8 +275,7 @@ class VersionBot extends procbot_1.ProcBot {
             const repoFullName = `${owner}/${repo}`;
             let newVersion;
             let fullPath;
-            let branchName;
-            let prInfo;
+            let branchName = pr.head.ref;
             let botConfig;
             switch (cookedData.data.action) {
                 case 'submitted':
@@ -266,27 +289,16 @@ class VersionBot extends procbot_1.ProcBot {
                 `version up for ${owner}/${repo}#${pr.number}`);
             return this.getConfiguration(owner, repo).then((config) => {
                 botConfig = config;
-                return this.githubCall({
-                    data: {
-                        number: pr.number,
-                        owner,
-                        repo
-                    },
-                    method: this.githubApi.pullRequests.get
-                });
-            }).then((prData) => {
-                prInfo = prData;
-                branchName = prInfo.head.ref;
-                if (prInfo.mergeable !== true) {
+                if (pr.mergeable !== true) {
                     throw new Error('The branch cannot currently be merged into master. It has a state of: ' +
-                        `\`${prInfo.mergeable_state}\``);
+                        `\`${pr.mergeable_state}\``);
                 }
-                return this.checkStatuses(prInfo);
+                return this.checkStatuses(pr);
             }).then((checkStatus) => {
                 if ((checkStatus === StatusChecks.Failed) || (checkStatus === StatusChecks.Pending)) {
                     throw new Error('checksPendingOrFailed');
                 }
-                return this.getVersionBotCommits(prInfo);
+                return this.getVersionBotCommits(pr);
             }).then((commitMessage) => {
                 if (commitMessage) {
                     throw new Error(`alreadyCommitted`);
@@ -356,22 +368,9 @@ class VersionBot extends procbot_1.ProcBot {
                                 }
                                 return this.mergeToMaster({
                                     commitVersion: commitMessage,
-                                    owner,
-                                    prNumber: prInfo.number,
-                                    repoName: repo
+                                    pullRequest: prInfo
                                 });
                             }).then(() => {
-                                if (process.env.VERSIONBOT_FLOWDOCK_ROOM) {
-                                    const flowdockMessage = {
-                                        content: `${process.env.VERSIONBOT_NAME} has now merged the above PR, located ` +
-                                            `here: ${prInfo.html_url}.`,
-                                        from_address: process.env.VERSIONBOT_EMAIL,
-                                        roomId: process.env.VERSIONBOT_FLOWDOCK_ROOM,
-                                        source: process.env.VERSIONBOT_NAME,
-                                        subject: `${process.env.VERSIONBOT_NAME} merged ${owner}/${repo}#${prInfo.number}`
-                                    };
-                                    this.flowdockCall(flowdockMessage);
-                                }
                                 this.logger.log(logger_1.LogLevel.INFO, `MergePR: Merged ${owner}/${repo}#${prInfo.number}`);
                             }).catch((err) => {
                                 if (!_.startsWith(err.message, 'Required status check')) {
@@ -611,12 +610,16 @@ class VersionBot extends procbot_1.ProcBot {
         });
     }
     mergeToMaster(data) {
+        const pr = data.pullRequest;
+        const owner = pr.head.repo.owner.login;
+        const repo = pr.head.repo.name;
+        const prNumber = pr.number;
         return this.githubCall({
             data: {
-                commit_title: `Auto-merge for PR #${data.prNumber} via ${process.env.VERSIONBOT_NAME}`,
-                number: data.prNumber,
-                owner: data.owner,
-                repo: data.repoName
+                commit_title: `Auto-merge for PR #${prNumber} via ${process.env.VERSIONBOT_NAME}`,
+                number: prNumber,
+                owner,
+                repo
             },
             method: this.githubApi.pullRequests.merge
         }).then((mergedData) => {
@@ -624,8 +627,8 @@ class VersionBot extends procbot_1.ProcBot {
                 data: {
                     message: data.commitVersion,
                     object: mergedData.sha,
-                    owner: data.owner,
-                    repo: data.repoName,
+                    owner,
+                    repo,
                     tag: data.commitVersion,
                     tagger: {
                         email: process.env.VERSIONBOT_EMAIL,
@@ -638,9 +641,9 @@ class VersionBot extends procbot_1.ProcBot {
         }).then((newTag) => {
             return this.githubCall({
                 data: {
-                    owner: data.owner,
+                    owner,
                     ref: `refs/tags/${data.commitVersion}`,
-                    repo: data.repoName,
+                    repo,
                     sha: newTag.sha
                 },
                 method: this.githubApi.gitdata.createReference
@@ -649,28 +652,18 @@ class VersionBot extends procbot_1.ProcBot {
             return this.githubCall({
                 data: {
                     name: MergeLabel,
-                    number: data.prNumber,
-                    owner: data.owner,
-                    repo: data.repoName
+                    number: prNumber,
+                    owner,
+                    repo
                 },
                 method: this.githubApi.issues.removeLabel
             });
         }).then(() => {
             return this.githubCall({
                 data: {
-                    number: data.prNumber,
-                    owner: data.owner,
-                    repo: data.repoName
-                },
-                method: this.githubApi.pullRequests.get
-            });
-        }).then((prInfo) => {
-            const branchName = prInfo.head.ref;
-            return this.githubCall({
-                data: {
-                    owner: data.owner,
-                    ref: `heads/${branchName}`,
-                    repo: data.repoName
+                    owner,
+                    ref: `heads/${pr.head.ref}`,
+                    repo
                 },
                 method: this.githubApi.gitdata.deleteReference
             });
@@ -680,9 +673,9 @@ class VersionBot extends procbot_1.ProcBot {
             }
             return this.githubCall({
                 data: {
-                    number: data.prNumber,
-                    owner: data.owner,
-                    repo: data.repoName
+                    number: prNumber,
+                    owner,
+                    repo
                 },
                 method: this.githubApi.pullRequests.get
             }).then((mergePr) => {
@@ -806,17 +799,6 @@ class VersionBot extends procbot_1.ProcBot {
         });
     }
     reportError(error) {
-        if (process.env.VERSIONBOT_FLOWDOCK_ROOM) {
-            const flowdockMessage = {
-                content: error.message,
-                from_address: process.env.VERSIONBOT_EMAIL,
-                roomId: process.env.VERSIONBOT_FLOWDOCK_ROOM,
-                source: process.env.VERSIONBOT_NAME,
-                subject: error.brief,
-                tags: ['devops']
-            };
-            this.flowdockCall(flowdockMessage);
-        }
         this.githubCall({
             data: {
                 body: error.message,
@@ -838,19 +820,6 @@ class VersionBot extends procbot_1.ProcBot {
             if (data.err) {
                 const ghError = JSON.parse(data.err.message);
                 throw new Error(ghError.message);
-            }
-            return data.response;
-        });
-    }
-    flowdockCall(context) {
-        const request = {
-            contexts: {},
-            source: process.env.VERSIONBOT_NAME
-        };
-        request.contexts[this.flowdockEmitterName] = context;
-        return this.dispatchToEmitter(this.flowdockEmitterName, request).then((data) => {
-            if (data.err) {
-                throw data.err;
             }
             return data.response;
         });

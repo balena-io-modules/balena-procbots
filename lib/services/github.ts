@@ -196,6 +196,10 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 
     /**
      * Send data to Github.
+     * This method will automatically deal with paged requests. Should any passed data
+     * reference the `per_page` or `page` properties, these will be honoured, else page
+     * fetches will start at 0 with the default 30 entries per page
+     * Fetches will occur until there are no pages left to fetch.
      * @param data  A ServiceEmitRequest detailling the call to make and associated data.
      * @return      A ServiceEmitResponse comprised from the response from Github.
      */
@@ -204,8 +208,11 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
         const emitContext: ServiceEmitContext = _.pickBy(data.contexts, (_val, key) => {
             return key === this._serviceName;
         });
-        const githubContext: GithubEmitRequestContext = emitContext.github;
+        const githubContext: GithubEmitRequestContext = _.cloneDeep(emitContext.github);
         let retriesLeft = 3;
+        let returnArray: any = [];
+        let perPage = githubContext.data['per_page'] || 30;
+        let page = githubContext.data.page || 1;
 
         // We need a new Promise here, as we might need to do retries.
         const runApi = (): Promise<ServiceEmitResponse> => {
@@ -213,8 +220,39 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 
             // Run the method.
             return githubContext.method(githubContext.data).then((resData: any) => {
+                let response = resData;
+
+                // If the returned data is an array, check the number of results.
+                // If the same length as `per_page`, then ask for another one.
+                if (Array.isArray(resData)) {
+                    returnArray = _.concat(returnArray, resData);
+                    retriesLeft += 1;
+
+                    // If there weren't page details previously, we now need to apply them
+                    // to the next fetch.
+                    // Then increase page number.
+                    if (!githubContext.data.page) {
+                        githubContext.data.page = page;
+                    }
+                    if (!githubContext.data['per_page']) {
+                        githubContext.data['per_page'] = perPage;
+                    }
+                    githubContext.data.page++;
+
+                    // Check to see if the last set of results was less than `per_page`.
+                    // If not, get the next page.
+                    if (resData.length === perPage) {
+                        return runApi();
+                    }
+
+                    // Finally we filter for duplicates. We do this via URL.
+                    response = _.uniqBy(returnArray, 'url');
+                }
+
+                // Else if not an array (or less entries then `per_page` returned), just
+                // return the data.
                 return {
-                    response: resData,
+                    response,
                     source: this._serviceName
                 };
             }).catch((err: Error) => {

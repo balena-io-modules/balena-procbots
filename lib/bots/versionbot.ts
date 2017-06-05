@@ -26,7 +26,6 @@ import { cleanup, track } from 'temp';
 import * as GithubApiTypes from '../apis/githubapi-types';
 import { ProcBot } from '../framework/procbot';
 import { ProcBotConfiguration } from '../framework/procbot-types';
-import { FlowdockEmitRequestContext } from '../services/flowdock-types';
 import { GithubCookedData, GithubEmitRequestContext, GithubHandle,
     GithubRegistration } from '../services/github-types';
 import { ServiceEmitRequest, ServiceEmitResponse, ServiceEvent } from '../services/service-types';
@@ -70,9 +69,7 @@ interface VersionistData {
 
 interface MergeData {
     commitVersion: string;
-    owner: string;
-    prNumber: number;
-    repoName: string;
+    pullRequest: GithubApiTypes.PullRequest;
 }
 
 interface VersionBotError {
@@ -401,7 +398,8 @@ export class VersionBot extends ProcBot {
      * Checks the newly opened PR and its commits.
      * 1. Triggered by an 'opened', 'synchronize' or 'labeled' event.
      * 2. If any PR commit has a 'Change-Type: <type>' commit, we create a status approving the PR.
-     * 3. If no PR commit has a 'Change-Type: <type>' commit, we create a status failing the PR.
+     * 3. If no PR commit has a 'Change-Type: <type>' commit (or any other statuses have failed),
+     *    inform the author of the PR that changes are required (we only warn once per commit).
      * 4. If a version bump has occurred and everything is valid, merge the commit to `master`.
      *
      * @param _registration GithubRegistration object used to register the method
@@ -409,10 +407,14 @@ export class VersionBot extends ProcBot {
      * @returns             A void Promise once execution has finished.
      */
     protected checkVersioning = (_registration: GithubRegistration, event: ServiceEvent): Promise<void> => {
-        const pr = event.cookedEvent.data.pull_request;
-        const head = event.cookedEvent.data.pull_request.head;
+        const prEvent: GithubApiTypes.PullRequestEvent = event.cookedEvent.data;
+        const pr = prEvent.pull_request;
+        const head = pr.head;
         const owner = head.repo.owner.login;
         const name = head.repo.name;
+        const author = prEvent.sender.login;
+        let committer = author;
+        let lastCommit: GithubApiTypes.Commit;
 
         // Only for opened or synced actions.
         if ((event.cookedEvent.data.action !== 'opened') && (event.cookedEvent.data.action !== 'synchronize') &&
@@ -463,6 +465,12 @@ export class VersionBot extends ProcBot {
                     }
                 }
             }
+            if (commits.length > 0) {
+                lastCommit = commits[commits.length - 1];
+                if (lastCommit.committer) {
+                    committer = lastCommit.committer.login;
+                }
+            }
 
             // If we found a change-type message, then mark this commit as ok.
             if (changetypeFound) {
@@ -492,22 +500,55 @@ export class VersionBot extends ProcBot {
                     state: 'failure'
                 },
                 method: this.githubApi.repos.createStatus,
-            }).then(() => {
-                // We only complain on opening. Either at that point it'll be fixed, or we
-                // simply don't pass it in future. This stops the PR being spammed on status changes.
-                if (event.cookedEvent.data.action === 'opened') {
+            });
+        }).then(() => {
+            // Check statuses (including Versionist) on the PR.
+            return this.checkStatuses(pr);
+        }).then((checkStatus) => {
+            // If any of them fail (*not* pending), then *if* we haven't already
+            // commented (ie. we previously commented and there's been no commit
+            // since), we ping the author of the PR and whinge at them.
+            if (checkStatus === StatusChecks.Failed) {
+                // Get the last commit. If there have been no comments *since* the
+                // date of that commit, then we know that we can safely post a
+                // comment telling the author of a failure. If there has, then
+                // it's implicit that we made a comment.
+                const lastCommitTimestamp = Date.parse(lastCommit.commit.committer.date);
+                return this.githubCall({
+                    data: {
+                        owner,
+                        repo: name,
+                        number: pr.number,
+                    },
+                    method: this.githubApi.issues.getComments
+                }).then((comments: GithubApiTypes.Comment[]) => {
+                    // Check for any comments that come *after* the last commit
+                    // timestamp and is a Bot.
+                    if (_.some(comments, (comment) => {
+                        return ((comment.user.type === 'Bot') &&
+                            (lastCommitTimestamp < Date.parse(comment.created_at)));
+                    })) {
+                        return Promise.resolve();
+                    }
+
+                    // Now we ping the author, telling them something went wrong.
+                    let warningUsers = '';
+                    warningUsers = `@${author}, `;
+                    if (author !== committer) {
+                        warningUsers += `@${committer}, `;
+                    }
                     return this.githubCall({
                         data: {
-                            body: `@${event.cookedEvent.data.sender.login}, please ensure that at least one commit ` +
-                                'contains a `Change-Type:` tag.',
+                            body: `${warningUsers}status checks have failed for this PR. Please make appropriate `+
+                                'changes and recommit.',
                             owner,
                             number: pr.number,
                             repo: name,
                         },
                         method: this.githubApi.issues.createComment,
                     });
-                }
-            });
+                });
+            }
         }).then(() => {
             // Get the labels for the PR.
             return this.githubCall({
@@ -521,18 +562,9 @@ export class VersionBot extends ProcBot {
         }).then((labels: GithubApiTypes.IssueLabel[]) => {
             // If we don't have a relevant label for merging, we don't proceed.
             if (_.some(labels, (label) => label.name === MergeLabel)) {
-                return this.githubCall({
-                    data: {
-                        number: pr.number,
-                        owner,
-                        repo: name
-                    },
-                    method: this.githubApi.pullRequests.get
-                }).then((mergePr: GithubApiTypes.PullRequest) => {
-                    if (mergePr.state === 'open') {
-                        return this.finaliseMerge(event.cookedEvent.data, mergePr);
-                    }
-                });
+                if (pr.state === 'open') {
+                    return this.finaliseMerge(event.cookedEvent.data, pr);
+                }
             }
         }).catch((err: Error) => {
             // Call the VersionBot error specific method.
@@ -584,8 +616,7 @@ export class VersionBot extends ProcBot {
         const repoFullName = `${owner}/${repo}`;
         let newVersion: string;
         let fullPath: string;
-        let branchName: string;
-        let prInfo: GithubApiTypes.PullRequest;
+        let branchName = pr.head.ref;
         let botConfig: VersionBotConfiguration;
 
         // Check the action on the event to see what we're dealing with.
@@ -646,30 +677,16 @@ export class VersionBot extends ProcBot {
         return this.getConfiguration(owner, repo).then((config: VersionBotConfiguration) => {
             botConfig = config;
 
-            // Get the branch for this PR.
-            return this.githubCall({
-                data: {
-                    number: pr.number,
-                    owner,
-                    repo
-                },
-                method: this.githubApi.pullRequests.get
-            });
-        }).then((prData: GithubApiTypes.PullRequest) => {
-            // Get the relevant branch.
-            prInfo = prData;
-            branchName = prInfo.head.ref;
-
             // Check to ensure that the PR is actually mergeable. If it isn't, we report this as an
             // error, passing the state.
-            if (prInfo.mergeable !== true) {
+            if (pr.mergeable !== true) {
                 throw new Error('The branch cannot currently be merged into master. It has a state of: ' +
-                    `\`${prInfo.mergeable_state}\``);
+                    `\`${pr.mergeable_state}\``);
             }
 
             // Ensure that all the statuses required have passed.
             // If not, an error will be thrown and not proceed any further.
-            return this.checkStatuses(prInfo);
+            return this.checkStatuses(pr);
         }).then((checkStatus) => {
             // Finally we have an array of booleans. If any of them are false,
             // statuses aren't valid.
@@ -678,7 +695,7 @@ export class VersionBot extends ProcBot {
             }
 
             // Ensure we've not already committed. If we have, we don't wish to do so again.
-            return this.getVersionBotCommits(prInfo);
+            return this.getVersionBotCommits(pr);
         }).then((commitMessage: string | null) => {
             if (commitMessage) {
                 throw new Error(`alreadyCommitted`);
@@ -970,12 +987,17 @@ export class VersionBot extends ProcBot {
      * @returns     Promise that resolves when reference updates and merging has finalised.
      */
     private mergeToMaster(data: MergeData): Promise<void> {
+        const pr = data.pullRequest;
+        const owner = pr.head.repo.owner.login;
+        const repo = pr.head.repo.name;
+        const prNumber = pr.number;
+
         return this.githubCall({
             data: {
-                commit_title: `Auto-merge for PR #${data.prNumber} via ${process.env.VERSIONBOT_NAME}`,
-                number: data.prNumber,
-                owner: data.owner,
-                repo: data.repoName
+                commit_title: `Auto-merge for PR #${prNumber} via ${process.env.VERSIONBOT_NAME}`,
+                number: prNumber,
+                owner,
+                repo
             },
             method: this.githubApi.pullRequests.merge
         }).then((mergedData: GithubApiTypes.Merge) => {
@@ -985,8 +1007,8 @@ export class VersionBot extends ProcBot {
                 data: {
                     message: data.commitVersion,
                     object: mergedData.sha,
-                    owner: data.owner,
-                    repo: data.repoName,
+                    owner,
+                    repo,
                     tag: data.commitVersion,
                     tagger: {
                         email: process.env.VERSIONBOT_EMAIL,
@@ -1001,9 +1023,9 @@ export class VersionBot extends ProcBot {
             // Create a new reference based on it.
             return this.githubCall({
                 data: {
-                    owner: data.owner,
+                    owner,
                     ref: `refs/tags/${data.commitVersion}`,
-                    repo: data.repoName,
+                    repo,
                     sha: newTag.sha
                 },
                 method: this.githubApi.gitdata.createReference
@@ -1014,32 +1036,19 @@ export class VersionBot extends ProcBot {
             return this.githubCall({
                 data: {
                     name: MergeLabel,
-                    number: data.prNumber,
-                    owner: data.owner,
-                    repo: data.repoName
+                    number: prNumber,
+                    owner,
+                    repo
                 },
                 method: this.githubApi.issues.removeLabel
             });
         }).then(() => {
-            // Get the branch for this PR.
-            return this.githubCall({
-                data: {
-                    number: data.prNumber,
-                    owner: data.owner,
-                    repo: data.repoName
-                },
-                method: this.githubApi.pullRequests.get
-            });
-        }).then((prInfo: GithubApiTypes.PullRequest) => {
-            // Get the relevant branch.
-            const branchName = prInfo.head.ref;
-
             // Finally delete this branch.
             return this.githubCall({
                 data: {
-                    owner: data.owner,
-                    ref: `heads/${branchName}`,
-                    repo: data.repoName
+                    owner,
+                    ref: `heads/${pr.head.ref}`,
+                    repo
                 },
                 method: this.githubApi.gitdata.deleteReference
             });
@@ -1058,9 +1067,9 @@ export class VersionBot extends ProcBot {
             // flag regardless of why.
             return this.githubCall({
                 data: {
-                    number: data.prNumber,
-                    owner: data.owner,
-                    repo: data.repoName
+                    number: prNumber,
+                    owner,
+                    repo
                 },
                 method: this.githubApi.pullRequests.get
             }).then((mergePr: GithubApiTypes.PullRequest) => {
@@ -1227,24 +1236,10 @@ export class VersionBot extends ProcBot {
                             // We go ahead and merge.
                             return this.mergeToMaster({
                                 commitVersion: commitMessage,
-                                owner,
-                                prNumber: prInfo.number,
-                                repoName: repo
+                                pullRequest: prInfo
                             });
                         }).then(() => {
-                            // No tags here, just mention it in Flowdock so its searchable.
-                            // It's not an error so doesn't need logging.
-                            if (process.env.VERSIONBOT_FLOWDOCK_ROOM) {
-                                const flowdockMessage = {
-                                    content: `${process.env.VERSIONBOT_NAME} has now merged the above PR, located ` +
-                                        `here: ${prInfo.html_url}.`,
-                                    from_address: process.env.VERSIONBOT_EMAIL,
-                                    roomId: process.env.VERSIONBOT_FLOWDOCK_ROOM,
-                                    source: process.env.VERSIONBOT_NAME,
-                                    subject: `${process.env.VERSIONBOT_NAME} merged ${owner}/${repo}#${prInfo.number}`
-                                };
-                                this.flowdockCall(flowdockMessage);
-                            }
+                            // Report to console that we've merged.
                             this.logger.log(LogLevel.INFO, `MergePR: Merged ${owner}/${repo}#${prInfo.number}`);
                         }).catch((err: Error) => {
                             // It's possible in some cases that we have to wait for a service that doesn't actually
@@ -1338,27 +1333,11 @@ export class VersionBot extends ProcBot {
     }
 
     /**
-     * Reports an error to the console and Flowdock.
+     * Reports an error to the console and as a Github comment..
      *
      * @param error The error to report.
      */
     private reportError(error: VersionBotError): void {
-        // We create several reports from this error:
-        //  * Flowdock team inbox post in the relevant room
-        //  * Comment on the PR affected
-        //  * Local console log
-        if (process.env.VERSIONBOT_FLOWDOCK_ROOM) {
-            const flowdockMessage = {
-                content: error.message,
-                from_address: process.env.VERSIONBOT_EMAIL,
-                roomId: process.env.VERSIONBOT_FLOWDOCK_ROOM,
-                source: process.env.VERSIONBOT_NAME,
-                subject: error.brief,
-                tags: [ 'devops' ]
-            };
-            this.flowdockCall(flowdockMessage);
-        }
-
         // Post a comment to the relevant PR, also detailing the issue.
         this.githubCall({
             data: {
@@ -1392,28 +1371,6 @@ export class VersionBot extends ProcBot {
                 // Specifically throw the error message.
                 const ghError = JSON.parse(data.err.message);
                 throw new Error(ghError.message);
-            }
-
-            return data.response;
-        });
-    }
-
-    /**
-     * A utility method to simplify the calling of the Flowdock ServiceEmitter.
-     *
-     * @param context   The object containing details required by the ServiceEmitter.
-     * @returns         A Promise containing any data returned by the Flowdock service.
-     */
-    private flowdockCall(context: FlowdockEmitRequestContext): Promise<any> {
-        const request: ServiceEmitRequest = {
-            contexts: {},
-            source: process.env.VERSIONBOT_NAME
-        };
-        request.contexts[this.flowdockEmitterName] = context;
-
-        return this.dispatchToEmitter(this.flowdockEmitterName, request).then((data: ServiceEmitResponse) => {
-            if (data.err) {
-                throw data.err;
             }
 
             return data.response;

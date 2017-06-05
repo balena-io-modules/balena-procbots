@@ -165,13 +165,32 @@ class GithubService extends worker_client_1.WorkerClient {
         const emitContext = _.pickBy(data.contexts, (_val, key) => {
             return key === this._serviceName;
         });
-        const githubContext = emitContext.github;
+        const githubContext = _.cloneDeep(emitContext.github);
         let retriesLeft = 3;
+        let returnArray = [];
+        let perPage = githubContext.data['per_page'] || 30;
+        let page = githubContext.data.page || 1;
         const runApi = () => {
             retriesLeft -= 1;
             return githubContext.method(githubContext.data).then((resData) => {
+                let response = resData;
+                if (Array.isArray(resData)) {
+                    returnArray = _.concat(returnArray, resData);
+                    retriesLeft += 1;
+                    if (!githubContext.data.page) {
+                        githubContext.data.page = page;
+                    }
+                    if (!githubContext.data['per_page']) {
+                        githubContext.data['per_page'] = perPage;
+                    }
+                    githubContext.data.page++;
+                    if (resData.length === perPage) {
+                        return runApi();
+                    }
+                    response = _.uniqBy(returnArray, 'url');
+                }
                 return {
-                    response: resData,
+                    response,
                     source: this._serviceName
                 };
             }).catch((err) => {

@@ -316,7 +316,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/github.ts#L273">services/github.ts:273</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/github.ts#L311">services/github.ts:311</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -339,7 +339,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/github.ts#L265">services/github.ts:265</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/github.ts#L303">services/github.ts:303</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -365,7 +365,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/github.ts#L374">services/github.ts:374</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/github.ts#L412">services/github.ts:412</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -388,7 +388,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/github.ts#L284">services/github.ts:284</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/github.ts#L322">services/github.ts:322</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -519,12 +519,16 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/github.ts#L202">services/github.ts:202</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/github.ts#L206">services/github.ts:206</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
-									<p>Send data to Github.</p>
+									<p>Send data to Github.
+										This method will automatically deal with paged requests. Should any passed data
+										reference the <code>per_page</code> or <code>page</code> properties, these will be honoured, else page
+										fetches will start at 0 with the default 30 entries per page
+									Fetches will occur until there are no pages left to fetch.</p>
 								</div>
 							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -573,17 +577,20 @@
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_services_flowdock_.html">"services/flowdock"</a>
 					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_services_front_.html">"services/front"</a>
+					</li>
 					<li class="current tsd-kind-external-module">
 						<a href="../modules/_services_github_.html">"services/github"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="../modules/_services_message_service_.html">"services/message-<wbr>service"</a>
+						<a href="../modules/_services_messenger_.html">"services/messenger"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_services_messenger_types_.html">"services/messenger-<wbr>types"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_utils_logger_.html">"utils/logger"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="../modules/_utils_message_converters_.html">"utils/message-<wbr>converters"</a>
 					</li>
 				</ul>
 			</nav>

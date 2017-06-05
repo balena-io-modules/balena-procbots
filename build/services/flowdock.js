@@ -148,7 +148,6 @@ class FlowdockService extends messenger_1.Messenger {
                 if (matchingUsers.length === 1) {
                     return (matchingUsers[0].id);
                 }
-                return undefined;
             });
         };
         this.fetchFromSession = (path, search) => {

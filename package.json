@@ -70,6 +70,6 @@
     "request-promise": "^4.1.1",
     "rmdir": "^1.2.0",
     "temp": "^0.8.3",
-    "versionist": "^2.8.0"
+    "versionist": "^2.10.0"
   }
 }

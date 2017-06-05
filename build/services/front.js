@@ -200,7 +200,6 @@ class FrontService extends messenger_1.Messenger {
                 if (teammate) {
                     return teammate.id;
                 }
-                return undefined;
             });
         };
         this.findConversation = (subject, attemptsLeft = 10) => {
