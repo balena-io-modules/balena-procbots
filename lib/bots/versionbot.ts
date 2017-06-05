@@ -26,9 +26,8 @@ import { cleanup, track } from 'temp';
 import * as GithubApiTypes from '../apis/githubapi-types';
 import { ProcBot } from '../framework/procbot';
 import { ProcBotConfiguration } from '../framework/procbot-types';
-import { GithubError } from '../services/github';
 import { GithubCookedData, GithubHandle, GithubRegistration } from '../services/github-types';
-import { ServiceEvent } from '../services/service-types';
+import { ServiceEmitter, ServiceEvent } from '../services/service-types';
 import { AlertLevel, LogLevel } from '../utils/logger';
 
 // Exec technically has a binding because of it's Node typings, but promisify doesn't include
@@ -92,20 +91,26 @@ interface ExternalCommand {
     };
 }
 
+enum ReviewState {
+    Approved = 0,
+    ChangesRequired
+};
+
+interface ReviewerMap {
+    [name: string]: ReviewState;
+};
+
+const RepositoryFilePath = 'repository.yml';
+const ReviewerAddMessage = 'Please add yourselves as reviewers for this PR.';
+
 /** The VersionBot specific ProcBot Configuration structure. */
 interface VersionBotConfiguration extends ProcBotConfiguration {
-    /** ProcBot entry. */
-    procbot: {
-        /** VersionBot entry. */
-        versionbot: {
-            /** Minimum number of review approvals required to satisfy a review. */
-            minimum_approvals?: number;
-            /** A list of approves reviewers who count towards the minimum number of approvals. */
-            approved_reviewers?: string[];
-            /** A list of approved maintainers (who also count as approved reviewers). */
-            maintainers?: string[];
-        };
-    };
+    /** Minimum number of review approvals required to satisfy a review. */
+    minimum_approvals?: number;
+    /** A list of approved reviewers who count towards the minimum number of approvals. */
+    reviewers?: string[];
+    /** A list of approved maintainers (who also count as approved reviewers). */
+    maintainers?: string[];
 }
 
 /** Interface for storing the result of each status check required on a PR and it's state. */
@@ -143,10 +148,12 @@ const IgnoreLabel = 'procbots/versionbot/no-checks';
  * accordingly.
  */
 export class VersionBot extends ProcBot {
-    /** Github ServiceListener. */
+    /** Github ServiceListener name. */
     private githubListenerName: string;
-    /** Github ServiceEmitter. */
+    /** Github ServiceEmitter name. */
     private githubEmitterName: string;
+    /** Github ServiceEmitter name. */
+    private githubEmitter: ServiceEmitter;
     /** Instance of Github SDK API in use. */
     private githubApi: GithubApi;
 
@@ -194,10 +201,11 @@ export class VersionBot extends ProcBot {
             throw new Error("Couldn't create a Github emitter");
         }
         this.githubListenerName = ghListener.serviceName;
-        this.githubEmitterName = ghEmitter.serviceName;
+        this.githubEmitter = ghEmitter;
+        this.githubEmitterName = this.githubEmitter.serviceName;
 
         // Github API handle
-        this.githubApi = (<GithubHandle>ghEmitter.apiHandle).github;
+        this.githubApi = (<GithubHandle>this.githubEmitter.apiHandle).github;
         if (!this.githubApi) {
             throw new Error('No Github API instance found');
         }
@@ -214,15 +222,26 @@ export class VersionBot extends ProcBot {
             },
             {
                 events: [ 'pull_request', 'pull_request_review' ],
-                listenerMethod: this.mergePR,
-                name: 'CheckForReadyMergeState',
+                listenerMethod: this.checkReviewers,
+                name: 'CheckReviewerStatus',
                 suppressionLabels: [ IgnoreLabel ],
-                triggerLabels: [ MergeLabel ],
             },
             {
                 events: [ 'pull_request' ],
                 listenerMethod: this.checkWaffleFlow,
                 name: 'CheckForWaffleFlow',
+            },
+            {
+                events: [ 'pull_request' ],
+                listenerMethod: this.addReviewers,
+                name: 'AddMissingReviewers',
+            },
+            {
+                events: [ 'pull_request', 'pull_request_review' ],
+                listenerMethod: this.mergePR,
+                name: 'CheckForReadyMergeState',
+                suppressionLabels: [ IgnoreLabel ],
+                triggerLabels: [ MergeLabel ],
             },
             // Should a status change occur (Jenkins, VersionBot, etc. all succeed)
             // then check versioning and potentially go to a merge to master.
@@ -390,6 +409,228 @@ export class VersionBot extends ProcBot {
     }
 
     /**
+     * Checks a freshly opened PR to see if there are any configured reviewers and maintainers.
+     * Should any valid reviewers and maintainers not already be assigned as reviewers on the PR, then
+     * a comment is posted on the PR directly asking those user logins to add themselves.
+     *
+     * @param _registration GithubRegistration object used to register the method
+     * @param event         ServiceEvent containing the event information ('pull_request' event)
+     * @returns             A void Promise once execution has finished.
+     */
+    protected addReviewers = (_registration: GithubRegistration, event: ServiceEvent): Promise<void> => {
+        const pr = event.cookedEvent.data.pull_request;
+        const head = event.cookedEvent.data.pull_request.head;
+        const owner = head.repo.owner.login;
+        const repo = head.repo.name;
+        let approvedMaintainers: string[];
+        let approvedReviewers: string[];
+
+        // Only when opening a new PR.
+        console.log(event.cookedEvent.data.action);
+        if (event.cookedEvent.data.action !== 'opened') {
+            return Promise.resolve();
+        }
+
+        this.logger.log(LogLevel.INFO, `Checking reviewers list for ${owner}/${repo}#${pr.number}`);
+
+        // Get the reviewers for the PR.
+        return this.retrieveConfiguration({
+            emitter: this.githubEmitter,
+            location: {
+                owner,
+                repo,
+                path: RepositoryFilePath
+            }
+        }).then((config: VersionBotConfiguration) => {
+            approvedMaintainers = this.stripPRAuthor((config || {}).maintainers || null, pr) || [];
+            approvedReviewers = this.stripPRAuthor((config || {}).reviewers || null, pr) || [];
+
+            return this.dispatchToEmitter(this.githubEmitterName, {
+                data: {
+                    number: pr.number,
+                    owner,
+                    repo
+                },
+                method: this.githubApi.pullRequests.get
+            });
+        }).then((pullRequest: GithubApiTypes.PullRequest) => {
+            // Look at the reviewers, create a list of configured reviewers that were not added
+            // when the PR was opened.
+            const assignedReviewers = _.map(pullRequest.requested_reviewers, (reviewer) => reviewer.login);
+            const configuredReviewers = _.uniq(_.unionWith(approvedReviewers, approvedMaintainers));
+            let missingReviewers = _.filter(configuredReviewers, (reviewer) => {
+                return !(_.find(assignedReviewers, (assignedReviewer) => (assignedReviewer === reviewer)) ||
+                    (reviewer === pr.user.login));
+            });
+
+            // We don't assign the author as a reviewer, if they're in the list.
+            // An App has no ability to create a review request. The best we can do is to create a new
+            // comment pinging those missing in the list to add themselves.
+            if (missingReviewers.length > 0) {
+                let reviewerMessage = '';
+                _.each(missingReviewers, (reviewer) => {
+                    reviewerMessage += `@${reviewer}, `;
+                });
+                reviewerMessage += ReviewerAddMessage;
+
+                return this.dispatchToEmitter(this.githubEmitterName, {
+                    data: {
+                        owner,
+                        repo,
+                        number: pr.number,
+                        body: reviewerMessage
+                    },
+                    method: this.githubApi.issues.createComment
+                });
+            }
+        });
+    }
+
+    /**
+     * Checks to ensure that the minimum number of approvals for a PR occurs.
+     * Should the conditions be satisfied then a successful status is set, otherwise a failed
+     * state is set.
+     *
+     *
+     *
+     * @param _registration GithubRegistration object used to register the method
+     * @param event         ServiceEvent containing the event information ('pull_request' event)
+     * @returns             A void Promise once execution has finished.
+     */
+    protected checkReviewers = (_registration: GithubRegistration, event: ServiceEvent): Promise<void> => {
+        const pr = event.cookedEvent.data.pull_request;
+        const head = event.cookedEvent.data.pull_request.head;
+        const owner = head.repo.owner.login;
+        const repo = head.repo.name;
+        let botConfig: VersionBotConfiguration;
+
+        this.logger.log(LogLevel.INFO, `Checking reviewer conditions for${owner}/${repo}#${pr.number}`);
+
+        // Get the reviews for the PR.
+        return this.retrieveConfiguration({
+            emitter: this.githubEmitter,
+            location: {
+                owner,
+                repo,
+                path: RepositoryFilePath
+            }
+        }).then((config: VersionBotConfiguration) => {
+            botConfig = config;
+
+            return this.dispatchToEmitter(this.githubEmitterName, {
+                data: {
+                    number: pr.number,
+                    owner,
+                    repo
+                },
+                method: this.githubApi.pullRequests.getReviews
+            });
+        }).then((reviews: GithubApiTypes.Review[]) => {
+            // Zero is a falsey value, so we'll automatically catch that here.
+            const approvalsNeeded = (botConfig || {}).minimum_approvals || 1;
+            let approvedCount = 0;
+            let reviewers: ReviewerMap = {};
+            let status = '';
+            let approvedPR = false;
+            const approvedMaintainers = this.stripPRAuthor((botConfig || {}).maintainers || null, pr);
+            const approvedReviewers = this.stripPRAuthor((botConfig || {}).reviewers || null, pr);
+
+            // Sanity checks.
+            // If less than one approval is needed, then there's probably a configuration error
+            // we fail to review and report as an error.
+            if (approvalsNeeded < 1) {
+                return this.reportError({
+                    brief: 'Invalid number of approvals required',
+                    message: 'The number of approvals required to merge a PR is less than one. At least ' +
+                        `one approval is required. Please ask a maintainer to correct the \`minimum_approvals\` ` +
+                        `value in the config file (current value: ${approvalsNeeded})`,
+                    number: pr.number,
+                    owner,
+                    repo
+                });
+            }
+            // If the length of the unique list of maintainers and reviewers is less than
+            // the value of `approvalsNeeded`, then this is never going to work.
+            // We only need to test if the `approvedReviewers` list is present
+            if (approvedReviewers &&
+            (_.unionWith(approvedReviewers, approvedMaintainers || [], _.isEqual).length < approvalsNeeded)) {
+                // We can never reach the number of approvals required. Comment on PR.
+                return this.reportError({
+                    brief: 'Not enough reviewers for PR approval',
+                    message: 'The number of approved reviewers for the repository is less than the ' +
+                        `number of approvals that are required for the PR to be merged (${approvalsNeeded}).`,
+                    number: pr.number,
+                    owner,
+                    repo
+                });
+            }
+
+            // Cycle through reviews, ensure that any approved review occurred after any requiring changes.
+            // Use a map for reviewers, as we'll need to know if they
+            reviews.forEach((review: GithubApiTypes.Review) => {
+                const reviewer = review.user.login;
+                if (review.state === 'APPROVED') {
+                    reviewers[reviewer] = ReviewState.Approved;
+                } else if (review.state === 'CHANGES_REQUESTED') {
+                    reviewers[reviewer] = ReviewState.ChangesRequired;
+                }
+            });
+
+            // Filter any reviewers who are not in the approved reviewer list *or* in the maintainers
+            // list.
+            if (_.find(reviewers, (state) => state === ReviewState.ChangesRequired)) {
+                status = 'Changes have been requested by at least one reviewer';
+            } else {
+                let reviewersApproved: string[] = _.map(reviewers, (_val, key) => key);
+                let appendStatus = '';
+
+                if (approvedReviewers || approvedMaintainers) {
+                    if (approvedReviewers) {
+                        reviewersApproved = _.filter(reviewersApproved, (reviewer) => {
+                            if (approvedReviewers && _.find(approvedReviewers, (login) => login === reviewer) ||
+                            (approvedMaintainers && _.find(approvedMaintainers, (login) => login === reviewer))) {
+                                return true;
+                            }
+
+                            return false;
+                        });
+                    }
+                }
+
+                // The list of reviewers is now filtered to those who are allowed to review.
+                // If there is a list of maintainers, *at least one* needs to be in the list.
+                // Big caveat, if the PR author is a maintainer, then we are not bound by the
+                // rules. But they will need minimum approvals, and if there are two or more
+                // maintainers, then another maintainer must approve.
+                approvedCount = reviewersApproved.length;
+                if (approvedMaintainers) {
+                    if (_.intersection(reviewersApproved, approvedMaintainers).length < 1) {
+                        approvedCount = (approvedCount >= approvalsNeeded) ? (approvalsNeeded - 1) : approvedCount;
+                        appendStatus = ' - Maintainer approval required';
+                    }
+                }
+
+                status = `${approvedCount}/${approvalsNeeded} review approvals met${appendStatus}`;
+                approvedPR = (approvedCount >= approvalsNeeded) ? true : false;
+            }
+
+            // Finally set the reviewer status. This is a count of how many *valid* approved reviews have
+            // been seen against the number required.
+            return this.dispatchToEmitter(this.githubEmitterName, {
+                data: {
+                    context: 'VersionBot',
+                    description: status,
+                    owner: pr.head.repo.owner.login,
+                    repo: pr.head.repo.name,
+                    sha: pr.head.sha,
+                    state: approvedPR ? 'success' : 'failure'
+                },
+                method: this.githubApi.repos.createStatus
+            });
+        });
+    }
+
+    /**
      * Checks the newly opened PR and its commits.
      * 1. Triggered by an 'opened', 'synchronize' or 'labeled' event.
      * 2. If any PR commit has a 'Change-Type: <type>' commit, we create a status approving the PR.
@@ -519,9 +760,10 @@ export class VersionBot extends ProcBot {
                 }).then((comments: GithubApiTypes.Comment[]) => {
                     // Check for any comments that come *after* the last commit
                     // timestamp and is a Bot.
-                    if (_.some(comments, (comment) => {
+                    if (_.some(comments, (comment: GithubApiTypes.Comment) => {
                         return ((comment.user.type === 'Bot') &&
-                            (lastCommitTimestamp < Date.parse(comment.created_at)));
+                            (lastCommitTimestamp < Date.parse(comment.created_at)) &&
+                            !_.endsWith(comment.body, ReviewerAddMessage));
                     })) {
                         return Promise.resolve();
                     }
@@ -600,7 +842,7 @@ export class VersionBot extends ProcBot {
         //
         // We *only* go through with a merge should:
         //  * The 'procbots/versionbot/ready-to-merge' label appear on the PR issue
-        //  * There is an 'APPROVED' review comment *and* no comment after is of state 'CHANGES_REQUESTED'
+        //  * All required statuses have been successful.
         // The latter overrides the label should it exist, as it will be assumed it is in error.
         const cookedData: GithubCookedData = event.cookedEvent;
         const data: GenericPullRequestEvent = cookedData.data;
@@ -626,51 +868,28 @@ export class VersionBot extends ProcBot {
                 return Promise.resolve();
         }
 
-        this.logger.log(LogLevel.INFO, `Attempting merge for ${owner}/${repo}#${pr.number}`);
-
-        // There is currently an issue with the Github API where PR reviews cannot be retrieved
-        // for private repositories. This means we can't check to ensure an APPROVED review exists
-        // before attempting to merge. It has been agreed that, instead, we will await for the
-        // maintainer label to be applied instead.
-        // The below code needs reinstating once Github fix their API.
-        // There's an issue about this here: https://github.com/resin-io-modules/resin-procbots/issues/31
-        /*
-        // Get the reviews for the PR.
-        return this.gitCall(githubApi.pullRequests.getReviews, {
-            number: pr.number,
-            owner,
-            repo
-        }).then((reviews: GithubApiTypes.Review[]) => {
-            // Cycle through reviews, ensure that any approved review occurred after any requiring changes.
-            let approved = false;
-            if (reviews) {
-                reviews.forEach((review: GithubApiTypes.Review) => {
-                    if (review.state === 'APPROVED') {
-                        approved = true;
-                    } else if (review.state === 'CHANGES_REQUESTED') {
-                        approved = false;
-                    }
-                });
-            }
-
-            if (approved === false) {
-                this.log(ProcBot.LogLevel.INFO, `Unable to merge ${owner}/${repo}#${pr.number}, ` +
-                    'no approval comment');
-                return Promise.resolve();
-            }*/
-
-        // Actually generate a new version of a component:
-        // 1. Clone the repo
-        // 2. Checkout the appropriate branch given the PR number
-        // 3. Run `versionist`
-        // 4. Read the `CHANGELOG.md` (and any `package.json`, if present)
-        // 5. Base64 encode them
-        // 6. Call Github to update them, in serial, CHANGELOG last (important for merging expectations)
-        // 7. Finish
         this.logger.log(LogLevel.INFO, `PR is ready to merge, attempting to carry out a ` +
             `version up for ${owner}/${repo}#${pr.number}`);
-        return this.getConfiguration(owner, repo).then((config: VersionBotConfiguration) => {
+
+        // Get the reviews for the PR.
+        return this.retrieveConfiguration({
+            emitter: this.githubEmitter,
+            location: {
+                owner,
+                repo,
+                path: RepositoryFilePath
+            }
+        }).then((config: VersionBotConfiguration) => {
             botConfig = config;
+
+            // Actually generate a new version of a component:
+            // 1. Clone the repo
+            // 2. Checkout the appropriate branch given the PR number
+            // 3. Run `versionist`
+            // 4. Read the `CHANGELOG.md` (and any `package.json`, if present)
+            // 5. Base64 encode them
+            // 6. Call Github to update them, in serial, CHANGELOG last (important for merging expectations)
+            // 7. Finish
 
             // Check to ensure that the PR is actually mergeable. If it isn't, we report this as an
             // error, passing the state.
@@ -969,7 +1188,7 @@ export class VersionBot extends ProcBot {
                 return this.dispatchToEmitter(this.githubEmitterName, {
                     data: {
                         committer: {
-                            email: process.env.VERSIONBOT_EMAIL,
+                            email: 'versionbot@resin.io',
                             name: process.env.VERSIONBOT_NAME
                         },
                         message: `${repoData.version}`,
@@ -1029,7 +1248,7 @@ export class VersionBot extends ProcBot {
                     repo,
                     tag: data.commitVersion,
                     tagger: {
-                        email: process.env.VERSIONBOT_EMAIL,
+                        email: 'versionbot@resin.io',
                         name: process.env.VERSIONBOT_NAME
                     },
                     type: 'commit'
@@ -1243,7 +1462,14 @@ export class VersionBot extends ProcBot {
                     if (commitMessage) {
                         // Ensure that the labeler was authorised. We do this here, else we could
                         // end up spamming the PR with errors.
-                        return this.getConfiguration(owner, repo).then((config: VersionBotConfiguration) => {
+                        return this.retrieveConfiguration({
+                            emitter: this.githubEmitter,
+                            location: {
+                                owner,
+                                repo,
+                                path: RepositoryFilePath
+                            }
+                        }).then((config: VersionBotConfiguration) => {
                             // If this was a labeling action and there's a config, check to see if there's a maintainers
                             // list and ensure the labeler was on it.
                             // This throws an error if not.
@@ -1278,6 +1504,18 @@ export class VersionBot extends ProcBot {
     }
 
     /**
+     * Strip the PR author from a list of user login string.
+     *
+     * @param list          The array of user logins.
+     * @param pullRequest   The pull request to use as a base.
+     * @returns             An array containing stripped user logins, or null should there be no valid users.
+     */
+    private stripPRAuthor(list: string[] | null, pullRequest: GithubApiTypes.PullRequest): string[] | null {
+        const filteredList = (list) ? _.filter(list, (reviewer) => reviewer !== pullRequest.user.login) : null;
+        return (filteredList && (filteredList.length === 0)) ? null : filteredList;
+    }
+
+    /**
      * Ensures that the merge label was added by a valid maintainer, should a list exist in the repo configuration.
      *
      * @param config    The VersionBot configuration object.
@@ -1287,7 +1525,7 @@ export class VersionBot extends ProcBot {
     private checkValidMaintainer(config: VersionBotConfiguration, event: GithubApiTypes.PullRequestEvent): void {
         // If we have a list of valid maintainers, then we need to ensure that if the `ready-to-merge` label
         // was added, that it was by one of these maintainers.
-        const maintainers = (((config || {}).procbot || {}).versionbot || {}).maintainers;
+        const maintainers = (config || {}).maintainers;
         if (maintainers) {
             // Get the user who added the label.
             if (!_.includes(maintainers, event.sender.login)) {
@@ -1300,49 +1538,16 @@ export class VersionBot extends ProcBot {
     }
 
     /**
-     * Custom ProcBots configuration retrieval method.
-     * This implementation retrieves the configuration file from a '.procbots.yml' in the repo,
-     * should it exist.
-     *
-     * @param owner Owner of the repo.
-     * @param repo  The repo name.
-     * @returns     Promise containing the configuration, if found, or void if not.
-     */
-    private getConfiguration(owner: string, repo: string): Promise<VersionBotConfiguration | void> {
-        // Use the parent method to get the configuration via the GH emitter, but then
-        // return it so we can decode it before processing it.
-        return this.retrieveConfiguration(this.githubEmitterName, {
-                data: {
-                    owner,
-                    repo,
-                    path: '.procbots.yml'
-                },
-                method: this.githubApi.repos.getContent
-        }).then((configData: GithubApiTypes.Content) => {
-            // Github API docs state a blob will *always* be encoded base64...
-            if (configData.encoding !== 'base64') {
-                this.logger.log(LogLevel.WARN, `A config file exists for ${owner}/${repo} but is not ` +
-                    `Base64 encoded! Ignoring.`);
-                return;
-            }
-
-            return <VersionBotConfiguration>this.processConfiguration(Buffer.from(configData.content, 'base64')
-            .toString());
-        }).catch((err: GithubError) => {
-            if (err.message !== 'Not Found') {
-                throw err;
-            }
-        });
-    }
-
-    /**
      * Reports an error to the console and as a Github comment..
      *
      * @param error The error to report.
      */
-    private reportError(error: VersionBotError): void {
+    private reportError(error: VersionBotError): Promise<void> {
+        // Log to console.
+        this.logger.alert(AlertLevel.ERROR, error.message);
+
         // Post a comment to the relevant PR, also detailing the issue.
-        this.dispatchToEmitter(this.githubEmitterName, {
+        return this.dispatchToEmitter(this.githubEmitterName, {
             data: {
                 body: error.message,
                 number: error.number,
@@ -1351,9 +1556,6 @@ export class VersionBot extends ProcBot {
             },
             method: this.githubApi.issues.createComment
         });
-
-        // Log to console.
-        this.logger.alert(AlertLevel.ERROR, error.message);
     }
 }
 
@@ -1361,9 +1563,9 @@ export class VersionBot extends ProcBot {
  * Creates a new instance of the VersionBot client.
  */
 export function createBot(): VersionBot {
-    if (!(process.env.VERSIONBOT_NAME && process.env.VERSIONBOT_EMAIL && process.env.VERSIONBOT_INTEGRATION_ID &&
+    if (!(process.env.VERSIONBOT_NAME && process.env.VERSIONBOT_INTEGRATION_ID &&
     process.env.VERSIONBOT_PEM && process.env.VERSIONBOT_WEBHOOK_SECRET)) {
-        throw new Error(`'VERSIONBOT_NAME', 'VERSIONBOT_EMAIL', 'VERSIONBOT_INTEGRATION_ID', 'VERSIONBOT_PEM' and ` +
+        throw new Error(`'VERSIONBOT_NAME', 'VERSIONBOT_INTEGRATION_ID', 'VERSIONBOT_PEM' and ` +
             `'VERSIONBOT_WEBHOOK_SECRET environment variables need setting`);
     }
 

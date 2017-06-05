@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import { ServiceEmitter } from '../services/service-types';
+
 /** The ProcBotConfiguration interface holds per-bot configuration information. */
 export interface ProcBotConfiguration {
     procbot: {
@@ -23,4 +25,14 @@ export interface ProcBotConfiguration {
          */
         minimum_version?: number;
     };
+}
+
+/** Enables a Service to retrieve a ProcBotConfiguration specific to the service type. */
+export interface ConfigurationLocation {
+    /**
+     * An instance of the ServiceEmitter to use, or a string denoting an inbuilt service.
+     * 'FS' can be used to retrieve a file-based configuration file, using `location` as the relative path.
+    */
+    emitter: ServiceEmitter | string;
+    location: string | any;
 }

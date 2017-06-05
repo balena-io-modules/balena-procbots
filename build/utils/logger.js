@@ -16,8 +16,8 @@ var AlertLevel;
 ;
 class Logger {
     constructor() {
-        this._logLevel = process.env.PROCBOT_LOG_LEVEL || LogLevel.WARN;
-        this._alertLevel = process.env.PROCBOT_ALERT_LEVEL || AlertLevel.ERROR;
+        this._logLevel = _.parseInt(process.env.PROCBOT_LOG_LEVEL) || LogLevel.INFO;
+        this._alertLevel = _.parseInt(process.env.PROCBOT_ALERT_LEVEL) || AlertLevel.ERROR;
         this.logLevelStrings = [
             'WARNING',
             'INFO',
@@ -53,7 +53,7 @@ class Logger {
         this.output(level, this._alertLevel, this.alertLevelStrings, message);
     }
     output(level, classLevel, levelStrings, message) {
-        if (level >= classLevel) {
+        if (level <= classLevel) {
             console.log(`${new Date().toISOString()}: ${levelStrings[level]} - ${message}`);
         }
     }

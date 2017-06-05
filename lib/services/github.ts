@@ -24,10 +24,11 @@ import * as _ from 'lodash';
 import * as path from 'path';
 import * as request from 'request-promise';
 import TypedError = require('typed-error');
+import * as GithubApiTypes from '../apis/githubapi-types';
 import { Worker, WorkerEvent } from '../framework/worker';
 import { WorkerClient } from '../framework/worker-client';
 import { AlertLevel, Logger, LogLevel } from '../utils/logger';
-import { GithubConstructor, GithubEmitRequestContext, GithubHandle, GithubIntegration,
+import { GithubConfigLocation, GithubConstructor, GithubEmitRequestContext, GithubHandle, GithubIntegration,
     GithubListenerConstructor, GithubRegistration } from './github-types';
 import { ServiceEmitContext, ServiceEmitRequest, ServiceEmitResponse, ServiceEmitter,
     ServiceEvent, ServiceListener } from './service-types';
@@ -176,7 +177,7 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 
             // Listen for Webhooks on the path specified by the client.
             app.post(listenerConstructor.path, (req, res) => {
-                const eventType: string = req.get('x-github-event') || '';
+                const eventType = req.get('x-github-event') || '';
                 const githubSignature = req.get('x-hub-signature') || '';
                 const payload = req.body;
 
@@ -237,7 +238,7 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
         const githubContext: GithubEmitRequestContext = _.cloneDeep(emitContext.github);
         let retriesLeft = 3;
         let returnArray: any = [];
-        let perPage = githubContext.data['per_page'] || 30;
+        let perPage = Math.min(githubContext.data['per_page'], 100) || 30;
         let page = githubContext.data.page || 1;
 
         // We need a new Promise here, as we might need to do retries.
@@ -246,12 +247,11 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 
             // Run the method.
             return githubContext.method(githubContext.data).then((resData: any) => {
-                let response = resData;
-
+                let response = resData.data;
                 // If the returned data is an array, check the number of results.
                 // If the same length as `per_page`, then ask for another one.
-                if (Array.isArray(resData)) {
-                    returnArray = _.concat(returnArray, resData);
+                if (Array.isArray(response)) {
+                    returnArray = _.concat(returnArray, response);
                     retriesLeft += 1;
 
                     // If there weren't page details previously, we now need to apply them
@@ -267,12 +267,12 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 
                     // Check to see if the last set of results was less than `per_page`.
                     // If not, get the next page.
-                    if (resData.length === perPage) {
+                    if (response.length === perPage) {
                         return runApi();
                     }
 
                     // Finally we filter for duplicates. We do this via URL.
-                    response = _.uniqBy(returnArray, 'url');
+                    response = _.uniqBy(returnArray, 'id');
                 }
 
                 // Else if not an array (or less entries then `per_page` returned), just
@@ -331,6 +331,45 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
         return {
             github: this.githubApi
         };
+    }
+
+    public getConfigurationFile(details: GithubConfigLocation): Promise<string | void> {
+        // Use the parent method to get the configuration via the GH emitter, but then
+        // return it so we can decode it before processing it.
+        const owner = details.location.owner;
+        const repo = details.location.repo;
+        const path = details.location.path || '.procbots.yml';
+        return this.sendData({
+            source: this._serviceName,
+            contexts: {
+                github: {
+                    data: {
+                        owner,
+                        repo,
+                        path
+                    },
+                    method: this.githubApi.repos.getContent
+                }
+            }
+        }).then((data: ServiceEmitResponse) => {
+            if (data.err) {
+                throw data.err;
+            }
+
+            const configData: GithubApiTypes.Content = data.response;
+            // Github API docs state a blob will *always* be encoded base64...
+            if (configData.encoding !== 'base64') {
+                this.logger.log(LogLevel.WARN, `A config file exists for ${owner}/${repo} but is not ` +
+                    `Base64 encoded! Ignoring.`);
+                return;
+            }
+
+            return Buffer.from(configData.content, 'base64').toString();
+        }).catch((err: GithubError) => {
+            if (err.message !== 'Not Found') {
+                throw err;
+            }
+        });
     }
 
     /**
@@ -469,12 +508,14 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
                 type: 'token'
             });
 
+            this.logger.log(LogLevel.INFO, `Reauthenticated with Github. Will expire at ${tokenDetails.expires_at}`);
+
             // For debug.
-            this.logger.log(LogLevel.INFO, `token for manual fiddling is: ${tokenDetails.token}`);
-            this.logger.log(LogLevel.INFO, `token expires at: ${tokenDetails.expires_at}`);
-            this.logger.log(LogLevel.INFO, 'Base curl command:');
-            this.logger.log(LogLevel.INFO,
-                `curl -XGET -H "Authorisation: token ${tokenDetails.token}" ` +
+            this.logger.log(LogLevel.DEBUG, `token for manual fiddling is: ${tokenDetails.token}`);
+            this.logger.log(LogLevel.DEBUG, `token expires at: ${tokenDetails.expires_at}`);
+            this.logger.log(LogLevel.DEBUG, 'Base curl command:');
+            this.logger.log(LogLevel.DEBUG,
+                `curl -XGET -H "Authorization: token ${tokenDetails.token}" ` +
                 `-H "Accept: ${this.ghApiAccept}" https://api.github.com/`);
         });
     }

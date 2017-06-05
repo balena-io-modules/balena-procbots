@@ -16,6 +16,8 @@ limitations under the License.
 
 import * as Promise from 'bluebird';
 import TypedError = require('typed-error');
+import { ProcBot } from '../framework/procbot';
+import { ConfigurationLocation, ProcBotConfiguration } from '../framework/procbot-types';
 import { WorkerMethod } from '../framework/worker';
 
 /** A Service is either a Listener or an Emitter. */
@@ -131,7 +133,18 @@ export interface ServiceEmitter {
      * @returns     A promise with the response of the emit.
      */
     sendData: (data: ServiceEmitRequest) => Promise<ServiceEmitResponse>;
-
+    /**
+     * Retrieves a ProcBot configuration file that is specific to the service being used.
+     * A ServiceEmitter will define the required structure for locating the ProcBot configuration.
+     * @param data  A ConfigurationLocation detailing the location of the configuration file.
+     * @returns     Promise fulfilled containing the raw JSON of the configuration file, or void.
+     */
+    getConfigurationFile?: (data: ConfigurationLocation) => Promise<string | void>;
+    /**
+     * Transforms an error into a new type, given detailed knowledge about the returned error.
+     * @param error     The error without any formatting.
+     * @returns         The formatted error.
+     */
     transformError?: (error: TypedError) => TypedError;
 }
 

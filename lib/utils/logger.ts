@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+import * as _ from 'lodash';
 
 // This is class and not a module as it allows different clients to change their
 // log level without affecting the rest of the system.
@@ -56,8 +57,8 @@ export enum AlertLevel {
 export class Logger {
     // Log and Alert levels are taken from an envvar or set to the minimum.
     // These can be overriden by specific methods.
-    private _logLevel =  process.env.PROCBOT_LOG_LEVEL || LogLevel.WARN;
-    private _alertLevel = process.env.PROCBOT_ALERT_LEVEL || AlertLevel.ERROR;
+    private _logLevel = _.parseInt(process.env.PROCBOT_LOG_LEVEL) || LogLevel.INFO;
+    private _alertLevel = _.parseInt(process.env.PROCBOT_ALERT_LEVEL) || AlertLevel.ERROR;
 
     /** Strings prepended to logging output. */
     private logLevelStrings = [
@@ -131,7 +132,7 @@ export class Logger {
 
     // Generic output method for either type.
     private output(level: number, classLevel: number, levelStrings: string[], message: string): void {
-        if (level >= classLevel) {
+        if (level <= classLevel) {
             console.log(`${new Date().toISOString()}: ${levelStrings[level]} - ${message}`);
         }
     }

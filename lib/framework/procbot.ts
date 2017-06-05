@@ -22,7 +22,7 @@ import * as _ from 'lodash';
 import { ServiceEmitRequest, ServiceEmitResponse, ServiceEmitter, ServiceFactory,
     ServiceListener } from '../services/service-types';
 import { Logger } from '../utils/logger';
-import { ProcBotConfiguration } from './procbot-types';
+import { ConfigurationLocation, ProcBotConfiguration } from './procbot-types';
 const fsReadFile = Promise.promisify(FS.readFile);
 const exec: (command: string, options?: any) => Promise<{}> = Promise.promisify(ChildProcess.exec);
 
@@ -83,29 +83,26 @@ export class ProcBot {
     }
 
     /**
-     * Retrieve a configuration file.
-     * This default implementation assumes a pathname.
-     * @param source    The media where the configuration file resides.
-     * @param location  The media relative location of the file (eg. file path, HTTP URL, etc.)
-     * @return          The configuration object, service reponse or void should it fail.
+     * Retrieve a ProcBotConfiguration file from a ServiceEmitter or inbuilt route.
+     * @param details   An object detailing the service to retrieve the configuration file from, and its location.
+     * @return          A Promise containing configuration object should one have been found, or void.
      */
-    // We should really pass in string | ServiceEmitRequest, the FS module should be a type of emmitter.
-    protected retrieveConfiguration(source: string, location: string | any):
-    Promise<ProcBotConfiguration | any | void> {
-        // If the path is a string, then we simply try and get from the filesystem,
-        // else we try and get the emitter passed in to read it.
-        let retrievePromise: Promise<any>;
-        if (source === 'fs') {
-            retrievePromise = fsReadFile(<string>location).call('toString');
+    protected retrieveConfiguration(details: ConfigurationLocation): Promise<ProcBotConfiguration | void> {
+        let retrievePromise: Promise<string | void>;
+        if (typeof details.emitter === 'string') {
+            retrievePromise = fsReadFile(details.location).call('toString');
         } else {
-            retrievePromise = this.dispatchToEmitter(source, location);
-        }
-        return retrievePromise.then((contents) => {
-            if (source === 'fs') {
-                return this.processConfiguration(contents);
+            if (details.emitter.getConfigurationFile) {
+                retrievePromise = details.emitter.getConfigurationFile(details);
+            } else {
+                return Promise.resolve();
             }
+        }
 
-            return contents;
+        return retrievePromise.then((configFile: string | void) => {
+            if (configFile) {
+                return this.processConfiguration(configFile);
+            }
         });
     }
 
@@ -128,13 +125,11 @@ export class ProcBot {
         return listener;
     }
 
-    // Add a new emitter.
-    // If it already exists, we just ignore it.
     /**
      * Add a new type of ServiceEmitter to the client.
      * Should the ServiceEmitter already exist on the client, this will do nothing.
      * @param name  The name of the ServiceEmitter to add.
-     * @param data? Any relevant data required to construct the ServiceListener.
+     * @param data? Any relevant data required to construct the ServiceEmitter.
      * @return      The constructed ServiceEmitter or void should it already exist or fail.
      */
     protected addServiceEmitter(name: string, data?: any): ServiceEmitter | void {
