@@ -85,7 +85,9 @@ interface TopicIssues {
 
 const NotifyBotPort = 8399; // Not a listed registered port
 
-const ConnectRE = /connects-to:[\s]+(#[0-9]+)/i;
+// https://help.github.com/articles/closing-issues-via-commit-messages/
+// https://help.waffle.io/faq/waffle-workflow/use-waffles-connect-keyword-to-connect-prs-to-issues
+const IssueReferenceRE = /(?:close[sd]?:?|fix(?:e[sd]{1})?:?|resolve[sd]?:?|connect(?:s|ed)?[\s]+(?:to)?)[\s]+(#[0-9]+)/i;
 const HqRE = /hq:[\s]+https:\/\/github.com\/resin-io\/hq\/issues\/([0-9]+)/i;
 
 const KeyframeFile = 'keyframe.yml';
@@ -337,8 +339,8 @@ export class NotifyBot extends ProcBot {
                 (comments: GithubApiTypes.IssueComment[], pullRequest: GithubApiTypes.PullRequest) => {
                     // Find reference to parent issues. We should not have any
                     // Front conversations in a PR.
-                    return  _.concat(_.flatMap(comments, (comment) => this.matchIssue(comment.body, ConnectRE)),
-                        this.matchIssue(pullRequest.body, ConnectRE),
+                    return  _.concat(_.flatMap(comments, (comment) => this.matchIssue(comment.body, IssueReferenceRE)),
+                        this.matchIssue(pullRequest.body, IssueReferenceRE),
                         _.flatMap(comments, (comment) => this.matchIssue(comment.body, HqRE)),
                         this.matchIssue(pullRequest.body, HqRE));
                 }

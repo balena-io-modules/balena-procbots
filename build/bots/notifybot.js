@@ -6,7 +6,7 @@ const _ = require("lodash");
 const procbot_1 = require("../framework/procbot");
 const logger_1 = require("../utils/logger");
 const NotifyBotPort = 8399;
-const ConnectRE = /connects-to:[\s]+(#[0-9]+)/i;
+const IssueReferenceRE = /(?:close[sd]?:?|fix(?:e[sd]{1})?:?|resolve[sd]?:?|connect(?:s|ed)?[\s]+(?:to)?)[\s]+(#[0-9]+)/i;
 const HqRE = /hq:[\s]+https:\/\/github.com\/resin-io\/hq\/issues\/([0-9]+)/i;
 const KeyframeFile = 'keyframe.yml';
 const ChangelogFile = 'CHANGELOG.md';
@@ -169,7 +169,7 @@ class NotifyBot extends procbot_1.ProcBot {
                 data: prData,
                 method: this.githubApi.pullRequests.get
             }), (comments, pullRequest) => {
-                return _.concat(_.flatMap(comments, (comment) => this.matchIssue(comment.body, ConnectRE)), this.matchIssue(pullRequest.body, ConnectRE), _.flatMap(comments, (comment) => this.matchIssue(comment.body, HqRE)), this.matchIssue(pullRequest.body, HqRE));
+                return _.concat(_.flatMap(comments, (comment) => this.matchIssue(comment.body, IssueReferenceRE)), this.matchIssue(pullRequest.body, IssueReferenceRE), _.flatMap(comments, (comment) => this.matchIssue(comment.body, HqRE)), this.matchIssue(pullRequest.body, HqRE));
             }).then((issueNumbers) => {
                 return Promise.mapSeries(issueNumbers, (issueNumber) => {
                     let topicIssues;
