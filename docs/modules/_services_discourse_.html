@@ -91,21 +91,28 @@
 					<a name="createmessageservice" class="tsd-anchor"></a>
 					<h3>create<wbr>Message<wbr>Service</h3>
 					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-external-module">
-						<li class="tsd-signature tsd-kind-icon">create<wbr>Message<wbr>Service<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../classes/_services_message_service_.messageservice.html" class="tsd-signature-type">MessageService</a></li>
+						<li class="tsd-signature tsd-kind-icon">create<wbr>Message<wbr>Service<span class="tsd-signature-symbol">(</span>data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">DiscourseConstructor</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../classes/_services_messenger_.messenger.html" class="tsd-signature-type">Messenger</a></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/discourse.ts#L230">services/discourse.ts:230</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/discourse.ts#L265">services/discourse.ts:265</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
-									<p>Return this class typed as a messenger</p>
+									<p>Build this class, typed as a message service.</p>
 								</div>
 							</div>
-							<h4 class="tsd-returns-title">Returns <a href="../classes/_services_message_service_.messageservice.html" class="tsd-signature-type">MessageService</a></h4>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>data: <span class="tsd-signature-type">DiscourseConstructor</span></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <a href="../classes/_services_messenger_.messenger.html" class="tsd-signature-type">Messenger</a></h4>
+							<p>Message Service object, ready to convert events.</p>
 						</li>
 					</ul>
 				</section>
@@ -113,21 +120,28 @@
 					<a name="createserviceemitter" class="tsd-anchor"></a>
 					<h3>create<wbr>Service<wbr>Emitter</h3>
 					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-external-module">
-						<li class="tsd-signature tsd-kind-icon">create<wbr>Service<wbr>Emitter<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ServiceEmitter</span></li>
+						<li class="tsd-signature tsd-kind-icon">create<wbr>Service<wbr>Emitter<span class="tsd-signature-symbol">(</span>data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">DiscourseConstructor</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ServiceEmitter</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/discourse.ts#L223">services/discourse.ts:223</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/discourse.ts#L257">services/discourse.ts:257</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
-									<p>Return this class typed as an emitter</p>
+									<p>Build this class, typed as an emitter.</p>
 								</div>
 							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>data: <span class="tsd-signature-type">DiscourseConstructor</span></h5>
+								</li>
+							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">ServiceEmitter</span></h4>
+							<p>Service Emitter object, ready for your events.</p>
 						</li>
 					</ul>
 				</section>
@@ -135,21 +149,28 @@
 					<a name="createservicelistener" class="tsd-anchor"></a>
 					<h3>create<wbr>Service<wbr>Listener</h3>
 					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-external-module">
-						<li class="tsd-signature tsd-kind-icon">create<wbr>Service<wbr>Listener<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ServiceListener</span></li>
+						<li class="tsd-signature tsd-kind-icon">create<wbr>Service<wbr>Listener<span class="tsd-signature-symbol">(</span>data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">DiscourseConstructor</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ServiceListener</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/discourse.ts#L216">services/discourse.ts:216</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/discourse.ts#L249">services/discourse.ts:249</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
-									<p>Return this class activated and typed as a listener</p>
+									<p>Build this class, typed and activated as a listener.</p>
 								</div>
 							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>data: <span class="tsd-signature-type">DiscourseConstructor</span></h5>
+								</li>
+							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">ServiceListener</span></h4>
+							<p>Service Listener object, awakened and ready to go.</p>
 						</li>
 					</ul>
 				</section>
@@ -186,16 +207,19 @@
 						<a href="_services_flowdock_.html">"services/flowdock"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
+						<a href="_services_front_.html">"services/front"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
 						<a href="_services_github_.html">"services/github"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="_services_message_service_.html">"services/message-<wbr>service"</a>
+						<a href="_services_messenger_.html">"services/messenger"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="_services_messenger_types_.html">"services/messenger-<wbr>types"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="_utils_logger_.html">"utils/logger"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_utils_message_converters_.html">"utils/message-<wbr>converters"</a>
 					</li>
 				</ul>
 			</nav>

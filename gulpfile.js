@@ -40,7 +40,10 @@ gulp.task('tslint', () =>
 
 gulp.task('typedoc', () => {
     exec('`npm bin`/typedoc --name "Resin ProcBots" --module commonjs --target ES6 --excludeExternals ' +
-        '--externalPattern **/typings/*.d.ts --gitRevision master --media docresources --out docs/ lib/');
+        '--externalPattern **/typings/*.d.ts --gitRevision master --media docresources --out docs/ lib/', () => {
+            exec('touch docs/.nojekyll');
+        });
+
 });
 
 gulp.task('build', [ 'tslint', 'typescript', 'copydecs', 'typedoc' ]);

@@ -8,6 +8,7 @@
             "check-type"
         ],
         "only-arrow-functions": false,
+        "object-literal-sort-keys": false,
         "quotemark": [true, "single", "avoid-escape"],
         "no-var-requires": false,
         "no-console": false,

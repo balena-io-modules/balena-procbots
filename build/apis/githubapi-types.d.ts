@@ -20,20 +20,7 @@ limitations under the License.
 export interface PullRequestEvent {
     type: 'pull_request';
     action: string;
-    pull_request: {
-        number: number;
-        head: {
-            repo: {
-                name: string;
-                owner: {
-                    login: string;
-                }
-            };
-            sha: string;
-        };
-        html_url: string;
-        url: string;
-    };
+    pull_request: PullRequest;
     sender: {
         login: string;
     };
@@ -42,20 +29,7 @@ export interface PullRequestEvent {
 export interface PullRequestReviewEvent {
     type: 'pull_request_review';
     action: string;
-    pull_request: {
-        number: number;
-        head: {
-            repo: {
-                name: string;
-                owner: {
-                    login: string;
-                }
-            };
-            sha: string;
-        };
-        html_url: string;
-        url: string;
-    };
+    pull_request: PullRequest;
 }
 
 export interface StatusEventBranch {
@@ -78,16 +52,30 @@ export interface StatusEvent {
 
 // Github API -----------------------------------------------------------------
 // These provide the current bare minimum definitions for child Procbots working with them.
+export interface Comment {
+    body: string;
+    user: {
+        login: string;
+        type: string;
+    };
+    created_at: string;
+    updated_at: string;
+}
+
 export interface CommitFile {
     filename: string;
 }
 
 export interface Commit {
+    committer: {
+        login: string;
+    };
     commit: {
         committer: {
-            name: string
+            name: string;
+            date: string;
         }
-        message: string
+        message: string;
     };
     files: CommitFile[];
     sha: string;
