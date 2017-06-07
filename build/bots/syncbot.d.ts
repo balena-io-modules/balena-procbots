@@ -1,27 +1,22 @@
 import { ProcBot } from '../framework/procbot';
 export declare class SyncBot extends ProcBot {
     private messengers;
-    private rooms;
-    private genericAccounts;
-    private systemAccounts;
+    private hub;
     constructor(name?: string);
-    private register(from, to, type);
+    private register(from, to);
     private createRouter(from, to);
-    private handleThread(event);
-    private handleMessage(event);
     private handleError(error, event);
     private getMessageService(key, data?);
+    private getDataHub(key, data?);
     private createConnection(event, type);
-    private create(event, type);
+    private create(event);
     private logSuccess(event);
-    private logError(event, message?);
-    private searchPrivateExistingOrGeneric(event, type);
-    private searchPrivateOrGeneric(event, type);
-    private searchPairs(event, type);
-    private searchExisting(event, type);
-    private searchGeneric(event, type);
-    private searchSystem(event, type);
-    private searchHistory(event, type, attemptsLeft?);
-    private searchPrivate(event, type);
+    private logError(error, event);
+    private useHubOrGeneric(event, type);
+    private useProvided(event, type);
+    private useGeneric(event, type);
+    private useSystem(event, type);
+    private useConnected(event, type);
+    private useHub(event, type);
 }
 export declare function createBot(): SyncBot;

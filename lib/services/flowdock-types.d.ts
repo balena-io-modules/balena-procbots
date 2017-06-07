@@ -15,24 +15,36 @@ limitations under the License.
 */
 
 import { Session } from 'flowdock';
-import { ServiceAPIHandle, ServiceEmitContext } from './service-types';
+import { MessengerEmitContext } from './messenger-types';
+import { ServiceAPIHandle } from './service-types';
 
-export interface FlowdockMessageEmitContext extends ServiceEmitContext {
+export interface FlowdockMessagePayload {
     content: string;
-    event: 'message';
+    event: string;
     external_user_name?: string;
-    flow: string;
-    tags?: string[];
     thread_id?: string;
+    flow?: string;
 }
 
-export interface FlowdockEmitRequestContext {
+export interface FlowdockInboxPayload {
     content: string;
     from_address: string;
     source: string;
     subject: string;
     tags?: string[];
     roomId: string;
+}
+
+export interface FlowdockEmitContext extends MessengerEmitContext {
+    endpoint: {
+        token: string;
+        url: string;
+    };
+    meta?: {
+        flow: string;
+        org: string;
+    };
+    payload: FlowdockInboxPayload | FlowdockMessagePayload;
 }
 
 export interface FlowdockMessage {
@@ -43,4 +55,9 @@ export interface FlowdockMessage {
 /** The Flowdock API SDK handle type. */
 export interface FlowdockHandle extends ServiceAPIHandle {
     flowdock: Session;
+}
+
+export interface FlowdockConstructor {
+    organization: string;
+    token: string;
 }
