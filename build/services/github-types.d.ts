@@ -16,6 +16,7 @@ limitations under the License.
 
 import * as Promise from 'bluebird';
 import * as GithubApi from 'github';
+import TypedError = require('typed-error');
 import { ProcBotConfiguration } from '../framework/procbot-types';
 import { ServiceAPIHandle, ServiceEmitContext, ServiceEvent, ServiceListenerMethod, ServiceRegistration,
     ServiceType } from './service-types';
@@ -116,3 +117,10 @@ export interface GithubEmitRequestContext extends ServiceEmitContext {
     /** The data for the relevant method. */
     data: any;
 }
+
+/*declare class GithubError {
+    public message: string;
+    public documentationUrl: string;
+
+    constructor(error: any);
+}*/

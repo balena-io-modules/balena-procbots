@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 import * as Promise from 'bluebird';
+import TypedError = require('typed-error');
 import { WorkerMethod } from '../framework/worker';
 
 /** A Service is either a Listener or an Emitter. */
@@ -66,7 +67,7 @@ export interface ServiceEmitResponse extends ServiceData {
     /** The response data from the external service, if any. */
     response?: any;
     /** An error returned from the external service, if any. */
-    err?: Error;
+    err?: TypedError;
 }
 
 /**
@@ -130,6 +131,8 @@ export interface ServiceEmitter {
      * @returns     A promise with the response of the emit.
      */
     sendData: (data: ServiceEmitRequest) => Promise<ServiceEmitResponse>;
+
+    transformError?: (error: TypedError) => TypedError;
 }
 
 /** The ServiceFactory object allows the creation of a ServiceListener and/or ServiceEmitter. */

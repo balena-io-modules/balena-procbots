@@ -50,8 +50,6 @@ class ProcBot {
                 return this.processConfiguration(contents);
             }
             return contents;
-        }).catch(() => {
-            this.logger.log(logger_1.LogLevel.INFO, 'No config file was found');
         });
     }
     addServiceListener(name, data) {
@@ -91,17 +89,17 @@ class ProcBot {
         if (!emitInstance) {
             throw new Error(`${name} emitter is not attached`);
         }
-        const emitContext = _.pickBy(data.contexts, (_val, key) => {
-            return key === name;
+        const request = {
+            contexts: {},
+            source: this._botname
+        };
+        request.contexts[name] = data;
+        return emitInstance.sendData(request).then((result) => {
+            if (result.err) {
+                throw result.err;
+            }
+            return result.response;
         });
-        if (!emitContext) {
-            console.log('No emit context, fail');
-            return Promise.resolve({
-                err: new Error('No emitter context'),
-                source: name
-            });
-        }
-        return emitInstance.sendData(data);
     }
     getService(name) {
         const service = require(`../services/${name}`);

@@ -17,6 +17,7 @@
 import * as Promise from 'bluebird';
 import * as bodyParser from 'body-parser';
 import * as express from 'express';
+import TypedError = require('typed-error');
 import * as _ from 'lodash';
 import { Worker } from '../framework/worker';
 import { WorkerClient } from '../framework/worker-client';
@@ -262,7 +263,7 @@ export abstract class Messenger extends WorkerClient<string|null> implements Ser
         }
         // If this data has no task for us then no-op is the correct resolution
         return Promise.resolve({
-            err: new Error(`No ${this.serviceName} context`),
+            err: new TypedError(`No ${this.serviceName} context`),
             source: this.serviceName,
         });
     }
