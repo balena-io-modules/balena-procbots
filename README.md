@@ -167,11 +167,11 @@ procbot:
 
 ## Architecture
 
-[The full architecture documentation.](media/Architecture/procbot-architecture.md)
+[The full architecture documentation.](https://resin-io-modules.github.io/resin-procbots/media/Architecture/procbot-architecture.md)
 
 ## SyncBot
 
-* [SyncBot getting started for users.](media/SyncBot/syncbot-readme.md)
+* [SyncBot getting started for users.](https://resin-io-modules.github.io/resin-procbots/media/SyncBot/syncbot-readme.md)
 
 ## TBD
 
