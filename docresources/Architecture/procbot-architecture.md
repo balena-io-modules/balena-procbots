@@ -1,3 +1,5 @@
+---
+---
 # Introduction
 
 Several operations carried out by Resin.io are suitable for automatic execution based on, for example, repository changes. The implementation of these automated processes are from this point onwards referred to as 'Bots'. Some examples of bots include:
