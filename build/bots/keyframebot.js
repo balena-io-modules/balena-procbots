@@ -24,7 +24,7 @@ class VersionBot extends procbot_1.ProcBot {
                 type: 'integration'
             },
             path: '/keyframehooks',
-            port: 8080,
+            port: process.env.PORT || 7788,
             type: 'listener',
             webhookSecret: webhook
         });
