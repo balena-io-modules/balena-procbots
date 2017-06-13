@@ -6,6 +6,7 @@ import { ServiceEmitRequest, ServiceEmitResponse, ServiceEmitter, ServiceEvent, 
 export declare class GithubError extends TypeError {
     message: string;
     documentationUrl: string;
+    type: string;
     constructor(error: any);
 }
 export declare class GithubService extends WorkerClient<string> implements ServiceListener, ServiceEmitter {
