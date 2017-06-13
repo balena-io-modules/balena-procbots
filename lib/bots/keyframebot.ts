@@ -18,6 +18,7 @@ limitations under the License.
 // updates any packages for it.
 import * as Promise from 'bluebird';
 import * as GithubApi from 'github';
+import * as _ from 'lodash';
 import { ProcBot } from '../framework/procbot';
 import { ProcBotConfiguration } from '../framework/procbot-types';
 import { GithubCookedData, GithubHandle, GithubRegistration } from '../services/github-types';
@@ -35,8 +36,73 @@ export class VersionBot extends ProcBot {
     constructor(integration: number, name: string, pemString: string, webhook: string) {
         // This is the VersionBot.
         super(name);
-        this.logger.log(LogLevel.INFO, `Ping!`);
+        // Create a new listener for Github with the right Integration ID.
+        const ghListener = this.addServiceListener('github', {
+            client: name,
+            loginType: {
+                integrationId: integration,
+                pem: pemString,
+                type: 'integration'
+            },
+            path: '/keyframehooks',
+            port: 7788,
+            type: 'listener',
+            webhookSecret: webhook
+        });
+
+        // Create a new emitter with the right Integration ID.
+        const ghEmitter = this.addServiceEmitter('github', {
+            loginType: {
+                integrationId: integration,
+                pem: pemString,
+                type: 'integration'
+            },
+            pem: pemString,
+            type: 'emitter'
+        });
+
+        // Throw if we didn't get either of the services.
+        if (!ghListener) {
+            throw new Error("Couldn't create a Github listener");
+        }
+        if (!ghEmitter) {
+            throw new Error("Couldn't create a Github emitter");
+        }
+        this.githubListenerName = ghListener.serviceName;
+        this.githubEmitterName = ghEmitter.serviceName;
+
+        // Github API handle
+        this.githubApi = (<GithubHandle>ghEmitter.apiHandle).github;
+        if (!this.githubApi) {
+            throw new Error('No Github API instance found');
+        }
+
+        // We have two different WorkerMethods here:
+        // 1) Status checks on PR open and commits
+        // 2) PR review and label checks for merge
+        _.forEach([
+            {
+                events: [ 'pull_request' ],
+                listenerMethod: this.lintKeyframe,
+                name: 'LintProductKeyframe',
+            },
+        ], (reg: GithubRegistration) => {
+            ghListener.registerEvent(reg);
+        });
     }
+
+    protected lintKeyframe = (_registration: GithubRegistration, event: ServiceEvent): Promise<void> => {
+        const pr = event.cookedEvent.data.pull_request;
+        const head = event.cookedEvent.data.pull_request.head;
+        const owner = head.repo.owner.login;
+        const repo = head.repo.name;
+        const prNumber = pr.number;
+
+        this.logger.log(LogLevel.INFO, `Linting ${owner}/${repo}#${prNumber} keyframe for issues`);
+
+        return Promise.resolve();
+    }
+
 }
 
 /**
