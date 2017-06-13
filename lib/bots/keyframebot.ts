@@ -45,7 +45,7 @@ export class VersionBot extends ProcBot {
                 type: 'integration'
             },
             path: '/keyframehooks',
-            port: 7788,
+            port: 8080,
             type: 'listener',
             webhookSecret: webhook
         });
