@@ -170,9 +170,14 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
             }
 
             // Standard Express installation.
-            const app = express();
-            app.use(bodyParser.urlencoded({ extended: true }));
-            app.use(bodyParser.json());
+            let app: express.Application;
+            if (listenerConstructor.express) {
+                app = listenerConstructor.express;
+            } else {
+                app = express();
+                app.use(bodyParser.urlencoded({ extended: true }));
+                app.use(bodyParser.json());
+            }
 
             // Listen for Webhooks on the path specified by the client.
             app.post(listenerConstructor.path, (req, res) => {
@@ -203,11 +208,13 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
                 });
             });
 
-            // Listen on the specified port.
-            app.listen(listenerConstructor.port, () => {
-                this.logger.log(LogLevel.INFO, `---> ${listenerConstructor.client}: Listening Github Service on ` +
-                    `':${listenerConstructor.port}${listenerConstructor.path}'`);
-            });
+            if (!listenerConstructor.express) {
+                // Listen on the specified port.
+                app.listen(listenerConstructor.port, () => {
+                    this.logger.log(LogLevel.INFO, `---> ${listenerConstructor.client}: Listening Github Service on ` +
+                        `':${listenerConstructor.port}${listenerConstructor.path}'`);
+                });
+            }
         }
     }
 

@@ -114,6 +114,11 @@ export interface PullRequest {
         };
         sha: string;
     };
+    base: {
+        label: string;
+        ref: string;
+        sha: string;
+    };
     html_url: string;
     mergeable: boolean;
     mergeable_state: string;

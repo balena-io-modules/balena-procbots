@@ -16,6 +16,7 @@ limitations under the License.
 
 import * as Promise from 'bluebird';
 import * as GithubApi from 'github';
+import * as express from 'express';
 import TypedError = require('typed-error');
 import { ProcBotConfiguration } from '../framework/procbot-types';
 import { ServiceAPIHandle, ServiceEmitContext, ServiceEvent, ServiceListenerMethod, ServiceRegistration,
@@ -62,6 +63,8 @@ export interface GithubListenerConstructor extends GithubConstructor {
     port: number;
     /** Github Webhook secret string for the Integration, authenticating events sent by Github. */
     webhookSecret: string;
+    /** Existing express instance to use.*/
+    express?: express.Application;
 }
 
 /** The GithubHandle extends the normal ServiceAPIHandle to include the Github API instance. */

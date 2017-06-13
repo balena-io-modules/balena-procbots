@@ -143,9 +143,15 @@ class GithubService extends worker_client_1.WorkerClient {
                 }
                 return false;
             }
-            const app = express();
-            app.use(bodyParser.urlencoded({ extended: true }));
-            app.use(bodyParser.json());
+            let app;
+            if (listenerConstructor.express) {
+                app = listenerConstructor.express;
+            }
+            else {
+                app = express();
+                app.use(bodyParser.urlencoded({ extended: true }));
+                app.use(bodyParser.json());
+            }
             app.post(listenerConstructor.path, (req, res) => {
                 const eventType = req.get('x-github-event');
                 const payload = req.body;
@@ -167,10 +173,12 @@ class GithubService extends worker_client_1.WorkerClient {
                     workerMethod: this.handleGithubEvent
                 });
             });
-            app.listen(listenerConstructor.port, () => {
-                this.logger.log(logger_1.LogLevel.INFO, `---> ${listenerConstructor.client}: Listening Github Service on ` +
-                    `':${listenerConstructor.port}${listenerConstructor.path}'`);
-            });
+            if (!listenerConstructor.express) {
+                app.listen(listenerConstructor.port, () => {
+                    this.logger.log(logger_1.LogLevel.INFO, `---> ${listenerConstructor.client}: Listening Github Service on ` +
+                        `':${listenerConstructor.port}${listenerConstructor.path}'`);
+                });
+            }
         }
     }
     registerEvent(registration) {

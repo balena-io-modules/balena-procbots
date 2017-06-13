@@ -68,6 +68,7 @@
     "node-getopt": "^0.2.3",
     "request": "^2.79.0",
     "request-promise": "^4.1.1",
+    "resin-sdk": "^6.4.1",
     "rmdir": "^1.2.0",
     "temp": "^0.8.3",
     "typed-error": "^1.0.1",
