@@ -46,14 +46,16 @@ if (opt.options['help'] || Object.keys(opt.options).length === 0) {
 logger.log(LogLevel.INFO, `---> ${process.env.npm_package_name}, Version ${process.env.npm_package_version} <---`);
 
 // Create Ping server.
+/*
 const app = express();
 app.get('/ping', (_req: any, res: any) => {
     res.send('OK');
 });
+
 app.listen(8080, () => {
     logger.log(LogLevel.INFO, `---> Started 'ping' service on port 8080`);
 });
-
+*/
 // Import any specified bots. These will all listen for webhooks.
 let botRegistry: ProcBot[] = [];
 for (let bot of opt.options['bot-names']) {

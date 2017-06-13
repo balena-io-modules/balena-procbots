@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const express = require("express");
 const Opts = require("node-getopt");
 const logger_1 = require("./utils/logger");
 const getopt = new Opts([
@@ -18,13 +17,6 @@ if (opt.options['help'] || Object.keys(opt.options).length === 0) {
     process.exit(0);
 }
 logger.log(logger_1.LogLevel.INFO, `---> ${process.env.npm_package_name}, Version ${process.env.npm_package_version} <---`);
-const app = express();
-app.get('/ping', (_req, res) => {
-    res.send('OK');
-});
-app.listen(8080, () => {
-    logger.log(logger_1.LogLevel.INFO, `---> Started 'ping' service on port 8080`);
-});
 let botRegistry = [];
 for (let bot of opt.options['bot-names']) {
     try {
