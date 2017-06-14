@@ -14,22 +14,30 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// VersionBot listens for merges of a PR to the `master` branch and then
-// updates any packages for it.
 import * as Promise from 'bluebird';
 import * as bodyParser from 'body-parser';
+import * as ChildProcess from 'child_process';
 import * as express from 'express';
+import * as FS from 'fs';
 import * as GithubApi from 'github';
 import * as _ from 'lodash';
+import * as path from 'path';
+import { cleanup, track } from 'temp';
 import * as GithubApiTypes from '../apis/githubapi-types';
 import { ProcBot } from '../framework/procbot';
 import { ProcBotConfiguration } from '../framework/procbot-types';
 import { GithubCookedData, GithubHandle, GithubRegistration } from '../services/github-types';
 import { ServiceEvent } from '../services/service-types';
 import { AlertLevel, LogLevel } from '../utils/logger';
+import * as keyframeControl from 'keyfctl';
 
 const resin = require('resin-sdk')();
 const jwtDecode = require('jwt-decode');
+
+const exec: (command: string, options?: any) => Promise<{}> = Promise.promisify(ChildProcess.exec);
+const tempMkdir = Promise.promisify(track().mkdir);
+const tempCleanup = Promise.promisify(cleanup);
+const fsFileExists = Promise.promisify(FS.stat);
 
 interface KeyframeBotError {
     brief: string;
@@ -37,6 +45,11 @@ interface KeyframeBotError {
     number: number;
     owner: string;
     repo: string;
+}
+
+interface FSError {
+    code: string;
+    message: string;
 }
 
 type Environment = 'staging' | 'production';
@@ -48,7 +61,7 @@ interface KeyframeDetails  {
 
 const DeployKeyframePath = '/deploykeyframe';
 
-export class VersionBot extends ProcBot {
+export class KeyframeBot extends ProcBot {
     /** Github ServiceListener. */
     private githubListenerName: string;
     /** Github ServiceEmitter. */
@@ -135,72 +148,76 @@ export class VersionBot extends ProcBot {
     }
 
     protected lintKeyframe = (_registration: GithubRegistration, event: ServiceEvent): Promise<void> => {
-        const pr: GithubApiTypes.PullRequest = event.cookedEvent.data.pull_request;
-        const head = event.cookedEvent.data.pull_request.head;
+        const cookedEvent: GithubCookedData = event.cookedEvent;
+        const pr: GithubApiTypes.PullRequest = cookedEvent.data.pull_request;
+        const head = cookedEvent.data.pull_request.head;
         const owner = head.repo.owner.login;
         const repo = head.repo.name;
         const prNumber = pr.number;
+        let branchName = pr.head.ref;
+        const authToken = cookedEvent.githubAuthToken;
+        let fullPath = '';
+        const cliCommand = (command: string) => {
+            return exec(command, { cwd: fullPath });
+        };
 
         this.logger.log(LogLevel.INFO, `Linting ${owner}/${repo}#${prNumber} keyframe for issues`);
 
-        // Get the keyframe from the current root.
-        return this.dispatchToEmitter(this.githubEmitterName, {
-            data: {
-                owner,
-                repo,
-                path: 'index.js',
-                ref: pr.head.ref
-            },
-            method: this.githubApi.repos.getContent
-        }).then((keyframeEncoded: GithubApiTypes.Content) => {
-            if (keyframeEncoded.encoding !== 'base64') {
-                this.reportError({
-                    brief: `${process.env.KEYFRAMEBOT_NAME} Keyframe encoding error in ${owner}/${repo}#${pr.number}`,
-                    message: `${process.env.KEYFRAMEBOT_NAME} failed to decode the Keyframe.`,
-                    number: pr.number,
-                    owner,
-                    repo
-                });
-            }
+        // Create a new temporary directory for the repo holding the keyframe.
+        return tempMkdir(`${repo}-${pr.number}_`).then((tempDir: string) => {
+            fullPath = `${tempDir}${path.sep}`;
 
-            // Decode the keyframe ready to pass into keyfctl.
-            const keyframe = Buffer.from(keyframeEncoded.content, 'base64').toString();
-
+            return Promise.mapSeries([
+                `git clone https://${authToken}:${authToken}@github.com/${owner}/${repo} ${fullPath}`,
+                `git checkout ${branchName}`
+            ], cliCommand);
+        }).then(() => {
             // Lint the keyframe
             // For this we need the base SHA and the last commit SHA for the PR.
             const baseSHA = pr.base.sha;
             const headSHA = pr.head.sha;
+            return keyframeControl.lint(baseSHA, headSHA, fullPath);
+        }).then((lintResults: keyframeControl.LintResponse) => {
+            let lintMessage = "Keyframe linted successfully";
+            let commentPromise = Promise.resolve();
 
-            // Now call keyfctl to lint it.
-            // Currently use keyfctl/linter branch.
-            /* We get back an array of Service class objects, where a Service looks like this:
-                Service {
-                    errors: [],
-                    _revision: 'HEAD',
-                    _name: 'registry2',
-                    version: 'v1.3.1',
-                    image: 'resin/resin-registry2:v1.3.1',
-                    target: 'fleet',
-                    valid: true,
-                    action: 'create service registry2 at v1.3.1'
-                }
-            */
-            return Promise.resolve('updated keyframe data...');
-        }).then((keyframeChanges: string) => {
-            // This isn't a string, it's a keyfctl object from above.
-            console.log(keyframeChanges);
-            // We take the new keyframe changes and display them in the PR.
-            console.log(`${owner}/${repo}#${prNumber}`);
-            return this.dispatchToEmitter(this.githubEmitterName, {
-                data: {
-                    owner,
-                    repo,
-                    number: prNumber,
-                    body: `This keyframe will make the following changes:\n${keyframeChanges}`
-                },
-                method: this.githubApi.issues.createComment
+            // Change status depending on lint.
+            if (!lintResults.valid) {
+                lintMessage = "Keyframe linting failed";
+
+                // We get array of arrays atm, not sure why.
+                const flattenedErrors = _.flatten(lintResults.messages);
+                let errorMessage = 'The following errors occurred whilst linting the `Keyframe.yml` file:\n';
+                // Comment on the PR so that the author knows why the lint failed.
+                _.each(flattenedErrors, (error: keyframeControl.LintError) => {
+                    errorMessage += `${error.message} at line ${error.parsedLine}: ${error.snippet}\n`;
+                });
+
+                commentPromise = this.dispatchToEmitter(this.githubEmitterName, {
+                    data: {
+                        body: errorMessage,
+                        owner,
+                        repo,
+                        number: prNumber,
+                    },
+                    method: this.githubApi.issues.createComment,
+                });
+
+            }
+            return commentPromise.then(() => {
+                return this.dispatchToEmitter(this.githubEmitterName, {
+                    data: {
+                        context: 'KeyframeBot',
+                        description: lintMessage,
+                        owner,
+                        repo,
+                        sha: head.sha,
+                        state: (lintResults.valid) ? 'success' : 'failure'
+                    },
+                    method: this.githubApi.repos.createStatus,
+                });
             });
-        });
+        }).finally(tempCleanup);
     }
 
     private deployKeyframe = (req: express.Request, res: express.Response): void => {
@@ -285,15 +302,15 @@ export class VersionBot extends ProcBot {
 }
 
 /**
- * Creates a new instance of the VersionBot client.
+ * Creates a new instance of the KeyframeBot client.
  */
-export function createBot(): VersionBot {
+export function createBot(): KeyframeBot {
     if (!(process.env.KEYFRAMEBOT_NAME && process.env.KEYFRAMEBOT_INTEGRATION_ID &&
     process.env.KEYFRAMEBOT_PEM && process.env.KEYFRAMEBOT_WEBHOOK_SECRET)) {
         throw new Error(`'KEYFRAMEBOT_NAME', 'KEYFRAMEBOT_INTEGRATION_ID', 'KEYFRAMEBOT_PEM' and ` +
             `'KEYFRAMEBOT_WEBHOOK_SECRET environment variables need setting`);
     }
 
-    return new VersionBot(process.env.KEYFRAMEBOT_INTEGRATION_ID, process.env.KEYFRAMEBOT_NAME,
+    return new KeyframeBot(process.env.KEYFRAMEBOT_INTEGRATION_ID, process.env.KEYFRAMEBOT_NAME,
     process.env.KEYFRAMEBOT_PEM, process.env.KEYFRAMEBOT_WEBHOOK_SECRET);
 }

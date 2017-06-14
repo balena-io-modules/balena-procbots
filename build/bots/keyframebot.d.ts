@@ -2,7 +2,7 @@ import * as Promise from 'bluebird';
 import { ProcBot } from '../framework/procbot';
 import { GithubRegistration } from '../services/github-types';
 import { ServiceEvent } from '../services/service-types';
-export declare class VersionBot extends ProcBot {
+export declare class KeyframeBot extends ProcBot {
     private githubListenerName;
     private githubEmitterName;
     private githubApi;
@@ -12,4 +12,4 @@ export declare class VersionBot extends ProcBot {
     private deployKeyframe;
     private reportError(error);
 }
-export declare function createBot(): VersionBot;
+export declare function createBot(): KeyframeBot;
