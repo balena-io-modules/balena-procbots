@@ -2,10 +2,120 @@
 
 A little Bot, using the ProcBot framework, that links communication services
 
-## Main Configuration
+## Process
 
+### Each event
+
+1) Listener receives an event
+1) SyncBot routes the event
+   1) Listener transforms the event into a message
+   1) SyncBot gathers information for the message transmission
+      1) Asks the Listener if there's a connected thread
+      1) Username is copied from the existing message details
+      1) Finds a token
+         1) in the 1-1 history with the user on the hub service
+         1) in the configuration otherwise, for the public posting
+   1) Emitter transforms the message into a payload
+1) Emitter emits the payload
+1) SyncBot deals with aftermath
+    1) Connects newly created threads
+       1) SyncBot generates special connection messages
+       1) Conversion to payload and emission happen as normal
+    1) Logs the success to the console
+    1) Reports any errors to the originating thread
+
+### Specific details
+
+#### Front receives an event
+
+The Front service is configured to send events from the configured inboxes
+via webhook.  These events are then added to the queue for their thread.
+
+#### Front transforms the event into a message
+
+The Front adapter gathers the full event, calculates whether it's the first in
+a thread and which inbox it happened in, bundling this into a generic format.
+
+#### Front transforms the message into a payload
+
+The Front adapter builds a new conversation, message or comment payload,
+depending on what it is given.
+
+#### Front emits the payload
+
+The Front adapter passes to the Front API the payload and passes back some
+basic details.
+
+#### Discourse receives an event
+
+The Discourse service is configured to send events from the configured
+categories via webhook.  These events are then added to the queue for their
+topic.
+
+#### Discourse transforms the event into a message
+
+The Discourse adapter gathers more complete topic and post information,
+bundling this into a generic format.
+
+#### Discourse transforms the message into a payload
+
+The Discourse adapter builds a new topic or post payload, depending on what it
+is given.
+
+#### Discourse emits the payload
+
+The Discourse adapter passes to the Discourse API the payload and passes back
+some basic details.
+
+#### Flowdock receives an event
+
+A Flowdock session is bought online when SyncBot starts, connects to the
+configured rooms and puts any events on the queue for their thread.
+
+#### Flowdock transforms the event into a message
+
+The Flowdock adapter gathers details of the username, and alongside the decent
+details Flowdock provides to the connection bundles it into a generic format
+
+#### Flowdock transforms the message into a payload
+
+The Flowdock adapter creates a new message payload.  This is actually fairly
+simple because one object structure supports all of our purposes.
+
+#### Flowdock emits the payload
+
+The Flowdock adapter passes to the Front API the payload and passes back some
+basic details
+
+#### Listener is quizzed for connected thread
+
+The listener looks back through the message history for a message that matches
+"Connects to {service} thread blah" and returns the blah
+
+#### Username is copied from the existing message details
+
+At this stage usernames across services must match.  This is so that SyncBot
+knows which user's 1-1 history to search for details.  In future this could
+become configurable, in a similar way to flows.
+
+#### Flowdock is quizzed for token
+
+Flowdock will search the 1-1 history of a user for a phrase that matches "My
+{service} token is blah", returning blah
+
+#### Error reporting
+
+Errors, where possible, are reported in the originating thread as whispers.
+
+## Configuration
+
+### Main Configuration
+
+* Flows
+  * Forums:Troubleshooting - Flowdock:public/s/community - Front:support/community
+  * Flowdock:public/s/premium - Front:support/premium (TBC)
 * Threads
-  * Public threads in linked rooms get synchronised
+  * Public threads in linked flows get synchronised
     * Use a `%` or `💬` at the beginning of a line to indicate the topic is public
   * Private thread remain private, but are synchronised
     * Uses discourse's `unlisted`
@@ -18,7 +128,7 @@ A little Bot, using the ProcBot framework, that links communication services
     * Uses front's `comment`
     * Without syntax, private is assumed
 
-## Your Configuration
+### Your Configuration
 
 * Ensure your Front, Discourse & Flowdock usernames match
 * Get your discourse details
