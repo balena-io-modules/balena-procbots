@@ -53,6 +53,7 @@ export class GithubError extends TypeError {
     public message: string;
     /** Documentation URL pertaining to the error. */
     public documentationUrl: string;
+    public type = 'GithubError';
 
     /** Should the error returned not be from the Github API but from the
      * REST layer, then the message from it is used instead.

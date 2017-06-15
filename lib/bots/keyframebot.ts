@@ -26,10 +26,13 @@ import { cleanup, track } from 'temp';
 import * as GithubApiTypes from '../apis/githubapi-types';
 import { ProcBot } from '../framework/procbot';
 import { ProcBotConfiguration } from '../framework/procbot-types';
+import { GithubError } from '../services/github';
 import { GithubCookedData, GithubHandle, GithubRegistration } from '../services/github-types';
 import { ServiceEvent } from '../services/service-types';
 import { AlertLevel, LogLevel } from '../utils/logger';
 import * as keyframeControl from 'keyfctl';
+import { Content } from '../../build/apis/githubapi-types';
+import TypedError = require('typed-error');
 
 const resin = require('resin-sdk')();
 const jwtDecode = require('jwt-decode');
@@ -52,6 +55,20 @@ interface FSError {
     message: string;
 }
 
+class HTTPError extends TypedError {
+    /** Message error from the Github API. */
+    public httpCode: number;
+    public type = 'HttpError';
+
+    constructor(code: number, message: string) {
+        super();
+
+        // Attempt to parse from JSON.
+        this.httpCode = code;
+        this.message = message;
+    }
+}
+
 type Environment = 'staging' | 'production';
 
 interface KeyframeDetails  {
@@ -60,6 +77,23 @@ interface KeyframeDetails  {
 }
 
 const DeployKeyframePath = '/deploykeyframe';
+
+const KeyframeFilename = 'keyframe.yml';
+
+const Environments = {
+    'test': 'resin-io/procbots-private-test',
+    'staging': 'blah',
+    'production': 'blah',
+};
+
+interface DeploymentDetails {
+    keyframe: GithubApiTypes.Content;
+    username: string;
+    version: string;
+    owner: string;
+    repo: string;
+    environment: string;
+}
 
 export class KeyframeBot extends ProcBot {
     /** Github ServiceListener. */
@@ -164,7 +198,7 @@ export class KeyframeBot extends ProcBot {
         this.logger.log(LogLevel.INFO, `Linting ${owner}/${repo}#${prNumber} keyframe for issues`);
 
         // Create a new temporary directory for the repo holding the keyframe.
-        return tempMkdir(`${repo}-${pr.number}_`).then((tempDir: string) => {
+        return tempMkdir(`keyframebot-${repo}-${pr.number}_`).then((tempDir: string) => {
             fullPath = `${tempDir}${path.sep}`;
 
             return Promise.mapSeries([
@@ -174,9 +208,9 @@ export class KeyframeBot extends ProcBot {
         }).then(() => {
             // Lint the keyframe
             // For this we need the base SHA and the last commit SHA for the PR.
-            const baseSHA = pr.base.sha;
-            const headSHA = pr.head.sha;
-            return keyframeControl.lint(baseSHA, headSHA, fullPath);
+            const baseSha = pr.base.sha;
+            const headSha = pr.head.sha;
+            return keyframeControl.lint(baseSha, headSha, fullPath);
         }).then((lintResults: keyframeControl.LintResponse) => {
             let lintMessage = "Keyframe linted successfully";
             let commentPromise = Promise.resolve();
@@ -187,7 +221,7 @@ export class KeyframeBot extends ProcBot {
 
                 // We get array of arrays atm, not sure why.
                 const flattenedErrors = _.flatten(lintResults.messages);
-                let errorMessage = 'The following errors occurred whilst linting the `Keyframe.yml` file:\n';
+                let errorMessage = 'The following errors occurred whilst linting the `${KeyframeFilename}` file:\n';
                 // Comment on the PR so that the author knows why the lint failed.
                 _.each(flattenedErrors, (error: keyframeControl.LintError) => {
                     errorMessage += `${error.message} at line ${error.parsedLine}: ${error.snippet}\n`;
@@ -222,61 +256,239 @@ export class KeyframeBot extends ProcBot {
 
     private deployKeyframe = (req: express.Request, res: express.Response): void => {
         const payload: KeyframeDetails = req.body;
+        const environment = payload.environment;
+        const version = payload.version;
         const headerToken = req.get('Authorization');
-        let valid = true;
+        let decodedToken: any;
+        let owner = '';
+        let repo = '';
+        let deployDetails: DeploymentDetails;
 
         // Read the headers, validate the bearer token with the SDK.
         const tokenMatch = headerToken.match(/^token (.*)$/i);
         if (!tokenMatch) {
-            res.sendStatus(403);
+            res.sendStatus(400);
             return;
         }
 
         const token = tokenMatch[1];
         return resin.auth.loginWithToken(token).then(() => {
-            let decodedToken: any;
             try {
                 decodedToken = jwtDecode(token);
             } catch(_err) {
                 throw new Error('Cannot decode token into JWT object');
             }
 
-            console.log(decodedToken);
-            if (!decodedToken.permissions['admin.home']) {
-                res.sendStatus(404);
-                return;
+            if (!_.includes(decodedToken.permissions, 'admin.home')) {
+                // Ensure it's a 404 so anyone without rights doesn't know it exists.
+                throw new HTTPError(404, 'Invalid access rights');
             }
 
             // We have a payload (hopefully) denoting the version of the keyframe on master to
             // deploy, and to which environment it should be deployed.
-            // We ensure both are valid.
-            if (!valid) {
-                // It's malformed content at this point.
-                res.sendStatus(400);
-                return;
+
+            // Get the right environment.
+            const envRepo = Environments[environment];
+            if (!envRepo) {
+                throw new HTTPError(400, 'Passed environment does not exist');
             }
 
-            // All is well, this was valid.
-            res.sendStatus(200);
+            // Prep for the environment PR.
+            owner = envRepo.split('/')[0];
+            repo = envRepo.split('/')[1];
 
-            // Now create a new PR on the specified environment:
-            // * Create a new branch for this, create it from the version passed
-            // * Commit the keyframe to that branch
-            // * Open a new PR pointing to that branch, add relevant reviewers? (Procbot config in repo, I guess)
-
-            // 1. Create a new branch.
-            // Get the current head reference of the master branch.
+            // Ensure that the version of the keyframe specified actually exists.
             return this.dispatchToEmitter(this.githubEmitterName, {
                 data: {
+                    owner,
+                    repo,
+                    path: KeyframeFilename,
+                    ref: `refs/tags/${version}`
                 },
-                method: this.githubApi.gitdata.getReference
-            }).then((reference: any) => {
-                console.log(reference);
+                method: this.githubApi.repos.getContent
             });
-        }).catch((err: Error) => {
-            this.logger.log(LogLevel.INFO, `Error thrown in keyframe deploy:\n${err}`);
-            res.sendStatus(500);
+        }).then((keyframeFile: GithubApiTypes.Content) => {
+            // Github API docs state a blob will *always* be encoded base64...
+            if (keyframeFile.encoding !== 'base64') {
+                this.logger.log(LogLevel.WARN, `Keyframe file exists for ${owner}/${repo} but is not ` +
+                    `Base64 encoded! Aborting.`);
+                throw new HTTPError(500, 'Keyframe was not correctly encoded');
+            }
+
+            // We now go ahead and:
+            // 1. Create a new branch for this, create it from the version passed
+            // 2. Commit the keyframe to that branch
+            // 3. Open a new PR pointing to that branch. Any relevant reviewers can be set (when it works) from
+            //    a `.procbot.yml` config in the env repo.
+
+            // Create a new branch and commit the keyframe to it.
+            deployDetails = {
+                keyframe: keyframeFile,
+                username: decodedToken.username,
+                environment,
+                version,
+                owner,
+                repo
+            };
+            return this.createNewEnvironmentBranchCommit(deployDetails);
+        }).then((branchName: string) => {
+            // Open a new PR using the new branch.
+            // If there's a `.procbot.yml` config in the branch, it'll do setup for us.
+            console.log(branchName);
+            return this.createNewPRFromBranch(deployDetails);
+        }).then(() => {
+            // Badabing. We'll now do linting on the *environment* branch automatically, as the
+            // PR will kick it off. NOTE: How do we determine which type of linting we do?
+            // I guess we could look at repo, but that's a bit horrible. See if there's a variables file?
+            // Talk to Jack.
+
+            // All done.
+            res.sendStatus(200);
+        }).catch((err: GithubError | HTTPError) => {
+            let errorCode = (err instanceof HTTPError) ? err.httpCode : 500;
+            this.logger.log(LogLevel.INFO, `Error thrown in keyframe deploy:\n${err.message}`);
+            res.status(errorCode).send(err.message);
         });
+    }
+
+    private createNewEnvironmentBranchCommit = (branchDetails: DeploymentDetails): Promise<string> => {
+        const owner = branchDetails.owner;
+        const repo = branchDetails.repo;
+        const keyframe = branchDetails.keyframe;
+        const environment = branchDetails.environment;
+        const version = branchDetails.version;
+        const user = branchDetails.username;
+        const branchName = `${user}-${version}`;;
+        let branchSha = '';
+        let keyframeEntry: GithubApiTypes.TreeEntry | void;
+        let oldTreeSha = '';
+        let newTreeSha = '';
+
+        // 1. Create a new branch.
+        return this.dispatchToEmitter(this.githubEmitterName, {
+            data: {
+                owner,
+                repo,
+                ref: 'heads/master'
+            },
+            method: this.githubApi.gitdata.getReference
+        }).then((reference: GithubApiTypes.Reference) => {
+            // Ensure that master exists.
+            if (reference.ref !== 'refs/heads/master') {
+                throw new Error(`Master doesn't exist on ${owner}/${repo}`);
+            }
+
+            // Grab the reference to the head.
+            const headSha = reference.object.sha;
+
+            // Create the new branch, using the version name and user.
+            return this.dispatchToEmitter(this.githubEmitterName, {
+                data: {
+                    owner,
+                    repo,
+                    ref: `refs/heads/${branchName}`,
+                    sha: headSha
+                },
+                method: this.githubApi.gitdata.createReference
+            });
+        }).then((reference: GithubApiTypes.Reference) => {
+            const branchReference = reference.ref;
+            branchSha = reference.object.sha;
+
+            if (!branchReference) {
+                throw new HTTPError(404, `Couldn't create the new branch for the ${environment} environment`);
+            }
+
+            // Get the tree for the branch.
+            return this.dispatchToEmitter(this.githubEmitterName, {
+                data: {
+                    owner,
+                    repo,
+                    sha: branchSha,
+                },
+                method: this.githubApi.gitdata.getTree
+            });
+        }).then((tree: GithubApiTypes.Tree) => {
+            // Find the write entry in the tree for the keyframe file.
+            keyframeEntry = _.find(tree.tree, (entry) => entry.path === KeyframeFilename);
+            if (!keyframeEntry) {
+                throw new HTTPError(404, `Couldn't find the keyframe file in the ${environment} repository`);
+            }
+
+            // Create a new blob using the keyframe data from the product repo.
+            // This data is already base64 encoded, so we just use that.
+            oldTreeSha = tree.sha;
+            return this.dispatchToEmitter(this.githubEmitterName, {
+                data: {
+                    owner,
+                    repo,
+                    content: keyframe.content,
+                    encoding: keyframe.encoding
+                },
+                method: this.githubApi.gitdata.createBlob
+            });
+        }).then((blob: GithubApiTypes.Blob) => {
+            // We've got the blob, we've got the tree entry for the previous keyframe.
+            // Create a new tree that includes this data.
+            if (keyframeEntry) {
+                return this.dispatchToEmitter(this.githubEmitterName, {
+                    data: {
+                        base_tree: oldTreeSha,
+                        owner,
+                        repo,
+                        tree: [{
+                            mode: keyframeEntry.mode,
+                            path: keyframeEntry.path,
+                            sha: blob.sha,
+                            type: 'blob'
+                        }]
+                    },
+                    method: this.githubApi.gitdata.createTree
+                });
+            }
+        }).then((newTree: GithubApiTypes.Tree) => {
+            newTreeSha = newTree.sha;
+
+            // Get the last commit for the branch.
+            return this.dispatchToEmitter(this.githubEmitterName, {
+                data: {
+                    owner,
+                    repo,
+                    sha: branchSha
+                },
+                method: this.githubApi.repos.getCommit
+            });
+        }).then((lastCommit: GithubApiTypes.Commit) => {
+            // We have new tree object, we now want to create a new commit referencing it.
+            return this.dispatchToEmitter(this.githubEmitterName, {
+                data: {
+                    message: `Update keyframe from product version ${version} on behalf of Resin user ${user}.`,
+                    owner,
+                    parents: [ lastCommit.sha ],
+                    repo,
+                    tree: newTreeSha
+                },
+                method: this.githubApi.gitdata.createCommit
+            });
+        }).then((commit: GithubApiTypes.Commit) => {
+            // Update the branch to include the new commit SHA, so the head points to our new
+            // keyframe.
+            console.log(branchName);
+            return this.dispatchToEmitter(this.githubEmitterName, {
+                data: {
+                    force: false,
+                    owner,
+                    ref: `heads/${branchName}`,
+                    repo,
+                    sha: commit.sha
+                },
+                method: this.githubApi.gitdata.updateReference
+            });
+        }).return(branchName);
+    };
+
+    private createNewPRFromBranch = (deploymentDetails: DeploymentDetails): Promise<void> => {
+        return Promise.resolve();
     }
 
     /**

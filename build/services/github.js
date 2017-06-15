@@ -16,6 +16,7 @@ const logger_1 = require("../utils/logger");
 class GithubError extends TypeError {
     constructor(error) {
         super(error);
+        this.type = 'GithubError';
         try {
             const data = JSON.parse(error.message);
             this.message = data.message;

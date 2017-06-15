@@ -11,13 +11,28 @@ const temp_1 = require("temp");
 const procbot_1 = require("../framework/procbot");
 const logger_1 = require("../utils/logger");
 const keyframeControl = require("keyfctl");
+const TypedError = require("typed-error");
 const resin = require('resin-sdk')();
 const jwtDecode = require('jwt-decode');
 const exec = Promise.promisify(ChildProcess.exec);
 const tempMkdir = Promise.promisify(temp_1.track().mkdir);
 const tempCleanup = Promise.promisify(temp_1.cleanup);
 const fsFileExists = Promise.promisify(FS.stat);
+class HTTPError extends TypedError {
+    constructor(code, message) {
+        super();
+        this.type = 'HttpError';
+        this.httpCode = code;
+        this.message = message;
+    }
+}
 const DeployKeyframePath = '/deploykeyframe';
+const KeyframeFilename = 'keyframe.yml';
+const Environments = {
+    'test': 'resin-io/procbots-private-test',
+    'staging': 'blah',
+    'production': 'blah',
+};
 class KeyframeBot extends procbot_1.ProcBot {
     constructor(integration, name, pemString, webhook) {
         super(name);
@@ -35,23 +50,23 @@ class KeyframeBot extends procbot_1.ProcBot {
                 return exec(command, { cwd: fullPath });
             };
             this.logger.log(logger_1.LogLevel.INFO, `Linting ${owner}/${repo}#${prNumber} keyframe for issues`);
-            return tempMkdir(`${repo}-${pr.number}_`).then((tempDir) => {
+            return tempMkdir(`keyframebot-${repo}-${pr.number}_`).then((tempDir) => {
                 fullPath = `${tempDir}${path.sep}`;
                 return Promise.mapSeries([
                     `git clone https://${authToken}:${authToken}@github.com/${owner}/${repo} ${fullPath}`,
                     `git checkout ${branchName}`
                 ], cliCommand);
             }).then(() => {
-                const baseSHA = pr.base.sha;
-                const headSHA = pr.head.sha;
-                return keyframeControl.lint(baseSHA, headSHA, fullPath);
+                const baseSha = pr.base.sha;
+                const headSha = pr.head.sha;
+                return keyframeControl.lint(baseSha, headSha, fullPath);
             }).then((lintResults) => {
                 let lintMessage = "Keyframe linted successfully";
                 let commentPromise = Promise.resolve();
                 if (!lintResults.valid) {
                     lintMessage = "Keyframe linting failed";
                     const flattenedErrors = _.flatten(lintResults.messages);
-                    let errorMessage = 'The following errors occurred whilst linting the `Keyframe.yml` file:\n';
+                    let errorMessage = 'The following errors occurred whilst linting the `${KeyframeFilename}` file:\n';
                     _.each(flattenedErrors, (error) => {
                         errorMessage += `${error.message} at line ${error.parsedLine}: ${error.snippet}\n`;
                     });
@@ -82,42 +97,187 @@ class KeyframeBot extends procbot_1.ProcBot {
         };
         this.deployKeyframe = (req, res) => {
             const payload = req.body;
+            const environment = payload.environment;
+            const version = payload.version;
             const headerToken = req.get('Authorization');
-            let valid = true;
+            let decodedToken;
+            let owner = '';
+            let repo = '';
+            let deployDetails;
             const tokenMatch = headerToken.match(/^token (.*)$/i);
             if (!tokenMatch) {
-                res.sendStatus(403);
+                res.sendStatus(400);
                 return;
             }
             const token = tokenMatch[1];
             return resin.auth.loginWithToken(token).then(() => {
-                let decodedToken;
                 try {
                     decodedToken = jwtDecode(token);
                 }
                 catch (_err) {
                     throw new Error('Cannot decode token into JWT object');
                 }
-                console.log(decodedToken);
-                if (!decodedToken.permissions['admin.home']) {
-                    res.sendStatus(404);
-                    return;
+                if (!_.includes(decodedToken.permissions, 'admin.home')) {
+                    throw new HTTPError(404, 'Invalid access rights');
                 }
-                if (!valid) {
-                    res.sendStatus(400);
-                    return;
+                const envRepo = Environments[environment];
+                if (!envRepo) {
+                    throw new HTTPError(400, 'Passed environment does not exist');
                 }
-                res.sendStatus(200);
+                owner = envRepo.split('/')[0];
+                repo = envRepo.split('/')[1];
                 return this.dispatchToEmitter(this.githubEmitterName, {
-                    data: {},
-                    method: this.githubApi.gitdata.getReference
-                }).then((reference) => {
-                    console.log(reference);
+                    data: {
+                        owner,
+                        repo,
+                        path: KeyframeFilename,
+                        ref: `refs/tags/${version}`
+                    },
+                    method: this.githubApi.repos.getContent
                 });
+            }).then((keyframeFile) => {
+                if (keyframeFile.encoding !== 'base64') {
+                    this.logger.log(logger_1.LogLevel.WARN, `Keyframe file exists for ${owner}/${repo} but is not ` +
+                        `Base64 encoded! Aborting.`);
+                    throw new HTTPError(500, 'Keyframe was not correctly encoded');
+                }
+                deployDetails = {
+                    keyframe: keyframeFile,
+                    username: decodedToken.username,
+                    environment,
+                    version,
+                    owner,
+                    repo
+                };
+                return this.createNewEnvironmentBranchCommit(deployDetails);
+            }).then((branchName) => {
+                console.log(branchName);
+                return this.createNewPRFromBranch(deployDetails);
+            }).then(() => {
+                res.sendStatus(200);
             }).catch((err) => {
-                this.logger.log(logger_1.LogLevel.INFO, `Error thrown in keyframe deploy:\n${err}`);
-                res.sendStatus(500);
+                let errorCode = (err instanceof HTTPError) ? err.httpCode : 500;
+                this.logger.log(logger_1.LogLevel.INFO, `Error thrown in keyframe deploy:\n${err.message}`);
+                res.status(errorCode).send(err.message);
             });
+        };
+        this.createNewEnvironmentBranchCommit = (branchDetails) => {
+            const owner = branchDetails.owner;
+            const repo = branchDetails.repo;
+            const keyframe = branchDetails.keyframe;
+            const environment = branchDetails.environment;
+            const version = branchDetails.version;
+            const user = branchDetails.username;
+            const branchName = `${user}-${version}`;
+            ;
+            let branchSha = '';
+            let keyframeEntry;
+            let oldTreeSha = '';
+            let newTreeSha = '';
+            return this.dispatchToEmitter(this.githubEmitterName, {
+                data: {
+                    owner,
+                    repo,
+                    ref: 'heads/master'
+                },
+                method: this.githubApi.gitdata.getReference
+            }).then((reference) => {
+                if (reference.ref !== 'refs/heads/master') {
+                    throw new Error(`Master doesn't exist on ${owner}/${repo}`);
+                }
+                const headSha = reference.object.sha;
+                return this.dispatchToEmitter(this.githubEmitterName, {
+                    data: {
+                        owner,
+                        repo,
+                        ref: `refs/heads/${branchName}`,
+                        sha: headSha
+                    },
+                    method: this.githubApi.gitdata.createReference
+                });
+            }).then((reference) => {
+                const branchReference = reference.ref;
+                branchSha = reference.object.sha;
+                if (!branchReference) {
+                    throw new HTTPError(404, `Couldn't create the new branch for the ${environment} environment`);
+                }
+                return this.dispatchToEmitter(this.githubEmitterName, {
+                    data: {
+                        owner,
+                        repo,
+                        sha: branchSha,
+                    },
+                    method: this.githubApi.gitdata.getTree
+                });
+            }).then((tree) => {
+                keyframeEntry = _.find(tree.tree, (entry) => entry.path === KeyframeFilename);
+                if (!keyframeEntry) {
+                    throw new HTTPError(404, `Couldn't find the keyframe file in the ${environment} repository`);
+                }
+                oldTreeSha = tree.sha;
+                return this.dispatchToEmitter(this.githubEmitterName, {
+                    data: {
+                        owner,
+                        repo,
+                        content: keyframe.content,
+                        encoding: keyframe.encoding
+                    },
+                    method: this.githubApi.gitdata.createBlob
+                });
+            }).then((blob) => {
+                if (keyframeEntry) {
+                    return this.dispatchToEmitter(this.githubEmitterName, {
+                        data: {
+                            base_tree: oldTreeSha,
+                            owner,
+                            repo,
+                            tree: [{
+                                    mode: keyframeEntry.mode,
+                                    path: keyframeEntry.path,
+                                    sha: blob.sha,
+                                    type: 'blob'
+                                }]
+                        },
+                        method: this.githubApi.gitdata.createTree
+                    });
+                }
+            }).then((newTree) => {
+                newTreeSha = newTree.sha;
+                return this.dispatchToEmitter(this.githubEmitterName, {
+                    data: {
+                        owner,
+                        repo,
+                        sha: branchSha
+                    },
+                    method: this.githubApi.repos.getCommit
+                });
+            }).then((lastCommit) => {
+                return this.dispatchToEmitter(this.githubEmitterName, {
+                    data: {
+                        message: `Update keyframe from product version ${version} on behalf of Resin user ${user}.`,
+                        owner,
+                        parents: [lastCommit.sha],
+                        repo,
+                        tree: newTreeSha
+                    },
+                    method: this.githubApi.gitdata.createCommit
+                });
+            }).then((commit) => {
+                console.log(branchName);
+                return this.dispatchToEmitter(this.githubEmitterName, {
+                    data: {
+                        force: false,
+                        owner,
+                        ref: `heads/${branchName}`,
+                        repo,
+                        sha: commit.sha
+                    },
+                    method: this.githubApi.gitdata.updateReference
+                });
+            }).return(branchName);
+        };
+        this.createNewPRFromBranch = (deploymentDetails) => {
+            return Promise.resolve();
         };
         this.expressApp = express();
         if (!this.expressApp) {

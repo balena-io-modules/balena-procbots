@@ -171,3 +171,13 @@ export interface CombinedStatus {
     total_count: number;
     statuses: Status[];
 }
+
+export interface Reference {
+    ref: string;
+    url: string;
+    object: {
+        type: string;
+        sha: string;
+        url: string;
+    };
+}

@@ -10,6 +10,8 @@ export declare class KeyframeBot extends ProcBot {
     constructor(integration: number, name: string, pemString: string, webhook: string);
     protected lintKeyframe: (_registration: GithubRegistration, event: ServiceEvent) => Promise<void>;
     private deployKeyframe;
+    private createNewEnvironmentBranchCommit;
+    private createNewPRFromBranch;
     private reportError(error);
 }
 export declare function createBot(): KeyframeBot;
