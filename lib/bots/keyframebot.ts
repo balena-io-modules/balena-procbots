@@ -13,25 +13,22 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
+/* tslint:disable: max-classes-per-file */
 import * as Promise from 'bluebird';
 import * as bodyParser from 'body-parser';
 import * as ChildProcess from 'child_process';
 import * as express from 'express';
-import * as FS from 'fs';
 import * as GithubApi from 'github';
+import * as keyframeControl from 'keyfctl';
 import * as _ from 'lodash';
 import * as path from 'path';
 import { cleanup, track } from 'temp';
 import * as GithubApiTypes from '../apis/githubapi-types';
 import { ProcBot } from '../framework/procbot';
-import { ProcBotConfiguration } from '../framework/procbot-types';
 import { GithubError } from '../services/github';
 import { GithubCookedData, GithubHandle, GithubRegistration } from '../services/github-types';
 import { ServiceEvent } from '../services/service-types';
 import { AlertLevel, LogLevel } from '../utils/logger';
-import * as keyframeControl from 'keyfctl';
-import { Content } from '../../build/apis/githubapi-types';
 import TypedError = require('typed-error');
 
 const resin = require('resin-sdk')();
@@ -40,20 +37,6 @@ const jwtDecode = require('jwt-decode');
 const exec: (command: string, options?: any) => Promise<{}> = Promise.promisify(ChildProcess.exec);
 const tempMkdir = Promise.promisify(track().mkdir);
 const tempCleanup = Promise.promisify(cleanup);
-const fsFileExists = Promise.promisify(FS.stat);
-
-interface KeyframeBotError {
-    brief: string;
-    message: string;
-    number: number;
-    owner: string;
-    repo: string;
-}
-
-interface FSError {
-    code: string;
-    message: string;
-}
 
 class HTTPError extends TypedError {
     /** Message error from the Github API. */
@@ -69,7 +52,7 @@ class HTTPError extends TypedError {
     }
 }
 
-type Environment = 'staging' | 'production';
+type Environment = 'test';
 
 interface KeyframeDetails  {
     version: string;
@@ -81,9 +64,7 @@ const DeployKeyframePath = '/deploykeyframe';
 const KeyframeFilename = 'keyframe.yml';
 
 const Environments = {
-    'test': 'resin-io/procbots-private-test',
-    'staging': 'blah',
-    'production': 'blah',
+    test: 'resin-io/procbots-private-test',
 };
 
 interface DeploymentDetails {
@@ -95,6 +76,31 @@ interface DeploymentDetails {
     environment: string;
 }
 
+// Highly WIP.
+// KeyframeBot listens for PullRequest and PullRequestReview events on both product
+// and environment repositories. The general flow is:
+// 1. User creates a PR to update the product keyframe.
+// 2. KeyframeBot lints the PR to ensure the keyframe is valid. It sets a status
+//    on the PR (pass/fail), along with an error if one exists.
+// 3. Usual PR flow is carried out, and eventually keyframe is merged to `master`.
+// 4. At some future point, a user requests that the keyframe is deployed to an environment.
+//    KeyframeBot runs an HTTP service that allows a user who is also a resin.io admin
+//    (ie. most engineers), to request this. They can do so by sending a payload of:
+//    '{ environment: <string>, version: <string> }' to it, along with their resin.io user token:
+//
+//    curl -XPOST http://<server>:7788/deploykeyframe -H 'Authorization: token <blah> \
+//    -H 'Content-Type: application/json' -d '{"version": "v4.4.0", "environment": "test"}'
+// 5. If the version if valid, and the user is confirmed as a resin.io admin, then a new branch
+//    in the given environment is created based off `master`, and the keyframe is committed to it.
+//    (Branches are named `<user>-<keyframeVersion>`).
+// 6. Finally, a new PR is created in the environment repository, ready for review.
+//
+// TBD:
+//  - Test deployment on opening/update of environment PR to create a status check.
+//  - Extended linting of keyframes along with variables in an environment PR
+//  - Label for saying 'Deploy to environment', which will:
+//    * Carry out deploy to the correct environment from the PR
+//    * On succesful deploy, kick VersionBot to merge the PR to `master`
 export class KeyframeBot extends ProcBot {
     /** Github ServiceListener. */
     private githubListenerName: string;
@@ -106,7 +112,7 @@ export class KeyframeBot extends ProcBot {
     private expressApp: express.Application;
 
     constructor(integration: number, name: string, pemString: string, webhook: string) {
-        // This is the VersionBot.
+        // This is the KeyframeBot.
         super(name);
 
         // New Express app. We'll reuse it in the GH SL.
@@ -172,9 +178,9 @@ export class KeyframeBot extends ProcBot {
         // 2) PR review and label checks for merge
         _.forEach([
             {
-                events: [ 'pull_request' ],
+                events: [ 'pull_request', 'pull_request_review' ],
                 listenerMethod: this.lintKeyframe,
-                name: 'LintProductKeyframe',
+                name: 'LintKeyframe',
             },
         ], (reg: GithubRegistration) => {
             ghListener.registerEvent(reg);
@@ -212,12 +218,12 @@ export class KeyframeBot extends ProcBot {
             const headSha = pr.head.sha;
             return keyframeControl.lint(baseSha, headSha, fullPath);
         }).then((lintResults: keyframeControl.LintResponse) => {
-            let lintMessage = "Keyframe linted successfully";
+            let lintMessage = 'Keyframe linted successfully';
             let commentPromise = Promise.resolve();
 
             // Change status depending on lint.
             if (!lintResults.valid) {
-                lintMessage = "Keyframe linting failed";
+                lintMessage = 'Keyframe linting failed';
 
                 // We get array of arrays atm, not sure why.
                 const flattenedErrors = _.flatten(lintResults.messages);
@@ -334,19 +340,27 @@ export class KeyframeBot extends ProcBot {
         }).then((branchName: string) => {
             // Open a new PR using the new branch.
             // If there's a `.procbot.yml` config in the branch, it'll do setup for us.
-            console.log(branchName);
-            return this.createNewPRFromBranch(deployDetails);
+            return this.dispatchToEmitter(this.githubEmitterName, {
+                data: {
+                    owner,
+                    repo,
+                    title: `Merge product keyframe ${deployDetails.version} into ${deployDetails.environment}`,
+                    body: `PR was created via a deployment of the keyframe by Resin admin ${deployDetails.username}.`,
+                    head: branchName,
+                    base: 'master'
+                },
+                method: this.githubApi.pullRequests.create
+            });
         }).then(() => {
             // Badabing. We'll now do linting on the *environment* branch automatically, as the
             // PR will kick it off. NOTE: How do we determine which type of linting we do?
             // I guess we could look at repo, but that's a bit horrible. See if there's a variables file?
             // Talk to Jack.
-
-            // All done.
             res.sendStatus(200);
         }).catch((err: GithubError | HTTPError) => {
             let errorCode = (err instanceof HTTPError) ? err.httpCode : 500;
             this.logger.log(LogLevel.INFO, `Error thrown in keyframe deploy:\n${err.message}`);
+            this.reportError(err);
             res.status(errorCode).send(err.message);
         });
     }
@@ -473,7 +487,6 @@ export class KeyframeBot extends ProcBot {
         }).then((commit: GithubApiTypes.Commit) => {
             // Update the branch to include the new commit SHA, so the head points to our new
             // keyframe.
-            console.log(branchName);
             return this.dispatchToEmitter(this.githubEmitterName, {
                 data: {
                     force: false,
@@ -485,10 +498,6 @@ export class KeyframeBot extends ProcBot {
                 method: this.githubApi.gitdata.updateReference
             });
         }).return(branchName);
-    };
-
-    private createNewPRFromBranch = (deploymentDetails: DeploymentDetails): Promise<void> => {
-        return Promise.resolve();
     }
 
     /**
@@ -496,18 +505,7 @@ export class KeyframeBot extends ProcBot {
      *
      * @param error The error to report.
      */
-    private reportError(error: KeyframeBotError): void {
-        // Post a comment to the relevant PR, also detailing the issue.
-        this.dispatchToEmitter(this.githubEmitterName, {
-            data: {
-                body: error.message,
-                number: error.number,
-                owner: error.owner,
-                repo: error.repo
-            },
-            method: this.githubApi.issues.createComment
-        });
-
+    private reportError(error: GithubError | HTTPError): void {
         // Log to console.
         this.logger.alert(AlertLevel.ERROR, error.message);
     }

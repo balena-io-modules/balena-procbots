@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 // Import most things with types if possible.
-import * as express from 'express';
+// import * as express from 'express';
 import Opts = require('node-getopt');
 import { ProcBot } from './framework/procbot';
 import { Logger, LogLevel } from './utils/logger';
@@ -58,7 +58,7 @@ app.listen(8080, () => {
 */
 // Import any specified bots. These will all listen for webhooks.
 let botRegistry: ProcBot[] = [];
-for (let bot of opt.options['bot-names']) {
+for (let bot of <string[]>opt.options['bot-names']) {
     // Dynamically require the bots.
     try {
         let importedBot = require(`./bots/${bot}`);

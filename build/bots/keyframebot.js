@@ -4,20 +4,18 @@ const Promise = require("bluebird");
 const bodyParser = require("body-parser");
 const ChildProcess = require("child_process");
 const express = require("express");
-const FS = require("fs");
+const keyframeControl = require("keyfctl");
 const _ = require("lodash");
 const path = require("path");
 const temp_1 = require("temp");
 const procbot_1 = require("../framework/procbot");
 const logger_1 = require("../utils/logger");
-const keyframeControl = require("keyfctl");
 const TypedError = require("typed-error");
 const resin = require('resin-sdk')();
 const jwtDecode = require('jwt-decode');
 const exec = Promise.promisify(ChildProcess.exec);
 const tempMkdir = Promise.promisify(temp_1.track().mkdir);
 const tempCleanup = Promise.promisify(temp_1.cleanup);
-const fsFileExists = Promise.promisify(FS.stat);
 class HTTPError extends TypedError {
     constructor(code, message) {
         super();
@@ -29,9 +27,7 @@ class HTTPError extends TypedError {
 const DeployKeyframePath = '/deploykeyframe';
 const KeyframeFilename = 'keyframe.yml';
 const Environments = {
-    'test': 'resin-io/procbots-private-test',
-    'staging': 'blah',
-    'production': 'blah',
+    test: 'resin-io/procbots-private-test',
 };
 class KeyframeBot extends procbot_1.ProcBot {
     constructor(integration, name, pemString, webhook) {
@@ -61,10 +57,10 @@ class KeyframeBot extends procbot_1.ProcBot {
                 const headSha = pr.head.sha;
                 return keyframeControl.lint(baseSha, headSha, fullPath);
             }).then((lintResults) => {
-                let lintMessage = "Keyframe linted successfully";
+                let lintMessage = 'Keyframe linted successfully';
                 let commentPromise = Promise.resolve();
                 if (!lintResults.valid) {
-                    lintMessage = "Keyframe linting failed";
+                    lintMessage = 'Keyframe linting failed';
                     const flattenedErrors = _.flatten(lintResults.messages);
                     let errorMessage = 'The following errors occurred whilst linting the `${KeyframeFilename}` file:\n';
                     _.each(flattenedErrors, (error) => {
@@ -151,13 +147,23 @@ class KeyframeBot extends procbot_1.ProcBot {
                 };
                 return this.createNewEnvironmentBranchCommit(deployDetails);
             }).then((branchName) => {
-                console.log(branchName);
-                return this.createNewPRFromBranch(deployDetails);
+                return this.dispatchToEmitter(this.githubEmitterName, {
+                    data: {
+                        owner,
+                        repo,
+                        title: `Merge product keyframe ${deployDetails.version} into ${deployDetails.environment}`,
+                        body: `PR was created via a deployment of the keyframe by Resin admin ${deployDetails.username}.`,
+                        head: branchName,
+                        base: 'master'
+                    },
+                    method: this.githubApi.pullRequests.create
+                });
             }).then(() => {
                 res.sendStatus(200);
             }).catch((err) => {
                 let errorCode = (err instanceof HTTPError) ? err.httpCode : 500;
                 this.logger.log(logger_1.LogLevel.INFO, `Error thrown in keyframe deploy:\n${err.message}`);
+                this.reportError(err);
                 res.status(errorCode).send(err.message);
             });
         };
@@ -263,7 +269,6 @@ class KeyframeBot extends procbot_1.ProcBot {
                     method: this.githubApi.gitdata.createCommit
                 });
             }).then((commit) => {
-                console.log(branchName);
                 return this.dispatchToEmitter(this.githubEmitterName, {
                     data: {
                         force: false,
@@ -275,9 +280,6 @@ class KeyframeBot extends procbot_1.ProcBot {
                     method: this.githubApi.gitdata.updateReference
                 });
             }).return(branchName);
-        };
-        this.createNewPRFromBranch = (deploymentDetails) => {
-            return Promise.resolve();
         };
         this.expressApp = express();
         if (!this.expressApp) {
@@ -325,24 +327,15 @@ class KeyframeBot extends procbot_1.ProcBot {
         });
         _.forEach([
             {
-                events: ['pull_request'],
+                events: ['pull_request', 'pull_request_review'],
                 listenerMethod: this.lintKeyframe,
-                name: 'LintProductKeyframe',
+                name: 'LintKeyframe',
             },
         ], (reg) => {
             ghListener.registerEvent(reg);
         });
     }
     reportError(error) {
-        this.dispatchToEmitter(this.githubEmitterName, {
-            data: {
-                body: error.message,
-                number: error.number,
-                owner: error.owner,
-                repo: error.repo
-            },
-            method: this.githubApi.issues.createComment
-        });
         this.logger.alert(logger_1.AlertLevel.ERROR, error.message);
     }
 }

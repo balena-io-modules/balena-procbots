@@ -15,8 +15,8 @@ limitations under the License.
 */
 
 import * as Promise from 'bluebird';
-import * as GithubApi from 'github';
 import * as express from 'express';
+import * as GithubApi from 'github';
 import TypedError = require('typed-error');
 import { ProcBotConfiguration } from '../framework/procbot-types';
 import { ServiceAPIHandle, ServiceEmitContext, ServiceEvent, ServiceListenerMethod, ServiceRegistration,

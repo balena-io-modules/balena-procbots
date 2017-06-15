@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>ProcBot | Resin ProcBots</title>
+	<title>KeyframeBot | Resin ProcBots</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -54,46 +54,27 @@
 					<a href="../globals.html">Globals</a>
 				</li>
 				<li>
-					<a href="../modules/_framework_procbot_.html">&quot;framework/procbot&quot;</a>
+					<a href="../modules/_bots_keyframebot_.html">&quot;bots/keyframebot&quot;</a>
 				</li>
 				<li>
-					<a href="_framework_procbot_.procbot.html">ProcBot</a>
+					<a href="_bots_keyframebot_.keyframebot.html">KeyframeBot</a>
 				</li>
 			</ul>
-			<h1>Class ProcBot</h1>
+			<h1>Class KeyframeBot</h1>
 		</div>
 	</div>
 </header>
 <div class="container container-main">
 	<div class="row">
 		<div class="col-8 col-content">
-			<section class="tsd-panel tsd-comment">
-				<div class="tsd-comment tsd-typography">
-					<div class="lead">
-						<p>The ProcBot class is a parent class that can be used for some top-level tasks:</p>
-						<ul>
-							<li>Schedule the processing of events clustered by a given context</li>
-							<li>Support the addition of listeners or emitters by the child class, and dispatch events
-							to emitters</li>
-							<li>Retrieve configuration file from either the local FS or a ServiceEmitter</li>
-						</ul>
-					</div>
-				</div>
-			</section>
 			<section class="tsd-panel tsd-hierarchy">
 				<h3>Hierarchy</h3>
 				<ul class="tsd-hierarchy">
 					<li>
-						<span class="target">ProcBot</span>
+						<a href="_framework_procbot_.procbot.html" class="tsd-signature-type">ProcBot</a>
 						<ul class="tsd-hierarchy">
 							<li>
-								<a href="_bots_keyframebot_.keyframebot.html" class="tsd-signature-type">KeyframeBot</a>
-							</li>
-							<li>
-								<a href="_bots_syncbot_.syncbot.html" class="tsd-signature-type">SyncBot</a>
-							</li>
-							<li>
-								<a href="_bots_versionbot_.versionbot.html" class="tsd-signature-type">VersionBot</a>
+								<span class="target">KeyframeBot</span>
 							</li>
 						</ul>
 					</li>
@@ -106,32 +87,36 @@
 						<section class="tsd-index-section ">
 							<h3>Constructors</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-constructor tsd-parent-kind-class"><a href="_framework_procbot_.procbot.html#constructor" class="tsd-kind-icon">constructor</a></li>
+								<li class="tsd-kind-constructor tsd-parent-kind-class tsd-is-overwrite"><a href="_bots_keyframebot_.keyframebot.html#constructor" class="tsd-kind-icon">constructor</a></li>
 							</ul>
 						</section>
 						<section class="tsd-index-section tsd-is-private-protected">
 							<h3>Properties</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a href="_framework_procbot_.procbot.html#_botname" class="tsd-kind-icon">_botname</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="_framework_procbot_.procbot.html#emitters" class="tsd-kind-icon">emitters</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="_framework_procbot_.procbot.html#listeners" class="tsd-kind-icon">listeners</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a href="_framework_procbot_.procbot.html#logger" class="tsd-kind-icon">logger</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="_framework_procbot_.procbot.html#nodebinpath" class="tsd-kind-icon">node<wbr>Bin<wbr>Path</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-protected"><a href="_bots_keyframebot_.keyframebot.html#_botname" class="tsd-kind-icon">_botname</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="_bots_keyframebot_.keyframebot.html#expressapp" class="tsd-kind-icon">express<wbr>App</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="_bots_keyframebot_.keyframebot.html#githubapi" class="tsd-kind-icon">github<wbr>Api</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="_bots_keyframebot_.keyframebot.html#githubemittername" class="tsd-kind-icon">github<wbr>Emitter<wbr>Name</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="_bots_keyframebot_.keyframebot.html#githublistenername" class="tsd-kind-icon">github<wbr>Listener<wbr>Name</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-protected"><a href="_bots_keyframebot_.keyframebot.html#logger" class="tsd-kind-icon">logger</a></li>
 							</ul>
 						</section>
 						<section class="tsd-index-section ">
 							<h3>Methods</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-protected"><a href="_framework_procbot_.procbot.html#addserviceemitter" class="tsd-kind-icon">add<wbr>Service<wbr>Emitter</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-protected"><a href="_framework_procbot_.procbot.html#addservicelistener" class="tsd-kind-icon">add<wbr>Service<wbr>Listener</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-protected"><a href="_framework_procbot_.procbot.html#dispatchtoallemitters" class="tsd-kind-icon">dispatch<wbr>ToAll<wbr>Emitters</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-protected"><a href="_framework_procbot_.procbot.html#dispatchtoemitter" class="tsd-kind-icon">dispatch<wbr>ToEmitter</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-protected"><a href="_framework_procbot_.procbot.html#getemitter" class="tsd-kind-icon">get<wbr>Emitter</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-protected"><a href="_framework_procbot_.procbot.html#getlistener" class="tsd-kind-icon">get<wbr>Listener</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_framework_procbot_.procbot.html#getnodebinpath" class="tsd-kind-icon">get<wbr>Node<wbr>Bin<wbr>Path</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="_framework_procbot_.procbot.html#getservice" class="tsd-kind-icon">get<wbr>Service</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-protected"><a href="_framework_procbot_.procbot.html#processconfiguration" class="tsd-kind-icon">process<wbr>Configuration</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-protected"><a href="_framework_procbot_.procbot.html#retrieveconfiguration" class="tsd-kind-icon">retrieve<wbr>Configuration</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected"><a href="_bots_keyframebot_.keyframebot.html#addserviceemitter" class="tsd-kind-icon">add<wbr>Service<wbr>Emitter</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected"><a href="_bots_keyframebot_.keyframebot.html#addservicelistener" class="tsd-kind-icon">add<wbr>Service<wbr>Listener</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="_bots_keyframebot_.keyframebot.html#createnewenvironmentbranchcommit" class="tsd-kind-icon">create<wbr>New<wbr>Environment<wbr>Branch<wbr>Commit</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="_bots_keyframebot_.keyframebot.html#deploykeyframe" class="tsd-kind-icon">deploy<wbr>Keyframe</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected"><a href="_bots_keyframebot_.keyframebot.html#dispatchtoallemitters" class="tsd-kind-icon">dispatch<wbr>ToAll<wbr>Emitters</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected"><a href="_bots_keyframebot_.keyframebot.html#dispatchtoemitter" class="tsd-kind-icon">dispatch<wbr>ToEmitter</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected"><a href="_bots_keyframebot_.keyframebot.html#getemitter" class="tsd-kind-icon">get<wbr>Emitter</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected"><a href="_bots_keyframebot_.keyframebot.html#getlistener" class="tsd-kind-icon">get<wbr>Listener</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_bots_keyframebot_.keyframebot.html#getnodebinpath" class="tsd-kind-icon">get<wbr>Node<wbr>Bin<wbr>Path</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-protected"><a href="_bots_keyframebot_.keyframebot.html#lintkeyframe" class="tsd-kind-icon">lint<wbr>Keyframe</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected"><a href="_bots_keyframebot_.keyframebot.html#processconfiguration" class="tsd-kind-icon">process<wbr>Configuration</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="_bots_keyframebot_.keyframebot.html#reporterror" class="tsd-kind-icon">report<wbr>Error</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected"><a href="_bots_keyframebot_.keyframebot.html#retrieveconfiguration" class="tsd-kind-icon">retrieve<wbr>Configuration</a></li>
 							</ul>
 						</section>
 					</div>
@@ -139,94 +124,137 @@
 			</section>
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Constructors</h2>
-				<section class="tsd-panel tsd-member tsd-kind-constructor tsd-parent-kind-class">
+				<section class="tsd-panel tsd-member tsd-kind-constructor tsd-parent-kind-class tsd-is-overwrite">
 					<a name="constructor" class="tsd-anchor"></a>
 					<h3>constructor</h3>
-					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">new <wbr>Proc<wbr>Bot<span class="tsd-signature-symbol">(</span>name<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_framework_procbot_.procbot.html" class="tsd-signature-type">ProcBot</a></li>
+					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class tsd-is-overwrite">
+						<li class="tsd-signature tsd-kind-icon">new <wbr>Keyframe<wbr>Bot<span class="tsd-signature-symbol">(</span>integration<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, name<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, pemString<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, webhook<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_bots_keyframebot_.keyframebot.html" class="tsd-signature-type">KeyframeBot</a></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
+								<p>Overrides <a href="_framework_procbot_.procbot.html">ProcBot</a>.<a href="_framework_procbot_.procbot.html#constructor">constructor</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L41">framework/procbot.ts:41</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/keyframebot.ts#L112">bots/keyframebot.ts:112</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5><span class="tsd-flag ts-flagDefault value">Default value</span> name: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> =&nbsp;&quot;ProcBot&quot;</span></h5>
+									<h5>integration: <span class="tsd-signature-type">number</span></h5>
+								</li>
+								<li>
+									<h5>name: <span class="tsd-signature-type">string</span></h5>
+								</li>
+								<li>
+									<h5>pemString: <span class="tsd-signature-type">string</span></h5>
+								</li>
+								<li>
+									<h5>webhook: <span class="tsd-signature-type">string</span></h5>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <a href="_framework_procbot_.procbot.html" class="tsd-signature-type">ProcBot</a></h4>
+							<h4 class="tsd-returns-title">Returns <a href="_bots_keyframebot_.keyframebot.html" class="tsd-signature-type">KeyframeBot</a></h4>
 						</li>
 					</ul>
 				</section>
 			</section>
 			<section class="tsd-panel-group tsd-member-group tsd-is-private-protected">
 				<h2>Properties</h2>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected">
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
 					<a name="_botname" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagProtected">Protected</span> _botname</h3>
 					<div class="tsd-signature tsd-kind-icon">_botname<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
+						<p>Inherited from <a href="_framework_procbot_.procbot.html">ProcBot</a>.<a href="_framework_procbot_.procbot.html#_botname">_botname</a></p>
 						<ul>
 							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L37">framework/procbot.ts:37</a></li>
 						</ul>
 					</aside>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private">
-					<a name="emitters" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagPrivate">Private</span> emitters</h3>
-					<div class="tsd-signature tsd-kind-icon">emitters<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">ServiceEmitter</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> =&nbsp;[]</span></div>
+					<a name="expressapp" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagPrivate">Private</span> express<wbr>App</h3>
+					<div class="tsd-signature tsd-kind-icon">express<wbr>App<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">express.Application</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L39">framework/procbot.ts:39</a></li>
+							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/keyframebot.ts#L112">bots/keyframebot.ts:112</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Instance of express.</p>
+						</div>
+					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private">
-					<a name="listeners" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagPrivate">Private</span> listeners</h3>
-					<div class="tsd-signature tsd-kind-icon">listeners<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">ServiceListener</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> =&nbsp;[]</span></div>
+					<a name="githubapi" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagPrivate">Private</span> github<wbr>Api</h3>
+					<div class="tsd-signature tsd-kind-icon">github<wbr>Api<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">GithubApi</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L40">framework/procbot.ts:40</a></li>
+							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/keyframebot.ts#L110">bots/keyframebot.ts:110</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Instance of Github SDK API in use.</p>
+						</div>
+					</div>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected">
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private">
+					<a name="githubemittername" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagPrivate">Private</span> github<wbr>Emitter<wbr>Name</h3>
+					<div class="tsd-signature tsd-kind-icon">github<wbr>Emitter<wbr>Name<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/keyframebot.ts#L108">bots/keyframebot.ts:108</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Github ServiceEmitter.</p>
+						</div>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private">
+					<a name="githublistenername" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagPrivate">Private</span> github<wbr>Listener<wbr>Name</h3>
+					<div class="tsd-signature tsd-kind-icon">github<wbr>Listener<wbr>Name<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/keyframebot.ts#L106">bots/keyframebot.ts:106</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Github ServiceListener.</p>
+						</div>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
 					<a name="logger" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagProtected">Protected</span> logger</h3>
 					<div class="tsd-signature tsd-kind-icon">logger<span class="tsd-signature-symbol">:</span> <a href="_utils_logger_.logger.html" class="tsd-signature-type">Logger</a><span class="tsd-signature-symbol"> =&nbsp;new Logger()</span></div>
 					<aside class="tsd-sources">
+						<p>Inherited from <a href="_framework_procbot_.procbot.html">ProcBot</a>.<a href="_framework_procbot_.procbot.html#logger">logger</a></p>
 						<ul>
 							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L38">framework/procbot.ts:38</a></li>
-						</ul>
-					</aside>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private">
-					<a name="nodebinpath" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagPrivate">Private</span> node<wbr>Bin<wbr>Path</h3>
-					<div class="tsd-signature tsd-kind-icon">node<wbr>Bin<wbr>Path<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L41">framework/procbot.ts:41</a></li>
 						</ul>
 					</aside>
 				</section>
 			</section>
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Methods</h2>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-protected">
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
 					<a name="addserviceemitter" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagProtected">Protected</span> add<wbr>Service<wbr>Emitter</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-protected">
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
 						<li class="tsd-signature tsd-kind-icon">add<wbr>Service<wbr>Emitter<span class="tsd-signature-symbol">(</span>name<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, data<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ServiceEmitter</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">void</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
+								<p>Inherited from <a href="_framework_procbot_.procbot.html">ProcBot</a>.<a href="_framework_procbot_.procbot.html#addserviceemitter">addServiceEmitter</a></p>
 								<ul>
 									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L140">framework/procbot.ts:140</a></li>
 								</ul>
@@ -257,15 +285,16 @@
 						</li>
 					</ul>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-protected">
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
 					<a name="addservicelistener" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagProtected">Protected</span> add<wbr>Service<wbr>Listener</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-protected">
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
 						<li class="tsd-signature tsd-kind-icon">add<wbr>Service<wbr>Listener<span class="tsd-signature-symbol">(</span>name<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, data<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ServiceListener</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">void</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
+								<p>Inherited from <a href="_framework_procbot_.procbot.html">ProcBot</a>.<a href="_framework_procbot_.procbot.html#addservicelistener">addServiceListener</a></p>
 								<ul>
 									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L119">framework/procbot.ts:119</a></li>
 								</ul>
@@ -296,15 +325,65 @@
 						</li>
 					</ul>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-protected">
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private">
+					<a name="createnewenvironmentbranchcommit" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagPrivate">Private</span> create<wbr>New<wbr>Environment<wbr>Branch<wbr>Commit</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
+						<li class="tsd-signature tsd-kind-icon">create<wbr>New<wbr>Environment<wbr>Branch<wbr>Commit<span class="tsd-signature-symbol">(</span>branchDetails<span class="tsd-signature-symbol">: </span><a href="../interfaces/_bots_keyframebot_.deploymentdetails.html" class="tsd-signature-type">DeploymentDetails</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/keyframebot.ts#L368">bots/keyframebot.ts:368</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>branchDetails: <a href="../interfaces/_bots_keyframebot_.deploymentdetails.html" class="tsd-signature-type">DeploymentDetails</a></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private">
+					<a name="deploykeyframe" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagPrivate">Private</span> deploy<wbr>Keyframe</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
+						<li class="tsd-signature tsd-kind-icon">deploy<wbr>Keyframe<span class="tsd-signature-symbol">(</span>req<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">express.Request</span>, res<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">express.Response</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/keyframebot.ts#L263">bots/keyframebot.ts:263</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>req: <span class="tsd-signature-type">express.Request</span></h5>
+								</li>
+								<li>
+									<h5>res: <span class="tsd-signature-type">express.Response</span></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
 					<a name="dispatchtoallemitters" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagProtected">Protected</span> dispatch<wbr>ToAll<wbr>Emitters</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-protected">
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
 						<li class="tsd-signature tsd-kind-icon">dispatch<wbr>ToAll<wbr>Emitters<span class="tsd-signature-symbol">(</span>data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ServiceEmitRequest</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ServiceEmitResponse</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
+								<p>Inherited from <a href="_framework_procbot_.procbot.html">ProcBot</a>.<a href="_framework_procbot_.procbot.html#dispatchtoallemitters">dispatchToAllEmitters</a></p>
 								<ul>
 									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L178">framework/procbot.ts:178</a></li>
 								</ul>
@@ -330,15 +409,16 @@
 						</li>
 					</ul>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-protected">
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
 					<a name="dispatchtoemitter" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagProtected">Protected</span> dispatch<wbr>ToEmitter</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-protected">
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
 						<li class="tsd-signature tsd-kind-icon">dispatch<wbr>ToEmitter<span class="tsd-signature-symbol">(</span>name<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
+								<p>Inherited from <a href="_framework_procbot_.procbot.html">ProcBot</a>.<a href="_framework_procbot_.procbot.html#dispatchtoemitter">dispatchToEmitter</a></p>
 								<ul>
 									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L200">framework/procbot.ts:200</a></li>
 								</ul>
@@ -375,15 +455,16 @@
 						</li>
 					</ul>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-protected">
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
 					<a name="getemitter" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagProtected">Protected</span> get<wbr>Emitter</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-protected">
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
 						<li class="tsd-signature tsd-kind-icon">get<wbr>Emitter<span class="tsd-signature-symbol">(</span>name<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ServiceEmitter</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">void</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
+								<p>Inherited from <a href="_framework_procbot_.procbot.html">ProcBot</a>.<a href="_framework_procbot_.procbot.html#getemitter">getEmitter</a></p>
 								<ul>
 									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L166">framework/procbot.ts:166</a></li>
 								</ul>
@@ -410,15 +491,16 @@
 						</li>
 					</ul>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-protected">
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
 					<a name="getlistener" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagProtected">Protected</span> get<wbr>Listener</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-protected">
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
 						<li class="tsd-signature tsd-kind-icon">get<wbr>Listener<span class="tsd-signature-symbol">(</span>name<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ServiceListener</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">void</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
+								<p>Inherited from <a href="_framework_procbot_.procbot.html">ProcBot</a>.<a href="_framework_procbot_.procbot.html#getlistener">getListener</a></p>
 								<ul>
 									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L157">framework/procbot.ts:157</a></li>
 								</ul>
@@ -445,15 +527,16 @@
 						</li>
 					</ul>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
 					<a name="getnodebinpath" class="tsd-anchor"></a>
 					<h3>get<wbr>Node<wbr>Bin<wbr>Path</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
 						<li class="tsd-signature tsd-kind-icon">get<wbr>Node<wbr>Bin<wbr>Path<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
+								<p>Inherited from <a href="_framework_procbot_.procbot.html">ProcBot</a>.<a href="_framework_procbot_.procbot.html#getnodebinpath">getNodeBinPath</a></p>
 								<ul>
 									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L51">framework/procbot.ts:51</a></li>
 								</ul>
@@ -468,47 +551,42 @@
 						</li>
 					</ul>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private">
-					<a name="getservice" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagPrivate">Private</span> get<wbr>Service</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
-						<li class="tsd-signature tsd-kind-icon">get<wbr>Service<span class="tsd-signature-symbol">(</span>name<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ServiceFactory</span></li>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-protected">
+					<a name="lintkeyframe" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagProtected">Protected</span> lint<wbr>Keyframe</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-protected">
+						<li class="tsd-signature tsd-kind-icon">lint<wbr>Keyframe<span class="tsd-signature-symbol">(</span>_registration<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">GithubRegistration</span>, event<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ServiceEvent</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L231">framework/procbot.ts:231</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/keyframebot.ts#L190">bots/keyframebot.ts:190</a></li>
 								</ul>
 							</aside>
-							<div class="tsd-comment tsd-typography">
-								<div class="lead">
-									<p>Retrieves and loads a ServiceListener or ServiceEmitter by name.</p>
-								</div>
-							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>name: <span class="tsd-signature-type">string</span></h5>
-									<div class="tsd-comment tsd-typography">
-										<p>The name of the ServiceListener or ServiceEmitter to load.</p>
-									</div>
+									<h5>_registration: <span class="tsd-signature-type">GithubRegistration</span></h5>
+								</li>
+								<li>
+									<h5>event: <span class="tsd-signature-type">ServiceEvent</span></h5>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">ServiceFactory</span></h4>
-							<p>The relevant ServiceFactory for the service.</p>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></h4>
 						</li>
 					</ul>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-protected">
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
 					<a name="processconfiguration" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagProtected">Protected</span> process<wbr>Configuration</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-protected">
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
 						<li class="tsd-signature tsd-kind-icon">process<wbr>Configuration<span class="tsd-signature-symbol">(</span>configFile<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ProcBotConfiguration</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">void</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
+								<p>Inherited from <a href="_framework_procbot_.procbot.html">ProcBot</a>.<a href="_framework_procbot_.procbot.html#processconfiguration">processConfiguration</a></p>
 								<ul>
 									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L67">framework/procbot.ts:67</a></li>
 								</ul>
@@ -535,15 +613,47 @@
 						</li>
 					</ul>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-protected">
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private">
+					<a name="reporterror" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagPrivate">Private</span> report<wbr>Error</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
+						<li class="tsd-signature tsd-kind-icon">report<wbr>Error<span class="tsd-signature-symbol">(</span>error<span class="tsd-signature-symbol">: </span><a href="_services_github_.githuberror.html" class="tsd-signature-type">GithubError</a><span class="tsd-signature-symbol"> | </span><a href="_bots_keyframebot_.httperror.html" class="tsd-signature-type">HTTPError</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/keyframebot.ts#L508">bots/keyframebot.ts:508</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Reports an error to the console and as a Github comment..</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>error: <a href="_services_github_.githuberror.html" class="tsd-signature-type">GithubError</a><span class="tsd-signature-symbol"> | </span><a href="_bots_keyframebot_.httperror.html" class="tsd-signature-type">HTTPError</a></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The error to report.</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
 					<a name="retrieveconfiguration" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagProtected">Protected</span> retrieve<wbr>Configuration</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-protected">
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
 						<li class="tsd-signature tsd-kind-icon">retrieve<wbr>Configuration<span class="tsd-signature-symbol">(</span>source<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, location<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ProcBotConfiguration</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
+								<p>Inherited from <a href="_framework_procbot_.procbot.html">ProcBot</a>.<a href="_framework_procbot_.procbot.html#retrieveconfiguration">retrieveConfiguration</a></p>
 								<ul>
 									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L93">framework/procbot.ts:93</a></li>
 								</ul>
@@ -585,7 +695,7 @@
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_app_.html">"app"</a>
 					</li>
-					<li class=" tsd-kind-external-module">
+					<li class="current tsd-kind-external-module">
 						<a href="../modules/_bots_keyframebot_.html">"bots/keyframebot"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
@@ -594,7 +704,7 @@
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_bots_versionbot_.html">"bots/versionbot"</a>
 					</li>
-					<li class="current tsd-kind-external-module">
+					<li class=" tsd-kind-external-module">
 						<a href="../modules/_framework_procbot_.html">"framework/procbot"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
@@ -628,68 +738,113 @@
 			</nav>
 			<nav class="tsd-navigation secondary menu-sticky">
 				<ul class="before-current">
+					<li class=" tsd-kind-class tsd-parent-kind-external-module tsd-is-not-exported">
+						<a href="_bots_keyframebot_.httperror.html" class="tsd-kind-icon">HTTPError</a>
+					</li>
 				</ul>
 				<ul class="current">
 					<li class="current tsd-kind-class tsd-parent-kind-external-module">
-						<a href="_framework_procbot_.procbot.html" class="tsd-kind-icon">Proc<wbr>Bot</a>
+						<a href="_bots_keyframebot_.keyframebot.html" class="tsd-kind-icon">Keyframe<wbr>Bot</a>
 						<ul>
-							<li class=" tsd-kind-constructor tsd-parent-kind-class">
-								<a href="_framework_procbot_.procbot.html#constructor" class="tsd-kind-icon">constructor</a>
+							<li class=" tsd-kind-constructor tsd-parent-kind-class tsd-is-overwrite">
+								<a href="_bots_keyframebot_.keyframebot.html#constructor" class="tsd-kind-icon">constructor</a>
 							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-protected">
-								<a href="_framework_procbot_.procbot.html#_botname" class="tsd-kind-icon">_botname</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-private">
-								<a href="_framework_procbot_.procbot.html#emitters" class="tsd-kind-icon">emitters</a>
+							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
+								<a href="_bots_keyframebot_.keyframebot.html#_botname" class="tsd-kind-icon">_botname</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-private">
-								<a href="_framework_procbot_.procbot.html#listeners" class="tsd-kind-icon">listeners</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-protected">
-								<a href="_framework_procbot_.procbot.html#logger" class="tsd-kind-icon">logger</a>
+								<a href="_bots_keyframebot_.keyframebot.html#expressapp" class="tsd-kind-icon">express<wbr>App</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-private">
-								<a href="_framework_procbot_.procbot.html#nodebinpath" class="tsd-kind-icon">node<wbr>Bin<wbr>Path</a>
+								<a href="_bots_keyframebot_.keyframebot.html#githubapi" class="tsd-kind-icon">github<wbr>Api</a>
 							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-protected">
-								<a href="_framework_procbot_.procbot.html#addserviceemitter" class="tsd-kind-icon">add<wbr>Service<wbr>Emitter</a>
+							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-private">
+								<a href="_bots_keyframebot_.keyframebot.html#githubemittername" class="tsd-kind-icon">github<wbr>Emitter<wbr>Name</a>
 							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-protected">
-								<a href="_framework_procbot_.procbot.html#addservicelistener" class="tsd-kind-icon">add<wbr>Service<wbr>Listener</a>
+							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-private">
+								<a href="_bots_keyframebot_.keyframebot.html#githublistenername" class="tsd-kind-icon">github<wbr>Listener<wbr>Name</a>
 							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-protected">
-								<a href="_framework_procbot_.procbot.html#dispatchtoallemitters" class="tsd-kind-icon">dispatch<wbr>ToAll<wbr>Emitters</a>
+							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
+								<a href="_bots_keyframebot_.keyframebot.html#logger" class="tsd-kind-icon">logger</a>
 							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-protected">
-								<a href="_framework_procbot_.procbot.html#dispatchtoemitter" class="tsd-kind-icon">dispatch<wbr>ToEmitter</a>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
+								<a href="_bots_keyframebot_.keyframebot.html#addserviceemitter" class="tsd-kind-icon">add<wbr>Service<wbr>Emitter</a>
 							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-protected">
-								<a href="_framework_procbot_.procbot.html#getemitter" class="tsd-kind-icon">get<wbr>Emitter</a>
-							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-protected">
-								<a href="_framework_procbot_.procbot.html#getlistener" class="tsd-kind-icon">get<wbr>Listener</a>
-							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class">
-								<a href="_framework_procbot_.procbot.html#getnodebinpath" class="tsd-kind-icon">get<wbr>Node<wbr>Bin<wbr>Path</a>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
+								<a href="_bots_keyframebot_.keyframebot.html#addservicelistener" class="tsd-kind-icon">add<wbr>Service<wbr>Listener</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-private">
-								<a href="_framework_procbot_.procbot.html#getservice" class="tsd-kind-icon">get<wbr>Service</a>
+								<a href="_bots_keyframebot_.keyframebot.html#createnewenvironmentbranchcommit" class="tsd-kind-icon">create<wbr>New<wbr>Environment<wbr>Branch<wbr>Commit</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-private">
+								<a href="_bots_keyframebot_.keyframebot.html#deploykeyframe" class="tsd-kind-icon">deploy<wbr>Keyframe</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
+								<a href="_bots_keyframebot_.keyframebot.html#dispatchtoallemitters" class="tsd-kind-icon">dispatch<wbr>ToAll<wbr>Emitters</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
+								<a href="_bots_keyframebot_.keyframebot.html#dispatchtoemitter" class="tsd-kind-icon">dispatch<wbr>ToEmitter</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
+								<a href="_bots_keyframebot_.keyframebot.html#getemitter" class="tsd-kind-icon">get<wbr>Emitter</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
+								<a href="_bots_keyframebot_.keyframebot.html#getlistener" class="tsd-kind-icon">get<wbr>Listener</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+								<a href="_bots_keyframebot_.keyframebot.html#getnodebinpath" class="tsd-kind-icon">get<wbr>Node<wbr>Bin<wbr>Path</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-protected">
-								<a href="_framework_procbot_.procbot.html#processconfiguration" class="tsd-kind-icon">process<wbr>Configuration</a>
+								<a href="_bots_keyframebot_.keyframebot.html#lintkeyframe" class="tsd-kind-icon">lint<wbr>Keyframe</a>
 							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-protected">
-								<a href="_framework_procbot_.procbot.html#retrieveconfiguration" class="tsd-kind-icon">retrieve<wbr>Configuration</a>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
+								<a href="_bots_keyframebot_.keyframebot.html#processconfiguration" class="tsd-kind-icon">process<wbr>Configuration</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-private">
+								<a href="_bots_keyframebot_.keyframebot.html#reporterror" class="tsd-kind-icon">report<wbr>Error</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
+								<a href="_bots_keyframebot_.keyframebot.html#retrieveconfiguration" class="tsd-kind-icon">retrieve<wbr>Configuration</a>
 							</li>
 						</ul>
 					</li>
 				</ul>
 				<ul class="after-current">
-					<li class=" tsd-kind-variable tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="../modules/_framework_procbot_.html#exec" class="tsd-kind-icon">exec</a>
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
+						<a href="../interfaces/_bots_keyframebot_.deploymentdetails.html" class="tsd-kind-icon">Deployment<wbr>Details</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
+						<a href="../interfaces/_bots_keyframebot_.keyframedetails.html" class="tsd-kind-icon">Keyframe<wbr>Details</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-parent-kind-external-module tsd-is-not-exported">
+						<a href="../modules/_bots_keyframebot_.html#environment" class="tsd-kind-icon">Environment</a>
 					</li>
 					<li class=" tsd-kind-variable tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="../modules/_framework_procbot_.html#fsreadfile" class="tsd-kind-icon">fs<wbr>Read<wbr>File</a>
+						<a href="../modules/_bots_keyframebot_.html#deploykeyframepath" class="tsd-kind-icon">Deploy<wbr>Keyframe<wbr>Path</a>
+					</li>
+					<li class=" tsd-kind-variable tsd-parent-kind-external-module tsd-is-not-exported">
+						<a href="../modules/_bots_keyframebot_.html#keyframefilename" class="tsd-kind-icon">Keyframe<wbr>Filename</a>
+					</li>
+					<li class=" tsd-kind-variable tsd-parent-kind-external-module tsd-is-not-exported">
+						<a href="../modules/_bots_keyframebot_.html#exec" class="tsd-kind-icon">exec</a>
+					</li>
+					<li class=" tsd-kind-variable tsd-parent-kind-external-module tsd-is-not-exported">
+						<a href="../modules/_bots_keyframebot_.html#jwtdecode" class="tsd-kind-icon">jwt<wbr>Decode</a>
+					</li>
+					<li class=" tsd-kind-variable tsd-parent-kind-external-module tsd-is-not-exported">
+						<a href="../modules/_bots_keyframebot_.html#resin" class="tsd-kind-icon">resin</a>
+					</li>
+					<li class=" tsd-kind-variable tsd-parent-kind-external-module tsd-is-not-exported">
+						<a href="../modules/_bots_keyframebot_.html#tempcleanup" class="tsd-kind-icon">temp<wbr>Cleanup</a>
+					</li>
+					<li class=" tsd-kind-variable tsd-parent-kind-external-module tsd-is-not-exported">
+						<a href="../modules/_bots_keyframebot_.html#tempmkdir" class="tsd-kind-icon">temp<wbr>Mkdir</a>
+					</li>
+					<li class=" tsd-kind-function tsd-parent-kind-external-module">
+						<a href="../modules/_bots_keyframebot_.html#createbot" class="tsd-kind-icon">create<wbr>Bot</a>
+					</li>
+					<li class=" tsd-kind-object-literal tsd-parent-kind-external-module tsd-is-not-exported">
+						<a href="../modules/_bots_keyframebot_.html#environments" class="tsd-kind-icon">Environments</a>
 					</li>
 				</ul>
 			</nav>

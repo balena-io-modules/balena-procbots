@@ -46,5 +46,4 @@ gulp.task('typedoc', () => {
 
 });
 
-//gulp.task('build', [ 'tslint', 'typescript', 'copydecs', 'typedoc' ]);
-gulp.task('build', [ 'typescript', 'copydecs', ]);
+gulp.task('build', [ 'tslint', 'typescript', 'copydecs', 'typedoc' ]);
