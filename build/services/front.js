@@ -90,7 +90,7 @@ class FrontService extends messenger_1.Messenger {
                         },
                         payload: {
                             author_id: userId,
-                            body: `${data.text}\n\n---\n${messenger_1.Messenger.stringifyMetadata(data, 'plaintext')}`,
+                            body: `${data.text}<hr/><br/>${messenger_1.Messenger.stringifyMetadata(data, 'plaintext')}`,
                             channel_id: this.data.inbox_channels[data.toIds.flow],
                             metadata: {
                                 thread_ref: data.sourceIds.thread,
@@ -129,7 +129,7 @@ class FrontService extends messenger_1.Messenger {
                     },
                     payload: {
                         author_id: details.userId,
-                        body: `${data.text}\n\n---\n${messenger_1.Messenger.stringifyMetadata(data, 'plaintext')}`,
+                        body: `${data.text}<hr/><br/>${messenger_1.Messenger.stringifyMetadata(data, 'plaintext')}`,
                         conversation_id: conversationId,
                         options: {
                             archive: false,
