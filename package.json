@@ -1,6 +1,6 @@
 {
   "name": "resin-procbots",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Process robots for automating CI pipelines",
   "homepage": "https://github.com/resin-io-modules/resin-procbots#readme",
   "preferGlobal": true,
