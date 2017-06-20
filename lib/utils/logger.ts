@@ -17,6 +17,8 @@ limitations under the License.
 // This is class and not a module as it allows different clients to change their
 // log level without affecting the rest of the system.
 
+import * as _ from 'lodash';
+
 /**
  * Logging levels are stacked, with a chosen logging level also triggering all
  * levels below it; choosing a logging level of DEBUG will cause all DEBUG,
@@ -106,8 +108,15 @@ export class Logger {
      * Log output.
      * @param level     The level that this message is of (INFO, etc.).
      * @param message   The actual log message.
+     * @param secrets   An optional array of strings to redact
      */
-    public log(level: number, message: string): void {
+    public log(level: number, message: string, secrets?: string[]): void {
+        if (secrets) {
+            const redactFilter = secrets.map((secret) => {
+                return _.escapeRegExp(secret);
+            }).join('|');
+            message = message.replace(new RegExp(redactFilter, 'g'), 'redacted');
+        }
         this.output(level, this._logLevel, this.logLevelStrings, message);
     }
 

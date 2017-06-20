@@ -26,9 +26,9 @@ import {
     LogLevel,
 } from '../utils/logger';
 import {
-    InterimContext, InterimIds,
+    InterimContext,
     MessengerEmitResponse,
-    MessengerEvent,
+    MessengerEvent, MessengerIds,
     MessengerWorkerEvent, Metadata,
     ReceiptContext, TransmitContext,
 } from './messenger-types';
@@ -49,7 +49,7 @@ export abstract class Messenger extends WorkerClient<string|null> implements Ser
      * @param toIds  Pre-populate the toIds, if desired.
      * @returns      newly created context for handling a message.
      */
-    public static initInterimContext(event: ReceiptContext, to: string, toIds: InterimIds = {}): InterimContext {
+    public static initInterimContext(event: ReceiptContext, to: string, toIds: MessengerIds = {}): InterimContext {
         return {
             // Details from the ReceiptContext
             action: event.action,

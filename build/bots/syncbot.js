@@ -22,6 +22,16 @@ class SyncBot extends procbot_1.ProcBot {
             }
         }
     }
+    static extractTokens(event) {
+        const secrets = [];
+        if (event.toIds.token) {
+            secrets.push(event.toIds.token);
+        }
+        if (event.sourceIds.token) {
+            secrets.push(event.sourceIds.token);
+        }
+        return secrets;
+    }
     register(from, to) {
         try {
             const fromConstructor = JSON.parse(process.env[`SYNCBOT_${from.service.toUpperCase()}_CONSTRUCTOR_OBJECT`]);
@@ -71,7 +81,7 @@ class SyncBot extends procbot_1.ProcBot {
     }
     handleError(error, event) {
         this.logger.log(logger_1.LogLevel.WARN, error.message);
-        this.logger.log(logger_1.LogLevel.WARN, JSON.stringify(event));
+        this.logger.log(logger_1.LogLevel.WARN, JSON.stringify(event), SyncBot.extractTokens(event));
         const fromEvent = {
             action: messenger_types_1.MessengerAction.Create,
             first: false,
@@ -173,7 +183,7 @@ class SyncBot extends procbot_1.ProcBot {
     logError(error, event) {
         this.logger.log(logger_1.LogLevel.WARN, 'v!!!v');
         this.logger.log(logger_1.LogLevel.WARN, error.message);
-        this.logger.log(logger_1.LogLevel.WARN, JSON.stringify(event));
+        this.logger.log(logger_1.LogLevel.WARN, JSON.stringify(event), SyncBot.extractTokens(event));
         this.logger.log(logger_1.LogLevel.WARN, '^!!!^');
     }
     useHubOrGeneric(event, type) {

@@ -3,10 +3,10 @@ import * as express from 'express';
 import { Worker } from '../framework/worker';
 import { WorkerClient } from '../framework/worker-client';
 import { Logger } from '../utils/logger';
-import { InterimContext, InterimIds, MessengerEmitResponse, MessengerEvent, MessengerWorkerEvent, Metadata, ReceiptContext, TransmitContext } from './messenger-types';
+import { InterimContext, MessengerEmitResponse, MessengerEvent, MessengerIds, MessengerWorkerEvent, Metadata, ReceiptContext, TransmitContext } from './messenger-types';
 import { ServiceAPIHandle, ServiceEmitContext, ServiceEmitRequest, ServiceEmitter, ServiceListener, ServiceRegistration } from './service-types';
 export declare abstract class Messenger extends WorkerClient<string | null> implements ServiceListener, ServiceEmitter {
-    static initInterimContext(event: ReceiptContext, to: string, toIds?: InterimIds): InterimContext;
+    static initInterimContext(event: ReceiptContext, to: string, toIds?: MessengerIds): InterimContext;
     protected static logger: Logger;
     protected static getIndicatorArrays(): {
         'shown': string[];
