@@ -2,7 +2,56 @@
 
 A little Bot, using the ProcBot framework, that links communication services
 
-## Process
+## How do I use SyncBot?
+
+### How do I set up my accounts?
+
+* Ensure your Front, Discourse & Flowdock usernames match
+* Get your discourse details
+  * Try:
+    * Sign-in to forums.resin.io
+    * Go to your preferences page (top right profile picture > cog icon)
+    * Go to your admin page (top right spanner labelled admin)
+    * Under permissions generate an API key
+  * Catch:
+    * Ask a Discourse admin to:
+      * Make you a moderator
+      * Generate an API key for you
+* Give your discourse details to SyncBot
+  * Send the following PM's to the SyncBot account:
+    * `My discourse token is ...`
+  * Do not be surprised by the lack of response
+    * Syncbot searches when required rather than constantly listening
+    * Testing and confirming receipt will be developed
+* Test your link
+  * [test thread](https://www.flowdock.com/app/rulemotion/user_happiness/threads/XY9ykgPS8EFABsLL57aCXMRxf44)
+    this is an unlisted thread which can be used to test your Discourse details
+    with SyncBot. SyncBot will complain if there is an error, otherwise stay
+    silent.
+
+### Which entities are linked?
+
+* Flows
+  * Forums:Troubleshooting - Flowdock:public/s/community - 
+    Front:support/community
+  * Flowdock:public/s/premium - Front:support/premium (TBC)
+* Threads
+  * Public threads in linked flows get synchronised
+    * Use a `%` or `💬` at the beginning of a line to indicate the topic is
+      public
+  * Private threads remain private, but are synchronised
+    * Uses discourse's `unlisted`
+    * Without syntax, private is assumed
+* Comments
+  * Public comments in linked threads get synchronised
+    * Use a `%` or `💬` at the beginning of a line to indicate the comment is
+      public
+  * Private comments remain private, but are synchronised
+    * Uses discourse's `whisper`
+    * Uses front's `comment`
+    * Without syntax, private is assumed
+
+## How does SyncBot work?
 
 ### Each event
 
@@ -107,45 +156,122 @@ Flowdock will search the 1-1 history of a user for a phrase that matches "My
 
 Errors, where possible, are reported in the originating thread as whispers.
 
-## Configuration
+## How would I configure SyncBot?
 
-### Main Configuration
+### Example .sh file
 
-* Flows
-  * Forums:Troubleshooting - Flowdock:public/s/community - Front:support/community
-  * Flowdock:public/s/premium - Front:support/premium (TBC)
-* Threads
-  * Public threads in linked flows get synchronised
-    * Use a `%` or `💬` at the beginning of a line to indicate the topic is public
-  * Private thread remain private, but are synchronised
-    * Uses discourse's `unlisted`
-    * Without syntax, private is assumed
-* Comments
-  * Public comments in linked threads get synchronised
-    * Use a `%` or `💬` at the beginning of a line to indicate the comment is public
-  * Private comments remain private, but are synchronised
-    * Uses discourse's `whisper`
-    * Uses front's `comment`
-    * Without syntax, private is assumed
+There is an example .sh file in the same directory as this file, that gives
+some sanitised examples of configuration.
 
-### Your Configuration
+### Environment Variables
 
-* Ensure your Front, Discourse & Flowdock usernames match
-* Get your discourse details
-  * Try:
-    * Sign-in to forums.resin.io
-    * Go to your preferences page (top right profile picture > cog icon)
-    * Go to your admin page (top right spanner labelled admin)
-    * Under permissions generate an API key
-  * Catch:
-    * Ask a Discourse admin to:
-      * Make you a moderator
-      * Generate an API key for you
-* Give your discourse details to SyncBot
-  * Send the following PM's to the SyncBot account:
-    * `My discourse token is ...`
-  * Do not be surprised by the lack of response
-    * Syncbot searches when required rather than constantly listening
-    * Testing and confirming receipt will be developed
-* Test your link
-  * [test thread](https://www.flowdock.com/app/rulemotion/user_happiness/threads/XY9ykgPS8EFABsLL57aCXMRxf44) this is an unlisted thread which can be used to test your Discourse details with SyncBot. SyncBot will complain if there is an error, otherwise stay silent.
+#### MESSAGE_CONVERTOR_PRIVATE_INDICATORS
+
+This is a JSON encoded array of strings that may be used to indicate that a
+message is private.
+
+e.g. `\["💭"]`
+
+#### MESSAGE_CONVERTOR_PUBLIC_INDICATORS
+
+This is a JSON encoded array of strings that may be used to indicate that a
+message is public.
+
+e.g. `\["💬", "%"]`
+
+#### MESSAGE_SERVICE_PORT
+
+This is an integer value for which port the web hooks should listen to.
+
+e.g. `4567`
+
+#### SYNCBOT_GENERIC_AUTHOR_ACCOUNTS
+
+These are a set of accounts that the bot may use when a message originates from
+a user that is not configured, i.e. the public.
+
+e.g.
+```json
+{
+  "flowdock":{"user":"SyncBot","token":""},
+  "discourse":{"user":"SyncBot","token":""},
+  "front":{"user":"SyncBot","token":""}
+}
+```
+
+#### SYNCBOT_SYSTEM_MESSAGE_ACCOUNTS
+
+These are a set of accounts that the bot may use for system messages, i.e.
+`Connects to ...`
+
+e.g.
+```json
+{
+  "flowdock":{"user":"SyncBot","token":""},
+  "discourse":{"user":"SyncBot","token":""},
+  "front":{"user":"SyncBot","token":""}
+}
+```
+
+#### SYNCBOT_HUB_SERVICE
+
+This is a service that the bot may use to search for user-linked values, i.e.
+`My ... token is ...`
+
+e.g. `flowdock`
+
+#### SYNCBOT_DISCOURSE_CONSTRUCTOR_OBJECT
+
+This is an object containing all the details that Discourse requires to
+configure an adapter, including which account listens to the topics.
+
+e.g.
+```json
+{
+  "instance":"forums.resin.io",
+  "token":"",
+  "username":"SyncBot"
+}
+```
+
+#### SYNCBOT_FLOWDOCK_CONSTRUCTOR_OBJECT
+This is an object containing all the details that Flowdock requires to
+configure an adapter.
+
+e.g.
+```json
+{
+  "organization":"rulemotion",
+  "token":""
+}
+```
+
+#### SYNCBOT_FRONT_CONSTRUCTOR_OBJECT
+This is an object containing all the details that Front requires to configure
+an adapter, including which channel to use to write to which inbox.
+
+e.g.
+```json
+{
+  "inbox_channels":{"":""},
+  "token":""
+}
+```
+
+#### SYNCBOT_MAPPINGS
+This contains details of which flows are considered to be equivalent
+
+e.g.
+```json
+[
+  [
+    {"service":"discourse","flow":""},
+    {"service":"flowdock","flow":""},
+    {"service":"front","flow":""}
+  ],
+  [
+    {"service":"flowdock","flow":""},
+    {"service":"front","flow":""}
+  ]
+]
+```
