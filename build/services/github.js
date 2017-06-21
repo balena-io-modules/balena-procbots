@@ -77,9 +77,7 @@ class GithubService extends worker_client_1.WorkerClient {
                     labelPromise.then((data) => {
                         const labels = data.response;
                         if (labels) {
-                            const foundLabels = labels.map((label) => {
-                                return label.name;
-                            });
+                            const foundLabels = _.map(labels, 'name');
                             if (registration.suppressionLabels &&
                                 (_.intersection(registration.suppressionLabels, foundLabels).length ===
                                     registration.suppressionLabels.length)) {
@@ -147,9 +145,10 @@ class GithubService extends worker_client_1.WorkerClient {
             app.use(bodyParser.urlencoded({ extended: true }));
             app.use(bodyParser.json());
             app.post(listenerConstructor.path, (req, res) => {
-                const eventType = req.get('x-github-event');
+                const eventType = req.get('x-github-event') || '';
+                const githubSignature = req.get('x-hub-signature') || '';
                 const payload = req.body;
-                if (!verifyWebhookToken(JSON.stringify(payload), req.get('x-hub-signature'))) {
+                if (!verifyWebhookToken(JSON.stringify(payload), githubSignature)) {
                     res.sendStatus(401);
                     return;
                 }
@@ -247,7 +246,7 @@ class GithubService extends worker_client_1.WorkerClient {
     authenticate() {
         const privatePem = new Buffer(this.pem, 'base64').toString();
         const payload = {
-            exp: Math.floor((Date.now() / 1000)) + (10 * 60),
+            exp: Math.floor((Date.now() / 1000)) + (10 * 50),
             iat: Math.floor((Date.now() / 1000)),
             iss: this.integrationId
         };

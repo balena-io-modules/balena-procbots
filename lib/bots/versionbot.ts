@@ -17,7 +17,7 @@ limitations under the License.
 // VersionBot listens for merges of a PR to the `master` branch and then
 // updates any packages for it.
 import * as Promise from 'bluebird';
-import * as ChildProcess from 'child_process';
+import { spawn } from 'child_process';
 import * as FS from 'fs';
 import * as GithubApi from 'github';
 import * as _ from 'lodash';
@@ -33,8 +33,7 @@ import { AlertLevel, LogLevel } from '../utils/logger';
 
 // Exec technically has a binding because of it's Node typings, but promisify doesn't include
 // the optional object (we need for CWD). So we need to special case it.
-const exec: (command: string, options?: any) => Promise<{}> = Promise.promisify(ChildProcess.exec);
-const fsReadFile = Promise.promisify(FS.readFile);
+const fsReadFile: (filename: string, options?: any) => Promise<Buffer | string> = Promise.promisify(FS.readFile);
 const fsFileExists = Promise.promisify(FS.stat);
 const tempMkdir = Promise.promisify(track().mkdir);
 const tempCleanup = Promise.promisify(cleanup);
@@ -83,6 +82,14 @@ interface VersionBotError {
 interface FSError {
     code: string;
     message: string;
+}
+
+interface ExternalCommand {
+    command: string;
+    args: string[];
+    options?: {
+        cwd?: string;
+    };
 }
 
 /** The VersionBot specific ProcBot Configuration structure. */
@@ -764,15 +771,35 @@ export class VersionBot extends ProcBot {
         //     `package.json` file. This means components that don't have one need a custom
         //     `versionist.conf.js` in their root dir. And we need to test to run against it.
         //     It's possible to get round this using a custom `versionist.conf.js`, which we now support.
-        const cliCommand = (command: string) => {
-            return exec(command, { cwd: versionData.fullPath });
+        const buildCliCommand = (command: string, args?: string[], workingDir?: string) => {
+            return {
+                command,
+                args: args || [],
+                options: (workingDir) ? { cwd: workingDir } : undefined
+            };
+        };
+        const runCliCommand = (params: ExternalCommand) => {
+            return new Promise((resolve, reject) => {
+                const child = spawn(params.command, params.args, params.options);
+                let stdout = '';
+                let stderr = '';
+
+                child.stdout.on('data', (data) => {
+                    stdout += data.toString();
+                });
+                child.stderr.on('data', (data) => {
+                    stderr += data.toString();
+                });
+                child.addListener('close', () => resolve(stdout));
+                child.addListener('error', () => reject(stderr));
+            });
         };
 
         return Promise.mapSeries([
-            `git clone https://${versionData.authToken}:${versionData.authToken}@github.com/` +
-                `${versionData.repoFullName} ${versionData.fullPath}`,
-            `git checkout ${versionData.branchName}`
-        ], cliCommand).then(() => {
+            buildCliCommand('git', ['clone', `https://${versionData.authToken}:${versionData.authToken}@github.com/` +
+                `${versionData.repoFullName}`, `${versionData.fullPath}`], `${versionData.fullPath}`),
+            buildCliCommand('git', ['checkout', `${versionData.branchName}`], `${versionData.fullPath}`)
+        ], runCliCommand).then(() => {
             // Test the repo, we want to see if there's a local `versionist.conf.js`.
             // If so, we use that rather than the built-in default.
             return fsFileExists(`${versionData.fullPath}/versionist.conf.js`)
@@ -786,18 +813,20 @@ export class VersionBot extends ProcBot {
             });
         }).then((exists: boolean) => {
             let versionistCommand: string;
+            let versionistArgs: string[] = [];
+
             return this.getNodeBinPath().then((nodePath: string) => {
                 versionistCommand = path.join(nodePath, 'versionist');
                 if (exists) {
-                    versionistCommand = `${versionistCommand} -c versionist.conf.js`;
+                    versionistArgs = ['-c', 'versionist.conf.js'];
                     this.logger.log(LogLevel.INFO, 'Found an overriding versionist config ' +
                         `for ${versionData.repoFullName}, using that`);
                 }
             }).then(() => {
                 return Promise.mapSeries([
-                    versionistCommand,
-                    'git status -s'
-                ], cliCommand);
+                    buildCliCommand(versionistCommand, versionistArgs, `${versionData.fullPath}`),
+                    buildCliCommand('git', ['status', '-s'], `${versionData.fullPath}`)
+                ], runCliCommand);
             });
         }).get(1).then((status: string) => {
             const moddedFiles: string[] = [];
@@ -833,7 +862,8 @@ export class VersionBot extends ProcBot {
             moddedFiles.push(`CHANGELOG.md`);
 
             // Now we get the new version from the CHANGELOG (*not* the package.json, it may not exist).
-            return exec(`cat ${versionData.fullPath}${_.last(moddedFiles)}`).then((contents: string) => {
+            return fsReadFile(`${versionData.fullPath}${_.last(moddedFiles)}`, { encoding: 'utf8' })
+            .then((contents: string) => {
                 // Only interested in the first match for '## v...'
                 const match = contents.match(/^## (v[0-9]+\.[0-9]+\.[0-9]+).+$/m);
 

@@ -48,7 +48,7 @@
     "jsdoc": "^3.4.3",
     "tslint": "^4.5.1",
     "typedoc": "^0.6.0",
-    "typescript": "^2.2.1"
+    "typescript": "^2.3.4"
   },
   "dependencies": {
     "bluebird": "^3.5.0",
