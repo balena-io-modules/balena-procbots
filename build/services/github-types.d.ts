@@ -118,10 +118,18 @@ export interface GithubEmitRequestContext extends ServiceEmitContext {
     data: any;
 }
 
+/**
+ * The location object to allow a Github ServiceEmitter to locate and retrieve a
+ * configuration file.
+ */
 export interface GithubConfigLocation extends ConfigurationLocation {
+    /** The location of the configuration file. */
     location: {
+        /** Owner of the repository. */
         owner: string;
+        /** The repository name. */
         repo: string;
+        /** Absolute path in the repository where the configuration file is located, inclusive of filename. */
         path?: string;
     };
 }

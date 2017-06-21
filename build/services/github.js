@@ -201,7 +201,7 @@ class GithubService extends worker_client_1.WorkerClient {
                     if (response.length === perPage) {
                         return runApi();
                     }
-                    response = _.uniqBy(returnArray, 'id');
+                    response = _.uniq(returnArray);
                 }
                 return {
                     response,

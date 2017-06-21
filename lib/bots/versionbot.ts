@@ -37,70 +37,113 @@ const fsFileExists = Promise.promisify(FS.stat);
 const tempMkdir = Promise.promisify(track().mkdir);
 const tempCleanup = Promise.promisify(cleanup);
 
-// Specific to VersionBot
-interface FileMapping {
-    file: string;
-    encoding: string;
-}
-
+/** Stores data for a file retrieved from Github. */
 interface EncodedFile extends FileMapping {
+    /** The git tree entry the file belongs in. */
     treeEntry: GithubApiTypes.TreeEntry;
+    /** The SHA for the blob that is the file. */
     blobSha: string;
 };
 
-interface RepoFileData {
-    owner: string;
-    repo: string;
-    branchName: string;
-    version: string;
-    files: FileMapping[];
-}
-
-interface VersionistData {
-    authToken: string;
-    branchName: string;
-    fullPath: string;
-    repoFullName: string;
-    files?: string[];
-    version?: string;
-}
-
-interface MergeData {
-    commitVersion: string;
-    pullRequest: GithubApiTypes.PullRequest;
-}
-
-interface VersionBotError {
-    brief: string;
-    message: string;
-    number: number;
-    owner: string;
-    repo: string;
-}
-
-interface FSError {
-    code: string;
-    message: string;
-}
-
+/** Used to create external command to run on the environment hosting VersionBot. */
 interface ExternalCommand {
+    /** The command to run. */
     command: string;
+    /** The arguments to pass to the command as an array. */
     args: string[];
+    /** Any relevant options for the command. */
     options?: {
+        /** The CWD to run the command in. */
         cwd?: string;
     };
 }
 
+/** Interface to store contents of a file extracted from a cloned git repo. */
+interface FileMapping {
+    /** The file contents. */
+    file: string;
+    /** The current format of encoding ('utf-8', 'base64' etc.) */
+    encoding: string;
+}
+
+/** Used to pass the the PR and commit message for merging. */
+interface MergeData {
+    /** Commit message (version) to use as the merge message. */
+    commitVersion: string;
+    /** The PR that originated the merge. */
+    pullRequest: GithubApiTypes.PullRequest;
+}
+
+/** Interface to pass relevant information into the blob creation method. */
+interface RepoFileData {
+    /** Owner of the repository to commit files to. */
+    owner: string;
+    /** Repository to commit files to. */
+    repo: string;
+    /** Branch to commit files to. */
+    branchName: string;
+    /** New version of the component to commit as. */
+    version: string;
+    /** The files to commit. */
+    files: FileMapping[];
+}
+
+/** The ReviewState enumerated type denotes an approved or blocked review. */
 enum ReviewState {
     Approved = 0,
     ChangesRequired
 };
 
+/**
+ * Interface used to store usernames of those who have reviewed, and the type of
+ * review they gave. Note that commented reviews are ignored.
+ */
 interface ReviewerMap {
+    /** Key is the username, value is the type of review. */
     [name: string]: ReviewState;
 };
 
+/** Interface to pass data required to run versionist on a repo. */
+interface VersionistData {
+    /** Auth token to use to clone the repository. */
+    authToken: string;
+    /** Branchname of the repo to clone. */
+    branchName: string;
+    /** Full path of the location where the repository should be cloned. */
+    fullPath: string;
+    /** Full name of the repository (owner/reponame). */
+    repoFullName: string;
+    /** Files that have been modified by running versionist. */
+    files?: string[];
+    /** The new version of the component. */
+    version?: string;
+}
+
+/** Interface for passing errors around. */
+interface VersionBotError {
+    /** Brief error message. */
+    brief: string;
+    /** Detailed error message. */
+    message: string;
+    /** PR number the error occured in. */
+    number: number;
+    /** Owner of the repository. */
+    owner: string;
+    /** Repository name. */
+    repo: string;
+}
+
+/** Interface for reporting an error from Node's FS module. */
+interface FSError {
+    /** Error code. */
+    code: string;
+    /** Error message. */
+    message: string;
+}
+
+/** Relative (from root) filepath to the VersionBot configuration file in a repository. */
 const RepositoryFilePath = 'repository.yml';
+/** Message sent to required reviewers should they not have been added on a review. */
 const ReviewerAddMessage = 'Please add yourselves as reviewers for this PR.';
 
 /** The VersionBot specific ProcBot Configuration structure. */
@@ -139,9 +182,6 @@ const MergeLabel = 'procbots/versionbot/ready-to-merge';
 /** Label to be applied for VersionBot to ignore the PR. */
 const IgnoreLabel = 'procbots/versionbot/no-checks';
 
-// The VersionBot is built on top of GithubBot, which does all the heavy lifting and scheduling.
-// It is designed to check for valid `versionist` commit semantics and alter (or merge) a PR
-// accordingly.
 /**
  * The VersionBot is built on top of the ProcBot class, which does all the heavy lifting and scheduling.
  * It is designed to check for valid `versionist` commit semantics and alter (or merge) a PR
@@ -152,10 +192,12 @@ export class VersionBot extends ProcBot {
     private githubListenerName: string;
     /** Github ServiceEmitter name. */
     private githubEmitterName: string;
-    /** Github ServiceEmitter name. */
+    /** Github ServiceEmitter. */
     private githubEmitter: ServiceEmitter;
     /** Instance of Github SDK API in use. */
     private githubApi: GithubApi;
+    /** Email address used for commiting as VersionBot. */
+    private emailAddress: string;
 
     /**
      * Constructs a new VersionBot instance.
@@ -164,9 +206,10 @@ export class VersionBot extends ProcBot {
      * @param pemString   PEM for Github events and App login.
      * @param webhook     Secret webhook for validating events.
      */
-    constructor(integration: number, name: string, pemString: string, webhook: string) {
+    constructor(integration: number, name: string, email: string, pemString: string, webhook: string) {
         // This is the VersionBot.
         super(name);
+        this.emailAddress = email;
 
         // Create a new listener for Github with the right Integration ID.
         const ghListener = this.addServiceListener('github', {
@@ -426,7 +469,6 @@ export class VersionBot extends ProcBot {
         let approvedReviewers: string[];
 
         // Only when opening a new PR.
-        console.log(event.cookedEvent.data.action);
         if (event.cookedEvent.data.action !== 'opened') {
             return Promise.resolve();
         }
@@ -491,8 +533,6 @@ export class VersionBot extends ProcBot {
      * Should the conditions be satisfied then a successful status is set, otherwise a failed
      * state is set.
      *
-     *
-     *
      * @param _registration GithubRegistration object used to register the method
      * @param event         ServiceEvent containing the event information ('pull_request' event)
      * @returns             A void Promise once execution has finished.
@@ -552,17 +592,19 @@ export class VersionBot extends ProcBot {
             // If the length of the unique list of maintainers and reviewers is less than
             // the value of `approvalsNeeded`, then this is never going to work.
             // We only need to test if the `approvedReviewers` list is present
-            if (approvedReviewers &&
-            (_.unionWith(approvedReviewers, approvedMaintainers || [], _.isEqual).length < approvalsNeeded)) {
-                // We can never reach the number of approvals required. Comment on PR.
-                return this.reportError({
-                    brief: 'Not enough reviewers for PR approval',
-                    message: 'The number of approved reviewers for the repository is less than the ' +
-                        `number of approvals that are required for the PR to be merged (${approvalsNeeded}).`,
-                    number: pr.number,
-                    owner,
-                    repo
-                });
+            if (approvedReviewers) {
+                const mergedReviewers = _.unionWith(approvedReviewers, approvedMaintainers || [], _.isEqual);
+                if (mergedReviewers.length < approvalsNeeded) {
+                    // We can never reach the number of approvals required. Comment on PR.
+                    return this.reportError({
+                        brief: 'Not enough reviewers for PR approval',
+                        message: 'The number of approved reviewers for the repository is less than the ' +
+                            `number of approvals that are required for the PR to be merged (${approvalsNeeded}).`,
+                        number: pr.number,
+                        owner,
+                        repo
+                    });
+                }
             }
 
             // Cycle through reviews, ensure that any approved review occurred after any requiring changes.
@@ -1188,8 +1230,8 @@ export class VersionBot extends ProcBot {
                 return this.dispatchToEmitter(this.githubEmitterName, {
                     data: {
                         committer: {
-                            email: 'versionbot@resin.io',
-                            name: process.env.VERSIONBOT_NAME
+                            email: this.emailAddress,
+                            name: this._botname
                         },
                         message: `${repoData.version}`,
                         owner: repoData.owner,
@@ -1248,8 +1290,8 @@ export class VersionBot extends ProcBot {
                     repo,
                     tag: data.commitVersion,
                     tagger: {
-                        email: 'versionbot@resin.io',
-                        name: process.env.VERSIONBOT_NAME
+                        email: this.emailAddress,
+                        name: this._botname
                     },
                     type: 'commit'
                 },
@@ -1511,7 +1553,7 @@ export class VersionBot extends ProcBot {
      * @returns             An array containing stripped user logins, or null should there be no valid users.
      */
     private stripPRAuthor(list: string[] | null, pullRequest: GithubApiTypes.PullRequest): string[] | null {
-        const filteredList = (list) ? _.filter(list, (reviewer) => reviewer !== pullRequest.user.login) : null;
+        const filteredList = list ? _.filter(list, (reviewer) => reviewer !== pullRequest.user.login) : null;
         return (filteredList && (filteredList.length === 0)) ? null : filteredList;
     }
 
@@ -1563,12 +1605,12 @@ export class VersionBot extends ProcBot {
  * Creates a new instance of the VersionBot client.
  */
 export function createBot(): VersionBot {
-    if (!(process.env.VERSIONBOT_NAME && process.env.VERSIONBOT_INTEGRATION_ID &&
+    if (!(process.env.VERSIONBOT_NAME && process.env.VERSIONBOT_EMAIL && process.env.VERSIONBOT_INTEGRATION_ID &&
     process.env.VERSIONBOT_PEM && process.env.VERSIONBOT_WEBHOOK_SECRET)) {
-        throw new Error(`'VERSIONBOT_NAME', 'VERSIONBOT_INTEGRATION_ID', 'VERSIONBOT_PEM' and ` +
+        throw new Error(`'VERSIONBOT_NAME', 'VERSIONBOT_EMAIL', 'VERSIONBOT_INTEGRATION_ID', 'VERSIONBOT_PEM' and ` +
             `'VERSIONBOT_WEBHOOK_SECRET environment variables need setting`);
     }
 
     return new VersionBot(process.env.VERSIONBOT_INTEGRATION_ID, process.env.VERSIONBOT_NAME,
-    process.env.VERSIONBOT_PEM, process.env.VERSIONBOT_WEBHOOK_SECRET);
+    process.env.VERSIONBOT_EMAIL, process.env.VERSIONBOT_PEM, process.env.VERSIONBOT_WEBHOOK_SECRET);
 }

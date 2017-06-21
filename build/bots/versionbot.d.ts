@@ -7,7 +7,8 @@ export declare class VersionBot extends ProcBot {
     private githubEmitterName;
     private githubEmitter;
     private githubApi;
-    constructor(integration: number, name: string, pemString: string, webhook: string);
+    private emailAddress;
+    constructor(integration: number, name: string, email: string, pemString: string, webhook: string);
     protected statusChange: (registration: GithubRegistration, event: ServiceEvent) => Promise<void | void[]>;
     protected checkWaffleFlow: (_registration: GithubRegistration, event: ServiceEvent) => Promise<void>;
     protected addReviewers: (_registration: GithubRegistration, event: ServiceEvent) => Promise<void>;

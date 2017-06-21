@@ -28,6 +28,7 @@ export interface PullRequestReviewEvent {
     type: 'pull_request_review';
     action: string;
     pull_request: PullRequest;
+    sender: User;
 }
 
 export interface StatusEvent {
@@ -35,6 +36,7 @@ export interface StatusEvent {
     name: string;
     sha: string;
     branches: StatusEventBranch[];
+    sender: User;
 }
 
 export interface StatusEventBranch {
@@ -44,6 +46,7 @@ export interface StatusEventBranch {
         sha: string;
         url: string;
     };
+    sender: User;
 }
 
 // Github API -----------------------------------------------------------------

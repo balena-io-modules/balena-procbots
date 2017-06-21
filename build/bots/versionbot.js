@@ -32,7 +32,7 @@ var StatusChecks;
 const MergeLabel = 'procbots/versionbot/ready-to-merge';
 const IgnoreLabel = 'procbots/versionbot/no-checks';
 class VersionBot extends procbot_1.ProcBot {
-    constructor(integration, name, pemString, webhook) {
+    constructor(integration, name, email, pemString, webhook) {
         super(name);
         this.statusChange = (registration, event) => {
             const splitRepo = event.cookedEvent.data.name.split('/');
@@ -148,7 +148,6 @@ class VersionBot extends procbot_1.ProcBot {
             const repo = head.repo.name;
             let approvedMaintainers;
             let approvedReviewers;
-            console.log(event.cookedEvent.data.action);
             if (event.cookedEvent.data.action !== 'opened') {
                 return Promise.resolve();
             }
@@ -239,16 +238,18 @@ class VersionBot extends procbot_1.ProcBot {
                         repo
                     });
                 }
-                if (approvedReviewers &&
-                    (_.unionWith(approvedReviewers, approvedMaintainers || [], _.isEqual).length < approvalsNeeded)) {
-                    return this.reportError({
-                        brief: 'Not enough reviewers for PR approval',
-                        message: 'The number of approved reviewers for the repository is less than the ' +
-                            `number of approvals that are required for the PR to be merged (${approvalsNeeded}).`,
-                        number: pr.number,
-                        owner,
-                        repo
-                    });
+                if (approvedReviewers) {
+                    const mergedReviewers = _.unionWith(approvedReviewers, approvedMaintainers || [], _.isEqual);
+                    if (mergedReviewers.length < approvalsNeeded) {
+                        return this.reportError({
+                            brief: 'Not enough reviewers for PR approval',
+                            message: 'The number of approved reviewers for the repository is less than the ' +
+                                `number of approvals that are required for the PR to be merged (${approvalsNeeded}).`,
+                            number: pr.number,
+                            owner,
+                            repo
+                        });
+                    }
                 }
                 reviews.forEach((review) => {
                     const reviewer = review.user.login;
@@ -562,6 +563,7 @@ class VersionBot extends procbot_1.ProcBot {
                 }
             });
         };
+        this.emailAddress = email;
         const ghListener = this.addServiceListener('github', {
             client: name,
             loginType: {
@@ -790,8 +792,8 @@ class VersionBot extends procbot_1.ProcBot {
                 return this.dispatchToEmitter(this.githubEmitterName, {
                     data: {
                         committer: {
-                            email: 'versionbot@resin.io',
-                            name: process.env.VERSIONBOT_NAME
+                            email: this.emailAddress,
+                            name: this._botname
                         },
                         message: `${repoData.version}`,
                         owner: repoData.owner,
@@ -837,8 +839,8 @@ class VersionBot extends procbot_1.ProcBot {
                     repo,
                     tag: data.commitVersion,
                     tagger: {
-                        email: 'versionbot@resin.io',
-                        name: process.env.VERSIONBOT_NAME
+                        email: this.emailAddress,
+                        name: this._botname
                     },
                     type: 'commit'
                 },
@@ -963,7 +965,7 @@ class VersionBot extends procbot_1.ProcBot {
         });
     }
     stripPRAuthor(list, pullRequest) {
-        const filteredList = (list) ? _.filter(list, (reviewer) => reviewer !== pullRequest.user.login) : null;
+        const filteredList = list ? _.filter(list, (reviewer) => reviewer !== pullRequest.user.login) : null;
         return (filteredList && (filteredList.length === 0)) ? null : filteredList;
     }
     checkValidMaintainer(config, event) {
@@ -992,12 +994,12 @@ class VersionBot extends procbot_1.ProcBot {
 }
 exports.VersionBot = VersionBot;
 function createBot() {
-    if (!(process.env.VERSIONBOT_NAME && process.env.VERSIONBOT_INTEGRATION_ID &&
+    if (!(process.env.VERSIONBOT_NAME && process.env.VERSIONBOT_EMAIL && process.env.VERSIONBOT_INTEGRATION_ID &&
         process.env.VERSIONBOT_PEM && process.env.VERSIONBOT_WEBHOOK_SECRET)) {
-        throw new Error(`'VERSIONBOT_NAME', 'VERSIONBOT_INTEGRATION_ID', 'VERSIONBOT_PEM' and ` +
+        throw new Error(`'VERSIONBOT_NAME', 'VERSIONBOT_EMAIL', 'VERSIONBOT_INTEGRATION_ID', 'VERSIONBOT_PEM' and ` +
             `'VERSIONBOT_WEBHOOK_SECRET environment variables need setting`);
     }
-    return new VersionBot(process.env.VERSIONBOT_INTEGRATION_ID, process.env.VERSIONBOT_NAME, process.env.VERSIONBOT_PEM, process.env.VERSIONBOT_WEBHOOK_SECRET);
+    return new VersionBot(process.env.VERSIONBOT_INTEGRATION_ID, process.env.VERSIONBOT_NAME, process.env.VERSIONBOT_EMAIL, process.env.VERSIONBOT_PEM, process.env.VERSIONBOT_WEBHOOK_SECRET);
 }
 exports.createBot = createBot;
 

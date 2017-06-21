@@ -27,12 +27,16 @@ export interface ProcBotConfiguration {
     };
 }
 
-/** Enables a Service to retrieve a ProcBotConfiguration specific to the service type. */
+/** Enables a Service to retrieve a configuration file from a specific service. */
 export interface ConfigurationLocation {
     /**
      * An instance of the ServiceEmitter to use, or a string denoting an inbuilt service.
      * 'FS' can be used to retrieve a file-based configuration file, using `location` as the relative path.
     */
     emitter: ServiceEmitter | string;
+    /**
+     * Location of the configuration file. May be a string (for local 'FS') or an object
+     * specific to a service.
+     */
     location: string | any;
 }

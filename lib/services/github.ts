@@ -271,8 +271,9 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
                         return runApi();
                     }
 
-                    // Finally we filter for duplicates. We do this via URL.
-                    response = _.uniqBy(returnArray, 'id');
+                    // Finally we filter for duplicates. We have to check entire objects
+                    // as there's no unique identifier across all returned types.
+                    response = _.uniq(returnArray);
                 }
 
                 // Else if not an array (or less entries then `per_page` returned), just

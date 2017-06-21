@@ -13,7 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-import * as _ from 'lodash';
 
 // This is class and not a module as it allows different clients to change their
 // log level without affecting the rest of the system.
