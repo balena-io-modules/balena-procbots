@@ -19,6 +19,7 @@
         "lib/bots/**/*.ts",
         "lib/framework/**/*.ts",
         "lib/services/**/*.ts",
-        "lib/utils/**/*.ts"
+        "lib/utils/**/*.ts",
+        "lib/RASP/**/*.ts"
     ]
 }
