@@ -46,14 +46,15 @@ export class RASPParser extends Parser {
 	public static readonly RULE_init = 0;
 	public static readonly RULE_botDefinition = 1;
 	public static readonly RULE_botBody = 2;
-	public static readonly RULE_addListener = 3;
-	public static readonly RULE_serviceName = 4;
-	public static readonly RULE_serviceConstructor = 5;
-	public static readonly RULE_githubConstructor = 6;
-	public static readonly RULE_githubConstructorType = 7;
+	public static readonly RULE_botName = 3;
+	public static readonly RULE_addListener = 4;
+	public static readonly RULE_serviceName = 5;
+	public static readonly RULE_serviceConstructor = 6;
+	public static readonly RULE_githubConstructor = 7;
+	public static readonly RULE_githubConstructorType = 8;
 	public static readonly ruleNames: string[] = [
-		"init", "botDefinition", "botBody", "addListener", "serviceName", "serviceConstructor", 
-		"githubConstructor", "githubConstructorType"
+		"init", "botDefinition", "botBody", "botName", "addListener", "serviceName", 
+		"serviceConstructor", "githubConstructor", "githubConstructorType"
 	];
 
 	private static readonly _LITERAL_NAMES: (string | undefined)[] = [
@@ -91,20 +92,20 @@ export class RASPParser extends Parser {
 		let _localctx: InitContext = new InitContext(this._ctx, this.state);
 		this.enterRule(_localctx, 0, RASPParser.RULE_init);
 		try {
-			this.state = 18;
+			this.state = 20;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
 			case RASPParser.T__0:
 				this.enterOuterAlt(_localctx, 1);
 				{
-				this.state = 16;
+				this.state = 18;
 				this.botDefinition();
 				}
 				break;
 			case RASPParser.EOF:
 				this.enterOuterAlt(_localctx, 2);
 				{
-				this.state = 17;
+				this.state = 19;
 				this.match(RASPParser.EOF);
 				}
 				break;
@@ -133,17 +134,17 @@ export class RASPParser extends Parser {
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 20;
-			this.match(RASPParser.T__0);
-			this.state = 21;
-			this.match(RASPParser.ALPHA);
 			this.state = 22;
-			this.match(RASPParser.T__1);
+			this.match(RASPParser.T__0);
 			this.state = 23;
-			this.match(RASPParser.T__2);
+			this.botName();
 			this.state = 24;
-			this.botBody();
+			this.match(RASPParser.T__1);
 			this.state = 25;
+			this.match(RASPParser.T__2);
+			this.state = 26;
+			this.botBody();
+			this.state = 27;
 			this.match(RASPParser.T__3);
 			}
 		}
@@ -168,8 +169,33 @@ export class RASPParser extends Parser {
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 27;
+			this.state = 29;
 			this.addListener();
+			}
+		}
+		catch (re) {
+			if (re instanceof RecognitionException) {
+				_localctx.exception = re;
+				this._errHandler.reportError(this, re);
+				this._errHandler.recover(this, re);
+			} else {
+				throw re;
+			}
+		}
+		finally {
+			this.exitRule();
+		}
+		return _localctx;
+	}
+	@RuleVersion(0)
+	public botName(): BotNameContext {
+		let _localctx: BotNameContext = new BotNameContext(this._ctx, this.state);
+		this.enterRule(_localctx, 6, RASPParser.RULE_botName);
+		try {
+			this.enterOuterAlt(_localctx, 1);
+			{
+			this.state = 31;
+			this.match(RASPParser.ALPHA);
 			}
 		}
 		catch (re) {
@@ -189,21 +215,21 @@ export class RASPParser extends Parser {
 	@RuleVersion(0)
 	public addListener(): AddListenerContext {
 		let _localctx: AddListenerContext = new AddListenerContext(this._ctx, this.state);
-		this.enterRule(_localctx, 6, RASPParser.RULE_addListener);
+		this.enterRule(_localctx, 8, RASPParser.RULE_addListener);
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 29;
+			this.state = 33;
 			this.match(RASPParser.T__4);
-			this.state = 30;
+			this.state = 34;
 			this.serviceName();
 			{
-			this.state = 31;
+			this.state = 35;
 			this.match(RASPParser.T__5);
-			this.state = 32;
+			this.state = 36;
 			this.serviceConstructor();
 			}
-			this.state = 34;
+			this.state = 38;
 			this.match(RASPParser.T__6);
 			}
 		}
@@ -224,11 +250,11 @@ export class RASPParser extends Parser {
 	@RuleVersion(0)
 	public serviceName(): ServiceNameContext {
 		let _localctx: ServiceNameContext = new ServiceNameContext(this._ctx, this.state);
-		this.enterRule(_localctx, 8, RASPParser.RULE_serviceName);
+		this.enterRule(_localctx, 10, RASPParser.RULE_serviceName);
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 36;
+			this.state = 40;
 			this.match(RASPParser.T__7);
 			}
 		}
@@ -249,11 +275,11 @@ export class RASPParser extends Parser {
 	@RuleVersion(0)
 	public serviceConstructor(): ServiceConstructorContext {
 		let _localctx: ServiceConstructorContext = new ServiceConstructorContext(this._ctx, this.state);
-		this.enterRule(_localctx, 10, RASPParser.RULE_serviceConstructor);
+		this.enterRule(_localctx, 12, RASPParser.RULE_serviceConstructor);
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 38;
+			this.state = 42;
 			this.githubConstructor();
 			}
 		}
@@ -274,36 +300,36 @@ export class RASPParser extends Parser {
 	@RuleVersion(0)
 	public githubConstructor(): GithubConstructorContext {
 		let _localctx: GithubConstructorContext = new GithubConstructorContext(this._ctx, this.state);
-		this.enterRule(_localctx, 12, RASPParser.RULE_githubConstructor);
+		this.enterRule(_localctx, 14, RASPParser.RULE_githubConstructor);
 		let _la: number;
 		try {
-			this.state = 53;
+			this.state = 57;
 			this._errHandler.sync(this);
 			switch ( this.interpreter.adaptivePredict(this._input,2,this._ctx) ) {
 			case 1:
 				this.enterOuterAlt(_localctx, 1);
 				{
-				this.state = 40;
+				this.state = 44;
 				this.match(RASPParser.T__2);
-				this.state = 41;
+				this.state = 45;
 				this.githubConstructorType();
-				this.state = 46;
+				this.state = 50;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
 				while (_la===RASPParser.T__5) {
 					{
 					{
-					this.state = 42;
+					this.state = 46;
 					this.match(RASPParser.T__5);
-					this.state = 43;
+					this.state = 47;
 					this.githubConstructorType();
 					}
 					}
-					this.state = 48;
+					this.state = 52;
 					this._errHandler.sync(this);
 					_la = this._input.LA(1);
 				}
-				this.state = 49;
+				this.state = 53;
 				this.match(RASPParser.T__3);
 				}
 				break;
@@ -311,9 +337,9 @@ export class RASPParser extends Parser {
 			case 2:
 				this.enterOuterAlt(_localctx, 2);
 				{
-				this.state = 51;
+				this.state = 55;
 				this.match(RASPParser.T__2);
-				this.state = 52;
+				this.state = 56;
 				this.match(RASPParser.T__3);
 				}
 				break;
@@ -336,12 +362,12 @@ export class RASPParser extends Parser {
 	@RuleVersion(0)
 	public githubConstructorType(): GithubConstructorTypeContext {
 		let _localctx: GithubConstructorTypeContext = new GithubConstructorTypeContext(this._ctx, this.state);
-		this.enterRule(_localctx, 14, RASPParser.RULE_githubConstructorType);
+		this.enterRule(_localctx, 16, RASPParser.RULE_githubConstructorType);
 		let _la: number;
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 55;
+			this.state = 59;
 			_la = this._input.LA(1);
 			if ( !((((_la) & ~0x1F) === 0 && ((1 << _la) & ((1 << RASPParser.T__8) | (1 << RASPParser.T__9) | (1 << RASPParser.T__10))) !== 0)) ) {
 			this._errHandler.recoverInline(this);
@@ -353,9 +379,9 @@ export class RASPParser extends Parser {
 				this._errHandler.reportMatch(this);
 				this.consume();
 			}
-			this.state = 56;
+			this.state = 60;
 			this.match(RASPParser.T__11);
-			this.state = 57;
+			this.state = 61;
 			this.match(RASPParser.ALPHA);
 			}
 		}
@@ -375,30 +401,31 @@ export class RASPParser extends Parser {
 	}
 
 	public static readonly _serializedATN: string =
-		"\x03\uAF6F\u8320\u479D\uB75C\u4880\u1605\u191C\uAB37\x03\x11>\x04\x02"+
+		"\x03\uAF6F\u8320\u479D\uB75C\u4880\u1605\u191C\uAB37\x03\x11B\x04\x02"+
 		"\t\x02\x04\x03\t\x03\x04\x04\t\x04\x04\x05\t\x05\x04\x06\t\x06\x04\x07"+
-		"\t\x07\x04\b\t\b\x04\t\t\t\x03\x02\x03\x02\x05\x02\x15\n\x02\x03\x03\x03"+
-		"\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x04\x03\x04\x03\x05\x03"+
-		"\x05\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05\x03\x06\x03\x06\x03\x07\x03"+
-		"\x07\x03\b\x03\b\x03\b\x03\b\x07\b/\n\b\f\b\x0E\b2\v\b\x03\b\x03\b\x03"+
-		"\b\x03\b\x05\b8\n\b\x03\t\x03\t\x03\t\x03\t\x03\t\x02\x02\x02\n\x02\x02"+
-		"\x04\x02\x06\x02\b\x02\n\x02\f\x02\x0E\x02\x10\x02\x02\x03\x03\x02\v\r"+
-		"8\x02\x14\x03\x02\x02\x02\x04\x16\x03\x02\x02\x02\x06\x1D\x03\x02\x02"+
-		"\x02\b\x1F\x03\x02\x02\x02\n&\x03\x02\x02\x02\f(\x03\x02\x02\x02\x0E7"+
-		"\x03\x02\x02\x02\x109\x03\x02\x02\x02\x12\x15\x05\x04\x03\x02\x13\x15"+
-		"\x07\x02\x02\x03\x14\x12\x03\x02\x02\x02\x14\x13\x03\x02\x02\x02\x15\x03"+
-		"\x03\x02\x02\x02\x16\x17\x07\x03\x02\x02\x17\x18\x07\x0F\x02\x02\x18\x19"+
-		"\x07\x04\x02\x02\x19\x1A\x07\x05\x02\x02\x1A\x1B\x05\x06\x04\x02\x1B\x1C"+
-		"\x07\x06\x02\x02\x1C\x05\x03\x02\x02\x02\x1D\x1E\x05\b\x05\x02\x1E\x07"+
-		"\x03\x02\x02\x02\x1F \x07\x07\x02\x02 !\x05\n\x06\x02!\"\x07\b\x02\x02"+
-		"\"#\x05\f\x07\x02#$\x03\x02\x02\x02$%\x07\t\x02\x02%\t\x03\x02\x02\x02"+
-		"&\'\x07\n\x02\x02\'\v\x03\x02\x02\x02()\x05\x0E\b\x02)\r\x03\x02\x02\x02"+
-		"*+\x07\x05\x02\x02+0\x05\x10\t\x02,-\x07\b\x02\x02-/\x05\x10\t\x02.,\x03"+
-		"\x02\x02\x02/2\x03\x02\x02\x020.\x03\x02\x02\x0201\x03\x02\x02\x0213\x03"+
-		"\x02\x02\x0220\x03\x02\x02\x0234\x07\x06\x02\x0248\x03\x02\x02\x0256\x07"+
-		"\x05\x02\x0268\x07\x06\x02\x027*\x03\x02\x02\x0275\x03\x02\x02\x028\x0F"+
-		"\x03\x02\x02\x029:\t\x02\x02\x02:;\x07\x0E\x02\x02;<\x07\x0F\x02\x02<"+
-		"\x11\x03\x02\x02\x02\x05\x1407";
+		"\t\x07\x04\b\t\b\x04\t\t\t\x04\n\t\n\x03\x02\x03\x02\x05\x02\x17\n\x02"+
+		"\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x04\x03\x04"+
+		"\x03\x05\x03\x05\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06"+
+		"\x03\x07\x03\x07\x03\b\x03\b\x03\t\x03\t\x03\t\x03\t\x07\t3\n\t\f\t\x0E"+
+		"\t6\v\t\x03\t\x03\t\x03\t\x03\t\x05\t<\n\t\x03\n\x03\n\x03\n\x03\n\x03"+
+		"\n\x02\x02\x02\v\x02\x02\x04\x02\x06\x02\b\x02\n\x02\f\x02\x0E\x02\x10"+
+		"\x02\x12\x02\x02\x03\x03\x02\v\r;\x02\x16\x03\x02\x02\x02\x04\x18\x03"+
+		"\x02\x02\x02\x06\x1F\x03\x02\x02\x02\b!\x03\x02\x02\x02\n#\x03\x02\x02"+
+		"\x02\f*\x03\x02\x02\x02\x0E,\x03\x02\x02\x02\x10;\x03\x02\x02\x02\x12"+
+		"=\x03\x02\x02\x02\x14\x17\x05\x04\x03\x02\x15\x17\x07\x02\x02\x03\x16"+
+		"\x14\x03\x02\x02\x02\x16\x15\x03\x02\x02\x02\x17\x03\x03\x02\x02\x02\x18"+
+		"\x19\x07\x03\x02\x02\x19\x1A\x05\b\x05\x02\x1A\x1B\x07\x04\x02\x02\x1B"+
+		"\x1C\x07\x05\x02\x02\x1C\x1D\x05\x06\x04\x02\x1D\x1E\x07\x06\x02\x02\x1E"+
+		"\x05\x03\x02\x02\x02\x1F \x05\n\x06\x02 \x07\x03\x02\x02\x02!\"\x07\x0F"+
+		"\x02\x02\"\t\x03\x02\x02\x02#$\x07\x07\x02\x02$%\x05\f\x07\x02%&\x07\b"+
+		"\x02\x02&\'\x05\x0E\b\x02\'(\x03\x02\x02\x02()\x07\t\x02\x02)\v\x03\x02"+
+		"\x02\x02*+\x07\n\x02\x02+\r\x03\x02\x02\x02,-\x05\x10\t\x02-\x0F\x03\x02"+
+		"\x02\x02./\x07\x05\x02\x02/4\x05\x12\n\x0201\x07\b\x02\x0213\x05\x12\n"+
+		"\x0220\x03\x02\x02\x0236\x03\x02\x02\x0242\x03\x02\x02\x0245\x03\x02\x02"+
+		"\x0257\x03\x02\x02\x0264\x03\x02\x02\x0278\x07\x06\x02\x028<\x03\x02\x02"+
+		"\x029:\x07\x05\x02\x02:<\x07\x06\x02\x02;.\x03\x02\x02\x02;9\x03\x02\x02"+
+		"\x02<\x11\x03\x02\x02\x02=>\t\x02\x02\x02>?\x07\x0E\x02\x02?@\x07\x0F"+
+		"\x02\x02@\x13\x03\x02\x02\x02\x05\x164;";
 	public static __ATN: ATN;
 	public static get _ATN(): ATN {
 		if (!RASPParser.__ATN) {
@@ -438,7 +465,9 @@ export class InitContext extends ParserRuleContext {
 
 
 export class BotDefinitionContext extends ParserRuleContext {
-	public ALPHA(): TerminalNode { return this.getToken(RASPParser.ALPHA, 0); }
+	public botName(): BotNameContext {
+		return this.getRuleContext(0, BotNameContext);
+	}
 	public botBody(): BotBodyContext {
 		return this.getRuleContext(0, BotBodyContext);
 	}
@@ -485,6 +514,30 @@ export class BotBodyContext extends ParserRuleContext {
 	@Override
 	public accept<Result>(visitor: RASPVisitor<Result>): Result {
 		if (visitor.visitBotBody) return visitor.visitBotBody(this);
+		else return visitor.visitChildren(this);
+	}
+}
+
+
+export class BotNameContext extends ParserRuleContext {
+	public ALPHA(): TerminalNode { return this.getToken(RASPParser.ALPHA, 0); }
+	constructor(parent: ParserRuleContext, invokingState: number);
+	constructor(parent: ParserRuleContext, invokingState: number) {
+		super(parent, invokingState);
+
+	}
+	@Override public get ruleIndex(): number { return RASPParser.RULE_botName; }
+	@Override
+	public enterRule(listener: RASPListener): void {
+		if (listener.enterBotName) listener.enterBotName(this);
+	}
+	@Override
+	public exitRule(listener: RASPListener): void {
+		if (listener.exitBotName) listener.exitBotName(this);
+	}
+	@Override
+	public accept<Result>(visitor: RASPVisitor<Result>): Result {
+		if (visitor.visitBotName) return visitor.visitBotName(this);
 		else return visitor.visitChildren(this);
 	}
 }

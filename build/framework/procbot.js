@@ -112,6 +112,13 @@ class ProcBot {
         }
         return service;
     }
+    static enterBotDefinition(ctx, botStructure) {
+        console.log('in procbot');
+    }
+    static exitBotDefinition(ctx, botStructure) {
+        botStructure.name = ctx.botName().text;
+        console.log('out procbot');
+    }
 }
 exports.ProcBot = ProcBot;
 

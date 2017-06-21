@@ -6,6 +6,7 @@ import { ParseTreeVisitor } from 'antlr4ts/tree/ParseTreeVisitor';
 import { InitContext } from './RASPParser';
 import { BotDefinitionContext } from './RASPParser';
 import { BotBodyContext } from './RASPParser';
+import { BotNameContext } from './RASPParser';
 import { AddListenerContext } from './RASPParser';
 import { ServiceNameContext } from './RASPParser';
 import { ServiceConstructorContext } from './RASPParser';
@@ -41,6 +42,13 @@ export interface RASPVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitBotBody?: (ctx: BotBodyContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `RASPParser.botName`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitBotName?: (ctx: BotNameContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `RASPParser.addListener`.

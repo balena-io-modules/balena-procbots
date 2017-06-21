@@ -18,10 +18,11 @@ bot(FortuneBot) {
 
 init: botDefinition | EOF;
 
-botDefinition: 'bot(' ALPHA ')' '{' botBody '}';
+botDefinition: 'bot(' botName ')' '{' botBody '}';
 
 //innards: addListener | addEmitter | requestEvents | innards;
 botBody: addListener;
+botName: ALPHA;
 
 
 addListener: 'AddListener(' serviceName (',' serviceConstructor) ')\n';

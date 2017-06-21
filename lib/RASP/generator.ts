@@ -6,17 +6,19 @@ import { ParseTreeWalker } from 'antlr4ts/tree/ParseTreeWalker';
 //import { ParserRuleContext } from 'antlr4ts/ParserRuleContext';
 //import { ParseTreeListener } from 'antlr4ts/tree/ParseTreeListener';
 //import { RuleNode } from 'antlr4ts/tree/RuleNode';
+import { ProcBot } from '../framework/procbot';
+import * as _ from 'lodash';
+
+interface BotDefinition {
+    botName: string;
+}
+
+const definition: BotDefinition = {};
 
 class TreeShapeListener implements RASPListener {
-    public thing: string = '';
 
-    enterBotDefinition(ctx: BotDefinitionContext): void {
-        console.log('in bot');
-    }
-
-    exitBotDefinition(ctx: BotDefinitionContext): void {
-        console.log('out bot');        
-    }
+    enterBotDefinition = _.partial(ProcBot.enterBotDefinition, _, definition);
+    exitBotDefinition = _.partial(ProcBot.exitBotDefinition, _, definition);
 }
 
 // Create the lexer and parser
@@ -33,4 +35,4 @@ let tree = parser.init();
 console.log(tree.toStringTree());
 const listener = new TreeShapeListener();
 ParseTreeWalker.DEFAULT.walk(listener, tree);
-console.log(listener.thing);
+console.log(definition);

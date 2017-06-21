@@ -6,6 +6,7 @@ import { ParseTreeListener } from 'antlr4ts/tree/ParseTreeListener';
 import { InitContext } from './RASPParser';
 import { BotDefinitionContext } from './RASPParser';
 import { BotBodyContext } from './RASPParser';
+import { BotNameContext } from './RASPParser';
 import { AddListenerContext } from './RASPParser';
 import { ServiceNameContext } from './RASPParser';
 import { ServiceConstructorContext } from './RASPParser';
@@ -50,6 +51,17 @@ export interface RASPListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitBotBody?: (ctx: BotBodyContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `RASPParser.botName`.
+	 * @param ctx the parse tree
+	 */
+	enterBotName?: (ctx: BotNameContext) => void;
+	/**
+	 * Exit a parse tree produced by `RASPParser.botName`.
+	 * @param ctx the parse tree
+	 */
+	exitBotName?: (ctx: BotNameContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `RASPParser.addListener`.

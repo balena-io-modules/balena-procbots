@@ -1,0 +1,35 @@
+import { ATN } from 'antlr4ts/atn/ATN';
+import { CharStream } from 'antlr4ts/CharStream';
+import { Lexer } from 'antlr4ts/Lexer';
+import { Vocabulary } from 'antlr4ts/Vocabulary';
+export declare class RASPLexer extends Lexer {
+    static readonly T__0: number;
+    static readonly T__1: number;
+    static readonly T__2: number;
+    static readonly T__3: number;
+    static readonly T__4: number;
+    static readonly T__5: number;
+    static readonly T__6: number;
+    static readonly T__7: number;
+    static readonly T__8: number;
+    static readonly T__9: number;
+    static readonly T__10: number;
+    static readonly T__11: number;
+    static readonly ALPHA: number;
+    static readonly INT: number;
+    static readonly WS: number;
+    static readonly modeNames: string[];
+    static readonly ruleNames: string[];
+    private static readonly _LITERAL_NAMES;
+    private static readonly _SYMBOLIC_NAMES;
+    static readonly VOCABULARY: Vocabulary;
+    readonly vocabulary: Vocabulary;
+    constructor(input: CharStream);
+    readonly grammarFileName: string;
+    readonly ruleNames: string[];
+    readonly serializedATN: string;
+    readonly modeNames: string[];
+    static readonly _serializedATN: string;
+    static __ATN: ATN;
+    static readonly _ATN: ATN;
+}
