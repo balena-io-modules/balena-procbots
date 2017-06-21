@@ -20,6 +20,7 @@ export interface MessengerIds {
     user?: string;
     message?: string;
     thread?: string;
+    token?: string;
     flow?: string;
     url?: string;
 }
@@ -42,13 +43,10 @@ export interface ReceiptIds extends MessengerIds {
 export interface ReceiptContext extends MessengerContext {
     sourceIds: ReceiptIds;
 }
-export interface InterimIds extends MessengerIds {
-    token?: string;
-}
 export interface InterimContext extends MessengerContext {
     sourceIds: ReceiptIds;
     to: string;
-    toIds: InterimIds;
+    toIds: MessengerIds;
 }
 export interface TransmitIds extends MessengerIds {
     user: string;

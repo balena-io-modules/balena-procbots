@@ -22,7 +22,6 @@ import {
     DataHub,
     FlowDefinition,
     InterimContext, MessengerAction,
-    MessengerContext,
     TransmitContext,
 } from '../services/messenger-types';
 import {
@@ -33,6 +32,21 @@ import {
 import { LogLevel } from '../utils/logger';
 
 export class SyncBot extends ProcBot {
+    /**
+     * Returns an array of the tokens in a provided context
+     * @param event  Context to data mine for tokens
+     */
+    private static extractTokens(event: InterimContext) {
+        const secrets = [];
+        if (event.toIds.token) {
+            secrets.push(event.toIds.token);
+        }
+        if (event.sourceIds.token) {
+            secrets.push(event.sourceIds.token);
+        }
+        return secrets;
+    }
+
     // These objects store built objects, typed and indexed, to help minimise object rebuilding
     private messengers = new Map<string, Messenger>();
     private hub: DataHub;
@@ -142,7 +156,7 @@ export class SyncBot extends ProcBot {
     private handleError(error: Error, event: InterimContext): void {
         // Put this on the log service
         this.logger.log(LogLevel.WARN, error.message);
-        this.logger.log(LogLevel.WARN, JSON.stringify(event));
+        this.logger.log(LogLevel.WARN, JSON.stringify(event), SyncBot.extractTokens(event));
         // Create a message event to echo with the details
         const fromEvent: InterimContext = {
             action: MessengerAction.Create,
@@ -295,11 +309,11 @@ export class SyncBot extends ProcBot {
      * @param error  Error to report.
      * @param event  Event that caused the error.
      */
-    private logError(error: Error, event: MessengerContext): void {
+    private logError(error: Error, event: InterimContext): void {
         // Do what we can to make this event obvious in the logs
         this.logger.log(LogLevel.WARN, 'v!!!v');
         this.logger.log(LogLevel.WARN, error.message);
-        this.logger.log(LogLevel.WARN, JSON.stringify(event));
+        this.logger.log(LogLevel.WARN, JSON.stringify(event), SyncBot.extractTokens(event));
         this.logger.log(LogLevel.WARN, '^!!!^');
     }
 

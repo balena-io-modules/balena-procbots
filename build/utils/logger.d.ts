@@ -14,7 +14,7 @@ export declare class Logger {
     private alertLevelStrings;
     logLevel: LogLevel;
     alertLevel: AlertLevel;
-    log(level: number, message: string): void;
+    log(level: number, message: string, secrets?: string[]): void;
     alert(level: number, message: string): void;
     private output(level, classLevel, levelStrings, message);
 }

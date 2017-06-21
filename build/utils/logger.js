@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const _ = require("lodash");
 var LogLevel;
 (function (LogLevel) {
     LogLevel[LogLevel["WARN"] = 0] = "WARN";
@@ -39,7 +40,13 @@ class Logger {
     set alertLevel(level) {
         this._alertLevel = level;
     }
-    log(level, message) {
+    log(level, message, secrets) {
+        if (secrets) {
+            const redactFilter = secrets.map((secret) => {
+                return _.escapeRegExp(secret);
+            }).join('|');
+            message = message.replace(new RegExp(redactFilter, 'g'), 'redacted');
+        }
         this.output(level, this._logLevel, this.logLevelStrings, message);
     }
     alert(level, message) {

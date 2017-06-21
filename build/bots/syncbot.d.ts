@@ -1,5 +1,6 @@
 import { ProcBot } from '../framework/procbot';
 export declare class SyncBot extends ProcBot {
+    private static extractTokens(event);
     private messengers;
     private hub;
     constructor(name?: string);

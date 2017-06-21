@@ -47,6 +47,7 @@ export interface MessengerIds {
     user?: string;
     message?: string;
     thread?: string;
+    token?: string;
     flow?: string;
     url?: string;
 }
@@ -73,13 +74,10 @@ export interface ReceiptContext extends MessengerContext {
 }
 
 // Message objects suitable for the handling of messages
-export interface InterimIds extends MessengerIds {
-    token?: string;
-}
 export interface InterimContext extends MessengerContext {
     sourceIds: ReceiptIds;
     to: string;
-    toIds: InterimIds;
+    toIds: MessengerIds;
 }
 
 // Message objects suitable for the transmission of messages
