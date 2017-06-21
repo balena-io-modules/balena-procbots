@@ -1,9 +1,24 @@
 import * as Promise from 'bluebird';
 import * as GithubApi from 'github';
-import { Comment, IssueCommentEvent } from '../apis/githubapi-types';
+import { IssueLabel } from '../apis/githubapi-types';
 import { ProcBot } from '../framework/procbot';
-import { GithubEmitRequestContext, GithubHandle, GithubRegistration } from '../services/github-types';
+import { GithubError } from '../services/github';
+import { GithubHandle, GithubRegistration } from '../services/github-types';
 import { ServiceEvent } from '../services/service-types';
+import { LogLevel } from '../utils/logger';
+
+const labelToRepoMap = [
+    {
+        label: 'component/resinos',
+        owner: 'shaunmulligan',
+        repo: 'test-component1'
+    },
+    {
+        label: 'component/dashboard',
+        owner: 'shaunmulligan',
+        repo: 'test-component2'
+    }
+];
 
 export class PassThroughBot extends ProcBot {
     // Listener and emitter handles
@@ -64,8 +79,68 @@ export class PassThroughBot extends ProcBot {
         const owner = issueEvent.repository.owner.login;
         const repo = issueEvent.repository.name;
         const issueNumber = issueEvent.issue.number;
-        console.log('a new passthrough label was added on issue #' + issueNumber);
-        return {};
+        const labelledBy = issueEvent.sender.login;
+        const currentIssueTitle = issueEvent.issue.title;
+        const currentIssueBody = issueEvent.issue.body;
+        this.logger.log(LogLevel.INFO,'passthrough label added on #' + issueNumber + ' by ' + labelledBy);
+
+        return this.dispatchToEmitter(this.githubEmitterName, {
+            data: {
+                number: issueNumber,
+                owner,
+                repo,
+            },
+            method: this.githubApi.issues.getIssueLabels
+        }).filter(function(label) {
+            return label.name.match(/component\/[^/]*/);
+        }).then((labels: IssueLabel[]) => {
+            let commentBody;
+            if (labels.length < 1) {
+                this.logger.log(LogLevel.INFO,'No component label defined');
+                commentBody = `@${labelledBy}: Please add a component label for this passthrough issue`;
+                return {body: commentBody};
+            } else if (labels.length === 1) {
+                this.logger.log(LogLevel.DEBUG, JSON.stringify(labels));
+                let component = labelToRepoMap.filter(function( obj ) {
+                    return obj.label === labels[0].name;
+                });
+                this.logger.log(LogLevel.INFO, `@${labelledBy}: Created a mirror issue on `+ component[0].repo);
+                return this.dispatchToEmitter(this.githubEmitterName, {
+                    data: {
+                        owner: component[0].owner,
+                        repo: component[0].repo,
+                        title: currentIssueTitle,
+                        body: currentIssueBody,
+                    },
+                    method: this.githubApi.issues.create
+                }).then((issue) => {
+                    this.logger.log(LogLevel.DEBUG, JSON.stringify(issue));
+                    return {body: `@${labelledBy}: Created a mirror issue at `+ issue.html_url};
+                }).catch((err) => {
+                    this.logger.log(LogLevel.WARN, 'Error creating issue on component repo:'+err);
+                    throw err;
+                });
+            } else {
+                this.logger.log(LogLevel.INFO, 'there is more than one component repo specified!');
+                commentBody = `@${labelledBy}: there is more than one component label specified!`;
+                return {body: commentBody};
+            }
+
+        }).then((comment) => {
+            return this.dispatchToEmitter(this.githubEmitterName, {
+                data: {
+                    body: comment.body,
+                    number: issueNumber,
+                    owner,
+                    repo,
+                },
+                method: this.githubApi.issues.createComment
+            });
+        }).catch((err: GithubError) => {
+            if (err.message !== 'Not Found') {
+                throw err;
+            }
+        });
     }
 }
 
