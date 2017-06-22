@@ -1,12 +1,13 @@
 import * as Promise from 'bluebird';
 import * as GithubApi from 'github';
-import { IssueLabel } from '../apis/githubapi-types';
+import { Comment, IssueLabel } from '../apis/githubapi-types';
 import { ProcBot } from '../framework/procbot';
 import { GithubError } from '../services/github';
 import { GithubHandle, GithubRegistration } from '../services/github-types';
 import { ServiceEvent } from '../services/service-types';
 import { LogLevel } from '../utils/logger';
 
+// Need to fill this out with resin component labels and repos
 const labelToRepoMap = [
     {
         label: 'component/resinos',
@@ -82,65 +83,98 @@ export class PassThroughBot extends ProcBot {
         const labelledBy = issueEvent.sender.login;
         const currentIssueTitle = issueEvent.issue.title;
         const currentIssueBody = issueEvent.issue.body;
-        this.logger.log(LogLevel.INFO,'passthrough label added on #' + issueNumber + ' by ' + labelledBy);
+        const issueAction = issueEvent.action;
+        
+        // Only act if we get a 'labeled' action.
+        if (issueAction === 'labeled') {
+            this.logger.log(LogLevel.INFO,'passthrough label added on #' + issueNumber + ' by ' + labelledBy);
+            this.logger.log(LogLevel.DEBUG, JSON.stringify(issueEvent));
 
-        return this.dispatchToEmitter(this.githubEmitterName, {
-            data: {
-                number: issueNumber,
-                owner,
-                repo,
-            },
-            method: this.githubApi.issues.getIssueLabels
-        }).filter(function(label) {
-            return label.name.match(/component\/[^/]*/);
-        }).then((labels: IssueLabel[]) => {
-            let commentBody;
-            if (labels.length < 1) {
-                this.logger.log(LogLevel.INFO,'No component label defined');
-                commentBody = `@${labelledBy}: Please add a component label for this passthrough issue`;
-                return {body: commentBody};
-            } else if (labels.length === 1) {
-                this.logger.log(LogLevel.DEBUG, JSON.stringify(labels));
-                let component = labelToRepoMap.filter(function( obj ) {
-                    return obj.label === labels[0].name;
-                });
-                this.logger.log(LogLevel.INFO, `@${labelledBy}: Created a mirror issue on `+ component[0].repo);
-                return this.dispatchToEmitter(this.githubEmitterName, {
-                    data: {
-                        owner: component[0].owner,
-                        repo: component[0].repo,
-                        title: currentIssueTitle,
-                        body: currentIssueBody,
-                    },
-                    method: this.githubApi.issues.create
-                }).then((issue) => {
-                    this.logger.log(LogLevel.DEBUG, JSON.stringify(issue));
-                    return {body: `@${labelledBy}: Created a mirror issue at `+ issue.html_url};
-                }).catch((err) => {
-                    this.logger.log(LogLevel.WARN, 'Error creating issue on component repo:'+err);
-                    throw err;
-                });
-            } else {
-                this.logger.log(LogLevel.INFO, 'there is more than one component repo specified!');
-                commentBody = `@${labelledBy}: there is more than one component label specified!`;
-                return {body: commentBody};
-            }
-
-        }).then((comment) => {
+            // Mirror an issue onto a component repo if it has 1 component label and
+            // a passthrough label.
             return this.dispatchToEmitter(this.githubEmitterName, {
                 data: {
-                    body: comment.body,
                     number: issueNumber,
                     owner,
                     repo,
                 },
-                method: this.githubApi.issues.createComment
+                method: this.githubApi.issues.getIssueLabels
+            }).filter(function(label) {
+                return label.name.match(/component\/[^/]*/);
+            }).then((labels: IssueLabel[]) => {
+                let commentBody;
+                if (labels.length < 1) {
+                    this.logger.log(LogLevel.INFO,'No component label defined');
+                    commentBody = `@${labelledBy}: Please add a component label for this passthrough issue`;
+                    return {body: commentBody};
+                } else if (labels.length === 1) {
+                    this.logger.log(LogLevel.DEBUG, JSON.stringify(labels));
+                    let component = labelToRepoMap.filter(function( obj ) {
+                        return obj.label === labels[0].name;
+                    });
+                    
+                    return this.dispatchToEmitter(this.githubEmitterName, {
+                        data: {
+                            owner,
+                            repo,
+                            number: issueNumber,
+                        },
+                        method: this.githubApi.issues.getComments
+                    }).then((comments: Comment[]) => {
+                        const comment = comments[comments.length - 1];
+                        if ((comments.length > 0) && (comment.user.type === 'Bot') &&
+                            comment.body.match(/Created a mirror issue at /i)) {
+                            return {body: 'A mirror issue for that component already exists'};
+                        } else {
+
+                            // Create an issue on the component
+                            return this.dispatchToEmitter(this.githubEmitterName, {
+                                    data: {
+                                        owner: component[0].owner,
+                                        repo: component[0].repo,
+                                        title: currentIssueTitle,
+                                        body: currentIssueBody,
+                                    },
+                                    method: this.githubApi.issues.create
+                                }).then((issue) => {
+                                    this.logger.log(LogLevel.DEBUG, JSON.stringify(issue));
+                                    this.logger.log(LogLevel.INFO, `@${labelledBy}: Created a mirror issue on `+ component[0].repo);
+                                    return {body: `@${labelledBy}: Created a mirror issue at `+ issue.html_url};
+                                }).catch((err) => {
+                                    this.logger.log(LogLevel.WARN, 'Error creating issue on component repo:'+err);
+                                    throw err;
+                                });
+                        }
+
+                    }).catch((err) => {
+                        this.logger.log(LogLevel.WARN, 'Error creating issue on component repo:'+err);
+                        throw err;
+                    });
+                } else {
+                    this.logger.log(LogLevel.INFO, 'there is more than one component repo specified!');
+                    commentBody = `@${labelledBy}: there is more than one component label specified!`;
+                    return {body: commentBody};
+                }
+            // Let the user know what has happend by commenting back on the issue
+            }).then((comment) => {
+                return this.dispatchToEmitter(this.githubEmitterName, {
+                    data: {
+                        body: comment.body,
+                        number: issueNumber,
+                        owner,
+                        repo,
+                    },
+                    method: this.githubApi.issues.createComment
+                });
+            }).catch((err: GithubError) => {
+                if (err.message !== 'Not Found') {
+                    throw err;
+                }
             });
-        }).catch((err: GithubError) => {
-            if (err.message !== 'Not Found') {
-                throw err;
-            }
-        });
+        } else {
+            // Don't do anything if the event is not a 'labeled' action.
+            return ;
+        }
     }
 }
 
