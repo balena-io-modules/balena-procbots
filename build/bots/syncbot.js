@@ -60,14 +60,14 @@ class SyncBot extends procbot_1.ProcBot {
                     const event = messenger_1.Messenger.initInterimContext(generic, to.service, { flow: to.flow });
                     return this.useConnected(event, 'thread')
                         .then(() => {
-                        this.useProvided(event, 'user')
+                        this.useConfiguredOrProvided(event, 'user')
                             .then(() => this.useHubOrGeneric(event, 'token'))
                             .then(() => this.create(event))
                             .then(() => this.logSuccess(event))
                             .catch((error) => this.handleError(error, event));
                     })
                         .catch(() => {
-                        this.useProvided(event, 'user')
+                        this.useConfiguredOrProvided(event, 'user')
                             .then(() => this.useHubOrGeneric(event, 'token'))
                             .then(() => this.create(event))
                             .then(() => this.createConnection(event, 'thread'))
@@ -190,6 +190,27 @@ class SyncBot extends procbot_1.ProcBot {
         return this.useHub(event, type)
             .catch(() => this.useGeneric(event, type))
             .catchThrow(new Error(`Could not find hub or generic ${type} for ${event.to}`));
+    }
+    useConfiguredOrProvided(event, type) {
+        return this.useConfigured(event, type)
+            .catch(() => this.useProvided(event, type))
+            .catchThrow(new Error(`Could not find configured or provided ${type} for ${event.to}`));
+    }
+    useConfigured(event, type) {
+        try {
+            const configuredUsernames = JSON.parse(process.env.SYNCBOT_ACCOUNTS_WITH_DIFFERING_USERNAMES);
+            const equivalence = _.find(configuredUsernames, (userDetails) => {
+                return userDetails[event.source] === event.sourceIds.user;
+            });
+            if (equivalence && equivalence[event.to]) {
+                event.toIds.user = equivalence[event.to];
+                return Promise.resolve(equivalence[event.to]);
+            }
+            return Promise.reject(new Error(`Could not find configured ${type} for ${event.to}`));
+        }
+        catch (error) {
+            return Promise.reject(error);
+        }
     }
     useProvided(event, type) {
         return new Promise((resolve) => {

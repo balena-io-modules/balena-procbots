@@ -6,14 +6,18 @@ A little Bot, using the ProcBot framework, that links communication services
 
 ### How do I set up my accounts?
 
-* Ensure your Front, Discourse & Flowdock usernames match
+* Attempt the following:
+  * Ensure your Front, Discourse and Flowdock usernames match
+* If you cannot:
+  * Let the SyncBot maintenance and deployment team know your usernames don't
+    align
 * Get your discourse details
-  * Try:
+  * Attempt the following:
     * Sign-in to forums.resin.io
     * Go to your preferences page (top right profile picture > cog icon)
     * Go to your admin page (top right spanner labelled admin)
     * Under permissions generate an API key
-  * Catch:
+  * If you cannot:
     * Ask a Discourse admin to:
       * Make you a moderator
       * Generate an API key for you

@@ -14,6 +14,8 @@ export declare class SyncBot extends ProcBot {
     private logSuccess(event);
     private logError(error, event);
     private useHubOrGeneric(event, type);
+    private useConfiguredOrProvided(event, type);
+    private useConfigured(event, type);
     private useProvided(event, type);
     private useGeneric(event, type);
     private useSystem(event, type);

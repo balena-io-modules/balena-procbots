@@ -122,7 +122,7 @@ export class SyncBot extends ProcBot {
                     return this.useConnected(event, 'thread')
                     .then(() => {
                         // Attempt to find account details for the user
-                        this.useProvided(event, 'user')
+                        this.useConfiguredOrProvided(event, 'user')
                         .then(() => this.useHubOrGeneric(event, 'token'))
                         // Attempt to emit the event, massaging it first into a final form
                         .then(() => this.create(event as TransmitContext))
@@ -132,7 +132,7 @@ export class SyncBot extends ProcBot {
                     })
                     .catch(() => {
                         // Attempt to find account details for the user
-                        this.useProvided(event, 'user')
+                        this.useConfiguredOrProvided(event, 'user')
                         .then(() => this.useHubOrGeneric(event, 'token'))
                         // Attempt to emit the event and record the connection
                         .then(() => this.create(event as TransmitContext))
@@ -321,6 +321,40 @@ export class SyncBot extends ProcBot {
         return this.useHub(event, type)
         .catch(() => this.useGeneric(event, type))
         .catchThrow(new Error(`Could not find hub or generic ${type} for ${event.to}`));
+    }
+
+    /**
+     * Use the configuration or the source data to provide the detail requested.
+     * @param event  Event to scrutinise and mutate.
+     * @param type   Property to search for, must be 'user'.
+     * @returns      Resolves to the found property.
+     */
+    private useConfiguredOrProvided(event: InterimContext, type: 'user'): Promise<string> {
+        return this.useConfigured(event, type)
+        .catch(() => this.useProvided(event, type))
+        .catchThrow(new Error(`Could not find configured or provided ${type} for ${event.to}`));
+    }
+
+    /**
+     * Use the configuration to provide the detail requested.
+     * @param event  Event to scrutinise and mutate.
+     * @param type   property to search for, must be 'user'.
+     * @returns      Resolves to the found property.
+     */
+    private useConfigured(event: InterimContext, type: 'user'): Promise<string> {
+        try {
+            const configuredUsernames = JSON.parse(process.env.SYNCBOT_ACCOUNTS_WITH_DIFFERING_USERNAMES);
+            const equivalence = _.find(configuredUsernames, (userDetails: {[key: string]: string}) => {
+                return userDetails[event.source] === event.sourceIds.user;
+            });
+            if (equivalence && equivalence[event.to]) {
+                event.toIds.user = equivalence[event.to];
+                return Promise.resolve(equivalence[event.to]);
+            }
+            return Promise.reject(new Error(`Could not find configured ${type} for ${event.to}`));
+        } catch (error) {
+            return Promise.reject(error);
+        }
     }
 
     /**
