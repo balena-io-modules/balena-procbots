@@ -62,14 +62,15 @@ class SyncBot extends procbot_1.ProcBot {
                         .then(() => {
                         this.useConfiguredOrProvided(event, 'user')
                             .then(() => this.useHubOrGeneric(event, 'token'))
-                            .then(() => this.create(event))
+                            .then(() => this.updateTags(event))
+                            .then(() => this.createComment(event))
                             .then(() => this.logSuccess(event))
                             .catch((error) => this.handleError(error, event));
                     })
                         .catch(() => {
                         this.useConfiguredOrProvided(event, 'user')
                             .then(() => this.useHubOrGeneric(event, 'token'))
-                            .then(() => this.create(event))
+                            .then(() => this.createComment(event))
                             .then(() => this.createConnection(event, 'thread'))
                             .then(() => this.logSuccess(event))
                             .catch((error) => this.handleError(error, event));
@@ -82,7 +83,7 @@ class SyncBot extends procbot_1.ProcBot {
     handleError(error, event) {
         this.logger.log(logger_1.LogLevel.WARN, error.message);
         this.logger.log(logger_1.LogLevel.WARN, JSON.stringify(event), SyncBot.extractTokens(event));
-        const fromEvent = {
+        const echoEvent = {
             action: messenger_types_1.MessengerAction.Create,
             first: false,
             genesis: 'system',
@@ -101,10 +102,10 @@ class SyncBot extends procbot_1.ProcBot {
                 thread: event.sourceIds.thread,
             },
         };
-        this.useSystem(fromEvent, 'user')
-            .then(() => this.useSystem(fromEvent, 'token'))
-            .then(() => this.create(fromEvent))
-            .then(() => this.logSuccess(fromEvent))
+        this.useSystem(echoEvent, 'user')
+            .then(() => this.useSystem(echoEvent, 'token'))
+            .then(() => this.createComment(echoEvent))
+            .then(() => this.logSuccess(echoEvent))
             .catch((err) => this.logError(err, event));
     }
     getMessageService(key, data) {
@@ -157,15 +158,15 @@ class SyncBot extends procbot_1.ProcBot {
         return Promise.all([
             this.useSystem(fromEvent, 'user')
                 .then(() => this.useSystem(fromEvent, 'token'))
-                .then(() => this.create(fromEvent))
+                .then(() => this.createComment(fromEvent))
                 .then(() => this.logSuccess(fromEvent)),
             this.useSystem(toEvent, 'user')
                 .then(() => this.useSystem(toEvent, 'token'))
-                .then(() => this.create(toEvent))
+                .then(() => this.createComment(toEvent))
                 .then(() => this.logSuccess(toEvent))
         ]).reduce(() => { });
     }
-    create(event) {
+    createComment(event) {
         return this.getMessageService(event.to).makeSpecific(event).then((specific) => {
             return this.dispatchToEmitter(event.to, specific)
                 .then((retVal) => {
@@ -174,6 +175,11 @@ class SyncBot extends procbot_1.ProcBot {
                 event.toIds.url = retVal.url;
                 return retVal.message;
             });
+        });
+    }
+    updateTags(event) {
+        return this.getMessageService(event.to).makeTagUpdate(event).then((tagUpdate) => {
+            return this.dispatchToEmitter(event.to, tagUpdate);
         });
     }
     logSuccess(event) {

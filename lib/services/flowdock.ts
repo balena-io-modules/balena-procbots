@@ -45,7 +45,32 @@ export class FlowdockService extends Messenger implements ServiceEmitter, Servic
 	 * @returns     A promise that resolves to the generic form of the event.
 	 */
 	public makeGeneric = (data: MessengerEvent): Promise<ReceiptContext> => {
-		return new Promise<ReceiptContext>((resolve) => {
+		const org = this.data.organization;
+		const flow = data.cookedEvent.flow;
+		const initialMessageID = data.rawEvent.thread.initial_message;
+		const tagFilter = (tag: string) => {
+			return !/^:/.test(tag);
+		};
+		return this.fetchFromSession(`/flows/${org}/${flow}/messages/${initialMessageID}`)
+		.then((initialMessage) => {
+			// If the data added any hashtags then update the initial message
+			if (data.rawEvent.tags.filter(tagFilter).length > 0) {
+				return this.sendPayload({
+					endpoint: {
+						method: 'PUT',
+						token: this.data.token,
+						url: `https://api.flowdock.com/flows/${org}/${flow}/messages/${initialMessageID}`
+					},
+					payload: {
+						tags: _.concat(data.rawEvent.tags, initialMessage.tags).filter(tagFilter),
+					},
+				}).then(() => {
+					return initialMessage;
+				});
+			}
+			return initialMessage;
+		})
+		.then((initialMessage) => {
 			// Imported messages use emoji and have a genesis, but native messages use char
 			const emojiMetadata = Messenger.extractMetadata(data.rawEvent.content, 'emoji');
 			const charMetadata = Messenger.extractMetadata(data.rawEvent.content, 'char');
@@ -56,10 +81,8 @@ export class FlowdockService extends Messenger implements ServiceEmitter, Servic
 			};
 			// Separate out some parts of the message to save line width and calculations later
 			const titleAndText = compiledMetadata.content.match(/^(.*)\n--\n((?:\r|\n|.)*)$/);
-			const flow = data.cookedEvent.flow;
 			const thread = data.rawEvent.thread_id;
 			const userId = data.rawEvent.user;
-			const org = this.data.organization;
 			const first = data.rawEvent.id === data.rawEvent.thread.initial_message;
 			const returnValue = {
 				action: MessengerAction.Create,
@@ -74,20 +97,20 @@ export class FlowdockService extends Messenger implements ServiceEmitter, Servic
 					url: `https://www.flowdock.com/app/${org}/${flow}/threads/${thread}`,
 					user: 'duff', // gets replaced
 				},
+				tags: _.concat(data.rawEvent.tags, initialMessage.tags).filter(tagFilter),
 				text: first && titleAndText ? titleAndText[2] : compiledMetadata.content,
 				title: first && titleAndText ? titleAndText[1] : undefined,
 			};
 			// If the data provided a username
 			if (data.rawEvent.external_user_name) {
 				returnValue.sourceIds.user = data.rawEvent.external_user_name;
-				resolve(returnValue);
-			} else {
-				this.fetchFromSession(`/organizations/${org}/users/${userId}`)
-				.then((user) => {
-					returnValue.sourceIds.user = user.nick;
-					resolve(returnValue);
-				});
+				return returnValue;
 			}
+			return this.fetchFromSession(`/organizations/${org}/users/${userId}`)
+			.then((user) => {
+				returnValue.sourceIds.user = user.nick;
+				return returnValue;
+			});
 		});
 	}
 
@@ -104,6 +127,7 @@ export class FlowdockService extends Messenger implements ServiceEmitter, Servic
 		return new Promise<FlowdockEmitContext>((resolve) => {
 			resolve({
 				endpoint: {
+					method: 'POST',
 					token: data.toIds.token,
 					url: `https://api.flowdock.com/flows/${org}/${flow}/messages/`,
 				},
@@ -118,9 +142,38 @@ export class FlowdockService extends Messenger implements ServiceEmitter, Servic
 					external_user_name:
 					// If this is using the generic token, then they must be an external user, so indicate this
 						data.toIds.token === this.data.token ? data.toIds.user.substring(0, 16) : undefined,
+					tags: data.first ? data.tags : undefined,
 					thread_id: data.toIds.thread,
 				},
 			});
+		});
+	}
+
+	// This was created on an out-of-date understanding of how things should be structured.
+	// TODO: It should be migrated as part of https://github.com/resin-io-modules/resin-procbots/issues/173
+	/**
+	 * Promise to turn the generic message format into a tag update to be emitted.
+	 * @param data  Generic message format object to be encoded.
+	 * @returns     Promise that resolves to the tag update object.
+	 */
+	public makeTagUpdate = (data: TransmitContext): Promise<FlowdockEmitContext> => {
+		const topicId = data.toIds.thread;
+		if (!topicId) {
+			throw new Error('Cannot update tags without specifying thread');
+		}
+		const org = this.data.organization;
+		const flow = data.toIds.flow;
+		return this.fetchFromSession(`/flows/${org}/${flow}/threads/${topicId}`).then((threadObj) => {
+			return {
+				endpoint: {
+					method: 'PUT',
+					token: data.toIds.token,
+					url: `https://api.flowdock.com/flows/${org}/${flow}/messages/${threadObj.initial_message}`,
+				},
+				payload: {
+					tags: data.tags ? data.tags : [],
+				},
+			};
 		});
 	}
 
@@ -230,13 +283,14 @@ export class FlowdockService extends Messenger implements ServiceEmitter, Servic
 		const requestOpts = {
 			body: data.payload,
 			headers: {
-				'Authorization': `Basic ${token}`,
+				Authorization: `Basic ${token}`,
 				'X-flowdock-wait-for-message': true,
 			},
 			json: true,
+			method: data.endpoint.method,
 			url: data.endpoint.url,
 		};
-		return request.post(requestOpts).then((resData: any) => {
+		return request(requestOpts).then((resData: any) => {
 			// Massage the response into a suitable form for the framework
 			const thread = resData.thread_id;
 			const org = data.meta ? data.meta.org : '';

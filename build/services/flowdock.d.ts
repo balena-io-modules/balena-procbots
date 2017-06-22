@@ -11,6 +11,7 @@ export declare class FlowdockService extends Messenger implements ServiceEmitter
     constructor(data: FlowdockConstructor, listen?: boolean);
     makeGeneric: (data: MessengerEvent) => Promise<ReceiptContext>;
     makeSpecific: (data: TransmitContext) => Promise<FlowdockEmitContext>;
+    makeTagUpdate: (data: TransmitContext) => Promise<FlowdockEmitContext>;
     translateEventName(eventType: string): string;
     fetchNotes: (thread: string, room: string, filter: RegExp, search?: string | undefined) => Promise<string[]>;
     fetchValue(user: string, key: string): Promise<string>;

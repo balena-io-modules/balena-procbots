@@ -10,7 +10,8 @@ export declare class SyncBot extends ProcBot {
     private getMessageService(key, data?);
     private getDataHub(key, data?);
     private createConnection(event, type);
-    private create(event);
+    private createComment(event);
+    private updateTags(event);
     private logSuccess(event);
     private logError(error, event);
     private useHubOrGeneric(event, type);

@@ -11,6 +11,7 @@ export declare class FrontService extends Messenger implements ServiceListener, 
     fetchNotes: (thread: string, _room: string, filter: RegExp) => Promise<string[]>;
     makeGeneric: (data: ServiceEvent) => Promise<ReceiptContext>;
     makeSpecific: (data: TransmitContext) => Promise<FrontEmitContext>;
+    makeTagUpdate: (data: TransmitContext) => Promise<FrontEmitContext>;
     translateEventName(eventType: string): string;
     protected activateMessageListener: () => void;
     protected sendPayload: (data: FrontEmitContext) => Promise<MessengerEmitResponse>;

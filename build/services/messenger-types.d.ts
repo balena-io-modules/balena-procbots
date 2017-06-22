@@ -31,6 +31,7 @@ export interface MessengerContext {
     hidden: boolean;
     source: string;
     sourceIds?: MessengerIds;
+    tags?: string[];
     text: string;
     title?: string;
 }
