@@ -103,7 +103,7 @@ export class FlowdockService extends Messenger implements ServiceEmitter, Servic
                 },
                 payload: {
                     // The concatenated string, of various data nuggets, to emit
-                    content: Messenger.stringifyMetadata(data) + titleText + data.text,
+                    content: titleText + data.text + '\n' + Messenger.stringifyMetadata(data),
                     event: 'message',
                     external_user_name:
                     // If this is using the generic token, then they must be an external user, so indicate this

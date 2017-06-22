@@ -141,7 +141,7 @@ export class FrontService extends Messenger implements ServiceListener, ServiceE
                     },
                     payload: {
                         author_id: userId,
-                        body: `${data.text}\n\n---\n${Messenger.stringifyMetadata(data, 'plaintext')}`,
+                        body: `${data.text}<hr/><br/>${Messenger.stringifyMetadata(data, 'plaintext')}`,
                         // Find the relevant channel for the inbox
                         channel_id: this.data.inbox_channels[data.toIds.flow],
                         metadata: {
@@ -181,7 +181,7 @@ export class FrontService extends Messenger implements ServiceListener, ServiceE
                 },
                 payload: {
                     author_id: details.userId,
-                    body: `${data.text}\n\n---\n${Messenger.stringifyMetadata(data, 'plaintext')}`,
+                    body: `${data.text}<hr/><br/>${Messenger.stringifyMetadata(data, 'plaintext')}`,
                     conversation_id: conversationId,
                     options: {
                         archive: false,

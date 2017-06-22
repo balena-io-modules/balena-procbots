@@ -75,7 +75,7 @@ class Messenger extends worker_client_1.WorkerClient {
             case 'markdown':
                 return `[${data.hidden ? indicators.hidden[0] : indicators.shown[0]}](${data.source})`;
             case 'plaintext':
-                return `${data.hidden ? indicators.hidden[0] : indicators.shown[0]}${data.source}`;
+                return `${data.hidden ? indicators.hidden[0] : indicators.shown[0]}:${data.source}`;
             default:
                 throw new Error(`${format} format not recognised`);
         }
@@ -84,7 +84,7 @@ class Messenger extends worker_client_1.WorkerClient {
         const indicators = Messenger.getIndicatorArrays();
         const visible = indicators.shown.join('|\\');
         const hidden = indicators.hidden.join('|\\');
-        const findMetadata = new RegExp(`(?:^|\\r|\\n)(?:\\s*)\\[?(${hidden}|${visible})\\]?\\(?(\\w*)\\)?`, 'i');
+        const findMetadata = new RegExp(`(?:^|\\r|\\n)(?:\\s*)\\[?(${hidden}|${visible})\\]?:?\\(?(\\w*)\\)?`, 'i');
         const metadata = message.match(findMetadata);
         if (metadata) {
             return {

@@ -62,7 +62,7 @@ class FlowdockService extends messenger_1.Messenger {
                         org,
                     },
                     payload: {
-                        content: messenger_1.Messenger.stringifyMetadata(data) + titleText + data.text,
+                        content: titleText + data.text + '\n' + messenger_1.Messenger.stringifyMetadata(data),
                         event: 'message',
                         external_user_name: data.toIds.token === this.data.token ? data.toIds.user.substring(0, 16) : undefined,
                         thread_id: data.toIds.thread,

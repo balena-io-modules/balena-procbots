@@ -105,7 +105,7 @@ export abstract class Messenger extends WorkerClient<string|null> implements Ser
             case 'markdown':
                 return `[${data.hidden ? indicators.hidden[0] : indicators.shown[0]}](${data.source})`;
             case 'plaintext':
-                return `${data.hidden ? indicators.hidden[0] : indicators.shown[0]}${data.source}`;
+                return `${data.hidden ? indicators.hidden[0] : indicators.shown[0]}:${data.source}`;
             default:
                 throw new Error(`${format} format not recognised`);
         }
@@ -124,7 +124,7 @@ export abstract class Messenger extends WorkerClient<string|null> implements Ser
         // Captured, the show/hide; brackets to enclose.
         // Then comes genesis; parens may surround.
         // The case we ignore; a Regex we form!
-        const findMetadata = new RegExp(`(?:^|\\r|\\n)(?:\\s*)\\[?(${hidden}|${visible})\\]?\\(?(\\w*)\\)?`, 'i');
+        const findMetadata = new RegExp(`(?:^|\\r|\\n)(?:\\s*)\\[?(${hidden}|${visible})\\]?:?\\(?(\\w*)\\)?`, 'i');
         const metadata = message.match(findMetadata);
         if (metadata) {
             // The content without the metadata, the word after the emoji, and whether the emoji is in the visible set
