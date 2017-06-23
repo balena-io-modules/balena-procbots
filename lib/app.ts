@@ -56,7 +56,7 @@ app.listen(8080, () => {
 
 // Import any specified bots. These will all listen for webhooks.
 let botRegistry: ProcBot[] = [];
-for (let bot of opt.options['bot-names']) {
+for (let bot of <string[]>opt.options['bot-names']) {
     // Dynamically require the bots.
     try {
         let importedBot = require(`./bots/${bot}`);

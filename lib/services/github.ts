@@ -176,11 +176,12 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 
             // Listen for Webhooks on the path specified by the client.
             app.post(listenerConstructor.path, (req, res) => {
-                const eventType: string = req.get('x-github-event');
+                const eventType: string = req.get('x-github-event') || '';
+                const githubSignature = req.get('x-hub-signature') || '';
                 const payload = req.body;
 
                 // Ensure that the sender is authorised and uses our secret.
-                if (!verifyWebhookToken(JSON.stringify(payload), req.get('x-hub-signature'))) {
+                if (!verifyWebhookToken(JSON.stringify(payload), githubSignature)) {
                     res.sendStatus(401);
                     return;
                 }
@@ -391,9 +392,7 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
                     // If there are some labels, then we process them.
                     const labels = data.response;
                     if (labels) {
-                        const foundLabels: string[] = labels.map((label: any) => {
-                            return label.name;
-                        });
+                        const foundLabels = _.map(labels, 'name');
 
                         // First, are all the suppression labels present?
                         if (registration.suppressionLabels &&
@@ -430,7 +429,7 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
         // Initialise JWTs
         const privatePem = new Buffer(this.pem, 'base64').toString();
         const payload = {
-            exp: Math.floor((Date.now() / 1000)) + (10 * 60),
+            exp: Math.floor((Date.now() / 1000)) + (10 * 50),
             iat: Math.floor((Date.now() / 1000)),
             iss: this.integrationId
         };

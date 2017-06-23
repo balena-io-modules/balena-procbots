@@ -1,14 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const Promise = require("bluebird");
-const ChildProcess = require("child_process");
+const child_process_1 = require("child_process");
 const FS = require("fs");
 const _ = require("lodash");
 const path = require("path");
 const temp_1 = require("temp");
 const procbot_1 = require("../framework/procbot");
 const logger_1 = require("../utils/logger");
-const exec = Promise.promisify(ChildProcess.exec);
 const fsReadFile = Promise.promisify(FS.readFile);
 const fsFileExists = Promise.promisify(FS.stat);
 const tempMkdir = Promise.promisify(temp_1.track().mkdir);
@@ -446,14 +445,33 @@ class VersionBot extends procbot_1.ProcBot {
         });
     }
     applyVersionist(versionData) {
-        const cliCommand = (command) => {
-            return exec(command, { cwd: versionData.fullPath });
+        const buildCliCommand = (command, args, workingDir) => {
+            return {
+                command,
+                args: args || [],
+                options: (workingDir) ? { cwd: workingDir } : undefined
+            };
+        };
+        const runCliCommand = (params) => {
+            return new Promise((resolve, reject) => {
+                const child = child_process_1.spawn(params.command, params.args, params.options);
+                let stdout = '';
+                let stderr = '';
+                child.stdout.on('data', (data) => {
+                    stdout += data.toString();
+                });
+                child.stderr.on('data', (data) => {
+                    stderr += data.toString();
+                });
+                child.addListener('close', () => resolve(stdout));
+                child.addListener('error', () => reject(stderr));
+            });
         };
         return Promise.mapSeries([
-            `git clone https://${versionData.authToken}:${versionData.authToken}@github.com/` +
-                `${versionData.repoFullName} ${versionData.fullPath}`,
-            `git checkout ${versionData.branchName}`
-        ], cliCommand).then(() => {
+            buildCliCommand('git', ['clone', `https://${versionData.authToken}:${versionData.authToken}@github.com/` +
+                    `${versionData.repoFullName}`, `${versionData.fullPath}`], `${versionData.fullPath}`),
+            buildCliCommand('git', ['checkout', `${versionData.branchName}`], `${versionData.fullPath}`)
+        ], runCliCommand).then(() => {
             return fsFileExists(`${versionData.fullPath}/versionist.conf.js`)
                 .return(true)
                 .catch((err) => {
@@ -464,18 +482,19 @@ class VersionBot extends procbot_1.ProcBot {
             });
         }).then((exists) => {
             let versionistCommand;
+            let versionistArgs = [];
             return this.getNodeBinPath().then((nodePath) => {
                 versionistCommand = path.join(nodePath, 'versionist');
                 if (exists) {
-                    versionistCommand = `${versionistCommand} -c versionist.conf.js`;
+                    versionistArgs = ['-c', 'versionist.conf.js'];
                     this.logger.log(logger_1.LogLevel.INFO, 'Found an overriding versionist config ' +
                         `for ${versionData.repoFullName}, using that`);
                 }
             }).then(() => {
                 return Promise.mapSeries([
-                    versionistCommand,
-                    'git status -s'
-                ], cliCommand);
+                    buildCliCommand(versionistCommand, versionistArgs, `${versionData.fullPath}`),
+                    buildCliCommand('git', ['status', '-s'], `${versionData.fullPath}`)
+                ], runCliCommand);
             });
         }).get(1).then((status) => {
             const moddedFiles = [];
@@ -503,7 +522,8 @@ class VersionBot extends procbot_1.ProcBot {
                 throw new Error(`Couldn't find the CHANGELOG.md file, abandoning version up`);
             }
             moddedFiles.push(`CHANGELOG.md`);
-            return exec(`cat ${versionData.fullPath}${_.last(moddedFiles)}`).then((contents) => {
+            return fsReadFile(`${versionData.fullPath}${_.last(moddedFiles)}`, { encoding: 'utf8' })
+                .then((contents) => {
                 const match = contents.match(/^## (v[0-9]+\.[0-9]+\.[0-9]+).+$/m);
                 if (!match) {
                     throw new Error('Cannot find new version for ${repoFullName}-#${pr.number}');
