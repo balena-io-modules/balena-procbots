@@ -36,6 +36,11 @@ export SYNCBOT_SYSTEM_MESSAGE_ACCOUNTS="{
         \"token\": \"...\"
     }
 }"
+# Account that are equivalent, despite different usernames
+export SYNCBOT_ACCOUNTS_WITH_DIFFERING_USERNAMES="[
+    { \"serviceA\": \"blah\", \"serviceB\": \"bleh\" }
+]"
+
 
 # Details for the Discourse adapter
 export SYNCBOT_DISCOURSE_CONSTRUCTOR_OBJECT="{
