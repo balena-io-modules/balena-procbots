@@ -1,60 +1,42 @@
 grammar RASP;
 
+init: botDefinition | comment | EOF;
 
-/*
-bot(FortuneBot) {
-    AddListener(github, {port: 1234, path: '/hooks'})
-    AddEmitter(github, {login: 'blah'})
-    
-    RequestEvents({ 'issue', printIssue })
+comment: COMMENT | LINE_COMMENT;
+botDefinition: 'bot(' ALPHA ')' '{' botBody (botBody)* '}';
 
-    printIssue {
-        event.action is 'open' then:
-            log(event 'is opened!')
+// The bot body.
+botBody: comment | addListener | addEmitter | requestServiceEvents | listenerMethod;
 
-    }
-}
-*/
+// Add a ServiceListener, with appropriate constructor.
+addListener: (ALPHA '=')? 'AddListener(' serviceName (',' serviceConstructor)* ')';
 
-init: botDefinition | EOF;
+// Add a ServiceEmitter, with appropriate constructor.
+addEmitter: (ALPHA '=')? 'AddEmitter(' serviceName (',' serviceConstructor) ')';
 
-botDefinition: 'bot(' botName ')' '{' botBody '}';
+serviceName: 'github' | 'flowdock';
+serviceConstructor: '{' serviceConstructorPair (',' serviceConstructorPair)* '}';
+serviceConstructorPair: ALPHA ':' (ALPHA | INT | HEX | path | serviceConstructor);
 
-//innards: addListener | addEmitter | requestEvents | innards;
-botBody: addListener;
-botName: ALPHA;
+// Request an event for a listener.
+requestServiceEvents: 'RequestEvents(' serviceName ',' eventRegistration ')';
+// Event registration is a block with an array of event names and a listener.
+eventRegistration: events ',' listenerMethodName;
+events: '[' ALPHANUMERIC (',' ALPHANUMERIC)* ']';
 
+// Listener methods.
+listenerMethodName: ALPHA;
+listenerMethod: ALPHA '{' listenerBody '}';
+listenerBody: ;
 
-addListener: 'AddListener(' serviceName (',' serviceConstructor) ')\n';
+// General rules.
+envvar: 'envar' '(' ALPHA ')';
+path: '/' ALPHA?;
 
-
-serviceName: 'github';
-serviceConstructor: githubConstructor;
-
-// Github
-githubConstructor:  '{' githubConstructorType (',' githubConstructorType)* '}' |
-                    '{' '}'
-                    ;
-githubConstructorType:  ('appId' | 'secret' | 'pem') ':' ALPHA;
-
-/*
-addEmitter: 'AddEmitter(' serviceName (',' constructor ) ')\n';
-requestEvents: 'RequestEvents(' eventRegistration (',' eventRegistration)* ')\n';
-
-serviceName: 'github';
-constructor: githubConstructor;
-githubConstructor:  '{' pair (',' pair)* '}' |
-                    '{' '}'
-                    ;
-
-eventRegistration: '{' eventName ',' eventMethod '}';
-pair: ALPHA ':' ALPHA;
-
-eventMethod: ALPHA;
-eventName: ALPHA;
-*/
-
-
-ALPHA:  [a-zA-Z]+;
-INT  :	[0-9]+;
+INT     : [0-9]+;
+ALPHA   : [a-zA-Z]+;
+HEX     : [a-fA-F0-9]+;
+ALPHANUMERIC: [a-zA-Z0-9|_-]+;
+COMMENT: '/*' .*? '*/' -> skip;
+LINE_COMMENT: '//' .*? '\r'? '\n' -> skip;
 WS   :  [ \t\r\n]+ -> skip;

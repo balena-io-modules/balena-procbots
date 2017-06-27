@@ -1,0 +1,32 @@
+bot(FortuneBot) {
+    // Eventually:
+    // If only one listener and one emitter is added, no variable need be set.
+    // Only if two or more of either type exist, do variables need setting.
+    // So in the following, 'set ghListener as' is optional if there's only one listener.
+    //
+    // set ghListener as github listener with initialisation
+    //     path as /mypath
+    //     port as 1234
+    //     login as: 
+    //         appId as APPID from environment
+    //         webhookSecret as WEBHOOK from environment
+    //         pem as PEM from environment
+    //         
+
+    // github emitter with initialisation
+    //     user: USERNAME from environment
+
+    // 'from ghListener' would be optional, but mandatory if more than one listener
+    // register for events:
+    //     pull_request with options:
+    //         trigger labels are:
+    //             procbots/versionbot/ready-to-merge
+    //             blah bla blah
+    //     pull_request_review
+
+    // However for now, we're doing simplified language and typescript.    
+    ghListener = AddListener(github, { port: 1234, path: /, login: { appId: 5678, pem: nnnnnn, secret: 12345abc } })
+    AddEmitter(github, { login: { pat: abcdef } })
+
+    RequestEvents(github, [ pull_request, pull_request_review ], myPRMethod)
+}

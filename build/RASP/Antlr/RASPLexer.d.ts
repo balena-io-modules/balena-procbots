@@ -15,8 +15,17 @@ export declare class RASPLexer extends Lexer {
     static readonly T__9: number;
     static readonly T__10: number;
     static readonly T__11: number;
-    static readonly ALPHA: number;
+    static readonly T__12: number;
+    static readonly T__13: number;
+    static readonly T__14: number;
+    static readonly T__15: number;
+    static readonly T__16: number;
     static readonly INT: number;
+    static readonly ALPHA: number;
+    static readonly HEX: number;
+    static readonly ALPHANUMERIC: number;
+    static readonly COMMENT: number;
+    static readonly LINE_COMMENT: number;
     static readonly WS: number;
     static readonly modeNames: string[];
     static readonly ruleNames: string[];

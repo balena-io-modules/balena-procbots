@@ -147,9 +147,15 @@ class GithubService extends worker_client_1.WorkerClient {
             app.use(bodyParser.json());
             app.post(listenerConstructor.path, (req, res) => {
                 const eventType = req.get('x-github-event') || '';
+<<<<<<< HEAD
                 const githubSignature = req.get('x-hub-signature') || '';
                 const payload = req.body;
                 if (!verifyWebhookToken(JSON.stringify(payload), githubSignature)) {
+=======
+                const signature = req.get('x-hub-signature') || '';
+                const payload = req.body;
+                if (!verifyWebhookToken(JSON.stringify(payload), signature)) {
+>>>>>>> Update current WIP.
                     res.sendStatus(401);
                     return;
                 }

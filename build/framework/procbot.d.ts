@@ -5,8 +5,11 @@ import { Logger } from '../utils/logger';
 import { ConfigurationLocation, ProcBotConfiguration } from './procbot-types';
 =======
 import { ProcBotConfiguration } from './procbot-types';
+<<<<<<< HEAD
 import { BotDefinitionContext } from '../RASP/Antlr/RASPParser';
 >>>>>>> Add start of generator.
+=======
+>>>>>>> Update current WIP.
 export declare class ProcBot {
     protected _botname: string;
     protected logger: Logger;
@@ -24,6 +27,4 @@ export declare class ProcBot {
     protected dispatchToAllEmitters(data: ServiceEmitRequest): Promise<ServiceEmitResponse[]>;
     protected dispatchToEmitter(name: string, data: any): Promise<any>;
     private getService(name);
-    static enterBotDefinition(ctx: BotDefinitionContext, botStructure: any): void;
-    static exitBotDefinition(ctx: BotDefinitionContext, botStructure: any): void;
 }
