@@ -30,6 +30,7 @@ import {
 	MessengerEmitResponse,
 	MessengerEvent, MessengerIds,
 	MessengerWorkerEvent, Metadata,
+	PublicityIndicator,
 	ReceiptContext, TransmitContext,
 } from './messenger-types';
 import {
@@ -73,18 +74,18 @@ export abstract class Messenger extends WorkerClient<string|null> implements Ser
 	 * Retrieve from the environment array of strings to use as indicators of visibility
 	 * @returns  Object of arrays of indicators, shown and hidden.
 	 */
-	protected static getIndicatorArrays(): { 'shown': string[], 'hidden': string[] } {
+	protected static getIndicatorArrays(): { 'shown': PublicityIndicator, 'hidden': PublicityIndicator } {
 		let shown;
 		let hidden;
 		try {
 			// Retrieve publicity indicators from the environment
-			shown = JSON.parse(process.env.MESSAGE_CONVERTOR_PUBLIC_INDICATORS);
-			hidden = JSON.parse(process.env.MESSAGE_CONVERTOR_PRIVATE_INDICATORS);
+			shown = JSON.parse(process.env.MESSAGE_CONVERTOR_PUBLICITY_INDICATORS_OBJECT);
+			hidden = JSON.parse(process.env.MESSAGE_CONVERTOR_PRIVACY_INDICATORS_OBJECT);
 		} catch (error) {
-			throw new Error('Message convertor environment variables not set correctly');
+			throw new Error('Message convertor environment variables not set correctly, indicators not json');
 		}
 		if (shown.length === 0 || hidden.length === 0) {
-			throw new Error('Message convertor environment variables not set correctly');
+			throw new Error('Message convertor environment variables not set correctly, indicators zero length');
 		}
 		return { hidden, shown };
 	}
@@ -92,17 +93,22 @@ export abstract class Messenger extends WorkerClient<string|null> implements Ser
 	/**
 	 * Encode the metadata of an event into a string to embed in the message.
 	 * @param data    Event to gather details from.
-	 * @param format  Optional, markdown or plaintext, defaults to markdown.
+	 * @param format  Format of the metadata encoding.
 	 * @returns       Text with data embedded.
 	 */
-	protected static stringifyMetadata(data: TransmitContext, format: 'markdown'|'plaintext' = 'markdown'): string {
+	protected static stringifyMetadata(data: TransmitContext, format: string): string {
 		const indicators = Messenger.getIndicatorArrays();
 		// Build the content with the indicator and genesis at the front
-		switch (format) {
-			case 'markdown':
-				return `[${data.hidden ? indicators.hidden[0] : indicators.shown[0]}](${data.source})`;
-			case 'plaintext':
-				return `${data.hidden ? indicators.hidden[0] : indicators.shown[0]}:${data.source}`;
+		switch (format.toLowerCase()) {
+			case 'human':
+				return `\n(${data.hidden ? indicators.hidden.word : indicators.shown.word} from ${data.source})`;
+			case 'emoji':
+				return `\n[${data.hidden ? indicators.hidden.emoji : indicators.shown.emoji}](${data.source})`;
+			case 'img':
+				const baseUrl = process.env.MESSAGE_CONVERTOR_IMG_BASE_URL;
+				const hidden = data.hidden ? indicators.hidden.word : indicators.shown.word;
+				const querystring = `?hidden=${hidden}&source=${encodeURI(data.source)}`;
+				return `\n<img src="${baseUrl}${querystring}" height="18" />`;
 			default:
 				throw new Error(`${format} format not recognised`);
 		}
@@ -111,27 +117,72 @@ export abstract class Messenger extends WorkerClient<string|null> implements Ser
 	/**
 	 * Given a basic string this will extract a more rich context for the event, if embedded.
 	 * @param message  Basic string that may contain metadata.
+	 * @param format   Format of the metadata encoding.
 	 * @returns        Object of content, genesis and hidden.
 	 */
-	protected static extractMetadata(message: string): Metadata {
+	protected static extractMetadata(message: string, format: string): Metadata {
 		const indicators = Messenger.getIndicatorArrays();
-		const visible = indicators.shown.join('|\\');
-		const hidden = indicators.hidden.join('|\\');
-		// Anchored with new line; followed by whitespace.
-		// Captured, the show/hide; brackets to enclose.
-		// Then comes genesis; parens may surround.
-		// The case we ignore; a Regex we form!
-		const findMetadata = new RegExp(`(?:^|\\r|\\n)(?:\\s*)\\[?(${hidden}|${visible})\\]?:?\\(?(\\w*)\\)?`, 'i');
-		const metadata = message.match(findMetadata);
+		const wordCapture = `(${indicators.hidden.word}|${indicators.shown.word})`;
+		const beginsLine = `(?:^|\\r|\\n)(?:\\s*)`;
+		switch (format.toLowerCase()) {
+			case 'human':
+				const parensRegex = new RegExp(`${beginsLine}\\(${wordCapture} from (\\w*)\\)`, 'i');
+				return Messenger.metadataByRegex(message, parensRegex);
+			case 'emoji':
+				const emojiCapture = `(${indicators.hidden.emoji}|${indicators.shown.emoji})`;
+				const emojiRegex = new RegExp(`${beginsLine}\\[${emojiCapture}\\]\\((\\w*)\\)`, 'i');
+				return Messenger.metadataByRegex(message, emojiRegex);
+			case 'img':
+				const baseUrl = _.escapeRegExp(process.env.MESSAGE_CONVERTOR_IMG_BASE_URL);
+				const querystring = `\\?hidden=${wordCapture}&source=(\\w*)`;
+				const imgRegex = new RegExp(`${beginsLine}<img src="${baseUrl}${querystring}" height="18" \/>`, 'i');
+				return Messenger.metadataByRegex(message, imgRegex);
+			case 'char':
+				const charCapture = `(${indicators.hidden.char}|${indicators.shown.char})`;
+				const charRegex = new RegExp(`${beginsLine}${charCapture}`, 'i');
+				return Messenger.metadataByRegex(message, charRegex);
+			default:
+				throw new Error(`${format} format not recognised`);
+		}
+	}
+
+	/**
+	 * A daily rotating message from a configured list.
+	 * @returns String of the message for today.
+	 */
+	protected static messageOfTheDay(): string {
+		try {
+			const messages = JSON.parse(process.env.MESSAGE_CONVERTOR_MESSAGES_OF_THE_DAY);
+			const daysSinceDatum = Math.floor(new Date().getTime() / 86400000);
+			return messages[daysSinceDatum % messages.length];
+		} catch (error) {
+			throw new Error('Message convertor environment variables not set correctly, motd not json');
+		}
+	}
+
+	/**
+	 * A singleton express instance for all web-hook based message services to share.
+	 * @type {Express}.
+	 */
+	private static _expressApp: express.Express;
+
+	/**
+	 * Generic handler for stock metadata regex, must match the syntax of:
+	 * first match is the indicator of visibility, second match is message source, remove the whole match for content.
+	 * @param message String to evaluate into metadata.
+	 * @param regex   Criteria for extraction.
+	 * @returns       Object of the metadata, decoded.
+	 */
+	private static metadataByRegex(message: string, regex: RegExp): Metadata {
+		const indicators = Messenger.getIndicatorArrays();
+		const metadata = message.match(regex);
 		if (metadata) {
-			// The content without the metadata, the word after the emoji, and whether the emoji is in the visible set
 			return {
-				content: message.replace(findMetadata, '').trim(),
+				content: message.replace(regex, '').trim(),
 				genesis: metadata[2] || null,
-				hidden: !_.includes(indicators.shown, metadata[1]),
+				hidden: !_.includes(_.values(indicators.shown), metadata[1]),
 			};
 		}
-		// Return some default values if there wasn't any metadata
 		return {
 			content: message,
 			genesis: null,
@@ -139,33 +190,30 @@ export abstract class Messenger extends WorkerClient<string|null> implements Ser
 		};
 	}
 
-	/** A singleton express instance for all web-hook based message services to share. */
-	private static _app: express.Express;
-
 	/**
 	 * Create or retrieve the singleton express app.
 	 * @returns  Singleton express server app.
 	 */
-	protected static get app(): express.Express {
-		if (!Messenger._app) {
+	protected static get expressApp(): express.Express {
+		if (!Messenger._expressApp) {
 			// Either MESSAGE_SERVICE_PORT from environment or PORT from Heroku environment
 			const port = process.env.MESSAGE_SERVICE_PORT || process.env.PORT;
 			if (!port) {
 				throw new Error('No inbound port specified for express server');
 			}
 			// Create and log an express instance
-			Messenger._app = express();
-			Messenger._app.use(bodyParser.json());
-			Messenger._app.listen(port);
+			Messenger._expressApp = express();
+			Messenger._expressApp.use(bodyParser.json());
+			Messenger._expressApp.listen(port);
 			Messenger.logger.log(LogLevel.INFO, `---> Started MessageService shared web server on port '${port}'`);
 		}
-		return Messenger._app;
+		return Messenger._expressApp;
 	}
 
 	/**
 	 * Promise to find the comment history of a particular thread.
-	 * @param thread  id of the thread to search.
-	 * @param room    id of the room in which the thread resides.
+	 * @param thread  ID of the thread to search.
+	 * @param room    ID of the room in which the thread resides.
 	 * @param filter  Criteria to match.
 	 * @param search  Optional, some words which may be used to shortlist the results.
 	 */
@@ -229,7 +277,7 @@ export abstract class Messenger extends WorkerClient<string|null> implements Ser
 	public registerEvent(registration: ServiceRegistration): void {
 		// Store each event registration in an object of arrays.
 		for (const event of registration.events) {
-			if (this._eventListeners[event] == null) {
+			if (!this._eventListeners[event]) {
 				this._eventListeners[event] = [];
 			}
 			this._eventListeners[event].push(registration);

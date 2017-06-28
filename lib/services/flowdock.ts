@@ -46,18 +46,26 @@ export class FlowdockService extends Messenger implements ServiceEmitter, Servic
 	 */
 	public makeGeneric = (data: MessengerEvent): Promise<ReceiptContext> => {
 		return new Promise<ReceiptContext>((resolve) => {
-			// Separate out some parts of the message
-			const metadata = Messenger.extractMetadata(data.rawEvent.content);
-			const titleAndText = metadata.content.match(/^(.*)\n--\n((?:\r|\n|.)*)$/);
+			// Imported messages use emoji and have a genesis, but native messages use char
+			const emojiMetadata = Messenger.extractMetadata(data.rawEvent.content, 'emoji');
+			const charMetadata = Messenger.extractMetadata(data.rawEvent.content, 'char');
+			const compiledMetadata = {
+				genesis: emojiMetadata.genesis || charMetadata.genesis || data.source,
+				hidden: emojiMetadata.hidden && charMetadata.hidden,
+				content: emojiMetadata.genesis ? emojiMetadata.content : charMetadata.content,
+			};
+			// Separate out some parts of the message to save line width and calculations later
+			const titleAndText = compiledMetadata.content.match(/^(.*)\n--\n((?:\r|\n|.)*)$/);
 			const flow = data.cookedEvent.flow;
 			const thread = data.rawEvent.thread_id;
 			const userId = data.rawEvent.user;
 			const org = this.data.organization;
+			const first = data.rawEvent.id === data.rawEvent.thread.initial_message;
 			const returnValue = {
 				action: MessengerAction.Create,
-				first: data.rawEvent.id === data.rawEvent.thread.initial_message,
-				genesis: metadata.genesis || data.source,
-				hidden: metadata.hidden,
+				first,
+				genesis: compiledMetadata.genesis,
+				hidden: compiledMetadata.hidden,
 				source: data.source,
 				sourceIds: {
 					message: data.rawEvent.id,
@@ -66,8 +74,8 @@ export class FlowdockService extends Messenger implements ServiceEmitter, Servic
 					url: `https://www.flowdock.com/app/${org}/${flow}/threads/${thread}`,
 					user: 'duff', // gets replaced
 				},
-				text: titleAndText ? titleAndText[2] : metadata.content,
-				title: titleAndText ? titleAndText[1] : undefined,
+				text: first && titleAndText ? titleAndText[2] : compiledMetadata.content,
+				title: first && titleAndText ? titleAndText[1] : undefined,
 			};
 			// If the data provided a username
 			if (data.rawEvent.external_user_name) {
@@ -105,7 +113,7 @@ export class FlowdockService extends Messenger implements ServiceEmitter, Servic
 				},
 				payload: {
 					// The concatenated string, of various data nuggets, to emit
-					content: titleText + data.text + '\n' + Messenger.stringifyMetadata(data),
+					content: titleText + data.text + Messenger.stringifyMetadata(data, 'emoji'),
 					event: 'message',
 					external_user_name:
 					// If this is using the generic token, then they must be an external user, so indicate this
@@ -205,7 +213,7 @@ export class FlowdockService extends Messenger implements ServiceEmitter, Servic
 			});
 		});
 		// Create a keep-alive endpoint for contexts that sleep between web requests
-		Messenger.app.get(`/${FlowdockService._serviceName}/`, (_formData, response) => {
+		Messenger.expressApp.get(`/${FlowdockService._serviceName}/`, (_formData, response) => {
 			response.sendStatus(200);
 		});
 	}

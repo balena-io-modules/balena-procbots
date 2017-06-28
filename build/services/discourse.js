@@ -29,7 +29,7 @@ class DiscourseService extends messenger_1.Messenger {
                 topic: request(getTopic),
             })
                 .then((details) => {
-                const metadata = messenger_1.Messenger.extractMetadata(details.post.raw);
+                const metadata = messenger_1.Messenger.extractMetadata(details.post.raw, 'img');
                 const first = details.post.post_number === 1;
                 return {
                     action: messenger_types_1.MessengerAction.Create,
@@ -51,6 +51,12 @@ class DiscourseService extends messenger_1.Messenger {
         };
         this.makeSpecific = (data) => {
             const topicId = data.toIds.thread;
+            const footer = `${messenger_1.Messenger.stringifyMetadata(data, 'img')} ${messenger_1.Messenger.messageOfTheDay()}`;
+            const raw = `${data.text}\n\n---${footer}\n`;
+            const endpoint = {
+                api_key: data.toIds.token,
+                api_username: data.toIds.user,
+            };
             if (!topicId) {
                 const title = data.title;
                 if (!title) {
@@ -58,13 +64,10 @@ class DiscourseService extends messenger_1.Messenger {
                 }
                 return new Promise((resolve) => {
                     resolve({
-                        endpoint: {
-                            api_key: data.toIds.token,
-                            api_username: data.toIds.user,
-                        },
+                        endpoint,
                         payload: {
                             category: data.toIds.flow,
-                            raw: `${data.text}\n\n---\n${messenger_1.Messenger.stringifyMetadata(data)}`,
+                            raw,
                             title,
                             unlist_topic: data.hidden ? 'true' : 'false',
                         }
@@ -73,12 +76,9 @@ class DiscourseService extends messenger_1.Messenger {
             }
             return new Promise((resolve) => {
                 resolve({
-                    endpoint: {
-                        api_key: data.toIds.token,
-                        api_username: data.toIds.user,
-                    },
+                    endpoint,
                     payload: {
-                        raw: `${data.text}\n\n---\n${messenger_1.Messenger.stringifyMetadata(data)}`,
+                        raw,
                         topic_id: topicId,
                         whisper: data.hidden ? 'true' : 'false',
                     },
@@ -105,7 +105,7 @@ class DiscourseService extends messenger_1.Messenger {
             });
         };
         this.activateMessageListener = () => {
-            messenger_1.Messenger.app.post(`/${DiscourseService._serviceName}/`, (formData, response) => {
+            messenger_1.Messenger.expressApp.post(`/${DiscourseService._serviceName}/`, (formData, response) => {
                 if (!this.receivedPostIds.has(formData.body.post.id)) {
                     this.receivedPostIds.add(formData.body.post.id);
                     this.queueEvent({

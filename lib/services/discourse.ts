@@ -64,7 +64,7 @@ export class DiscourseService extends Messenger implements ServiceListener, Serv
 		})
 		.then((details: {post: any, topic: any}) => {
 			// Gather metadata and resolve
-			const metadata = Messenger.extractMetadata(details.post.raw);
+			const metadata = Messenger.extractMetadata(details.post.raw, 'img');
 			const first = details.post.post_number === 1;
 			return {
 				action: MessengerAction.Create,
@@ -95,6 +95,12 @@ export class DiscourseService extends Messenger implements ServiceListener, Serv
 	public makeSpecific = (data: TransmitContext): Promise<DiscourseEmitContext> => {
 		// Attempt to find the thread ID to know if this is a new topic or not
 		const topicId = data.toIds.thread;
+		const footer = `${Messenger.stringifyMetadata(data, 'img')} ${Messenger.messageOfTheDay()}`;
+		const raw = `${data.text}\n\n---${footer}\n`;
+		const endpoint = {
+			api_key: data.toIds.token,
+			api_username: data.toIds.user,
+		};
 		if (!topicId) {
 			const title = data.title;
 			if (!title) {
@@ -103,13 +109,10 @@ export class DiscourseService extends Messenger implements ServiceListener, Serv
 			// A new topic request for discourse
 			return new Promise<DiscourseEmitContext>((resolve) => {
 				resolve({
-					endpoint: {
-						api_key: data.toIds.token,
-						api_username: data.toIds.user,
-					},
+					endpoint,
 					payload: {
 						category: data.toIds.flow,
-						raw: `${data.text}\n\n---\n${Messenger.stringifyMetadata(data)}`,
+						raw,
 						title,
 						unlist_topic: data.hidden ? 'true' : 'false',
 					}
@@ -119,12 +122,9 @@ export class DiscourseService extends Messenger implements ServiceListener, Serv
 		// A new message request for discourse
 		return new Promise<DiscourseEmitContext>((resolve) => {
 			resolve({
-				endpoint: {
-					api_key: data.toIds.token,
-					api_username: data.toIds.user,
-				},
+				endpoint,
 				payload: {
-					raw: `${data.text}\n\n---\n${Messenger.stringifyMetadata(data)}`,
+					raw,
 					topic_id: topicId,
 					whisper: data.hidden ? 'true' : 'false',
 				},
@@ -178,7 +178,7 @@ export class DiscourseService extends Messenger implements ServiceListener, Serv
 	 */
 	protected activateMessageListener = (): void => {
 		// Create an endpoint for this listener and protect against double-web-hooks
-		Messenger.app.post(`/${DiscourseService._serviceName}/`, (formData, response) => {
+		Messenger.expressApp.post(`/${DiscourseService._serviceName}/`, (formData, response) => {
 			if(!this.receivedPostIds.has(formData.body.post.id)) {
 				this.receivedPostIds.add(formData.body.post.id);
 				// Enqueue the event as simply as possible
