@@ -17,7 +17,7 @@ limitations under the License.
 import * as Promise from 'bluebird';
 import * as GithubApi from 'github';
 import TypedError = require('typed-error');
-import { ProcBotConfiguration } from '../framework/procbot-types';
+import { ConfigurationLocation, ProcBotConfiguration } from '../framework/procbot-types';
 import { ServiceAPIHandle, ServiceEmitContext, ServiceEvent, ServiceListenerMethod, ServiceRegistration,
     ServiceType } from './service-types';
 
@@ -118,9 +118,18 @@ export interface GithubEmitRequestContext extends ServiceEmitContext {
     data: any;
 }
 
-/*declare class GithubError {
-    public message: string;
-    public documentationUrl: string;
-
-    constructor(error: any);
-}*/
+/**
+ * The location object to allow a Github ServiceEmitter to locate and retrieve a
+ * configuration file.
+ */
+export interface GithubConfigLocation extends ConfigurationLocation {
+    /** The location of the configuration file. */
+    location: {
+        /** Owner of the repository. */
+        owner: string;
+        /** The repository name. */
+        repo: string;
+        /** Absolute path in the repository where the configuration file is located, inclusive of filename. */
+        path?: string;
+    };
+}

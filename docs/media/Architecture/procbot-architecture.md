@@ -109,7 +109,8 @@ Obviously this has potentially disasterous consquences depending on the data bei
 
 Workers are designed to solve the concurrency issue presented here by allowing a ServiceListener to define a context for the events that they receive. Events that are related are serialised, ensuring that any processing and emitting is carried out completely for an event before the next event in the context is operated upon, but ensuring that separate events can also be processed asynchronously to achieve a suitable throughput.
 
-Workers and WorkerClient Bots are instrumental to achieving event handling based on context.
+Workers and WorkerClient Bots are instrumental to achieving event handling based on context. The following diagram shows how Workers and WorkerClients handle contexts, using a Github ServiceListener receiving events from two separate repositories as an example:
+![Procbots Workers](Worker-Event-Queue.png)
 
 Whenever a ServiceListener receives a new event from an external source, it uses methods in the WorkerClient to queue the event into the relevant context. This is carried out by the ServiceListener implementing a method that creates a new Worker should a relevant context not already exist, or retrieving a current Worker should a Worker for the context already exist. The WorkerClient then adds the passed event to that Worker. WorkerClient Bots hold a map of each Worker along with the value of its context.
 
@@ -222,7 +223,7 @@ Responses to any data sent in a `sendData()` request is returned via a `ServiceE
 The general flow is as follows:
 
 1. Client Bot creates a `ServiceEmitRequest` object and sets a context property for each ServiceEmitter it wishes to send data via
-2. It calls the `dispatchToEmitter()` or `dispatchToAllEmitters()` method passing the `ServiceEmitRequest`
+2. It calls the `dispatchToEmitter()` or `dispatchToAllEmitters()` method passing the `ServiceEmitRequest`. Note that whilst a full `ServiceEmitRequest` object is required by `dispatchToAllEmitters()` with each context required, `dispatchToEmitter()` only requires the internal data structure required by the service, without a `contexts` wrapper. This simplifies the calling mechanism for Client Bots who are only interested in a single response from a Service
 3. Any relevant ServiceEmitter is then called with this object, and it inspects it for a relevant context (ie. a context with the same property key name as itself)
 4. It makes a request to an external service using an relevant API and, if required, awaits a response
 5. And response or error received is noted in a new `ServiceEmitResponse` object, which includes the name of the ServiceEmitter in the `source` property, this object is then returned

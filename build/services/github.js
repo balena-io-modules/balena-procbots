@@ -182,14 +182,14 @@ class GithubService extends worker_client_1.WorkerClient {
         const githubContext = _.cloneDeep(emitContext.github);
         let retriesLeft = 3;
         let returnArray = [];
-        let perPage = githubContext.data['per_page'] || 30;
+        let perPage = Math.min(githubContext.data['per_page'], 100) || 30;
         let page = githubContext.data.page || 1;
         const runApi = () => {
             retriesLeft -= 1;
             return githubContext.method(githubContext.data).then((resData) => {
-                let response = resData;
-                if (Array.isArray(resData)) {
-                    returnArray = _.concat(returnArray, resData);
+                let response = resData.data;
+                if (Array.isArray(response)) {
+                    returnArray = _.concat(returnArray, response);
                     retriesLeft += 1;
                     if (!githubContext.data.page) {
                         githubContext.data.page = page;
@@ -198,10 +198,10 @@ class GithubService extends worker_client_1.WorkerClient {
                         githubContext.data['per_page'] = perPage;
                     }
                     githubContext.data.page++;
-                    if (resData.length === perPage) {
+                    if (response.length === perPage) {
                         return runApi();
                     }
-                    response = _.uniqBy(returnArray, 'url');
+                    response = _.uniq(returnArray);
                 }
                 return {
                     response,
@@ -243,6 +243,39 @@ class GithubService extends worker_client_1.WorkerClient {
             github: this.githubApi
         };
     }
+    getConfigurationFile(details) {
+        const owner = details.location.owner;
+        const repo = details.location.repo;
+        const path = details.location.path || '.procbots.yml';
+        return this.sendData({
+            source: this._serviceName,
+            contexts: {
+                github: {
+                    data: {
+                        owner,
+                        repo,
+                        path
+                    },
+                    method: this.githubApi.repos.getContent
+                }
+            }
+        }).then((data) => {
+            if (data.err) {
+                throw data.err;
+            }
+            const configData = data.response;
+            if (configData.encoding !== 'base64') {
+                this.logger.log(logger_1.LogLevel.WARN, `A config file exists for ${owner}/${repo} but is not ` +
+                    `Base64 encoded! Ignoring.`);
+                return;
+            }
+            return Buffer.from(configData.content, 'base64').toString();
+        }).catch((err) => {
+            if (err.message !== 'Not Found') {
+                throw err;
+            }
+        });
+    }
     authenticate() {
         const privatePem = new Buffer(this.pem, 'base64').toString();
         const payload = {
@@ -279,10 +312,11 @@ class GithubService extends worker_client_1.WorkerClient {
                 token: this.authToken,
                 type: 'token'
             });
-            this.logger.log(logger_1.LogLevel.INFO, `token for manual fiddling is: ${tokenDetails.token}`);
-            this.logger.log(logger_1.LogLevel.INFO, `token expires at: ${tokenDetails.expires_at}`);
-            this.logger.log(logger_1.LogLevel.INFO, 'Base curl command:');
-            this.logger.log(logger_1.LogLevel.INFO, `curl -XGET -H "Authorisation: token ${tokenDetails.token}" ` +
+            this.logger.log(logger_1.LogLevel.INFO, `Reauthenticated with Github. Will expire at ${tokenDetails.expires_at}`);
+            this.logger.log(logger_1.LogLevel.DEBUG, `token for manual fiddling is: ${tokenDetails.token}`);
+            this.logger.log(logger_1.LogLevel.DEBUG, `token expires at: ${tokenDetails.expires_at}`);
+            this.logger.log(logger_1.LogLevel.DEBUG, 'Base curl command:');
+            this.logger.log(logger_1.LogLevel.DEBUG, `curl -XGET -H "Authorization: token ${tokenDetails.token}" ` +
                 `-H "Accept: ${this.ghApiAccept}" https://api.github.com/`);
         });
     }

@@ -13,6 +13,15 @@ const fsFileExists = Promise.promisify(FS.stat);
 const tempMkdir = Promise.promisify(temp_1.track().mkdir);
 const tempCleanup = Promise.promisify(temp_1.cleanup);
 ;
+var ReviewState;
+(function (ReviewState) {
+    ReviewState[ReviewState["Approved"] = 0] = "Approved";
+    ReviewState[ReviewState["ChangesRequired"] = 1] = "ChangesRequired";
+})(ReviewState || (ReviewState = {}));
+;
+;
+const RepositoryFilePath = 'repository.yml';
+const ReviewerAddMessage = 'Please add yourselves as reviewers for this PR.';
 var StatusChecks;
 (function (StatusChecks) {
     StatusChecks[StatusChecks["Passed"] = 0] = "Passed";
@@ -23,7 +32,7 @@ var StatusChecks;
 const MergeLabel = 'procbots/versionbot/ready-to-merge';
 const IgnoreLabel = 'procbots/versionbot/no-checks';
 class VersionBot extends procbot_1.ProcBot {
-    constructor(integration, name, pemString, webhook) {
+    constructor(integration, name, email, pemString, webhook) {
         super(name);
         this.statusChange = (registration, event) => {
             const splitRepo = event.cookedEvent.data.name.split('/');
@@ -132,6 +141,165 @@ class VersionBot extends procbot_1.ProcBot {
                 }
             });
         };
+        this.addReviewers = (_registration, event) => {
+            const pr = event.cookedEvent.data.pull_request;
+            const head = event.cookedEvent.data.pull_request.head;
+            const owner = head.repo.owner.login;
+            const repo = head.repo.name;
+            let approvedMaintainers;
+            let approvedReviewers;
+            if (event.cookedEvent.data.action !== 'opened') {
+                return Promise.resolve();
+            }
+            this.logger.log(logger_1.LogLevel.INFO, `Checking reviewers list for ${owner}/${repo}#${pr.number}`);
+            return this.retrieveConfiguration({
+                emitter: this.githubEmitter,
+                location: {
+                    owner,
+                    repo,
+                    path: RepositoryFilePath
+                }
+            }).then((config) => {
+                approvedMaintainers = this.stripPRAuthor((config || {}).maintainers || null, pr) || [];
+                approvedReviewers = this.stripPRAuthor((config || {}).reviewers || null, pr) || [];
+                return this.dispatchToEmitter(this.githubEmitterName, {
+                    data: {
+                        number: pr.number,
+                        owner,
+                        repo
+                    },
+                    method: this.githubApi.pullRequests.get
+                });
+            }).then((pullRequest) => {
+                const assignedReviewers = _.map(pullRequest.requested_reviewers, (reviewer) => reviewer.login);
+                const configuredReviewers = _.uniq(_.unionWith(approvedReviewers, approvedMaintainers));
+                let missingReviewers = _.filter(configuredReviewers, (reviewer) => {
+                    return !(_.find(assignedReviewers, (assignedReviewer) => (assignedReviewer === reviewer)) ||
+                        (reviewer === pr.user.login));
+                });
+                if (missingReviewers.length > 0) {
+                    let reviewerMessage = '';
+                    _.each(missingReviewers, (reviewer) => {
+                        reviewerMessage += `@${reviewer}, `;
+                    });
+                    reviewerMessage += ReviewerAddMessage;
+                    return this.dispatchToEmitter(this.githubEmitterName, {
+                        data: {
+                            owner,
+                            repo,
+                            number: pr.number,
+                            body: reviewerMessage
+                        },
+                        method: this.githubApi.issues.createComment
+                    });
+                }
+            });
+        };
+        this.checkReviewers = (_registration, event) => {
+            const pr = event.cookedEvent.data.pull_request;
+            const head = event.cookedEvent.data.pull_request.head;
+            const owner = head.repo.owner.login;
+            const repo = head.repo.name;
+            let botConfig;
+            this.logger.log(logger_1.LogLevel.INFO, `Checking reviewer conditions for${owner}/${repo}#${pr.number}`);
+            return this.retrieveConfiguration({
+                emitter: this.githubEmitter,
+                location: {
+                    owner,
+                    repo,
+                    path: RepositoryFilePath
+                }
+            }).then((config) => {
+                botConfig = config;
+                return this.dispatchToEmitter(this.githubEmitterName, {
+                    data: {
+                        number: pr.number,
+                        owner,
+                        repo
+                    },
+                    method: this.githubApi.pullRequests.getReviews
+                });
+            }).then((reviews) => {
+                const approvalsNeeded = (botConfig || {}).minimum_approvals || 1;
+                let approvedCount = 0;
+                let reviewers = {};
+                let status = '';
+                let approvedPR = false;
+                const approvedMaintainers = this.stripPRAuthor((botConfig || {}).maintainers || null, pr);
+                const approvedReviewers = this.stripPRAuthor((botConfig || {}).reviewers || null, pr);
+                if (approvalsNeeded < 1) {
+                    return this.reportError({
+                        brief: 'Invalid number of approvals required',
+                        message: 'The number of approvals required to merge a PR is less than one. At least ' +
+                            `one approval is required. Please ask a maintainer to correct the \`minimum_approvals\` ` +
+                            `value in the config file (current value: ${approvalsNeeded})`,
+                        number: pr.number,
+                        owner,
+                        repo
+                    });
+                }
+                if (approvedReviewers) {
+                    const mergedReviewers = _.unionWith(approvedReviewers, approvedMaintainers || [], _.isEqual);
+                    if (mergedReviewers.length < approvalsNeeded) {
+                        return this.reportError({
+                            brief: 'Not enough reviewers for PR approval',
+                            message: 'The number of approved reviewers for the repository is less than the ' +
+                                `number of approvals that are required for the PR to be merged (${approvalsNeeded}).`,
+                            number: pr.number,
+                            owner,
+                            repo
+                        });
+                    }
+                }
+                reviews.forEach((review) => {
+                    const reviewer = review.user.login;
+                    if (review.state === 'APPROVED') {
+                        reviewers[reviewer] = ReviewState.Approved;
+                    }
+                    else if (review.state === 'CHANGES_REQUESTED') {
+                        reviewers[reviewer] = ReviewState.ChangesRequired;
+                    }
+                });
+                if (_.find(reviewers, (state) => state === ReviewState.ChangesRequired)) {
+                    status = 'Changes have been requested by at least one reviewer';
+                }
+                else {
+                    let reviewersApproved = _.map(reviewers, (_val, key) => key);
+                    let appendStatus = '';
+                    if (approvedReviewers || approvedMaintainers) {
+                        if (approvedReviewers) {
+                            reviewersApproved = _.filter(reviewersApproved, (reviewer) => {
+                                if (approvedReviewers && _.find(approvedReviewers, (login) => login === reviewer) ||
+                                    (approvedMaintainers && _.find(approvedMaintainers, (login) => login === reviewer))) {
+                                    return true;
+                                }
+                                return false;
+                            });
+                        }
+                    }
+                    approvedCount = reviewersApproved.length;
+                    if (approvedMaintainers) {
+                        if (_.intersection(reviewersApproved, approvedMaintainers).length < 1) {
+                            approvedCount = (approvedCount >= approvalsNeeded) ? (approvalsNeeded - 1) : approvedCount;
+                            appendStatus = ' - Maintainer approval required';
+                        }
+                    }
+                    status = `${approvedCount}/${approvalsNeeded} review approvals met${appendStatus}`;
+                    approvedPR = (approvedCount >= approvalsNeeded) ? true : false;
+                }
+                return this.dispatchToEmitter(this.githubEmitterName, {
+                    data: {
+                        context: 'VersionBot',
+                        description: status,
+                        owner: pr.head.repo.owner.login,
+                        repo: pr.head.repo.name,
+                        sha: pr.head.sha,
+                        state: approvedPR ? 'success' : 'failure'
+                    },
+                    method: this.githubApi.repos.createStatus
+                });
+            });
+        };
         this.checkVersioning = (_registration, event) => {
             const prEvent = event.cookedEvent.data;
             const pr = prEvent.pull_request;
@@ -216,7 +384,8 @@ class VersionBot extends procbot_1.ProcBot {
                     }).then((comments) => {
                         if (_.some(comments, (comment) => {
                             return ((comment.user.type === 'Bot') &&
-                                (lastCommitTimestamp < Date.parse(comment.created_at)));
+                                (lastCommitTimestamp < Date.parse(comment.created_at)) &&
+                                !_.endsWith(comment.body, ReviewerAddMessage));
                         })) {
                             return Promise.resolve();
                         }
@@ -283,10 +452,16 @@ class VersionBot extends procbot_1.ProcBot {
                 default:
                     return Promise.resolve();
             }
-            this.logger.log(logger_1.LogLevel.INFO, `Attempting merge for ${owner}/${repo}#${pr.number}`);
             this.logger.log(logger_1.LogLevel.INFO, `PR is ready to merge, attempting to carry out a ` +
                 `version up for ${owner}/${repo}#${pr.number}`);
-            return this.getConfiguration(owner, repo).then((config) => {
+            return this.retrieveConfiguration({
+                emitter: this.githubEmitter,
+                location: {
+                    owner,
+                    repo,
+                    path: RepositoryFilePath
+                }
+            }).then((config) => {
                 botConfig = config;
                 if (pr.mergeable !== true) {
                     throw new Error('The branch cannot currently be merged into master. It has a state of: ' +
@@ -361,7 +536,14 @@ class VersionBot extends procbot_1.ProcBot {
                 if (checkStatus === StatusChecks.Passed) {
                     return this.getVersionBotCommits(prInfo).then((commitMessage) => {
                         if (commitMessage) {
-                            return this.getConfiguration(owner, repo).then((config) => {
+                            return this.retrieveConfiguration({
+                                emitter: this.githubEmitter,
+                                location: {
+                                    owner,
+                                    repo,
+                                    path: RepositoryFilePath
+                                }
+                            }).then((config) => {
                                 if (data.action === 'labeled') {
                                     this.checkValidMaintainer(config, data);
                                 }
@@ -381,6 +563,7 @@ class VersionBot extends procbot_1.ProcBot {
                 }
             });
         };
+        this.emailAddress = email;
         const ghListener = this.addServiceListener('github', {
             client: name,
             loginType: {
@@ -409,8 +592,9 @@ class VersionBot extends procbot_1.ProcBot {
             throw new Error("Couldn't create a Github emitter");
         }
         this.githubListenerName = ghListener.serviceName;
-        this.githubEmitterName = ghEmitter.serviceName;
-        this.githubApi = ghEmitter.apiHandle.github;
+        this.githubEmitter = ghEmitter;
+        this.githubEmitterName = this.githubEmitter.serviceName;
+        this.githubApi = this.githubEmitter.apiHandle.github;
         if (!this.githubApi) {
             throw new Error('No Github API instance found');
         }
@@ -423,15 +607,26 @@ class VersionBot extends procbot_1.ProcBot {
             },
             {
                 events: ['pull_request', 'pull_request_review'],
-                listenerMethod: this.mergePR,
-                name: 'CheckForReadyMergeState',
+                listenerMethod: this.checkReviewers,
+                name: 'CheckReviewerStatus',
                 suppressionLabels: [IgnoreLabel],
-                triggerLabels: [MergeLabel],
             },
             {
                 events: ['pull_request'],
                 listenerMethod: this.checkWaffleFlow,
                 name: 'CheckForWaffleFlow',
+            },
+            {
+                events: ['pull_request'],
+                listenerMethod: this.addReviewers,
+                name: 'AddMissingReviewers',
+            },
+            {
+                events: ['pull_request', 'pull_request_review'],
+                listenerMethod: this.mergePR,
+                name: 'CheckForReadyMergeState',
+                suppressionLabels: [IgnoreLabel],
+                triggerLabels: [MergeLabel],
             },
             {
                 events: ['status'],
@@ -597,8 +792,8 @@ class VersionBot extends procbot_1.ProcBot {
                 return this.dispatchToEmitter(this.githubEmitterName, {
                     data: {
                         committer: {
-                            email: process.env.VERSIONBOT_EMAIL,
-                            name: process.env.VERSIONBOT_NAME
+                            email: this.emailAddress,
+                            name: this._botname
                         },
                         message: `${repoData.version}`,
                         owner: repoData.owner,
@@ -644,8 +839,8 @@ class VersionBot extends procbot_1.ProcBot {
                     repo,
                     tag: data.commitVersion,
                     tagger: {
-                        email: process.env.VERSIONBOT_EMAIL,
-                        name: process.env.VERSIONBOT_NAME
+                        email: this.emailAddress,
+                        name: this._botname
                     },
                     type: 'commit'
                 },
@@ -769,8 +964,12 @@ class VersionBot extends procbot_1.ProcBot {
             return null;
         });
     }
+    stripPRAuthor(list, pullRequest) {
+        const filteredList = list ? _.filter(list, (reviewer) => reviewer !== pullRequest.user.login) : null;
+        return (filteredList && (filteredList.length === 0)) ? null : filteredList;
+    }
     checkValidMaintainer(config, event) {
-        const maintainers = (((config || {}).procbot || {}).versionbot || {}).maintainers;
+        const maintainers = (config || {}).maintainers;
         if (maintainers) {
             if (!_.includes(maintainers, event.sender.login)) {
                 let errorMessage = `The \`${MergeLabel}\` label was not added by an authorised ` +
@@ -780,30 +979,9 @@ class VersionBot extends procbot_1.ProcBot {
             }
         }
     }
-    getConfiguration(owner, repo) {
-        return this.retrieveConfiguration(this.githubEmitterName, {
-            data: {
-                owner,
-                repo,
-                path: '.procbots.yml'
-            },
-            method: this.githubApi.repos.getContent
-        }).then((configData) => {
-            if (configData.encoding !== 'base64') {
-                this.logger.log(logger_1.LogLevel.WARN, `A config file exists for ${owner}/${repo} but is not ` +
-                    `Base64 encoded! Ignoring.`);
-                return;
-            }
-            return this.processConfiguration(Buffer.from(configData.content, 'base64')
-                .toString());
-        }).catch((err) => {
-            if (err.message !== 'Not Found') {
-                throw err;
-            }
-        });
-    }
     reportError(error) {
-        this.dispatchToEmitter(this.githubEmitterName, {
+        this.logger.alert(logger_1.AlertLevel.ERROR, error.message);
+        return this.dispatchToEmitter(this.githubEmitterName, {
             data: {
                 body: error.message,
                 number: error.number,
@@ -812,7 +990,6 @@ class VersionBot extends procbot_1.ProcBot {
             },
             method: this.githubApi.issues.createComment
         });
-        this.logger.alert(logger_1.AlertLevel.ERROR, error.message);
     }
 }
 exports.VersionBot = VersionBot;
@@ -822,7 +999,7 @@ function createBot() {
         throw new Error(`'VERSIONBOT_NAME', 'VERSIONBOT_EMAIL', 'VERSIONBOT_INTEGRATION_ID', 'VERSIONBOT_PEM' and ` +
             `'VERSIONBOT_WEBHOOK_SECRET environment variables need setting`);
     }
-    return new VersionBot(process.env.VERSIONBOT_INTEGRATION_ID, process.env.VERSIONBOT_NAME, process.env.VERSIONBOT_PEM, process.env.VERSIONBOT_WEBHOOK_SECRET);
+    return new VersionBot(process.env.VERSIONBOT_INTEGRATION_ID, process.env.VERSIONBOT_NAME, process.env.VERSIONBOT_EMAIL, process.env.VERSIONBOT_PEM, process.env.VERSIONBOT_WEBHOOK_SECRET);
 }
 exports.createBot = createBot;
 

@@ -37,19 +37,23 @@ class ProcBot {
         }
         return config;
     }
-    retrieveConfiguration(source, location) {
+    retrieveConfiguration(details) {
         let retrievePromise;
-        if (source === 'fs') {
-            retrievePromise = fsReadFile(location).call('toString');
+        if (typeof details.emitter === 'string') {
+            retrievePromise = fsReadFile(details.location).call('toString');
         }
         else {
-            retrievePromise = this.dispatchToEmitter(source, location);
-        }
-        return retrievePromise.then((contents) => {
-            if (source === 'fs') {
-                return this.processConfiguration(contents);
+            if (details.emitter.getConfigurationFile) {
+                retrievePromise = details.emitter.getConfigurationFile(details);
             }
-            return contents;
+            else {
+                return Promise.resolve();
+            }
+        }
+        return retrievePromise.then((configFile) => {
+            if (configFile) {
+                return this.processConfiguration(configFile);
+            }
         });
     }
     addServiceListener(name, data) {

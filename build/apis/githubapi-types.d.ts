@@ -21,26 +21,14 @@ export interface PullRequestEvent {
     type: 'pull_request';
     action: string;
     pull_request: PullRequest;
-    sender: {
-        login: string;
-    };
+    sender: User;
 }
 
 export interface PullRequestReviewEvent {
     type: 'pull_request_review';
     action: string;
     pull_request: PullRequest;
-}
-
-export interface StatusEventBranch {
-    name: string;
-    commit: {
-        author: {
-            login: string;
-        }
-        sha: string;
-        url: string;
-    };
+    sender: User;
 }
 
 export interface StatusEvent {
@@ -48,28 +36,41 @@ export interface StatusEvent {
     name: string;
     sha: string;
     branches: StatusEventBranch[];
+    sender: User;
+}
+
+export interface StatusEventBranch {
+    name: string;
+    commit: {
+        author: User;
+        sha: string;
+        url: string;
+    };
+    sender: User;
 }
 
 // Github API -----------------------------------------------------------------
 // These provide the current bare minimum definitions for child Procbots working with them.
+
+export interface Blob {
+    sha: string;
+}
+
+export interface CombinedStatus {
+    state: string;
+    total_count: number;
+    statuses: Status[];
+}
+
 export interface Comment {
     body: string;
-    user: {
-        login: string;
-        type: string;
-    };
+    user: User;
     created_at: string;
     updated_at: string;
 }
 
-export interface CommitFile {
-    filename: string;
-}
-
 export interface Commit {
-    committer: {
-        login: string;
-    };
+    committer: User;
     commit: {
         committer: {
             name: string;
@@ -81,6 +82,9 @@ export interface Commit {
     sha: string;
 }
 
+export interface CommitFile {
+    filename: string;
+}
 export interface Content {
     type: string;
     encoding: string;
@@ -91,15 +95,13 @@ export interface Content {
     sha: string;
 }
 
-export interface Review {
-    state: string;
+export interface IssueLabel {
+    default: boolean;
+    id: string;
+    name: string;
 }
 
 export interface Merge {
-    sha: string;
-}
-
-export interface Tag {
     sha: string;
 }
 
@@ -107,9 +109,7 @@ export interface PullRequest {
     head: {
         ref: string;
         repo: {
-            owner: {
-                login: string;
-            }
+            owner: User;
             name: string;
         };
         sha: string;
@@ -120,13 +120,38 @@ export interface PullRequest {
     number: number;
     state: string;
     url: string;
+    user: User;
+    requested_reviewers: User[];
+}
+
+export interface RequiredStatusChecks {
+    include_admins: boolean;
+    strict: boolean;
+    contexts: string[];
+}
+
+export interface Review {
     user: {
         login: string;
     };
+    body: string;
+    commit_id: string;
+    state: string;
 }
 
-export interface Blob {
+export interface Status {
+    state: string;
+    context: string;
+}
+
+export interface Tag {
     sha: string;
+}
+
+export interface Tree {
+    sha: string;
+    url: string;
+    tree: TreeEntry[];
 }
 
 export interface TreeEntry {
@@ -138,31 +163,10 @@ export interface TreeEntry {
     size?: number;
 }
 
-export interface Tree {
-    sha: string;
+export interface User {
+    login: string;
+    id: number;
     url: string;
-    tree: TreeEntry[];
-}
-
-export interface RequiredStatusChecks {
-    include_admins: boolean;
-    strict: boolean;
-    contexts: string[];
-}
-
-export interface IssueLabel {
-    default: boolean;
-    id: string;
-    name: string;
-}
-
-export interface Status {
-    state: string;
-    context: string;
-}
-
-export interface CombinedStatus {
-    state: string;
-    total_count: number;
-    statuses: Status[];
+    type: string;
+    site_admin: string;
 }

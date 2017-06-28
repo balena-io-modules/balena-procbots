@@ -1,7 +1,7 @@
 import * as Promise from 'bluebird';
 import { ServiceEmitRequest, ServiceEmitResponse, ServiceEmitter, ServiceListener } from '../services/service-types';
 import { Logger } from '../utils/logger';
-import { ProcBotConfiguration } from './procbot-types';
+import { ConfigurationLocation, ProcBotConfiguration } from './procbot-types';
 export declare class ProcBot {
     protected _botname: string;
     protected logger: Logger;
@@ -11,7 +11,7 @@ export declare class ProcBot {
     constructor(name?: string);
     getNodeBinPath(): Promise<string>;
     protected processConfiguration(configFile: string): ProcBotConfiguration | void;
-    protected retrieveConfiguration(source: string, location: string | any): Promise<ProcBotConfiguration | any | void>;
+    protected retrieveConfiguration(details: ConfigurationLocation): Promise<ProcBotConfiguration | void>;
     protected addServiceListener(name: string, data?: any): ServiceListener | void;
     protected addServiceEmitter(name: string, data?: any): ServiceEmitter | void;
     protected getListener(name: string): ServiceListener | void;

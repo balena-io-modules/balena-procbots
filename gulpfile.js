@@ -14,7 +14,7 @@ const OPTIONS = {
 
 // Compile the TS sources
 gulp.task('typescript', () => {
-    tsProject.src()
+    return tsProject.src()
         .pipe(sourcemaps.init())
         .pipe(tsProject()).on('error', gutil.log)
         .pipe(sourcemaps.write('./', { includeContent: true,
@@ -25,23 +25,24 @@ gulp.task('typescript', () => {
 
 // Copy any pre-defined declarations
 gulp.task('copydecs', () => {
-    gulp.src(OPTIONS.files.declarations)
+    return gulp.src(OPTIONS.files.declarations)
         .pipe(gulp.dest('build/'));
 });
 
-gulp.task('tslint', () =>
-    tsProject.src()
+gulp.task('tslint', () => {
+    return tsProject.src()
         .pipe(tslint({
             configuration: 'tslint.json',
             formatter: 'prose'
         }))
         .pipe(tslint.report())
-);
+});
 
-gulp.task('typedoc', () => {
+gulp.task('typedoc', (done) => {
     exec('`npm bin`/typedoc --name "Resin ProcBots" --module commonjs --target ES6 --excludeExternals ' +
         '--externalPattern **/typings/*.d.ts --gitRevision master --media docresources --out docs/ lib/', () => {
             exec('touch docs/.nojekyll');
+            done();
         });
 
 });

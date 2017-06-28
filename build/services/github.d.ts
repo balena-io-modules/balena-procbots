@@ -1,7 +1,7 @@
 import * as Promise from 'bluebird';
 import { Worker, WorkerEvent } from '../framework/worker';
 import { WorkerClient } from '../framework/worker-client';
-import { GithubConstructor, GithubHandle, GithubListenerConstructor, GithubRegistration } from './github-types';
+import { GithubConfigLocation, GithubConstructor, GithubHandle, GithubListenerConstructor, GithubRegistration } from './github-types';
 import { ServiceEmitRequest, ServiceEmitResponse, ServiceEmitter, ServiceEvent, ServiceListener } from './service-types';
 export declare class GithubError extends TypeError {
     message: string;
@@ -23,6 +23,7 @@ export declare class GithubService extends WorkerClient<string> implements Servi
     sendData(data: ServiceEmitRequest): Promise<ServiceEmitResponse>;
     readonly serviceName: string;
     readonly apiHandle: GithubHandle;
+    getConfigurationFile(details: GithubConfigLocation): Promise<string | void>;
     protected handleGithubEvent: (event: ServiceEvent) => Promise<void>;
     protected authenticate(): Promise<void>;
 }
