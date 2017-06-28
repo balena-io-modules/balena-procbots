@@ -17,7 +17,6 @@ limitations under the License.
 // VersionBot listens for merges of a PR to the `master` branch and then
 // updates any packages for it.
 import * as Promise from 'bluebird';
-import { spawn } from 'child_process';
 import * as FS from 'fs';
 import * as GithubApi from 'github';
 import * as _ from 'lodash';
@@ -28,6 +27,7 @@ import { ProcBot } from '../framework/procbot';
 import { ProcBotConfiguration } from '../framework/procbot-types';
 import { GithubCookedData, GithubHandle, GithubRegistration } from '../services/github-types';
 import { ServiceEmitter, ServiceEvent } from '../services/service-types';
+import { BuildCommand, ExecuteCommand } from '../utils/environment';
 import { AlertLevel, LogLevel } from '../utils/logger';
 
 // Exec technically has a binding because of it's Node typings, but promisify doesn't include
@@ -44,19 +44,6 @@ interface EncodedFile extends FileMapping {
 	/** The SHA for the blob that is the file. */
 	blobSha: string;
 };
-
-/** Used to create external command to run on the environment hosting VersionBot. */
-interface ExternalCommand {
-	/** The command to run. */
-	command: string;
-	/** The arguments to pass to the command as an array. */
-	args: string[];
-	/** Any relevant options for the command. */
-	options?: {
-		/** The CWD to run the command in. */
-		cwd?: string;
-	};
-}
 
 /** Interface to store contents of a file extracted from a cloned git repo. */
 interface FileMapping {
@@ -544,7 +531,7 @@ export class VersionBot extends ProcBot {
 		const repo = head.repo.name;
 		let botConfig: VersionBotConfiguration;
 
-		this.logger.log(LogLevel.INFO, `Checking reviewer conditions for${owner}/${repo}#${pr.number}`);
+		this.logger.log(LogLevel.INFO, `Checking reviewer conditions for ${owner}/${repo}#${pr.number}`);
 
 		// Get the reviews for the PR.
 		return this.retrieveConfiguration({
@@ -1032,35 +1019,15 @@ export class VersionBot extends ProcBot {
 		//  `package.json` file. This means components that don't have one need a custom
 		//  `versionist.conf.js` in their root dir. And we need to test to run against it.
 		//  It's possible to get round this using a custom `versionist.conf.js`, which we now support.
-		const buildCliCommand = (command: string, args?: string[], workingDir?: string) => {
-			return {
-				command,
-				args: args || [],
-				options: (workingDir) ? { cwd: workingDir } : undefined
-			};
-		};
-		const runCliCommand = (params: ExternalCommand) => {
-			return new Promise((resolve, reject) => {
-				const child = spawn(params.command, params.args, params.options);
-				let stdout = '';
-				let stderr = '';
 
-				child.stdout.on('data', (data) => {
-					stdout += data.toString();
-				});
-				child.stderr.on('data', (data) => {
-					stderr += data.toString();
-				});
-				child.addListener('close', () => resolve(stdout));
-				child.addListener('error', () => reject(stderr));
-			});
-		};
-
+		// We retry the clone up to three times, as we've seen issues in the past where GH doesn't
+		// authenticate correctly. If it clones, then checkout should only fail if the branch isn't valid.
 		return Promise.mapSeries([
-			buildCliCommand('git', ['clone', `https://${versionData.authToken}:${versionData.authToken}@github.com/` +
-				`${versionData.repoFullName}`, `${versionData.fullPath}`], `${versionData.fullPath}`),
-			buildCliCommand('git', ['checkout', `${versionData.branchName}`], `${versionData.fullPath}`)
-		], runCliCommand).then(() => {
+			BuildCommand('git', ['clone', `https://${versionData.authToken}:${versionData.authToken}@github.com/` +
+				`${versionData.repoFullName}`, `${versionData.fullPath}`],
+				{ cwd: `${versionData.fullPath}`, retries: 3 }),
+			BuildCommand('git', ['checkout', `${versionData.branchName}`], { cwd: `${versionData.fullPath}` })
+		], ExecuteCommand).then(() => {
 			// Test the repo, we want to see if there's a local `versionist.conf.js`.
 			// If so, we use that rather than the built-in default.
 			return fsFileExists(`${versionData.fullPath}/versionist.conf.js`)
@@ -1072,6 +1039,9 @@ export class VersionBot extends ProcBot {
 
 				return false;
 			});
+		}).catch(() => {
+			// Sanitise the error so we send something cleaner up.
+			throw new Error(`Cloning of branch ${versionData.branchName} in ${versionData.repoFullName} failed`);
 		}).then((exists: boolean) => {
 			let versionistCommand: string;
 			let versionistArgs: string[] = [];
@@ -1085,9 +1055,9 @@ export class VersionBot extends ProcBot {
 				}
 			}).then(() => {
 				return Promise.mapSeries([
-					buildCliCommand(versionistCommand, versionistArgs, `${versionData.fullPath}`),
-					buildCliCommand('git', ['status', '-s'], `${versionData.fullPath}`)
-				], runCliCommand);
+					BuildCommand(versionistCommand, versionistArgs, { cwd: `${versionData.fullPath}` }),
+					BuildCommand('git', ['status', '-s'], { cwd: `${versionData.fullPath}` })
+				], ExecuteCommand);
 			});
 		}).get(1).then((status: string) => {
 			const moddedFiles: string[] = [];

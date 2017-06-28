@@ -1,12 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const Promise = require("bluebird");
-const child_process_1 = require("child_process");
 const FS = require("fs");
 const _ = require("lodash");
 const path = require("path");
 const temp_1 = require("temp");
 const procbot_1 = require("../framework/procbot");
+const environment_1 = require("../utils/environment");
 const logger_1 = require("../utils/logger");
 const fsReadFile = Promise.promisify(FS.readFile);
 const fsFileExists = Promise.promisify(FS.stat);
@@ -201,7 +201,7 @@ class VersionBot extends procbot_1.ProcBot {
             const owner = head.repo.owner.login;
             const repo = head.repo.name;
             let botConfig;
-            this.logger.log(logger_1.LogLevel.INFO, `Checking reviewer conditions for${owner}/${repo}#${pr.number}`);
+            this.logger.log(logger_1.LogLevel.INFO, `Checking reviewer conditions for ${owner}/${repo}#${pr.number}`);
             return this.retrieveConfiguration({
                 emitter: this.githubEmitter,
                 location: {
@@ -640,33 +640,11 @@ class VersionBot extends procbot_1.ProcBot {
         });
     }
     applyVersionist(versionData) {
-        const buildCliCommand = (command, args, workingDir) => {
-            return {
-                command,
-                args: args || [],
-                options: (workingDir) ? { cwd: workingDir } : undefined
-            };
-        };
-        const runCliCommand = (params) => {
-            return new Promise((resolve, reject) => {
-                const child = child_process_1.spawn(params.command, params.args, params.options);
-                let stdout = '';
-                let stderr = '';
-                child.stdout.on('data', (data) => {
-                    stdout += data.toString();
-                });
-                child.stderr.on('data', (data) => {
-                    stderr += data.toString();
-                });
-                child.addListener('close', () => resolve(stdout));
-                child.addListener('error', () => reject(stderr));
-            });
-        };
         return Promise.mapSeries([
-            buildCliCommand('git', ['clone', `https://${versionData.authToken}:${versionData.authToken}@github.com/` +
-                    `${versionData.repoFullName}`, `${versionData.fullPath}`], `${versionData.fullPath}`),
-            buildCliCommand('git', ['checkout', `${versionData.branchName}`], `${versionData.fullPath}`)
-        ], runCliCommand).then(() => {
+            environment_1.BuildCommand('git', ['clone', `https://${versionData.authToken}:${versionData.authToken}@github.com/` +
+                    `${versionData.repoFullName}`, `${versionData.fullPath}`], { cwd: `${versionData.fullPath}`, retries: 3 }),
+            environment_1.BuildCommand('git', ['checkout', `${versionData.branchName}`], { cwd: `${versionData.fullPath}` })
+        ], environment_1.ExecuteCommand).then(() => {
             return fsFileExists(`${versionData.fullPath}/versionist.conf.js`)
                 .return(true)
                 .catch((err) => {
@@ -675,6 +653,8 @@ class VersionBot extends procbot_1.ProcBot {
                 }
                 return false;
             });
+        }).catch(() => {
+            throw new Error(`Cloning of branch ${versionData.branchName} in ${versionData.repoFullName} failed`);
         }).then((exists) => {
             let versionistCommand;
             let versionistArgs = [];
@@ -687,9 +667,9 @@ class VersionBot extends procbot_1.ProcBot {
                 }
             }).then(() => {
                 return Promise.mapSeries([
-                    buildCliCommand(versionistCommand, versionistArgs, `${versionData.fullPath}`),
-                    buildCliCommand('git', ['status', '-s'], `${versionData.fullPath}`)
-                ], runCliCommand);
+                    environment_1.BuildCommand(versionistCommand, versionistArgs, { cwd: `${versionData.fullPath}` }),
+                    environment_1.BuildCommand('git', ['status', '-s'], { cwd: `${versionData.fullPath}` })
+                ], environment_1.ExecuteCommand);
             });
         }).get(1).then((status) => {
             const moddedFiles = [];
