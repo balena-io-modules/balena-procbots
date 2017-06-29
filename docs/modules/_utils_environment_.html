@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>&quot;bots/syncbot&quot; | Resin ProcBots</title>
+	<title>&quot;utils/environment&quot; | Resin ProcBots</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -54,10 +54,10 @@
 					<a href="../globals.html">Globals</a>
 				</li>
 				<li>
-					<a href="_bots_syncbot_.html">&quot;bots/syncbot&quot;</a>
+					<a href="_utils_environment_.html">&quot;utils/environment&quot;</a>
 				</li>
 			</ul>
-			<h1>External module &quot;bots/syncbot&quot;</h1>
+			<h1>External module &quot;utils/environment&quot;</h1>
 		</div>
 	</div>
 </header>
@@ -69,15 +69,17 @@
 				<section class="tsd-panel tsd-index-panel">
 					<div class="tsd-index-content">
 						<section class="tsd-index-section ">
-							<h3>Classes</h3>
+							<h3>Interfaces</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-class tsd-parent-kind-external-module"><a href="../classes/_bots_syncbot_.syncbot.html" class="tsd-kind-icon">Sync<wbr>Bot</a></li>
+								<li class="tsd-kind-interface tsd-parent-kind-external-module"><a href="../interfaces/_utils_environment_.command.html" class="tsd-kind-icon">Command</a></li>
+								<li class="tsd-kind-interface tsd-parent-kind-external-module"><a href="../interfaces/_utils_environment_.commandoptions.html" class="tsd-kind-icon">Command<wbr>Options</a></li>
 							</ul>
 						</section>
 						<section class="tsd-index-section ">
 							<h3>Functions</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_bots_syncbot_.html#createbot" class="tsd-kind-icon">create<wbr>Bot</a></li>
+								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_utils_environment_.html#buildcommand" class="tsd-kind-icon">Build<wbr>Command</a></li>
+								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_utils_environment_.html#executecommand" class="tsd-kind-icon">Execute<wbr>Command</a></li>
 							</ul>
 						</section>
 					</div>
@@ -86,19 +88,86 @@
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Functions</h2>
 				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-external-module">
-					<a name="createbot" class="tsd-anchor"></a>
-					<h3>create<wbr>Bot</h3>
+					<a name="buildcommand" class="tsd-anchor"></a>
+					<h3>Build<wbr>Command</h3>
 					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-external-module">
-						<li class="tsd-signature tsd-kind-icon">create<wbr>Bot<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../classes/_bots_syncbot_.syncbot.html" class="tsd-signature-type">SyncBot</a></li>
+						<li class="tsd-signature tsd-kind-icon">Build<wbr>Command<span class="tsd-signature-symbol">(</span>command<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, args<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span>, options<span class="tsd-signature-symbol">?: </span><a href="../interfaces/_utils_environment_.commandoptions.html" class="tsd-signature-type">CommandOptions</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../interfaces/_utils_environment_.command.html" class="tsd-signature-type">Command</a></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/syncbot.ts#L467">bots/syncbot.ts:467</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/utils/environment.ts#L48">utils/environment.ts:48</a></li>
 								</ul>
 							</aside>
-							<h4 class="tsd-returns-title">Returns <a href="../classes/_bots_syncbot_.syncbot.html" class="tsd-signature-type">SyncBot</a></h4>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Build a new environment command object.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>command: <span class="tsd-signature-type">string</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The name of the command to execute.</p>
+									</div>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> args: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>An array of arguments to pass to the command.</p>
+									</div>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> options: <a href="../interfaces/_utils_environment_.commandoptions.html" class="tsd-signature-type">CommandOptions</a></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>A CommandOptions structure containing options required when the command is executed.</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <a href="../interfaces/_utils_environment_.command.html" class="tsd-signature-type">Command</a></h4>
+							<p>A Command object which can be passed to the RunCommand method.</p>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-external-module">
+					<a name="executecommand" class="tsd-anchor"></a>
+					<h3>Execute<wbr>Command</h3>
+					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-external-module">
+						<li class="tsd-signature tsd-kind-icon">Execute<wbr>Command<span class="tsd-signature-symbol">(</span>command<span class="tsd-signature-symbol">: </span><a href="../interfaces/_utils_environment_.command.html" class="tsd-signature-type">Command</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">__type</span><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/utils/environment.ts#L76">utils/environment.ts:76</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Executes an environment command.
+										The command will be executed via the <code>child_process.spawn</code> command. This ensures that
+										a new process is used to run the command, thus ensuring no access to the local shell.
+										The command will be attempted based on the value of the <code>options.retry</code> property in the
+										passed Command object. Should no retries be specified, command execution will only
+									be attempted once.</p>
+								</div>
+								<dl class="tsd-comment-tags">
+									<dt>throws</dt>
+									<dd><p>An error containing a message from the failed command&#39;s <code>stderr</code> output.</p>
+									</dd>
+								</dl>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>command: <a href="../interfaces/_utils_environment_.command.html" class="tsd-signature-type">Command</a></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">__type</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<p>A Promise containing a string from <code>stdout</code>. If output from <code>stderr</code> occurred, this will be used
+							instead.</p>
 						</li>
 					</ul>
 				</section>
@@ -113,7 +182,7 @@
 					<li class=" tsd-kind-external-module">
 						<a href="_app_.html">"app"</a>
 					</li>
-					<li class="current tsd-kind-external-module">
+					<li class=" tsd-kind-external-module">
 						<a href="_bots_syncbot_.html">"bots/syncbot"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
@@ -146,7 +215,7 @@
 					<li class=" tsd-kind-external-module">
 						<a href="_services_messenger_types_.html">"services/messenger-<wbr>types"</a>
 					</li>
-					<li class=" tsd-kind-external-module">
+					<li class="current tsd-kind-external-module">
 						<a href="_utils_environment_.html">"utils/environment"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
@@ -156,11 +225,17 @@
 			</nav>
 			<nav class="tsd-navigation secondary menu-sticky">
 				<ul class="before-current">
-					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="../classes/_bots_syncbot_.syncbot.html" class="tsd-kind-icon">Sync<wbr>Bot</a>
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
+						<a href="../interfaces/_utils_environment_.command.html" class="tsd-kind-icon">Command</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
+						<a href="../interfaces/_utils_environment_.commandoptions.html" class="tsd-kind-icon">Command<wbr>Options</a>
 					</li>
 					<li class=" tsd-kind-function tsd-parent-kind-external-module">
-						<a href="_bots_syncbot_.html#createbot" class="tsd-kind-icon">create<wbr>Bot</a>
+						<a href="_utils_environment_.html#buildcommand" class="tsd-kind-icon">Build<wbr>Command</a>
+					</li>
+					<li class=" tsd-kind-function tsd-parent-kind-external-module">
+						<a href="_utils_environment_.html#executecommand" class="tsd-kind-icon">Execute<wbr>Command</a>
 					</li>
 				</ul>
 			</nav>

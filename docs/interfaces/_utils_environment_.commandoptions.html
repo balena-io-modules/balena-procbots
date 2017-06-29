@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>&quot;bots/syncbot&quot; | Resin ProcBots</title>
+	<title>CommandOptions | Resin ProcBots</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -54,53 +54,73 @@
 					<a href="../globals.html">Globals</a>
 				</li>
 				<li>
-					<a href="_bots_syncbot_.html">&quot;bots/syncbot&quot;</a>
+					<a href="../modules/_utils_environment_.html">&quot;utils/environment&quot;</a>
+				</li>
+				<li>
+					<a href="_utils_environment_.commandoptions.html">CommandOptions</a>
 				</li>
 			</ul>
-			<h1>External module &quot;bots/syncbot&quot;</h1>
+			<h1>Interface CommandOptions</h1>
 		</div>
 	</div>
 </header>
 <div class="container container-main">
 	<div class="row">
 		<div class="col-8 col-content">
+			<section class="tsd-panel tsd-hierarchy">
+				<h3>Hierarchy</h3>
+				<ul class="tsd-hierarchy">
+					<li>
+						<span class="target">CommandOptions</span>
+					</li>
+				</ul>
+			</section>
 			<section class="tsd-panel-group tsd-index-group">
 				<h2>Index</h2>
 				<section class="tsd-panel tsd-index-panel">
 					<div class="tsd-index-content">
 						<section class="tsd-index-section ">
-							<h3>Classes</h3>
+							<h3>Properties</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-class tsd-parent-kind-external-module"><a href="../classes/_bots_syncbot_.syncbot.html" class="tsd-kind-icon">Sync<wbr>Bot</a></li>
-							</ul>
-						</section>
-						<section class="tsd-index-section ">
-							<h3>Functions</h3>
-							<ul class="tsd-index-list">
-								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_bots_syncbot_.html#createbot" class="tsd-kind-icon">create<wbr>Bot</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_utils_environment_.commandoptions.html#cwd" class="tsd-kind-icon">cwd</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_utils_environment_.commandoptions.html#retries" class="tsd-kind-icon">retries</a></li>
 							</ul>
 						</section>
 					</div>
 				</section>
 			</section>
 			<section class="tsd-panel-group tsd-member-group ">
-				<h2>Functions</h2>
-				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-external-module">
-					<a name="createbot" class="tsd-anchor"></a>
-					<h3>create<wbr>Bot</h3>
-					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-external-module">
-						<li class="tsd-signature tsd-kind-icon">create<wbr>Bot<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../classes/_bots_syncbot_.syncbot.html" class="tsd-signature-type">SyncBot</a></li>
-					</ul>
-					<ul class="tsd-descriptions">
-						<li class="tsd-description">
-							<aside class="tsd-sources">
-								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/syncbot.ts#L467">bots/syncbot.ts:467</a></li>
-								</ul>
-							</aside>
-							<h4 class="tsd-returns-title">Returns <a href="../classes/_bots_syncbot_.syncbot.html" class="tsd-signature-type">SyncBot</a></h4>
-						</li>
-					</ul>
+				<h2>Properties</h2>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="cwd" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagOptional">Optional</span> cwd</h3>
+					<div class="tsd-signature tsd-kind-icon">cwd<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/utils/environment.ts#L22">utils/environment.ts:22</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>The CWD to run the command in.</p>
+						</div>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
+					<a name="retries" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagOptional">Optional</span> retries</h3>
+					<div class="tsd-signature tsd-kind-icon">retries<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/utils/environment.ts#L27">utils/environment.ts:27</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>How many retry attempts should occur if the command fails. Any value less than
+							one will result in no retries.</p>
+						</div>
+					</div>
 				</section>
 			</section>
 		</div>
@@ -111,56 +131,74 @@
 						<a href="../globals.html"><em>Globals</em></a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="_app_.html">"app"</a>
+						<a href="../modules/_app_.html">"app"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_bots_syncbot_.html">"bots/syncbot"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_bots_versionbot_.html">"bots/versionbot"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_framework_procbot_.html">"framework/procbot"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_framework_worker_.html">"framework/worker"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_framework_worker_client_.html">"framework/worker-<wbr>client"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_services_discourse_.html">"services/discourse"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_services_flowdock_.html">"services/flowdock"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_services_front_.html">"services/front"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_services_github_.html">"services/github"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_services_messenger_.html">"services/messenger"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_services_messenger_types_.html">"services/messenger-<wbr>types"</a>
 					</li>
 					<li class="current tsd-kind-external-module">
-						<a href="_bots_syncbot_.html">"bots/syncbot"</a>
+						<a href="../modules/_utils_environment_.html">"utils/environment"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
-						<a href="_bots_versionbot_.html">"bots/versionbot"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_framework_procbot_.html">"framework/procbot"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_framework_worker_.html">"framework/worker"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_framework_worker_client_.html">"framework/worker-<wbr>client"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_services_discourse_.html">"services/discourse"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_services_flowdock_.html">"services/flowdock"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_services_front_.html">"services/front"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_services_github_.html">"services/github"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_services_messenger_.html">"services/messenger"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_services_messenger_types_.html">"services/messenger-<wbr>types"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_utils_environment_.html">"utils/environment"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_utils_logger_.html">"utils/logger"</a>
+						<a href="../modules/_utils_logger_.html">"utils/logger"</a>
 					</li>
 				</ul>
 			</nav>
 			<nav class="tsd-navigation secondary menu-sticky">
 				<ul class="before-current">
-					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="../classes/_bots_syncbot_.syncbot.html" class="tsd-kind-icon">Sync<wbr>Bot</a>
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
+						<a href="_utils_environment_.command.html" class="tsd-kind-icon">Command</a>
+					</li>
+				</ul>
+				<ul class="current">
+					<li class="current tsd-kind-interface tsd-parent-kind-external-module">
+						<a href="_utils_environment_.commandoptions.html" class="tsd-kind-icon">Command<wbr>Options</a>
+						<ul>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="_utils_environment_.commandoptions.html#cwd" class="tsd-kind-icon">cwd</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface">
+								<a href="_utils_environment_.commandoptions.html#retries" class="tsd-kind-icon">retries</a>
+							</li>
+						</ul>
+					</li>
+				</ul>
+				<ul class="after-current">
+					<li class=" tsd-kind-function tsd-parent-kind-external-module">
+						<a href="../modules/_utils_environment_.html#buildcommand" class="tsd-kind-icon">Build<wbr>Command</a>
 					</li>
 					<li class=" tsd-kind-function tsd-parent-kind-external-module">
-						<a href="_bots_syncbot_.html#createbot" class="tsd-kind-icon">create<wbr>Bot</a>
+						<a href="../modules/_utils_environment_.html#executecommand" class="tsd-kind-icon">Execute<wbr>Command</a>
 					</li>
 				</ul>
 			</nav>

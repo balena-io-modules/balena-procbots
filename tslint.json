@@ -7,6 +7,7 @@
             false,
             "check-type"
         ],
+        "arrow-parens": false,
         "only-arrow-functions": false,
         "object-literal-sort-keys": false,
         "quotemark": [true, "single", "avoid-escape"],

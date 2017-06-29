@@ -6,12 +6,6 @@ const tslint = require('gulp-tslint');
 const tsProject = typescript.createProject('tsconfig.json');
 const exec = require('child_process').exec;
 
-const OPTIONS = {
-    files: {
-        declarations: [ 'lib/**/*.d.ts' ]
-    }
-}
-
 // Compile the TS sources
 gulp.task('typescript', () => {
     return tsProject.src()
@@ -20,12 +14,6 @@ gulp.task('typescript', () => {
         .pipe(sourcemaps.write('./', { includeContent: true,
             sourceRoot: '../lib'
         }))
-        .pipe(gulp.dest('build/'));
-});
-
-// Copy any pre-defined declarations
-gulp.task('copydecs', () => {
-    return gulp.src(OPTIONS.files.declarations)
         .pipe(gulp.dest('build/'));
 });
 
@@ -47,5 +35,5 @@ gulp.task('typedoc', (done) => {
 
 });
 
-gulp.task('build', [ 'tslint', 'typescript', 'copydecs', 'typedoc' ]);
+gulp.task('build', [ 'tslint', 'typescript', 'typedoc' ]);
 
