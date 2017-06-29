@@ -27,12 +27,12 @@ import * as _ from 'lodash';
  * They are arranged this way to allow additional items to be added if required.
  */
 export enum LogLevel {
-    /** Warning level. */
-    WARN = 0,
-    /** Information level. Includes WARN level. */
-    INFO,
-    /** Debug level. Includes INFO and WARN level. */
-    DEBUG
+	/** Warning level. */
+	WARN = 0,
+	/** Information level. Includes WARN level. */
+	INFO,
+	/** Debug level. Includes INFO and WARN level. */
+	DEBUG
 };
 
 /**
@@ -43,10 +43,10 @@ export enum LogLevel {
  * They are arranged this way to allow additional items to be added if required.
  */
 export enum AlertLevel {
-    /** Critical alert level. */
-    CRITICAL = 0,
-    /** Error level. Includes CRITICAL level. */
-    ERROR
+	/** Critical alert level. */
+	CRITICAL = 0,
+	/** Error level. Includes CRITICAL level. */
+	ERROR
 };
 
 /**
@@ -54,85 +54,85 @@ export enum AlertLevel {
  * Currently the only output is of that to the console.
  */
 export class Logger {
-    // Log and Alert levels are taken from an envvar or set to the minimum.
-    // These can be overriden by specific methods.
-    private _logLevel = _.parseInt(process.env.PROCBOT_LOG_LEVEL) || LogLevel.INFO;
-    private _alertLevel = _.parseInt(process.env.PROCBOT_ALERT_LEVEL) || AlertLevel.ERROR;
+	// Log and Alert levels are taken from an envvar or set to the minimum.
+	// These can be overriden by specific methods.
+	private _logLevel = _.parseInt(process.env.PROCBOT_LOG_LEVEL) || LogLevel.INFO;
+	private _alertLevel = _.parseInt(process.env.PROCBOT_ALERT_LEVEL) || AlertLevel.ERROR;
 
-    /** Strings prepended to logging output. */
-    private logLevelStrings = [
-        'WARNING',
-        'INFO',
-        'DEBUG'
-    ];
+	/** Strings prepended to logging output. */
+	private logLevelStrings = [
+		'WARNING',
+		'INFO',
+		'DEBUG'
+	];
 
-    /** Strings prepended to alerting output. */
-    private alertLevelStrings = [
-        'CRITICAL',
-        'ERROR'
-    ];
+	/** Strings prepended to alerting output. */
+	private alertLevelStrings = [
+		'CRITICAL',
+		'ERROR'
+	];
 
-    /**
-     * Get the logging level.
-     * @return  Current logging level.
-     */
-    public get logLevel(): LogLevel {
-        return this._logLevel;
-    }
+	/**
+	 * Get the logging level.
+	 * @return  Current logging level.
+	 */
+	public get logLevel(): LogLevel {
+		return this._logLevel;
+	}
 
-    /**
-     * Set logging evel.
-     * @param level Logging level to use.
-     */
-    public set logLevel(level: LogLevel) {
-        this._logLevel = level;
-    }
+	/**
+	 * Set logging evel.
+	 * @param level  Logging level to use.
+	 */
+	public set logLevel(level: LogLevel) {
+		this._logLevel = level;
+	}
 
-    /**
-     * Get the alert level.
-     * @return  Current alerting level.
-     */
-    public get alertLevel(): AlertLevel {
-        return this._alertLevel;
-    }
+	/**
+	 * Get the alert level.
+	 * @return  Current alerting level.
+	 */
+	public get alertLevel(): AlertLevel {
+		return this._alertLevel;
+	}
 
-    /**
-     * Set alert level.
-     * @param level Alerting level to use.
-     */
-    public set alertLevel(level: AlertLevel) {
-        this._alertLevel = level;
-    }
+	/**
+	 * Set alert level.
+	 * @param level  Alerting level to use.
+	 */
+	public set alertLevel(level: AlertLevel) {
+		this._alertLevel = level;
+	}
 
-    /**
-     * Log output.
-     * @param level     The level that this message is of (INFO, etc.).
-     * @param message   The actual log message.
-     * @param secrets   An optional array of strings to redact
-     */
-    public log(level: number, message: string, secrets?: string[]): void {
-        if (secrets) {
-            const redactFilter = secrets.map((secret) => {
-                return _.escapeRegExp(secret);
-            }).join('|');
-            message = message.replace(new RegExp(redactFilter, 'g'), 'redacted');
-        }
-        this.output(level, this._logLevel, this.logLevelStrings, message);
-    }
+	/**
+	 * Log output.
+	 * @param level    The level that this message is of (INFO, etc.).
+	 * @param message  The actual log message.
+	 * @param secrets  An optional array of strings to redact
+	 */
+	public log(level: number, message: string, secrets?: string[]): void {
+		if (secrets) {
+			const redactFilter = secrets.map((secret) => {
+				return _.escapeRegExp(secret);
+			}).join('|');
+			message = message.replace(new RegExp(redactFilter, 'g'), 'redacted');
+		}
+		this.output(level, this._logLevel, this.logLevelStrings, message);
+	}
 
-    /**
-     * Alert output.
-     * @param level     The level that this message is of (ERROR, etc.).
-     * @param message   The actual alert message.
-     */
-    public alert(level: number, message: string): void {
-        this.output(level, this._alertLevel, this.alertLevelStrings, message);
-    }
+	/**
+	 * Alert output.
+	 * @param level    The level that this message is of (ERROR, etc.).
+	 * @param message  The actual alert message.
+	 */
+	public alert(level: number, message: string): void {
+		this.output(level, this._alertLevel, this.alertLevelStrings, message);
+	}
 
-    // Generic output method for either type.
-    private output(level: number, classLevel: number, levelStrings: string[], message: string): void {
-        if (level <= classLevel) {
-            console.log(`${new Date().toISOString()}: ${levelStrings[level]} - ${message}`);
-        }
-    }
+	// Generic output method for either type.
+	private output(level: number, classLevel: number, levelStrings: string[], message: string): void {
+		if (level <= classLevel) {
+			console.log(`${new Date().toISOString()}: ${levelStrings[level]} - ${message}`);
+		}
+	}
 }

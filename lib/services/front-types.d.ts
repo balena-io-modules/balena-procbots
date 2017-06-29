@@ -22,18 +22,18 @@ import { ServiceAPIHandle } from './service-types';
 export type FrontEmitMethod = (param: RequestData) => Promise<ResponseData|Status>;
 
 export interface FrontEmitContext extends MessengerEmitContext {
-    endpoint: {
-        method: FrontEmitMethod;
-    };
-    payload: RequestData;
+	endpoint: {
+		method: FrontEmitMethod;
+	};
+	payload: RequestData;
 }
 export interface FrontHandle extends ServiceAPIHandle {
-    front: Front;
+	front: Front;
 }
 
 export interface FrontConstructor {
-    token: string;
-    inbox_channels: {
-        [inbox: string]: string;
-    };
+	token: string;
+	inbox_channels: {
+		[inbox: string]: string;
+	};
 }

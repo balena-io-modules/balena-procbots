@@ -19,45 +19,45 @@ import { MessengerEmitContext } from './messenger-types';
 import { ServiceAPIHandle } from './service-types';
 
 export interface FlowdockMessagePayload {
-    content: string;
-    event: string;
-    external_user_name?: string;
-    thread_id?: string;
-    flow?: string;
+	content: string;
+	event: string;
+	external_user_name?: string;
+	thread_id?: string;
+	flow?: string;
 }
 
 export interface FlowdockInboxPayload {
-    content: string;
-    from_address: string;
-    source: string;
-    subject: string;
-    tags?: string[];
-    roomId: string;
+	content: string;
+	from_address: string;
+	source: string;
+	subject: string;
+	tags?: string[];
+	roomId: string;
 }
 
 export interface FlowdockEmitContext extends MessengerEmitContext {
-    endpoint: {
-        token: string;
-        url: string;
-    };
-    meta?: {
-        flow: string;
-        org: string;
-    };
-    payload: FlowdockInboxPayload | FlowdockMessagePayload;
+	endpoint: {
+		token: string;
+		url: string;
+	};
+	meta?: {
+		flow: string;
+		org: string;
+	};
+	payload: FlowdockInboxPayload | FlowdockMessagePayload;
 }
 
 export interface FlowdockMessage {
-    content: string;
-    [key: string]: string;
+	content: string;
+	[key: string]: string;
 }
 
 /** The Flowdock API SDK handle type. */
 export interface FlowdockHandle extends ServiceAPIHandle {
-    flowdock: Session;
+	flowdock: Session;
 }
 
 export interface FlowdockConstructor {
-    organization: string;
-    token: string;
+	organization: string;
+	token: string;
 }
