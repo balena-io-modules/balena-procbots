@@ -18,155 +18,155 @@ limitations under the License.
 // These provide the current bare minimum definitions for child Procbots working with them.
 
 export interface PullRequestEvent {
-    type: 'pull_request';
-    action: string;
-    pull_request: PullRequest;
-    sender: User;
+	type: 'pull_request';
+	action: string;
+	pull_request: PullRequest;
+	sender: User;
 }
 
 export interface PullRequestReviewEvent {
-    type: 'pull_request_review';
-    action: string;
-    pull_request: PullRequest;
-    sender: User;
+	type: 'pull_request_review';
+	action: string;
+	pull_request: PullRequest;
+	sender: User;
 }
 
 export interface StatusEvent {
-    context: string;
-    name: string;
-    sha: string;
-    branches: StatusEventBranch[];
-    sender: User;
+	context: string;
+	name: string;
+	sha: string;
+	branches: StatusEventBranch[];
+	sender: User;
 }
 
 export interface StatusEventBranch {
-    name: string;
-    commit: {
-        author: User;
-        sha: string;
-        url: string;
-    };
-    sender: User;
+	name: string;
+	commit: {
+		author: User;
+		sha: string;
+		url: string;
+	};
+	sender: User;
 }
 
 // Github API -----------------------------------------------------------------
 // These provide the current bare minimum definitions for child Procbots working with them.
 
 export interface Blob {
-    sha: string;
+	sha: string;
 }
 
 export interface CombinedStatus {
-    state: string;
-    total_count: number;
-    statuses: Status[];
+	state: string;
+	total_count: number;
+	statuses: Status[];
 }
 
 export interface Comment {
-    body: string;
-    user: User;
-    created_at: string;
-    updated_at: string;
+	body: string;
+	user: User;
+	created_at: string;
+	updated_at: string;
 }
 
 export interface Commit {
-    committer: User;
-    commit: {
-        committer: {
-            name: string;
-            date: string;
-        }
-        message: string;
-    };
-    files: CommitFile[];
-    sha: string;
+	committer: User;
+	commit: {
+		committer: {
+			name: string;
+			date: string;
+		}
+		message: string;
+	};
+	files: CommitFile[];
+	sha: string;
 }
 
 export interface CommitFile {
-    filename: string;
+	filename: string;
 }
 export interface Content {
-    type: string;
-    encoding: string;
-    size: number;
-    name: string;
-    path: string;
-    content: string;
-    sha: string;
+	type: string;
+	encoding: string;
+	size: number;
+	name: string;
+	path: string;
+	content: string;
+	sha: string;
 }
 
 export interface IssueLabel {
-    default: boolean;
-    id: string;
-    name: string;
+	default: boolean;
+	id: string;
+	name: string;
 }
 
 export interface Merge {
-    sha: string;
+	sha: string;
 }
 
 export interface PullRequest {
-    head: {
-        ref: string;
-        repo: {
-            owner: User;
-            name: string;
-        };
-        sha: string;
-    };
-    html_url: string;
-    mergeable: boolean;
-    mergeable_state: string;
-    number: number;
-    state: string;
-    url: string;
-    user: User;
-    requested_reviewers: User[];
+	head: {
+		ref: string;
+		repo: {
+			owner: User;
+			name: string;
+		};
+		sha: string;
+	};
+	html_url: string;
+	mergeable: boolean;
+	mergeable_state: string;
+	number: number;
+	state: string;
+	url: string;
+	user: User;
+	requested_reviewers: User[];
 }
 
 export interface RequiredStatusChecks {
-    include_admins: boolean;
-    strict: boolean;
-    contexts: string[];
+	include_admins: boolean;
+	strict: boolean;
+	contexts: string[];
 }
 
 export interface Review {
-    user: {
-        login: string;
-    };
-    body: string;
-    commit_id: string;
-    state: string;
+	user: {
+		login: string;
+	};
+	body: string;
+	commit_id: string;
+	state: string;
 }
 
 export interface Status {
-    state: string;
-    context: string;
+	state: string;
+	context: string;
 }
 
 export interface Tag {
-    sha: string;
+	sha: string;
 }
 
 export interface Tree {
-    sha: string;
-    url: string;
-    tree: TreeEntry[];
+	sha: string;
+	url: string;
+	tree: TreeEntry[];
 }
 
 export interface TreeEntry {
-    path: string;
-    mode: string;
-    type: string;
-    sha: string;
-    url?: string;
-    size?: number;
+	path: string;
+	mode: string;
+	type: string;
+	sha: string;
+	url?: string;
+	size?: number;
 }
 
 export interface User {
-    login: string;
-    id: number;
-    url: string;
-    type: string;
-    site_admin: string;
+	login: string;
+	id: number;
+	url: string;
+	type: string;
+	site_admin: string;
 }

@@ -22,8 +22,8 @@ import { Logger, LogLevel } from './utils/logger';
 
 // Arguments determine which bot type we want to use.
 const getopt = new Opts([
-    [ 'b',    'bot-names=ARG+',   'Determines which bots will run'],
-    [ 'h',    'help',             'This help message'],
+	[ 'b',	'bot-names=ARG+',   'Determines which bots will run'],
+	[ 'h',	'help',			 'This help message'],
 ]);
 
 // Create a new Logger.
@@ -38,8 +38,8 @@ Usage: ${process.argv[1].split('/').slice(-1)} [OPTION]
 // No options, no run.
 const opt = getopt.parse(process.argv.slice(2));
 if (opt.options['help'] || Object.keys(opt.options).length === 0) {
-    logger.log(LogLevel.WARN, getopt.getHelp());
-    process.exit(0);
+	logger.log(LogLevel.WARN, getopt.getHelp());
+	process.exit(0);
 }
 
 // Startup text.
@@ -48,23 +48,23 @@ logger.log(LogLevel.INFO, `---> ${process.env.npm_package_name}, Version ${proce
 // Create Ping server.
 const app = express();
 app.get('/ping', (_req: any, res: any) => {
-    res.send('OK');
+	res.send('OK');
 });
 app.listen(8080, () => {
-    logger.log(LogLevel.INFO, `---> Started 'ping' service on port 8080`);
+	logger.log(LogLevel.INFO, `---> Started 'ping' service on port 8080`);
 });
 
 // Import any specified bots. These will all listen for webhooks.
 let botRegistry: ProcBot[] = [];
 for (let bot of <string[]>opt.options['bot-names']) {
-    // Dynamically require the bots.
-    try {
-        let importedBot = require(`./bots/${bot}`);
-        botRegistry.push(importedBot.createBot());
-        logger.log(LogLevel.INFO, `---> Imported ${bot}...`);
-    } catch (err) {
-        logger.log(LogLevel.WARN, `---> Could not import bot type ${bot}`);
-        logger.log(LogLevel.WARN, err);
-        throw err;
-    }
+	// Dynamically require the bots.
+	try {
+		let importedBot = require(`./bots/${bot}`);
+		botRegistry.push(importedBot.createBot());
+		logger.log(LogLevel.INFO, `---> Imported ${bot}...`);
+	} catch (err) {
+		logger.log(LogLevel.WARN, `---> Could not import bot type ${bot}`);
+		logger.log(LogLevel.WARN, err);
+		throw err;
+	}
 }

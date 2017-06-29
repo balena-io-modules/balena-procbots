@@ -24,10 +24,10 @@ import { WorkerMethod } from '../framework/worker';
 export type ServiceType = 'listener' | 'emitter';
 
 /** The source is the name of the event service (in the case of an Listener) or the
-    client (in the case of an Emitter). */
+	client (in the case of an Emitter). */
 export interface ServiceData {
-    /** The source (name) of the ServiceListener or ServiceEmitter. */
-    source: string;
+	/** The source (name) of the ServiceListener or ServiceEmitter. */
+	source: string;
 }
 
 /**
@@ -36,16 +36,16 @@ export interface ServiceData {
  * Raw data is the raw event received by the Listener from the service.
  */
 export interface ServiceEvent extends ServiceData {
-    /** The cooked data constructed by the ServiceListener. */
-    cookedEvent: any;
-    /** Raw data as received by the ServiceListener. */
-    rawEvent: any;
+	/** The cooked data constructed by the ServiceListener. */
+	cookedEvent: any;
+	/** Raw data as received by the ServiceListener. */
+	rawEvent: any;
 }
 
 /** Specifies one or more specific contexts based on Services. */
 export interface ServiceEmitContext {
-    /** A context has a string based key, but may have an `any` value. */
-    [name: string]: any;
+	/** A context has a string based key, but may have an `any` value. */
+	[name: string]: any;
 }
 
 /**
@@ -53,12 +53,12 @@ export interface ServiceEmitContext {
  *  that can support the context to use it to send data.
  */
 export interface ServiceEmitRequest extends ServiceData {
-    /**
-     * An array of data contexts. The contexts include specific
-     * data types for the emitter required.
-     * The emitter itself must validate data coming in.
-     */
-    contexts: ServiceEmitContext;
+	/**
+	 * An array of data contexts. The contexts include specific
+	 * data types for the emitter required.
+	 * The emitter itself must validate data coming in.
+	 */
+	contexts: ServiceEmitContext;
 }
 
 /**
@@ -66,10 +66,10 @@ export interface ServiceEmitRequest extends ServiceData {
  * service sent back, or may contain an error.
  */
 export interface ServiceEmitResponse extends ServiceData {
-    /** The response data from the external service, if any. */
-    response?: any;
-    /** An error returned from the external service, if any. */
-    err?: TypedError;
+	/** The response data from the external service, if any. */
+	response?: any;
+	/** An error returned from the external service, if any. */
+	err?: TypedError;
 }
 
 /**
@@ -77,12 +77,12 @@ export interface ServiceEmitResponse extends ServiceData {
  * This can be extended by a service to pass more meaningful information (and to filter events).
  */
 export interface ServiceRegistration {
-    /** Name of the service. */
-    name: string;
-    /** Specific events that the ServiceListener should listen for. Any others must be ignored. */
-    events: string[];
-    /** The method to call when events are ready for processing. */
-    listenerMethod: ServiceListenerMethod;
+	/** Name of the service. */
+	name: string;
+	/** Specific events that the ServiceListener should listen for. Any others must be ignored. */
+	events: string[];
+	/** The method to call when events are ready for processing. */
+	listenerMethod: ServiceListenerMethod;
 }
 
 /**
@@ -99,7 +99,7 @@ export type ServiceListenerMethod = (registration: ServiceRegistration, event: S
  * intended to return a handle.
  */
 export interface ServiceAPIHandle {
-    [index: string]: object;
+	[index: string]: object;
 }
 
 /**
@@ -107,15 +107,15 @@ export interface ServiceAPIHandle {
  * an event along with service specific details.
  */
 export interface ServiceListener {
-    /** Getter for the SDK instance handle, if any. */
-    apiHandle: ServiceAPIHandle | void;
-    /** Name of the ServiceListener. */
-    serviceName: string;
-    /**
-     * Registers the request for events to be sent to a client from a ServiceListener.
-     * @param registration  A ServiceRegistration object detailing the events and method to use.
-     */
-    registerEvent: (registration: ServiceRegistration) => void;
+	/** Getter for the SDK instance handle, if any. */
+	apiHandle: ServiceAPIHandle | void;
+	/** Name of the ServiceListener. */
+	serviceName: string;
+	/**
+	 * Registers the request for events to be sent to a client from a ServiceListener.
+	 * @param registration  A ServiceRegistration object detailing the events and method to use.
+	 */
+	registerEvent: (registration: ServiceRegistration) => void;
 }
 
 /**
@@ -123,43 +123,43 @@ export interface ServiceListener {
  * that is to be sent to the relevant service.
  */
 export interface ServiceEmitter {
-    /** Getter for the SDK instance handle, if any. */
-    apiHandle: ServiceAPIHandle | void;
-    /** Name of the ServiceEmitter. */
-    serviceName: string;
-    /**
-     * The method by which a client sends data for the external service the ServiceEmitter represents.
-     * @param data  A ServiceEmitRequest detailing the service and data to send to it.
-     * @returns     A promise with the response of the emit.
-     */
-    sendData: (data: ServiceEmitRequest) => Promise<ServiceEmitResponse>;
-    /**
-     * Retrieves a ProcBot configuration file that is specific to the service being used.
-     * A ServiceEmitter will define the required structure for locating the ProcBot configuration.
-     * @param data  A ConfigurationLocation detailing the location of the configuration file.
-     * @returns     Promise fulfilled containing the raw JSON of the configuration file, or void.
-     */
-    getConfigurationFile?: (data: ConfigurationLocation) => Promise<string | void>;
-    /**
-     * Transforms an error into a new type, given detailed knowledge about the returned error.
-     * @param error     The error without any formatting.
-     * @returns         The formatted error.
-     */
-    transformError?: (error: TypedError) => TypedError;
+	/** Getter for the SDK instance handle, if any. */
+	apiHandle: ServiceAPIHandle | void;
+	/** Name of the ServiceEmitter. */
+	serviceName: string;
+	/**
+	 * The method by which a client sends data for the external service the ServiceEmitter represents.
+	 * @param data  A ServiceEmitRequest detailing the service and data to send to it.
+	 * @returns     A promise with the response of the emit.
+	 */
+	sendData: (data: ServiceEmitRequest) => Promise<ServiceEmitResponse>;
+	/**
+	 * Retrieves a ProcBot configuration file that is specific to the service being used.
+	 * A ServiceEmitter will define the required structure for locating the ProcBot configuration.
+	 * @param data  A ConfigurationLocation detailing the location of the configuration file.
+	 * @returns     Promise fulfilled containing the raw JSON of the configuration file, or void.
+	 */
+	getConfigurationFile?: (data: ConfigurationLocation) => Promise<string | void>;
+	/**
+	 * Transforms an error into a new type, given detailed knowledge about the returned error.
+	 * @param error  The error without any formatting.
+	 * @returns      The formatted error.
+	 */
+	transformError?: (error: TypedError) => TypedError;
 }
 
 /** The ServiceFactory object allows the creation of a ServiceListener and/or ServiceEmitter. */
 export interface ServiceFactory {
-    /**
-     * Creates a new ServiceListener.
-     * @param data  Any required data for the construction of the ServiceListener.
-     * @return      A new ServiceListener instance.
-     */
-    createServiceListener: (data: any) => ServiceListener;
-    /**
-     * Creates a new ServiceEmitter.
-     * @param data  Any required data for the construction of the ServiceEmitter.
-     * @return      A new ServiceEmitter instance.
-     */
-    createServiceEmitter: (data: any) => ServiceEmitter;
+	/**
+	 * Creates a new ServiceListener.
+	 * @param data  Any required data for the construction of the ServiceListener.
+	 * @return      A new ServiceListener instance.
+	 */
+	createServiceListener: (data: any) => ServiceListener;
+	/**
+	 * Creates a new ServiceEmitter.
+	 * @param data  Any required data for the construction of the ServiceEmitter.
+	 * @return      A new ServiceEmitter instance.
+	 */
+	createServiceEmitter: (data: any) => ServiceEmitter;
 }

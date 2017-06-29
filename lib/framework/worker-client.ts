@@ -22,45 +22,45 @@ import { Worker, WorkerEvent, WorkerMap } from './worker';
  * It allows the use of generic contexts, to suit the service using it.
  */
 export class WorkerClient<T> {
-    protected workers: WorkerMap<T> = new Map<T, Worker<T>>();
+	protected workers: WorkerMap<T> = new Map<T, Worker<T>>();
 
-    /**
-     * This generic method must be implemented in children extended from a ProcBot.
-     * It defines the context type used for Workers.
-     * @param event The WorkerEvent to retrieve a valid Worker for.
-     * @return      Returns a Worker that should be used to process the event.
-     */
-    protected getWorker: (event: WorkerEvent) => Worker<T>;
+	/**
+	 * This generic method must be implemented in children extended from a ProcBot.
+	 * It defines the context type used for Workers.
+	 * @param event  The WorkerEvent to retrieve a valid Worker for.
+	 * @return       Returns a Worker that should be used to process the event.
+	 */
+	protected getWorker: (event: WorkerEvent) => Worker<T>;
 
-    /**
-     * Queue an event ready for running in a child.
-     * @param event The WorkerEvent to add to the queue for processing.
-     */
-    protected queueEvent(event: WorkerEvent): void {
-        let entry: Worker<T> | undefined;
+	/**
+	 * Queue an event ready for running in a child.
+	 * @param event  The WorkerEvent to add to the queue for processing.
+	 */
+	protected queueEvent(event: WorkerEvent): void {
+		let entry: Worker<T> | undefined;
 
-        if (!event.workerMethod) {
-            return;
-        }
+		if (!event.workerMethod) {
+			return;
+		}
 
-        // If there's no data, we can't actually do anything with this.
-        if (!event.data) {
-            return;
-        }
+		// If there's no data, we can't actually do anything with this.
+		if (!event.data) {
+			return;
+		}
 
-        // Retrieve any worker with a matching context, or create a new one.
-        // Bot implementation specific.
-        entry = this.getWorker(event);
+		// Retrieve any worker with a matching context, or create a new one.
+		// Bot implementation specific.
+		entry = this.getWorker(event);
 
-        // Now add the event to the found/created repo worker.
-        entry.addEvent(event);
-    }
+		// Now add the event to the found/created repo worker.
+		entry.addEvent(event);
+	}
 
-    /**
-     * Remove a worker from a context post-action.
-     * @param context   The context in which the Worker must be removed.
-     */
-    protected removeWorker = (context: T): void => {
-        this.workers.delete(context);
-    }
+	/**
+	 * Remove a worker from a context post-action.
+	 * @param context  The context in which the Worker must be removed.
+	 */
+	protected removeWorker = (context: T): void => {
+		this.workers.delete(context);
+	}
 }

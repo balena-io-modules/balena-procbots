@@ -15,6 +15,7 @@ export declare abstract class Messenger extends WorkerClient<string | null> impl
     protected static stringifyMetadata(data: TransmitContext, format?: 'markdown' | 'plaintext'): string;
     protected static extractMetadata(message: string): Metadata;
     private static _app;
+    protected static readonly app: express.Express;
     abstract fetchNotes: (thread: string, room: string, filter: RegExp, search?: string) => Promise<string[]>;
     abstract makeGeneric: (data: MessengerEvent) => Promise<ReceiptContext>;
     abstract makeSpecific: (data: TransmitContext) => Promise<ServiceEmitContext>;
@@ -22,7 +23,6 @@ export declare abstract class Messenger extends WorkerClient<string | null> impl
     protected abstract sendPayload: (data: ServiceEmitContext) => Promise<MessengerEmitResponse>;
     private listening;
     private _eventListeners;
-    protected static readonly app: express.Express;
     constructor(listener: boolean);
     listen: () => void;
     registerEvent(registration: ServiceRegistration): void;
