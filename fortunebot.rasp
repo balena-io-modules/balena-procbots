@@ -24,9 +24,118 @@ bot(FortuneBot) {
     //             blah bla blah
     //     pull_request_review
 
-    // However for now, we're doing simplified language and typescript.    
-    ghListener = AddListener(github, { port: 1234, path: /, login: { appId: 5678, pem: nnnnnn, secret: 12345abc } })
+    // However for now, we're doing simplified language and typescript. 
+    // Inbuilt method are always CapitalisedMethods. User defined methods are uncapitalisedMethods   
+    set ghListener as AddListener(github, { port: 1234, path: /, login: { appId: 5678, pem: nnnnnn, secret: 12345abc } })
     AddEmitter(github, { login: { pat: abcdef } })
 
-    RequestEvents(github, [ pull_request, pull_request_review ], myPRMethod)
+    RequestEvents(github, [ pull_request, pull_request_review ], FortuneUp)
+
+    // Note the last two lines. This is a single string stretching over two lines. We know it's the 
+    // same string as there's an addition operator after the string on the previous line.
+    set Fortunes as [
+        'Great thoughts come from the heart. Your brain is on strike.'
+        'People in your surroundings will be more cooperative than usual. Bring money.'
+        'Your life will be filled with magical moments. Also, chocolate.'
+        'Use your instincts now. RUN!'
+        'The energy is within you. Money is Coming!'
+        'Darkness is only succesful when there is no light. Don\'t forget about light!'
+        'Encourage your peers. To write ProcBots.'
+        'The man on the top of the mountain did not fall there. ' +
+        'Though he may be out of bottled oxygen.'
+    ]
+
+    // Every listener gets an event, which has the service it has come from baked in, we only send cooked data
+    // in RASP, so we can't get the service from the raw event. Instead generated code has a 'service'
+    // variable that is reserved and used. So reserved names:
+    //  * service   - The service that generated the event
+    //  * event     - The cooked event itself
+    // Note that the syntax is special, usually a method is defined:
+    // MethodName param1, param2, ... {
+    //
+    // }
+    // However, listener methods *always* have strict parameters (registration, event) so do not fall under
+    // these rules
+    FortuneUp {
+        // Set the variables for retrieving comments
+        set owner as event.repository.owner.login
+        set repo as event.repository.name
+        set issueNumber as event.issue.number
+        // Because there's a single emitter with no specific name, we use 'Emitter' which uses
+        // the default. It points to the API instance of the emitter, which is used in the usual way
+        set callMethod as Emitter.issues.getComments
+
+        // Note that if a variable name matches that in a property, you can set it directly with the name
+        set data as { owner, repo, issueNumber }
+
+        // Get all the comments for the issue
+        // 'comments' is an array, which is returned on 
+        set comments as EmitterRequest(method: callMethod, data)
+
+        // Note that should the statement that proceed it be asynchronous, then the next statement
+        // implicitly executes after this statement has returned. As EmitterRequest returns a promise
+        // the generated code here always now operates in a promise chain.
+        if comments.length is 0 {
+            print 'There were no comments to read'
+            end
+        }
+        
+        set lastComment as comments[comments.length - 1]
+        //if RegExp(/fortune me, baby!/i).matches(comment.body) is true {
+        // Note here that methods with no parameters don't need parentheses. We match
+        // function first *then* property name
+        if comment.body.matches('fortune me, baby!'.lowered) is true {  
+            // Set the author
+            set author as lastComment.user.login
+            // Get a new fortune string from the Fortune array
+            set fortune as Fortune[Maths.floor(Maths.random multiplied by Fortunes.length)]
+            // Method is the createComment GH method
+            set method as Emitter.issues.createComment
+            // Augment the data object with a new 'body' property
+            set data.body as author added to fortune
+
+            // Both method and data are named, simples.
+            EmitterRequest(method, data)
+        }
+    }
 }
+
+/*
+RegExp(re) always returns a structure with the following:
+ - matches  : true or false
+ - captured : an array containing one or more results, depending on the regexp passed in. if global more than one result
+
+
+    'each' loops through ever element in an array or structure
+    each comment in comments: {
+        print comment
+    }
+
+    'loop' lets you use a number range
+    loop from 0 to comments.length {
+        print comments.comment
+    }
+
+    'while' uses comparison, you can loop with these too
+    set commentIndex as 0
+    while commentIndex is not greater or equal to comments.length {
+        print comments[commentIndex]
+        set commentIndex as commentIndex added to 1
+    }
+
+    operators are all aliased:
+        greater or equal to: >=
+        greater than: >
+        equal to: =
+        less than: <
+        less than or equal to: <=
+        not: !
+        and: &&
+        or: ||
+        added to: +
+        subtracted by: -
+        multiplied by: *
+        divided by: /
+
+    set thing as (MyFunc(1) multiplied by 2) added to 3
+*/

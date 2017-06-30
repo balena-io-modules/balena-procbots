@@ -1,0 +1,41 @@
+bot(FortuneBot) {
+    set ghListener as AddListener(github, { port: 1234, path: /, login: { appId: 5678, pem: nnnnnn, secret: 12345abc } })
+    AddEmitter(github, { login: { pat: abcdef } })
+
+    RequestEvents(github, [ pull_request, pull_request_review ], FortuneUp)
+
+    set Fortunes as [
+        'Great thoughts come from the heart. Your brain is on strike.'
+        'People in your surroundings will be more cooperative than usual. Bring money.'
+        'Your life will be filled with magical moments. Also, chocolate.'
+        'Use your instincts now. RUN!'
+        'The energy is within you. Money is Coming!'
+        'Darkness is only succesful when there is no light. Don\'t forget about light!'
+        'Encourage your peers. To write ProcBots.'
+        'The man on the top of the mountain did not fall there. ' +
+        'Though he may be out of bottled oxygen.'
+    ]
+
+    FortuneUp {
+        set data as { owner: event.repository.owner.login, repo: event.repository.name,
+            number: event.issue.number }
+        set comments as EmitterRequest(method: Emitter.issues.getComments, data)
+
+        if comments.length is 0 {
+            print 'There were no comments to read'
+            end
+        }
+        
+        set lastComment as comments[comments.length - 1]
+        if comment.body.matches('fortune me, baby!'.lowered) is true {
+            set author as lastComment.user.login
+            set fortune as Fortune[Maths.floor(Maths.random multiplied by Fortunes.length)]
+            set method as Emitter.issues.createComment
+            set data.body as author added to fortune
+
+            EmitterRequest(method, data)
+        }        
+    }, Error {
+        print 'Oh dear, an error occured!'
+    }
+}
