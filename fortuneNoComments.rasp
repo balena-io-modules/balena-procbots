@@ -27,7 +27,7 @@ bot(FortuneBot) {
         }
         
         set lastComment as comments[comments.length - 1]
-        if comment.body.matches('fortune me, baby!'.lowered) is true {
+        if lastComment.body.matches('fortune me, baby!'.lowered) is true {
             set author as lastComment.user.login
             set fortune as Fortune[Maths.floor(Maths.random multiplied by Fortunes.length)]
             set method as Emitter.issues.createComment
