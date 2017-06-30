@@ -31,7 +31,7 @@ bot(FortuneBot) {
             set author as lastComment.user.login
             set fortune as Fortune[Maths.floor(Maths.random multiplied by Fortunes.length)]
             set method as Emitter.issues.createComment
-            set data.body as author added to fortune
+            set data.body as ('@' + author) added to fortune
 
             EmitterRequest(method, data)
         }        
