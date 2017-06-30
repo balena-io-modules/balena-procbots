@@ -133,6 +133,29 @@ const RepositoryFilePath = 'repository.yml';
 /** Message sent to required reviewers should they not have been added on a review. */
 const ReviewerAddMessage = 'Please add yourselves as reviewers for this PR.';
 
+/** Defines an interface for configuration-defined required tags. */
+interface FooterTag {
+	/** How many occurrences of the tag must be seen in a PR. */
+	occurrence?: string;
+	/** A RegExp defining the valid values for a tag. */
+	values?: string;
+	/** RegExp flags to use with the values property. */
+	flags?: string;
+}
+
+/** Interface defining a set of FooterTag objects. */
+interface FooterTags {
+	[key: string]: FooterTag;
+}
+
+/** Interface for passing missing tags in a PR to a calling method. */
+interface MissingTag {
+	/** Name of the required tag missing. */
+	name: string;
+	/** Reason the tag failed. */
+	reason: string;
+}
+
 /** The VersionBot specific ProcBot Configuration structure. */
 interface VersionBotConfiguration extends ProcBotConfiguration {
 	/** Minimum number of review approvals required to satisfy a review. */
@@ -141,6 +164,8 @@ interface VersionBotConfiguration extends ProcBotConfiguration {
 	reviewers?: string[];
 	/** A list of approved maintainers (who also count as approved reviewers). */
 	maintainers?: string[];
+	/** Required commit footer tags. */
+	'required-tags'?: FooterTags;
 }
 
 /** Interface for storing the result of each status check required on a PR and it's state. */
@@ -247,7 +272,7 @@ export class VersionBot extends ProcBot {
 			{
 				name: 'CheckVersionistCommitStatus',
 				events: [ 'pull_request' ],
-				listenerMethod: this.checkVersioning,
+				listenerMethod: this.checkFooterTags,
 				suppressionLabels: [ IgnoreLabel ],
 			},
 			{
@@ -353,27 +378,29 @@ export class VersionBot extends ProcBot {
 			// We've an event for each PR. However, we now have to check the labels on it and a status event
 			// does not include a PR. As we have already retrieved the right PR here, we filter out any that
 			// have the suppression label on them.
-			return Promise.filter(prEvents, (prEvent) => {
-				const pr: GithubApiTypes.PullRequest = prEvent.cookedEvent.data.pull_request;
+			return Promise.delay(2000).then(() => {
+				return Promise.filter(prEvents, (prEvent) => {
+					const pr: GithubApiTypes.PullRequest = prEvent.cookedEvent.data.pull_request;
 
-				return this.dispatchToEmitter(this.githubEmitterName, {
-					data: {
-						number: pr.number,
-						owner: pr.head.repo.owner.login,
-						repo: pr.head.repo.name,
-					},
-					method: this.githubApi.issues.getIssueLabels
-				}).then((labels: GithubApiTypes.IssueLabel[]) => {
-					if (!_.every(labels, (label) => label.name !== IgnoreLabel)) {
-						this.logger.log(LogLevel.DEBUG,
-							`Dropping '${registration.name}' as suppression labels are all present`);
-						return false;
-					}
-					return true;
+					return this.dispatchToEmitter(this.githubEmitterName, {
+						data: {
+							number: pr.number,
+							owner: pr.head.repo.owner.login,
+							repo: pr.head.repo.name,
+						},
+						method: this.githubApi.issues.getIssueLabels
+					}).then((labels: GithubApiTypes.IssueLabel[]) => {
+						if (!_.every(labels, (label) => label.name !== IgnoreLabel)) {
+							this.logger.log(LogLevel.DEBUG,
+								`Dropping '${registration.name}' as suppression labels are all present`);
+							return false;
+						}
+						return true;
+					});
 				});
 			});
 		}).map((prEvent: ServiceEvent) => {
-			return this.checkVersioning(registration, prEvent);
+			return this.checkFooterTags(registration, prEvent);
 		});
 	}
 
@@ -681,16 +708,15 @@ export class VersionBot extends ProcBot {
 	/**
 	 * Checks the newly opened PR and its commits.
 	 * 1. Triggered by an 'opened', 'synchronize' or 'labeled' event.
-	 * 2. If any PR commit has a 'Change-Type: <type>' commit, we create a status approving the PR.
-	 * 3. If no PR commit has a 'Change-Type: <type>' commit (or any other statuses have failed),
-	 *	inform the author of the PR that changes are required (we only warn once per commit).
-	 * 4. If a version bump has occurred and everything is valid, merge the commit to `master`.
+	 * 2. If the number of required tags and occurrences are present, we create a successful status,
+	 *    otherwise we create a failed one.
+	 * 3. If a version bump has occurred and everything is valid, merge the commit to `master`.
 	 *
 	 * @param _registration  GithubRegistration object used to register the method
 	 * @param event          ServiceEvent containing the event information ('pull_request' event)
 	 * @returns              A void Promise once execution has finished.
 	 */
-	protected checkVersioning = (_registration: GithubRegistration, event: ServiceEvent): Promise<void> => {
+	protected checkFooterTags = (_registration: GithubRegistration, event: ServiceEvent): Promise<void> => {
 		const prEvent: GithubApiTypes.PullRequestEvent = event.cookedEvent.data;
 		const pr = prEvent.pull_request;
 		const head = pr.head;
@@ -699,6 +725,7 @@ export class VersionBot extends ProcBot {
 		const author = prEvent.sender.login;
 		let committer = author;
 		let lastCommit: GithubApiTypes.Commit;
+		let botConfig: VersionBotConfiguration;
 
 		// Only for opened or synced actions.
 		if ((event.cookedEvent.data.action !== 'opened') && (event.cookedEvent.data.action !== 'synchronize') &&
@@ -706,49 +733,35 @@ export class VersionBot extends ProcBot {
 			return Promise.resolve();
 		}
 
-		this.logger.log(LogLevel.INFO, `Checking version for ${owner}/${name}#${pr.number}`);
-		return this.dispatchToEmitter(this.githubEmitterName, {
-			data: {
+		this.logger.log(LogLevel.INFO, `Checking footer tags for ${owner}/${name}#${pr.number}`);
+
+		// Get the configuration, if it exists, for this repo.
+		return this.retrieveConfiguration({
+			emitter: this.githubEmitter,
+			location: {
 				owner,
-				number: pr.number,
 				repo: name,
-			},
-			method: this.githubApi.pullRequests.getCommits
-		}).then((commits: GithubApiTypes.Commit[]) => {
-			let changetypeFound: boolean = false;
-			// Go through all the commits. We're looking for, at a minimum, a 'change-type:' tag.
-			for (let commit of commits) {
-				const commitMessage: string = commit.commit.message;
-
-				// Split the commits up into lines, and find the last line with any whitespace in.
-				// Whilst we tend to ask for:
-				//  <header>
-				//
-				//  <body>
-				//
-				//  <footer>
-				// This code will actually let you get away with:
-				//  <header>
-				//
-				//  <footer>
-				// As sometimes a development patch may be self-explanatory in the header alone.
-				const lines = commitMessage.split('\n');
-				const lastLine = _.findLastIndex(lines, (line) => line.match(/^\s*$/) );
-
-				// If there's no match, then at the very least there's no footer, and the commit
-				// is in the wrong format (as there's no text to use in the logs).
-				if (lastLine > 0) {
-					// We should have a line index to join from, now.
-					lines.splice(0, lastLine);
-					const footer = lines.join('\n');
-					const invalidCommit = !footer.match(/^change-type:\s*(patch|minor|major)\s*$/mi);
-
-					if (!invalidCommit) {
-						changetypeFound = true;
-						break;
-					}
-				}
+				path: RepositoryFilePath
 			}
+		}).then((config: VersionBotConfiguration) => {
+			botConfig = config;
+
+			// Get all the commits on the repo.
+			return this.dispatchToEmitter(this.githubEmitterName, {
+				data: {
+					owner,
+					number: pr.number,
+					repo: name,
+				},
+				method: this.githubApi.pullRequests.getCommits
+			});
+		}).then((commits: GithubApiTypes.Commit[]) => {
+			// For each tag we find, we adhere to some rules:
+			//  * all - Every commit in the PR must contain the tag
+			//  * once - At least one commit in the PR contains the tag
+			//  * never - The tag must not occur in any commit in the PR
+			const missingTags = this.checkCommitFooterTags(commits, botConfig);
+
 			if (commits.length > 0) {
 				lastCommit = commits[commits.length - 1];
 				if (lastCommit.committer) {
@@ -756,12 +769,11 @@ export class VersionBot extends ProcBot {
 				}
 			}
 
-			// If we found a change-type message, then mark this commit as ok.
-			if (changetypeFound) {
+			if (missingTags.length === 0) {
 				return this.dispatchToEmitter(this.githubEmitterName, {
 					data: {
 						context: 'Versionist',
-						description: 'Found a valid Versionist `Change-Type` tag',
+						description: 'Found all required commit footer tags',
 						owner,
 						repo: name,
 						sha: head.sha,
@@ -772,12 +784,19 @@ export class VersionBot extends ProcBot {
 			}
 
 			// Else we mark it as having failed and we inform the user directly in the PR.
-			this.logger.log(LogLevel.INFO, "No valid 'Change-Type' tag found, failing last commit " +
+			let tagNames = '';
+			_.each(missingTags, (tag) => {
+				tagNames += `${tag.name}, `;
+			});
+			this.logger.log(LogLevel.INFO, `Missing tags from accumulated commits: ${tagNames}` +
 				`for ${owner}/${name}#${pr.number}`);
+
+			// Go through the tags and compose a message.
+			let description = 'Missing or forbidden tags in commits, see `repository.yml`';
 			return this.dispatchToEmitter(this.githubEmitterName, {
 				data: {
 					context: 'Versionist',
-					description: 'None of the commits in the PR have a `Change-Type` tag',
+					description,
 					owner,
 					repo: name,
 					sha: head.sha,
@@ -1566,6 +1585,170 @@ export class VersionBot extends ProcBot {
 				throw new Error(errorMessage);
 			}
 		}
+	}
+
+	/**
+	 * Loops through all of the commits for a PR, ensuring that any required tags are present the
+	 * specified number of times for a PR.
+	 *
+	 * @param allCommits  All of the commits for the PR.
+	 * @param config      The config (if any) for the repository the PR belongs to.
+	 * @returns           An array of MissingTag objects, denoting required tags not on the PR.
+	 */
+	private checkCommitFooterTags(allCommits: GithubApiTypes.Commit[], config: VersionBotConfiguration): MissingTag[] {
+		const tagDefinitions = (config || {})['required-tags'] || {};
+		const changeType = 'change-type';
+		// Enumerated strings exist in 2.4, we'll move to those once the framework has.
+		const tagOccurrences = [ 'all', 'once', 'never' ];
+		const tagValueFlags = ['i', 'u', 'y', 'g', 'm']; // Last two ignored
+		let sanitisedDefs: FooterTags = {};
+		let tagCounts: { [key: string]: number } = {};
+
+		// Filter the list of commits to those not made by VB.
+		const commits = _.filter(allCommits, (commit) => commit.commit.committer.name !== process.env.VERSIONBOT_NAME);
+		// Get and validate tag configs.
+		_.each(_.mapKeys(tagDefinitions, (_value, key) => key.toLowerCase()), (tag: FooterTag, tagName) => {
+			if (tagCounts[tagName]) {
+				throw new Error(`More than one occurrence of a required footer tag (${tagName}) found ` +
+					'in configuration');
+			}
+			if (tag.occurrence) {
+				if ((typeof tag.occurrence !== 'string') ||
+				!_.find(tagOccurrences, (occurrence) => tag.occurrence === occurrence)) {
+					throw new Error(`Invalid occurrence value found for ${tagName} definition`);
+				}
+			}
+			if (tag.values && tag.flags) {
+				// Go through each character in the string, ensure that it's in the valid
+				// flags definition.
+				_.each(tag.flags, (char) => {
+					if (!_.find(tagValueFlags, (flag) => flag !== char)) {
+						throw new Error(`Invalid RegExp flags specific for ${tagName} definition`);
+					}
+				});
+			}
+			// Always use a lowered version of the tag.
+			tagCounts[tagName] = 0;
+
+			// Add to our sanitised definitions
+			sanitisedDefs[tagName] = {
+				occurrence: tag.occurrence,
+				values: tag.values,
+				flags: tag.flags
+			};
+		});
+
+		// Always add the 'change-type' tag.
+		sanitisedDefs[changeType] = sanitisedDefs[changeType] || {
+				values: '\s*(patch|minor|major)\s*',
+				flags: 'i'
+		};
+		tagCounts[changeType] = tagCounts[changeType] || 0;
+
+		// Go through each commit. For each tag, we determine if it's present or not
+		// and if it matches required values.
+		for (let commit of commits) {
+			const commitMessage: string = commit.commit.message;
+
+			// Split the commits up into lines, and find the last line with any whitespace in.
+			// Whilst we tend to ask for:
+			//  <header>
+			//
+			//  <body>
+			//
+			//  <footer>
+			// This code will actually let you get away with:
+			//  <header>
+			//
+			//  <footer>
+			// As sometimes a development patch may be self-explanatory in the header alone.
+			const lines = commitMessage.split('\n');
+			const lastLine = _.findLastIndex(lines, (line) => line.match(/^\s*$/) );
+
+			// If there's no match, then at the very least there's no footer, and the commit
+			// is in the wrong format (as there's no text to use in the logs).
+			if (lastLine > 0) {
+				// We should have a line index to join from, now.
+				lines.splice(0, lastLine);
+				const footer = lines.join('\n');
+
+				// For each tag, interrogate the footer and determine if the tag is
+				// present.
+				// We check for a valid instance of a tag. If there are duplicates,
+				// potentially with invalid values, we don't flag it. This is primarily
+				// as we don't know how scripts requiring these tags deal with them
+				// and have to assume they'll pick a valid tag out.
+				_.each(sanitisedDefs, (tag, name) => {
+					// RE for the key. We want to capture the entire line
+					const keyRE = new RegExp(`^${name}:(.*)$`, 'gmi');
+
+					// We need to compile the RE for the value, if it doesn't already exist.
+					// Strip the RE into a body and flags.
+					let valueRE: RegExp = /.*/;
+					if (tag.values) {
+						// Get flag values, we ignore everything apart from 'i'.
+						// Ensure we tack the end of input condition on.
+						valueRE = new RegExp(`${tag.values}$`, tag.flags);
+					}
+
+					// Try and match the key.
+					// We want all matches.
+					let valueMatches = [];
+					let match = keyRE.exec(footer);
+					while (match) {
+						valueMatches.push(match[1]);
+						match = keyRE.exec(footer);
+					}
+
+					// Match the value.
+					for (let valueMatch of valueMatches) {
+						// Try and match the value returned, if any.
+						const valueFound = valueMatch.match(valueRE);
+						if (valueFound) {
+							tagCounts[name]++;
+							break;
+						}
+					}
+				});
+			}
+		}
+
+		// For each of the tags, now determine if the threshold occurrence has occurred.
+		let tagResults: MissingTag[] = [];
+		_.each(sanitisedDefs, (tag, name) => {
+			// Lookup the tag in the tag map
+			const tagCount = tagCounts[name] || 0;
+			let tagsRequired = 0;
+
+			// Convert all/never to numbers, appropriately. As we pre-validated
+			// tags, we don't need to check for 'never' as that's the only
+			// number left.
+			if (tag.occurrence !== 'never') {
+				// No tag occurrence or 'once'.
+				tagsRequired = 1;
+
+				if (tag.occurrence === 'all') {
+					tagsRequired = commits.length;
+				}
+
+				if (tagCount < tagsRequired) {
+					tagResults.push({
+						name,
+						reason: `Not enough occurrences of ${name} tag found in PR commits`
+					});
+				}
+			} else {
+				if (tagCount > 0) {
+					tagResults.push({
+						name,
+						reason: `The ${name} tag was found when it should not be present in a PR commit`
+					});
+				}
+			}
+
+		});
+
+		return tagResults;
 	}
 
 	/**

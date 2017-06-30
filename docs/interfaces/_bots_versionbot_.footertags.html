@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>VersionistData | Resin ProcBots</title>
+	<title>FooterTags | Resin ProcBots</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -57,10 +57,10 @@
 					<a href="../modules/_bots_versionbot_.html">&quot;bots/versionbot&quot;</a>
 				</li>
 				<li>
-					<a href="_bots_versionbot_.versionistdata.html">VersionistData</a>
+					<a href="_bots_versionbot_.footertags.html">FooterTags</a>
 				</li>
 			</ul>
-			<h1>Interface VersionistData</h1>
+			<h1>Interface FooterTags</h1>
 		</div>
 	</div>
 </header>
@@ -70,7 +70,7 @@
 			<section class="tsd-panel tsd-comment">
 				<div class="tsd-comment tsd-typography">
 					<div class="lead">
-						<p>Interface to pass data required to run versionist on a repo.</p>
+						<p>Interface defining a set of FooterTag objects.</p>
 					</div>
 				</div>
 			</section>
@@ -78,120 +78,18 @@
 				<h3>Hierarchy</h3>
 				<ul class="tsd-hierarchy">
 					<li>
-						<span class="target">VersionistData</span>
+						<span class="target">FooterTags</span>
 					</li>
 				</ul>
 			</section>
-			<section class="tsd-panel-group tsd-index-group">
-				<h2>Index</h2>
-				<section class="tsd-panel tsd-index-panel">
-					<div class="tsd-index-content">
-						<section class="tsd-index-section tsd-is-not-exported">
-							<h3>Properties</h3>
-							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="_bots_versionbot_.versionistdata.html#authtoken" class="tsd-kind-icon">auth<wbr>Token</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="_bots_versionbot_.versionistdata.html#branchname" class="tsd-kind-icon">branch<wbr>Name</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="_bots_versionbot_.versionistdata.html#files" class="tsd-kind-icon">files</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="_bots_versionbot_.versionistdata.html#fullpath" class="tsd-kind-icon">full<wbr>Path</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="_bots_versionbot_.versionistdata.html#repofullname" class="tsd-kind-icon">repo<wbr>Full<wbr>Name</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="_bots_versionbot_.versionistdata.html#version" class="tsd-kind-icon">version</a></li>
-							</ul>
-						</section>
+			<section class="tsd-panel tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
+				<h3 class="tsd-before-signature">Indexable</h3>
+				<div class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">[</span>key: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">]: </span><a href="_bots_versionbot_.footertag.html" class="tsd-signature-type">FooterTag</a></div>
+				<div class="tsd-comment tsd-typography">
+					<div class="lead">
+						<p>Interface defining a set of FooterTag objects.</p>
 					</div>
-				</section>
-			</section>
-			<section class="tsd-panel-group tsd-member-group tsd-is-not-exported">
-				<h2>Properties</h2>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-					<a name="authtoken" class="tsd-anchor"></a>
-					<h3>auth<wbr>Token</h3>
-					<div class="tsd-signature tsd-kind-icon">auth<wbr>Token<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L96">bots/versionbot.ts:96</a></li>
-						</ul>
-					</aside>
-					<div class="tsd-comment tsd-typography">
-						<div class="lead">
-							<p>Auth token to use to clone the repository.</p>
-						</div>
-					</div>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-					<a name="branchname" class="tsd-anchor"></a>
-					<h3>branch<wbr>Name</h3>
-					<div class="tsd-signature tsd-kind-icon">branch<wbr>Name<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L98">bots/versionbot.ts:98</a></li>
-						</ul>
-					</aside>
-					<div class="tsd-comment tsd-typography">
-						<div class="lead">
-							<p>Branchname of the repo to clone.</p>
-						</div>
-					</div>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-					<a name="files" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> files</h3>
-					<div class="tsd-signature tsd-kind-icon">files<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L104">bots/versionbot.ts:104</a></li>
-						</ul>
-					</aside>
-					<div class="tsd-comment tsd-typography">
-						<div class="lead">
-							<p>Files that have been modified by running versionist.</p>
-						</div>
-					</div>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-					<a name="fullpath" class="tsd-anchor"></a>
-					<h3>full<wbr>Path</h3>
-					<div class="tsd-signature tsd-kind-icon">full<wbr>Path<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L100">bots/versionbot.ts:100</a></li>
-						</ul>
-					</aside>
-					<div class="tsd-comment tsd-typography">
-						<div class="lead">
-							<p>Full path of the location where the repository should be cloned.</p>
-						</div>
-					</div>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-					<a name="repofullname" class="tsd-anchor"></a>
-					<h3>repo<wbr>Full<wbr>Name</h3>
-					<div class="tsd-signature tsd-kind-icon">repo<wbr>Full<wbr>Name<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L102">bots/versionbot.ts:102</a></li>
-						</ul>
-					</aside>
-					<div class="tsd-comment tsd-typography">
-						<div class="lead">
-							<p>Full name of the repository (owner/reponame).</p>
-						</div>
-					</div>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-					<a name="version" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> version</h3>
-					<div class="tsd-signature tsd-kind-icon">version<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L106">bots/versionbot.ts:106</a></li>
-						</ul>
-					</aside>
-					<div class="tsd-comment tsd-typography">
-						<div class="lead">
-							<p>The new version of the component.</p>
-						</div>
-					</div>
-				</section>
+				</div>
 			</section>
 		</div>
 		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
@@ -270,9 +168,13 @@
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
 						<a href="_bots_versionbot_.footertag.html" class="tsd-kind-icon">Footer<wbr>Tag</a>
 					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
+				</ul>
+				<ul class="current">
+					<li class="current tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
 						<a href="_bots_versionbot_.footertags.html" class="tsd-kind-icon">Footer<wbr>Tags</a>
 					</li>
+				</ul>
+				<ul class="after-current">
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
 						<a href="_bots_versionbot_.mergedata.html" class="tsd-kind-icon">Merge<wbr>Data</a>
 					</li>
@@ -294,33 +196,9 @@
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
 						<a href="_bots_versionbot_.versionboterror.html" class="tsd-kind-icon">Version<wbr>Bot<wbr>Error</a>
 					</li>
-				</ul>
-				<ul class="current">
-					<li class="current tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
 						<a href="_bots_versionbot_.versionistdata.html" class="tsd-kind-icon">Versionist<wbr>Data</a>
-						<ul>
-							<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-								<a href="_bots_versionbot_.versionistdata.html#authtoken" class="tsd-kind-icon">auth<wbr>Token</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-								<a href="_bots_versionbot_.versionistdata.html#branchname" class="tsd-kind-icon">branch<wbr>Name</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-								<a href="_bots_versionbot_.versionistdata.html#files" class="tsd-kind-icon">files</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-								<a href="_bots_versionbot_.versionistdata.html#fullpath" class="tsd-kind-icon">full<wbr>Path</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-								<a href="_bots_versionbot_.versionistdata.html#repofullname" class="tsd-kind-icon">repo<wbr>Full<wbr>Name</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-								<a href="_bots_versionbot_.versionistdata.html#version" class="tsd-kind-icon">version</a>
-							</li>
-						</ul>
 					</li>
-				</ul>
-				<ul class="after-current">
 					<li class=" tsd-kind-type-alias tsd-parent-kind-external-module tsd-is-not-exported">
 						<a href="../modules/_bots_versionbot_.html#genericpullrequestevent" class="tsd-kind-icon">Generic<wbr>Pull<wbr>Request<wbr>Event</a>
 					</li>
