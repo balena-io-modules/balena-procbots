@@ -109,9 +109,16 @@ export interface PullRequest {
 	head: {
 		ref: string;
 		repo: {
-			owner: User;
+			owner: {
+				login: string;
+			}
 			name: string;
 		};
+		sha: string;
+	};
+	base: {
+		label: string;
+		ref: string;
 		sha: string;
 	};
 	html_url: string;
@@ -122,6 +129,10 @@ export interface PullRequest {
 	url: string;
 	user: User;
 	requested_reviewers: User[];
+}
+
+export interface Blob {
+	sha: string;
 }
 
 export interface RequiredStatusChecks {
@@ -169,4 +180,14 @@ export interface User {
 	url: string;
 	type: string;
 	site_admin: string;
+}
+
+export interface Reference {
+	ref: string;
+	url: string;
+	object: {
+		type: string;
+		sha: string;
+		url: string;
+	};
 }

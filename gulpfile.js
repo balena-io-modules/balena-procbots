@@ -8,32 +8,31 @@ const exec = require('child_process').exec;
 
 // Compile the TS sources
 gulp.task('typescript', () => {
-    return tsProject.src()
-        .pipe(sourcemaps.init())
-        .pipe(tsProject()).on('error', gutil.log)
-        .pipe(sourcemaps.write('./', { includeContent: true,
-            sourceRoot: '../lib'
-        }))
-        .pipe(gulp.dest('build/'));
+	return tsProject.src()
+		.pipe(sourcemaps.init())
+		.pipe(tsProject()).on('error', gutil.log)
+		.pipe(sourcemaps.write('./', { includeContent: true,
+			sourceRoot: '../lib'
+		}))
+		.pipe(gulp.dest('build/'));
 });
 
 gulp.task('tslint', () => {
-    return tsProject.src()
-        .pipe(tslint({
-            configuration: 'tslint.json',
-            formatter: 'prose'
-        }))
-        .pipe(tslint.report())
+	return tsProject.src()
+		.pipe(tslint({
+			configuration: 'tslint.json',
+			formatter: 'prose'
+		}))
+		.pipe(tslint.report())
 });
 
 gulp.task('typedoc', (done) => {
-    exec('`npm bin`/typedoc --name "Resin ProcBots" --module commonjs --target ES6 --excludeExternals ' +
-        '--externalPattern **/typings/*.d.ts --gitRevision master --media docresources --out docs/ lib/', () => {
-            exec('touch docs/.nojekyll');
-            done();
-        });
+	exec('`npm bin`/typedoc --name "Resin ProcBots" --module commonjs --target ES6 --excludeExternals ' +
+		'--externalPattern **/typings/*.d.ts --gitRevision master --media docresources --out docs/ lib/', () => {
+			exec('touch docs/.nojekyll');
+			done();
+		});
 
 });
 
 gulp.task('build', [ 'tslint', 'typescript', 'typedoc' ]);
-

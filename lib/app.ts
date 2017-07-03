@@ -50,6 +50,7 @@ const app = express();
 app.get('/ping', (_req: any, res: any) => {
 	res.send('OK');
 });
+
 app.listen(8080, () => {
 	logger.log(LogLevel.INFO, `---> Started 'ping' service on port 8080`);
 });

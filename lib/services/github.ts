@@ -54,6 +54,7 @@ export class GithubError extends TypeError {
 	public message: string;
 	/** Documentation URL pertaining to the error. */
 	public documentationUrl: string;
+	public type = 'GithubError';
 
 	/** Should the error returned not be from the Github API but from the
 	 * REST layer, then the message from it is used instead.
@@ -93,7 +94,7 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 
 	/**
 	 * Constructor for both the ServiceListener and ServiceEmitter.
-	 * @param constObj	Construction object for either ServiceListener or ServiceEmitter.
+	 * @param constObj  Construction object for either ServiceListener or ServiceEmitter.
 	 */
 	constructor(constObj: GithubListenerConstructor | GithubConstructor) {
 		super();
@@ -215,7 +216,7 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 
 	/**
 	 * Create a new event triggered action for the list.
-	 * @param registration	A GithubRegistration object detailing the events required by the client.
+	 * @param registration  A GithubRegistration object detailing the events required by the client.
 	 */
 	public registerEvent(registration: GithubRegistration): void {
 		this.eventTriggers.push(registration);
@@ -228,7 +229,7 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 	 * fetches will start at 0 with the default 30 entries per page
 	 * Fetches will occur until there are no pages left to fetch.
 	 * @param data  A ServiceEmitRequest detailling the call to make and associated data.
-	 * @return      A ServiceEmitResponse comprised from the response from Github.
+	 * @returns     A ServiceEmitResponse comprised from the response from Github.
 	 */
 	public sendData(data: ServiceEmitRequest): Promise<ServiceEmitResponse> {
 		// Try and find the context for the Github request.
@@ -318,7 +319,7 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 
 	/**
 	 * Get the name of the Github service.
-	 * @return  The name of the service.
+	 * @returns  The name of the service.
 	 */
 	get serviceName(): string {
 		return this._serviceName;
@@ -326,7 +327,7 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 
 	/**
 	 * Retrieve the Github SDK API handle.
-	 * @return  Github SDK handle.
+	 * @returns  Github SDK handle.
 	 */
 	get apiHandle(): GithubHandle {
 		return {
@@ -382,7 +383,7 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 	/**
 	 * Handles all Github events to trigger actions, should the parameters meet those registered.
 	 * @param event  A ServiceEvent created from the event sent by Github.
-	 * @return       Promise that is fulfilled once all processing of the event has completed.
+	 * @returns      Promise that is fulfilled once all processing of the event has completed.
 	 */
 	protected handleGithubEvent = (event: ServiceEvent): Promise<void> => {
 		// Determine the head to use based on the event.
@@ -469,7 +470,7 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 
 	/**
 	 * Authenticate against the Github API and Installation environment (for Integrations).
-	 * @return  Promise fulfilled once authentication has occurred.
+	 * @returns  Promise fulfilled once authentication has occurred.
 	 */
 	protected authenticate(): Promise<void> {
 		// Initialise JWTs
@@ -531,7 +532,7 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 /**
  * Create a new Github ServiceListener.
  * @param constObj  Constructor for the ServiceListener.
- * @return          A new instance of the ServiceListener.
+ * @returns         A new instance of the ServiceListener.
  */
 export function createServiceListener(constObj: GithubListenerConstructor): ServiceListener {
 	return new GithubService(constObj);
@@ -540,7 +541,7 @@ export function createServiceListener(constObj: GithubListenerConstructor): Serv
 /**
  * Create a new Github ServiceEmitter.
  * @param constObj  Constructor for the ServiceEmitter.
- * @return          A new instance of the ServiceEmitter.
+ * @returns         A new instance of the ServiceEmitter.
  */
 export function createServiceEmitter(constObj: GithubConstructor): ServiceEmitter {
 	return new GithubService(constObj);
