@@ -9,17 +9,32 @@ import { BotDefinitionContext } from './RASPParser';
 import { BotBodyContext } from './RASPParser';
 import { AddListenerContext } from './RASPParser';
 import { AddEmitterContext } from './RASPParser';
-import { ServiceNameContext } from './RASPParser';
-import { ServiceConstructorContext } from './RASPParser';
-import { ServiceConstructorPairContext } from './RASPParser';
 import { RequestServiceEventsContext } from './RASPParser';
-import { EventRegistrationContext } from './RASPParser';
 import { EventsContext } from './RASPParser';
-import { ListenerMethodNameContext } from './RASPParser';
+import { SetIdAsContext } from './RASPParser';
+import { SetIdFromContext } from './RASPParser';
 import { ListenerMethodContext } from './RASPParser';
-import { ListenerBodyContext } from './RASPParser';
+import { ListenerErrorContext } from './RASPParser';
+import { StatementContext } from './RASPParser';
+import { ExprContext } from './RASPParser';
+import { ServiceNameContext } from './RASPParser';
+import { VariableNameContext } from './RASPParser';
+import { VariableContext } from './RASPParser';
+import { ObjectContext } from './RASPParser';
+import { ArrayContext } from './RASPParser';
+import { PropertyContext } from './RASPParser';
+import { PrecedenceContext } from './RASPParser';
+import { AssignmentContext } from './RASPParser';
+import { R_ifContext } from './RASPParser';
+import { R_whileContext } from './RASPParser';
+import { LoopContext } from './RASPParser';
+import { PrintContext } from './RASPParser';
+import { EndContext } from './RASPParser';
+import { SendQueryContext } from './RASPParser';
+import { MethodContext } from './RASPParser';
+import { MethodListContext } from './RASPParser';
+import { StringMethodContext } from './RASPParser';
 import { EnvvarContext } from './RASPParser';
-import { PathContext } from './RASPParser';
 
 
 /**
@@ -73,39 +88,11 @@ export interface RASPVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitAddEmitter?: (ctx: AddEmitterContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by `RASPParser.serviceName`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitServiceName?: (ctx: ServiceNameContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by `RASPParser.serviceConstructor`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitServiceConstructor?: (ctx: ServiceConstructorContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by `RASPParser.serviceConstructorPair`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitServiceConstructorPair?: (ctx: ServiceConstructorPairContext) => Result;
-
-	/**
 	 * Visit a parse tree produced by `RASPParser.requestServiceEvents`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	visitRequestServiceEvents?: (ctx: RequestServiceEventsContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by `RASPParser.eventRegistration`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitEventRegistration?: (ctx: EventRegistrationContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `RASPParser.events`.
@@ -115,11 +102,18 @@ export interface RASPVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitEvents?: (ctx: EventsContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by `RASPParser.listenerMethodName`.
+	 * Visit a parse tree produced by `RASPParser.setIdAs`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitListenerMethodName?: (ctx: ListenerMethodNameContext) => Result;
+	visitSetIdAs?: (ctx: SetIdAsContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `RASPParser.setIdFrom`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitSetIdFrom?: (ctx: SetIdFromContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `RASPParser.listenerMethod`.
@@ -129,11 +123,144 @@ export interface RASPVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitListenerMethod?: (ctx: ListenerMethodContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by `RASPParser.listenerBody`.
+	 * Visit a parse tree produced by `RASPParser.listenerError`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitListenerBody?: (ctx: ListenerBodyContext) => Result;
+	visitListenerError?: (ctx: ListenerErrorContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `RASPParser.statement`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitStatement?: (ctx: StatementContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `RASPParser.expr`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitExpr?: (ctx: ExprContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `RASPParser.serviceName`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitServiceName?: (ctx: ServiceNameContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `RASPParser.variableName`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitVariableName?: (ctx: VariableNameContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `RASPParser.variable`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitVariable?: (ctx: VariableContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `RASPParser.object`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitObject?: (ctx: ObjectContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `RASPParser.array`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitArray?: (ctx: ArrayContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `RASPParser.property`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitProperty?: (ctx: PropertyContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `RASPParser.precedence`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitPrecedence?: (ctx: PrecedenceContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `RASPParser.assignment`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitAssignment?: (ctx: AssignmentContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `RASPParser.r_if`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitR_if?: (ctx: R_ifContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `RASPParser.r_while`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitR_while?: (ctx: R_whileContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `RASPParser.loop`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitLoop?: (ctx: LoopContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `RASPParser.print`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitPrint?: (ctx: PrintContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `RASPParser.end`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitEnd?: (ctx: EndContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `RASPParser.sendQuery`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitSendQuery?: (ctx: SendQueryContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `RASPParser.method`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitMethod?: (ctx: MethodContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `RASPParser.methodList`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitMethodList?: (ctx: MethodListContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `RASPParser.stringMethod`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitStringMethod?: (ctx: StringMethodContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `RASPParser.envvar`.
@@ -141,12 +268,5 @@ export interface RASPVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitEnvvar?: (ctx: EnvvarContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by `RASPParser.path`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitPath?: (ctx: PathContext) => Result;
 }
 

@@ -9,17 +9,32 @@ import { BotDefinitionContext } from './RASPParser';
 import { BotBodyContext } from './RASPParser';
 import { AddListenerContext } from './RASPParser';
 import { AddEmitterContext } from './RASPParser';
-import { ServiceNameContext } from './RASPParser';
-import { ServiceConstructorContext } from './RASPParser';
-import { ServiceConstructorPairContext } from './RASPParser';
 import { RequestServiceEventsContext } from './RASPParser';
-import { EventRegistrationContext } from './RASPParser';
 import { EventsContext } from './RASPParser';
-import { ListenerMethodNameContext } from './RASPParser';
+import { SetIdAsContext } from './RASPParser';
+import { SetIdFromContext } from './RASPParser';
 import { ListenerMethodContext } from './RASPParser';
-import { ListenerBodyContext } from './RASPParser';
+import { ListenerErrorContext } from './RASPParser';
+import { StatementContext } from './RASPParser';
+import { ExprContext } from './RASPParser';
+import { ServiceNameContext } from './RASPParser';
+import { VariableNameContext } from './RASPParser';
+import { VariableContext } from './RASPParser';
+import { ObjectContext } from './RASPParser';
+import { ArrayContext } from './RASPParser';
+import { PropertyContext } from './RASPParser';
+import { PrecedenceContext } from './RASPParser';
+import { AssignmentContext } from './RASPParser';
+import { R_ifContext } from './RASPParser';
+import { R_whileContext } from './RASPParser';
+import { LoopContext } from './RASPParser';
+import { PrintContext } from './RASPParser';
+import { EndContext } from './RASPParser';
+import { SendQueryContext } from './RASPParser';
+import { MethodContext } from './RASPParser';
+import { MethodListContext } from './RASPParser';
+import { StringMethodContext } from './RASPParser';
 import { EnvvarContext } from './RASPParser';
-import { PathContext } from './RASPParser';
 
 
 /**
@@ -94,39 +109,6 @@ export interface RASPListener extends ParseTreeListener {
 	exitAddEmitter?: (ctx: AddEmitterContext) => void;
 
 	/**
-	 * Enter a parse tree produced by `RASPParser.serviceName`.
-	 * @param ctx the parse tree
-	 */
-	enterServiceName?: (ctx: ServiceNameContext) => void;
-	/**
-	 * Exit a parse tree produced by `RASPParser.serviceName`.
-	 * @param ctx the parse tree
-	 */
-	exitServiceName?: (ctx: ServiceNameContext) => void;
-
-	/**
-	 * Enter a parse tree produced by `RASPParser.serviceConstructor`.
-	 * @param ctx the parse tree
-	 */
-	enterServiceConstructor?: (ctx: ServiceConstructorContext) => void;
-	/**
-	 * Exit a parse tree produced by `RASPParser.serviceConstructor`.
-	 * @param ctx the parse tree
-	 */
-	exitServiceConstructor?: (ctx: ServiceConstructorContext) => void;
-
-	/**
-	 * Enter a parse tree produced by `RASPParser.serviceConstructorPair`.
-	 * @param ctx the parse tree
-	 */
-	enterServiceConstructorPair?: (ctx: ServiceConstructorPairContext) => void;
-	/**
-	 * Exit a parse tree produced by `RASPParser.serviceConstructorPair`.
-	 * @param ctx the parse tree
-	 */
-	exitServiceConstructorPair?: (ctx: ServiceConstructorPairContext) => void;
-
-	/**
 	 * Enter a parse tree produced by `RASPParser.requestServiceEvents`.
 	 * @param ctx the parse tree
 	 */
@@ -136,17 +118,6 @@ export interface RASPListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitRequestServiceEvents?: (ctx: RequestServiceEventsContext) => void;
-
-	/**
-	 * Enter a parse tree produced by `RASPParser.eventRegistration`.
-	 * @param ctx the parse tree
-	 */
-	enterEventRegistration?: (ctx: EventRegistrationContext) => void;
-	/**
-	 * Exit a parse tree produced by `RASPParser.eventRegistration`.
-	 * @param ctx the parse tree
-	 */
-	exitEventRegistration?: (ctx: EventRegistrationContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `RASPParser.events`.
@@ -160,15 +131,26 @@ export interface RASPListener extends ParseTreeListener {
 	exitEvents?: (ctx: EventsContext) => void;
 
 	/**
-	 * Enter a parse tree produced by `RASPParser.listenerMethodName`.
+	 * Enter a parse tree produced by `RASPParser.setIdAs`.
 	 * @param ctx the parse tree
 	 */
-	enterListenerMethodName?: (ctx: ListenerMethodNameContext) => void;
+	enterSetIdAs?: (ctx: SetIdAsContext) => void;
 	/**
-	 * Exit a parse tree produced by `RASPParser.listenerMethodName`.
+	 * Exit a parse tree produced by `RASPParser.setIdAs`.
 	 * @param ctx the parse tree
 	 */
-	exitListenerMethodName?: (ctx: ListenerMethodNameContext) => void;
+	exitSetIdAs?: (ctx: SetIdAsContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `RASPParser.setIdFrom`.
+	 * @param ctx the parse tree
+	 */
+	enterSetIdFrom?: (ctx: SetIdFromContext) => void;
+	/**
+	 * Exit a parse tree produced by `RASPParser.setIdFrom`.
+	 * @param ctx the parse tree
+	 */
+	exitSetIdFrom?: (ctx: SetIdFromContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `RASPParser.listenerMethod`.
@@ -182,15 +164,224 @@ export interface RASPListener extends ParseTreeListener {
 	exitListenerMethod?: (ctx: ListenerMethodContext) => void;
 
 	/**
-	 * Enter a parse tree produced by `RASPParser.listenerBody`.
+	 * Enter a parse tree produced by `RASPParser.listenerError`.
 	 * @param ctx the parse tree
 	 */
-	enterListenerBody?: (ctx: ListenerBodyContext) => void;
+	enterListenerError?: (ctx: ListenerErrorContext) => void;
 	/**
-	 * Exit a parse tree produced by `RASPParser.listenerBody`.
+	 * Exit a parse tree produced by `RASPParser.listenerError`.
 	 * @param ctx the parse tree
 	 */
-	exitListenerBody?: (ctx: ListenerBodyContext) => void;
+	exitListenerError?: (ctx: ListenerErrorContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `RASPParser.statement`.
+	 * @param ctx the parse tree
+	 */
+	enterStatement?: (ctx: StatementContext) => void;
+	/**
+	 * Exit a parse tree produced by `RASPParser.statement`.
+	 * @param ctx the parse tree
+	 */
+	exitStatement?: (ctx: StatementContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `RASPParser.expr`.
+	 * @param ctx the parse tree
+	 */
+	enterExpr?: (ctx: ExprContext) => void;
+	/**
+	 * Exit a parse tree produced by `RASPParser.expr`.
+	 * @param ctx the parse tree
+	 */
+	exitExpr?: (ctx: ExprContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `RASPParser.serviceName`.
+	 * @param ctx the parse tree
+	 */
+	enterServiceName?: (ctx: ServiceNameContext) => void;
+	/**
+	 * Exit a parse tree produced by `RASPParser.serviceName`.
+	 * @param ctx the parse tree
+	 */
+	exitServiceName?: (ctx: ServiceNameContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `RASPParser.variableName`.
+	 * @param ctx the parse tree
+	 */
+	enterVariableName?: (ctx: VariableNameContext) => void;
+	/**
+	 * Exit a parse tree produced by `RASPParser.variableName`.
+	 * @param ctx the parse tree
+	 */
+	exitVariableName?: (ctx: VariableNameContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `RASPParser.variable`.
+	 * @param ctx the parse tree
+	 */
+	enterVariable?: (ctx: VariableContext) => void;
+	/**
+	 * Exit a parse tree produced by `RASPParser.variable`.
+	 * @param ctx the parse tree
+	 */
+	exitVariable?: (ctx: VariableContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `RASPParser.object`.
+	 * @param ctx the parse tree
+	 */
+	enterObject?: (ctx: ObjectContext) => void;
+	/**
+	 * Exit a parse tree produced by `RASPParser.object`.
+	 * @param ctx the parse tree
+	 */
+	exitObject?: (ctx: ObjectContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `RASPParser.array`.
+	 * @param ctx the parse tree
+	 */
+	enterArray?: (ctx: ArrayContext) => void;
+	/**
+	 * Exit a parse tree produced by `RASPParser.array`.
+	 * @param ctx the parse tree
+	 */
+	exitArray?: (ctx: ArrayContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `RASPParser.property`.
+	 * @param ctx the parse tree
+	 */
+	enterProperty?: (ctx: PropertyContext) => void;
+	/**
+	 * Exit a parse tree produced by `RASPParser.property`.
+	 * @param ctx the parse tree
+	 */
+	exitProperty?: (ctx: PropertyContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `RASPParser.precedence`.
+	 * @param ctx the parse tree
+	 */
+	enterPrecedence?: (ctx: PrecedenceContext) => void;
+	/**
+	 * Exit a parse tree produced by `RASPParser.precedence`.
+	 * @param ctx the parse tree
+	 */
+	exitPrecedence?: (ctx: PrecedenceContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `RASPParser.assignment`.
+	 * @param ctx the parse tree
+	 */
+	enterAssignment?: (ctx: AssignmentContext) => void;
+	/**
+	 * Exit a parse tree produced by `RASPParser.assignment`.
+	 * @param ctx the parse tree
+	 */
+	exitAssignment?: (ctx: AssignmentContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `RASPParser.r_if`.
+	 * @param ctx the parse tree
+	 */
+	enterR_if?: (ctx: R_ifContext) => void;
+	/**
+	 * Exit a parse tree produced by `RASPParser.r_if`.
+	 * @param ctx the parse tree
+	 */
+	exitR_if?: (ctx: R_ifContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `RASPParser.r_while`.
+	 * @param ctx the parse tree
+	 */
+	enterR_while?: (ctx: R_whileContext) => void;
+	/**
+	 * Exit a parse tree produced by `RASPParser.r_while`.
+	 * @param ctx the parse tree
+	 */
+	exitR_while?: (ctx: R_whileContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `RASPParser.loop`.
+	 * @param ctx the parse tree
+	 */
+	enterLoop?: (ctx: LoopContext) => void;
+	/**
+	 * Exit a parse tree produced by `RASPParser.loop`.
+	 * @param ctx the parse tree
+	 */
+	exitLoop?: (ctx: LoopContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `RASPParser.print`.
+	 * @param ctx the parse tree
+	 */
+	enterPrint?: (ctx: PrintContext) => void;
+	/**
+	 * Exit a parse tree produced by `RASPParser.print`.
+	 * @param ctx the parse tree
+	 */
+	exitPrint?: (ctx: PrintContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `RASPParser.end`.
+	 * @param ctx the parse tree
+	 */
+	enterEnd?: (ctx: EndContext) => void;
+	/**
+	 * Exit a parse tree produced by `RASPParser.end`.
+	 * @param ctx the parse tree
+	 */
+	exitEnd?: (ctx: EndContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `RASPParser.sendQuery`.
+	 * @param ctx the parse tree
+	 */
+	enterSendQuery?: (ctx: SendQueryContext) => void;
+	/**
+	 * Exit a parse tree produced by `RASPParser.sendQuery`.
+	 * @param ctx the parse tree
+	 */
+	exitSendQuery?: (ctx: SendQueryContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `RASPParser.method`.
+	 * @param ctx the parse tree
+	 */
+	enterMethod?: (ctx: MethodContext) => void;
+	/**
+	 * Exit a parse tree produced by `RASPParser.method`.
+	 * @param ctx the parse tree
+	 */
+	exitMethod?: (ctx: MethodContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `RASPParser.methodList`.
+	 * @param ctx the parse tree
+	 */
+	enterMethodList?: (ctx: MethodListContext) => void;
+	/**
+	 * Exit a parse tree produced by `RASPParser.methodList`.
+	 * @param ctx the parse tree
+	 */
+	exitMethodList?: (ctx: MethodListContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `RASPParser.stringMethod`.
+	 * @param ctx the parse tree
+	 */
+	enterStringMethod?: (ctx: StringMethodContext) => void;
+	/**
+	 * Exit a parse tree produced by `RASPParser.stringMethod`.
+	 * @param ctx the parse tree
+	 */
+	exitStringMethod?: (ctx: StringMethodContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `RASPParser.envvar`.
@@ -202,16 +393,5 @@ export interface RASPListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitEnvvar?: (ctx: EnvvarContext) => void;
-
-	/**
-	 * Enter a parse tree produced by `RASPParser.path`.
-	 * @param ctx the parse tree
-	 */
-	enterPath?: (ctx: PathContext) => void;
-	/**
-	 * Exit a parse tree produced by `RASPParser.path`.
-	 * @param ctx the parse tree
-	 */
-	exitPath?: (ctx: PathContext) => void;
 }
 

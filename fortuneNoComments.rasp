@@ -1,41 +1,49 @@
 bot(FortuneBot) {
-    set ghListener as AddListener(github, { port: 1234, path: /, login: { appId: 5678, pem: nnnnnn, secret: 12345abc } })
-    AddEmitter(github, { login: { pat: abcdef } })
+    set ghListener as event receiver from github {
+        port: 1234, path: '/',
+        login: { appId: 5678, pem: 'nnnnnn', secret: '12345abc' }
+    }
 
-    RequestEvents(github, [ pull_request, pull_request_review ], FortuneUp)
+    send queries to github {
+        login: { pat: 'abcdef' }
+    }
+
+    send [ pull_request, pull_request_review ] events from github to FortuneUp
 
     set Fortunes as [
-        'Great thoughts come from the heart. Your brain is on strike.'
-        'People in your surroundings will be more cooperative than usual. Bring money.'
-        'Your life will be filled with magical moments. Also, chocolate.'
-        'Use your instincts now. RUN!'
-        'The energy is within you. Money is Coming!'
-        'Darkness is only succesful when there is no light. Don\'t forget about light!'
-        'Encourage your peers. To write ProcBots.'
-        'The man on the top of the mountain did not fall there. ' +
+        'Great thoughts come from the heart. Your brain is on strike.',
+        'People in your surroundings will be more cooperative than usual. Bring money.',
+        'Your life will be filled with magical moments. Also, chocolate.',
+        'Use your instincts now. RUN!',
+        'The energy is within you. Money is Coming!',
+        'Darkness is only succesful when there is no light. Don\'t forget about light!',
+        'Encourage your peers. To write ProcBots.',
+        'The man on the top of the mountain did not fall there. ',
         'Though he may be out of bottled oxygen.'
     ]
 
-    FortuneUp {
-        set data as { owner: event.repository.owner.login, repo: event.repository.name,
-            number: event.issue.number }
-        set comments as EmitterRequest(method: Emitter.issues.getComments, data)
+    listenerMethod FortuneUp
+        set data as { owner: serviceEvent.repository.owner.login, repo: serviceEvent.repository.name,
+            number: serviceEvent.issue.number }
 
-        if comments.length is 0 {
+        //set comments from query githubEmitter { method: githubEmitter.issues.getComments, data }
+        set comments from query { method: issues.getComments, data }
+        
+        if comments.length is 0
             print 'There were no comments to read'
             end
-        }
-        
-        set lastComment as comments[comments.length - 1]
-        if lastComment.body.matches('fortune me, baby!'.lowered) is true {
-            set author as lastComment.user.login
-            set fortune as Fortune[Maths.floor(Maths.random multiplied by Fortunes.length)]
-            set method as Emitter.issues.createComment
-            set data.body as ('@' + author) added to fortune
 
-            EmitterRequest(method, data)
-        }        
-    }, Error {
-        print 'Oh dear, an error occured!'
-    }
+        set lastComment as comments[comments.length subtracted by 1]
+
+        if lastComment.body.matches('fortune me, baby!'.lowered()) is true
+            set author as lastComment.user.login
+            set fortune as Fortune[Maths.floor(Maths.random() multiplied by Fortunes.length)]
+            // Emitter is the default emitter if only one is present, else this would be 'as githubEmitter.issues.createComment'
+            set method as Emitter.issues.createComment
+            set data.body as ('@' added to author) added to fortune
+
+            query { method, data }
+
+    listenerErrorMethod FortuneUp
+        print 'Oh dear, an error occured! Error is' added to error
 }

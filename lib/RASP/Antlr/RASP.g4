@@ -3,40 +3,113 @@ grammar RASP;
 init: botDefinition | comment | EOF;
 
 comment: COMMENT | LINE_COMMENT;
-botDefinition: 'bot(' ALPHA ')' '{' botBody (botBody)* '}';
+botDefinition: BOT '(' ID ')' '{' botBody (botBody)* '}';
 
 // The bot body.
-botBody: comment | addListener | addEmitter | requestServiceEvents | listenerMethod;
+// Methods can *only* be defined as part of the botBody, which differentiates them from calls to
+// a method inside the listenerBody.
+botBody: comment | addListener | addEmitter | requestServiceEvents | listenerMethod | listenerError | method | assignment;
 
 // Add a ServiceListener, with appropriate constructor.
-addListener: (ALPHA '=')? 'AddListener(' serviceName (',' serviceConstructor)* ')';
+addListener: setIdAs? EVENT RECEIVER FROM serviceName expr?;
 
 // Add a ServiceEmitter, with appropriate constructor.
-addEmitter: (ALPHA '=')? 'AddEmitter(' serviceName (',' serviceConstructor) ')';
-
-serviceName: 'github' | 'flowdock';
-serviceConstructor: '{' serviceConstructorPair (',' serviceConstructorPair)* '}';
-serviceConstructorPair: ALPHA ':' (ALPHA | INT | HEX | path | serviceConstructor);
+addEmitter: setIdAs? SEND QUERIES TO serviceName expr?;
 
 // Request an event for a listener.
-requestServiceEvents: 'RequestEvents(' serviceName ',' eventRegistration ')';
+requestServiceEvents: SEND events EVENTS FROM serviceName TO ID;
+
 // Event registration is a block with an array of event names and a listener.
-eventRegistration: events ',' listenerMethodName;
-events: '[' ALPHANUMERIC (',' ALPHANUMERIC)* ']';
+events: '[' ID (',' ID)* ']';
+
+setIdAs: SET ID AS;
+setIdFrom: SET ID FROM;
 
 // Listener methods.
-listenerMethodName: ALPHA;
-listenerMethod: ALPHA '{' listenerBody '}';
-listenerBody: ;
+listenerMethod: METHOD ID statement*;
+listenerError: ERRORMETHOD ID statement*;
 
-// General rules.
-envvar: 'envar' '(' ALPHA ')';
-path: '/' ALPHA?;
+statement: method |
+           assignment |
+           r_if |
+           r_while |
+           loop |
+           print |
+           sendQuery |
+           end;
 
-INT     : [0-9]+;
-ALPHA   : [a-zA-Z]+;
-HEX     : [a-fA-F0-9]+;
-ALPHANUMERIC: [a-zA-Z0-9|_-]+;
-COMMENT: '/*' .*? '*/' -> skip;
-LINE_COMMENT: '//' .*? '\r'? '\n' -> skip;
-WS   :  [ \t\r\n]+ -> skip;
+expr: expr 'added' 'to' expr |
+      expr 'subtracted' 'by' expr |
+      expr 'multiplied' 'by' expr |
+      expr 'divided' 'by' expr |
+      expr 'and' expr |
+      expr 'or' expr |
+      expr IS expr |
+      expr IS NOT expr |
+      array |
+      method |
+      stringMethod |
+      variable |
+      object |
+      precedence |
+      NUMBER |
+      STRING |
+      BOOLEAN;
+
+serviceName: ID;
+variableName: ID;
+variable: ID ('.' ID)*;
+object: '{' property (',' property)* '}';
+array: ID* '[' expr (',' expr)* ']';
+property: ID (':' expr)*;
+precedence: '(' expr ')';
+
+assignment: 'set' variable 'as' expr;
+r_if: 'if' expr statement ('else' statement)*;
+r_while: 'while' expr statement;
+loop: 'loop' 'from' expr 'to' expr;
+print: 'print' expr;
+end: 'end';
+sendQuery: setIdFrom? QUERY ID* object;
+
+// This needs work, we want to be able to call methods without parentheses, as if they were properties
+method: variable '(' methodList* ')';
+methodList: expr (',' expr)*;
+stringMethod: STRING '.' method;
+
+// Type rules.
+envvar: 'envar' ID;
+
+// Keywords
+BOT        : 'bot';
+EVENT      : 'event';
+EVENTS     : 'events';
+RECEIVER   : 'receiver';
+FROM       : 'from';
+SEND       : 'send';
+QUERIES    : 'queries';
+TO         : 'to';
+SET        : 'set';
+AS         : 'as';
+IS         : 'is';
+NOT        : 'not';
+QUERY      : 'query';
+METHOD     : 'listenerMethod';
+ERRORMETHOD: 'listenerErrorMethod';
+
+fragment DIGIT   : [0-9];
+fragment ALPHA   : [a-zA-Z];
+fragment HEX     : [a-fA-F0-9];
+
+STRING      : '\'' (ESC|.)*? '\'';
+ESC         : '\\' [btnr'\\];
+ID          : ALPHA (ALPHA | DIGIT | '_' | '-')*;
+BOOLEAN     : 'true' | 'false';
+NUMBER      : INT | FLOAT | HEXNUMBER;
+FLOAT       : DIGIT+ '.' DIGIT+ |
+              '.' DIGIT+;
+INT         : DIGIT+;
+HEXNUMBER   : HEX+;
+COMMENT     : '/*' .*? '*/' -> skip;
+LINE_COMMENT: '//' .*? '\n' -> skip;
+WS          :  [ \t\r\n]+ -> skip;
