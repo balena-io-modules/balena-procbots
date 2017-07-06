@@ -15,22 +15,23 @@
  */
 
 import * as Promise from 'bluebird';
-import { Front, RequestData, ResponseData, Status } from 'front-sdk';
-import { MessengerEmitContext } from './messenger-types';
+import { ConversationComments, Front, RequestData, ResponseData, Status } from 'front-sdk';
 import { ServiceAPIHandle } from './service-types';
+import {UtilityEmitContext, UtilityEndpointDefinition} from './service-utilities-types';
 
-export type FrontEmitMethod = (param: RequestData) => Promise<ResponseData|Status>;
+export type FrontEmitMethod = (payload?: RequestData) => Promise<ResponseData|Status|void|ConversationComments>;
 
-export interface FrontEmitContext extends MessengerEmitContext {
-	endpoint: {
-		method: FrontEmitMethod;
-	};
+export interface FrontEndpointDefinition extends UtilityEndpointDefinition {
+	objectType: string,
+	action: string,
+}
+export interface FrontEmitContext extends UtilityEmitContext {
+	endpoint: FrontEndpointDefinition;
 	payload: RequestData;
 }
 export interface FrontHandle extends ServiceAPIHandle {
 	front: Front;
 }
-
 export interface FrontConstructor {
 	token: string;
 }

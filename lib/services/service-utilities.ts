@@ -18,43 +18,45 @@ import TypedError = require('typed-error');
 import * as Promise from 'bluebird';
 import * as bodyParser from 'body-parser';
 import * as express from 'express';
-import { Worker, WorkerEvent } from '../framework/worker';
+import * as _ from 'lodash';
+import { Worker } from '../framework/worker';
 import { WorkerClient } from '../framework/worker-client';
 import { Logger, LogLevel } from '../utils/logger';
 import {
-	ServiceAPIHandle, ServiceEmitContext, ServiceEmitRequest, ServiceEmitResponse, ServiceEmitter, ServiceEvent,
-	ServiceListener, ServiceRegistration,
+	ServiceAPIHandle, ServiceEmitRequest, ServiceEmitResponse,
+	ServiceEmitter, ServiceListener, ServiceRegistration,
 } from './service-types';
+import {
+	UtilityEmitContext, UtilityEmitMethod, UtilityEndpointDefinition,
+	UtilityEvent, UtilityWorkerEvent
+} from './service-utilities-types';
 
-export interface UtilityEvent extends ServiceEvent {
-	cookedEvent: {
-		context: string;
-		type: string;
-		[key: string]: any;
-	};
-	rawEvent: any;
-	source: string;
-}
-export interface UtilityWorkerEvent extends WorkerEvent {
-	data: UtilityEvent;
-}
-
+/**
+ * A utility class to handle a bunch of the repetitive work associated with being a ServiceListener and ServiceEmitter
+ *
+ * This class provides:
+ * - A connect then listen constructor flow.
+ * - An express app, if asked for, and a logger.
+ * - An event registration and handling standard.
+ * - Context presence-check and extraction around sending data.
+ * - A standard way of getting contextualised workers.
+ * - A single-call wrapper around becoming a listener.
+ *
+ * In exchange you agree to:
+ * - provide a `startListening` method to activate this class as a listener, calling queueEvent as required.
+ * - provide a `connect` method to connect this class to the service, called during construction and only once.
+ * - provide a `getEmitter` method that finds a method which will take a payload and promise to resolve.
+ * - provide a `serviceName` getter, which because it is based on file path cannot be inherited away.
+ * - provide a `apiHandle` getter, which should return the underlying object that executes the requests.
+ * - enqueue your events with `context` and `event` in cookedData.
+ * - receive your `sendData` according to UtilityEmitContext.
+ */
 export abstract class ServiceUtilities extends WorkerClient<string> implements ServiceListener, ServiceEmitter {
 	/** A place to put output for debug and reference. */
 	private _logger = new Logger();
 
 	/** A singleton express instance for all web-hook based services to share. */
 	private _expressApp: express.Express;
-
-	/**
-	 * Deliver the payload to the service. Sourcing the relevant context has already been performed.
-	 * @param data  The object to be delivered to the service.
-	 * @returns     Response from the service endpoint.
-	 */
-	protected abstract sendPayload: (data: ServiceEmitContext) => Promise<ServiceEmitResponse>;
-
-	/** Awaken this class as a listener. */
-	protected abstract activateListener: () => void;
 
 	/** Store a list of actions to perform when particular actions happen */
 	private eventListeners: { [event: string]: ServiceRegistration[] } = {};
@@ -64,13 +66,15 @@ export abstract class ServiceUtilities extends WorkerClient<string> implements S
 
 	/**
 	 * Build this service, specifying whether to awaken as a listener.
+	 * @param data    Object containing the required details for the service.
 	 * @param listen  Whether to start listening during construction.
 	 */
-	constructor(listen: boolean) {
+	constructor(data: object, listen: boolean) {
 		super();
+		this.connect(data);
+		this.logger.log(LogLevel.INFO, `---> Connected '${this.serviceName}'.`);
 		if (listen) {
-			// Allow the sub-constructor to set up sessions, etc, before listening
-			process.nextTick(this.listen);
+			this.listen();
 		}
 	}
 
@@ -89,30 +93,67 @@ export abstract class ServiceUtilities extends WorkerClient<string> implements S
 	}
 
 	/**
-	 * Queue an event ready for running in a child.
-	 * @param data  The WorkerEvent to add to the queue for processing.
-	 */
-	public queueEvent(data: UtilityWorkerEvent) {
-		// This type guards a simple pass-through
-		super.queueEvent(data);
-	}
-
-	/**
 	 * Emit data to the service.
 	 * @param data  Service Emit Request to send, if relevant.
 	 * @returns     Details of the successful transmission from the service.
 	 */
 	public sendData(data: ServiceEmitRequest): Promise<ServiceEmitResponse> {
-		// Check that the data has specifies a task for our emitter, before passing it on
-		if (data.contexts[this.serviceName]) {
-			return this.sendPayload(data.contexts[this.serviceName]);
+		try {
+			const context = data.contexts[this.serviceName] as UtilityEmitContext;
+			if (context) {
+				return new Promise<ServiceEmitResponse>((resolve) => {
+					this.getEmitter(context.endpoint)(context.payload)
+					.then((response) => {
+						const protectParameters = {};
+						_.merge(protectParameters, context.passThrough, response);
+						resolve({
+							response: protectParameters,
+							source: this.serviceName,
+						});
+					})
+					.catch((err) => {
+						resolve({
+							err,
+							source: this.serviceName,
+						});
+					});
+				});
+			} else {
+				return Promise.resolve({
+					err: new TypedError(`No ${this.serviceName} context`),
+					source: this.serviceName,
+				});
+			}
+		} catch(err) {
+			return Promise.resolve({
+				err,
+				source: this.serviceName,
+			});
 		}
-		// If this data has no task for us then no-op is the correct resolution
-		return Promise.resolve({
-			err: new TypedError(`No ${this.serviceName} context`),
-			source: this.serviceName,
-		});
 	}
+
+	/**
+	 * Queue an event ready for running in a child, here to type guard.
+	 * @param data  The WorkerEvent to add to the queue for processing.
+	 */
+	protected queueEvent(data: UtilityWorkerEvent) {
+		super.queueEvent(data);
+	}
+
+	/** Awaken this class as a listener. */
+	protected abstract startListening(): void;
+
+	/**
+	 * Return a method that will: emit a payload to the service, resolving to whatever you wish
+	 * @param data  Definition of the emitter to create
+	 */
+	protected abstract getEmitter(data: UtilityEndpointDefinition): UtilityEmitMethod;
+
+	/**
+	 * Connect to the service, used as part of construction.
+	 * @param data  Object containing the required details for the service.
+	 */
+	protected abstract connect(data: object): void
 
 	/**
 	 * Get a Worker object for the provided event, threaded by context.
@@ -141,23 +182,23 @@ export abstract class ServiceUtilities extends WorkerClient<string> implements S
 			// Either MESSAGE_SERVICE_PORT from environment or PORT from Heroku environment
 			const port = process.env.MESSAGE_SERVICE_PORT || process.env.PORT;
 			if (!port) {
-				throw new Error('No inbound port specified for express server');
+				throw new Error('No inbound port specified for express server.');
 			}
 			// Create and log an express instance
 			this._expressApp = express();
 			this._expressApp.use(bodyParser.json());
 			this._expressApp.listen(port);
-			this.logger.log(LogLevel.INFO, `---> Started ProcBot shared web server on port '${port}'`);
+			this.logger.log(LogLevel.INFO, `---> Started ProcBot shared web server on port '${port}'.`);
 		}
 		return this._expressApp;
 	}
 
 	/**
 	 * Retrieve the logger, here to write-protect it
-	 * @returns
+	 * @returns  Logger instance for this class
 	 */
 	protected get logger(): Logger {
-		return ServiceUtilities._logger;
+		return this._logger;
 	}
 
 	/**
@@ -178,8 +219,8 @@ export abstract class ServiceUtilities extends WorkerClient<string> implements S
 		// Ensure the code in the child object gets executed a maximum of once
 		if (!this.listening) {
 			this.listening = true;
-			this.activateListener();
-			ServiceUtilities.logger.log(LogLevel.INFO, `---> Started '${this.serviceName}' listener`);
+			this.startListening();
+			this.logger.log(LogLevel.INFO, `---> '${this.serviceName}' listening.`);
 		}
 	}
 
