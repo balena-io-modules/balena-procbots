@@ -61,9 +61,9 @@ export SYNCBOT_FRONT_CONSTRUCTOR_OBJECT="{
     }
 }"
 
-# Details for the Message Converter hub
-export MESSAGE_CONVERTOR_PRIVATE_INDICATORS="[\"💭\"]"
-export MESSAGE_CONVERTOR_PUBLIC_INDICATORS="[\"💬\", \"%\"]"
+# Details for the Message Translator hub
+export MESSAGE_TRANSLATOR_PRIVATE_INDICATORS="[\"💭\"]"
+export MESSAGE_TRANSLATOR_PUBLIC_INDICATORS="[\"💬\", \"%\"]"
 
 # Do the thing
 npm start

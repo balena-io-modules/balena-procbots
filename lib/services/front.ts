@@ -19,20 +19,19 @@ import { Conversation, Front } from 'front-sdk';
 import * as _ from 'lodash';
 import * as path from 'path';
 import * as request from 'request-promise';
+import { AOLCommon, ServiceListenerEventUtilities } from './aol-common';
 import { FrontConstructor, FrontEmitContext, FrontHandle } from './front-types';
-import { Messenger } from './messenger';
 import { MessengerAction, MessengerEmitResponse, ReceiptContext, TransmitContext } from './messenger-types';
 import { ServiceEmitter, ServiceEvent, ServiceListener } from './service-types';
+import { WorkerClient } from '../framework/worker-client';
 
-export class FrontService extends Messenger implements ServiceListener, ServiceEmitter {
+export class FrontService extends WorkerClient<string> implements ServiceListenerEventUtilities, ServiceListener, ServiceEmitter {
 	private static _serviceName = path.basename(__filename.split('.')[0]);
 	private session: Front;
-	private data: FrontConstructor;
 
-	public constructor(data: FrontConstructor, listen = true) {
+	public constructor(token: string, listen = true) {
 		super(listen);
-		this.data = data;
-		this.session = new Front(data.token);
+		this.session = new Front(token);
 	}
 
 	/**
@@ -194,32 +193,21 @@ export class FrontService extends Messenger implements ServiceListener, ServiceE
 	}
 
 	/**
-	 * Turns the generic, messenger, name for an event into a specific trigger name for this class.
-	 * @param eventType  Name of the event to translate, eg 'message'.
-	 * @returns          This class's equivalent, eg 'post'.
-	 */
-	public translateEventName(eventType: string): string {
-		const equivalents: {[key: string]: string} = {
-			message: 'event',
-		};
-		return equivalents[eventType];
-	}
-
-	/**
 	 * Activate this service as a listener.
 	 */
-	protected activateMessageListener = (): void => {
-		// This swallows response attempts to the channel, since we notice them on the inbox instead
-		Messenger.app.post('/front-dev-null', (_formData, response) => {
+	protected activateListener = (): void => {
+		// This swallows webhook events.  When operating on an entire inbox we use its webhook rule, but a webhook
+		// channel still requires somewhere to send its webhooks to.
+		AOLCommon.expressApp.post('/front-dev-null', (_formData, response) => {
 			response.sendStatus(200);
 		});
 		// Create an endpoint for this listener and enqueue events
-		Messenger.app.post(`/${FrontService._serviceName}/`, (formData, response) => {
+		AOLCommon.expressApp.post(`/${FrontService._serviceName}/`, (formData, response) => {
 			this.queueEvent({
 				data: {
 					cookedEvent: {
 						context: formData.body.conversation.id,
-						type: 'event',
+						type: 'something' // TODO
 					},
 					rawEvent: formData.body,
 					source: FrontService._serviceName,
@@ -337,7 +325,7 @@ export class FrontService extends Messenger implements ServiceListener, ServiceE
  * @returns  Service Listener object, awakened and ready to go.
  */
 export function createServiceListener(data: FrontConstructor): ServiceListener {
-	return new FrontService(data, true);
+	return new FrontService(data.token, true);
 }
 
 /**
@@ -345,13 +333,5 @@ export function createServiceListener(data: FrontConstructor): ServiceListener {
  * @returns  Service Emitter object, ready for your events.
  */
 export function createServiceEmitter(data: FrontConstructor): ServiceEmitter {
-	return new FrontService(data, false);
-}
-
-/**
- * Build this class, typed as a message service.
- * @returns  Message Service object, ready to convert events.
- */
-export function createMessageService(data: FrontConstructor): Messenger {
-	return new FrontService(data, false);
+	return new FrontService(data.token, false);
 }

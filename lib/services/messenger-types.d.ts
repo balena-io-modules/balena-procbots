@@ -17,26 +17,9 @@
 import * as Promise from 'bluebird';
 
 import {
-	WorkerEvent,
-} from '../framework/worker';
-import {
 	ServiceEmitContext,
 	ServiceEmitResponse,
-	ServiceEvent,
 } from './service-types';
-
-export interface MessengerEvent extends ServiceEvent {
-	cookedEvent: {
-		context: string;
-		type: string;
-		[key: string]: any;
-	};
-	rawEvent: any;
-	source: string;
-}
-export interface MessengerWorkerEvent extends WorkerEvent {
-	data: MessengerEvent;
-}
 
 export enum MessengerAction {
 	Create,

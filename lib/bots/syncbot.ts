@@ -53,7 +53,7 @@ export class SyncBot extends ProcBot {
 
 	/**
 	 * Creates a SyncBot using SYNCBOT_MAPPINGS and SYNCBOT_HUB_SERVICE from the environment.
-	 * @param name	identifier for this bot, defaults to SyncBot.
+	 * @param name  identifier for this bot, defaults to SyncBot.
 	 */
 	constructor(name = 'SyncBot') {
 		super(name);

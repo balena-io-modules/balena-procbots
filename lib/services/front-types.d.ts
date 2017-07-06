@@ -33,7 +33,4 @@ export interface FrontHandle extends ServiceAPIHandle {
 
 export interface FrontConstructor {
 	token: string;
-	inbox_channels: {
-		[inbox: string]: string;
-	};
 }
