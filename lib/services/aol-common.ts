@@ -26,7 +26,7 @@ import {
 	ServiceListener, ServiceRegistration,
 } from './service-types';
 
-export interface CommonEvent extends ServiceEvent {
+export interface UtilityEvent extends ServiceEvent {
 	cookedEvent: {
 		context: string;
 		type: string;
@@ -35,49 +35,16 @@ export interface CommonEvent extends ServiceEvent {
 	rawEvent: any;
 	source: string;
 }
-export interface CommonWorkerEvent extends WorkerEvent {
-	data: CommonEvent;
+export interface UtilityWorkerEvent extends WorkerEvent {
+	data: UtilityEvent;
 }
 
-export class ServiceListenerEventUtilities {
-	/** Store a list of actions to perform when particular actions happen */
-	private eventListeners: { [event: string]: ServiceRegistration[] } = {};
-
-	/**
-	 * Store an event of interest, so that the method gets triggered appropriately.
-	 * @param registration  Registration object with event trigger and other details.
-	 */
-	public registerEvent(registration: ServiceRegistration): void {
-		// Store each event registration in an object of arrays.
-		for (const event of registration.events) {
-			if (!this.eventListeners[event]) {
-				this.eventListeners[event] = [];
-			}
-			this.eventListeners[event].push(registration);
-		}
-	}
-
-	/**
-	 * Pass an event to registered listenerMethods.
-	 * @param event  Enqueued event from the listener.
-	 * @returns      Promise that resolves once the event is handled.
-	 */
-	protected handleEvent = (event: CommonEvent): Promise<void> => {
-		// Retrieve and execute all the listener methods, squashing their responses
-		const listeners = this.eventListeners[event.cookedEvent.type] || [];
-		return Promise.map(listeners, (listener) => {
-			return listener.listenerMethod(listener, event);
-		}).return();
-	}
-}
-
-// TODO: Rename this class
-export abstract class AOLCommon extends WorkerClient<string> implements ServiceListener, ServiceEmitter {
+export abstract class ServiceUtilities extends WorkerClient<string> implements ServiceListener, ServiceEmitter {
 	/** A place to put output for debug and reference. */
-	protected static logger = new Logger();
+	private _logger = new Logger();
 
 	/** A singleton express instance for all web-hook based services to share. */
-	private static _expressApp: express.Express;
+	private _expressApp: express.Express;
 
 	/**
 	 * Deliver the payload to the service. Sourcing the relevant context has already been performed.
@@ -125,7 +92,7 @@ export abstract class AOLCommon extends WorkerClient<string> implements ServiceL
 	 * Queue an event ready for running in a child.
 	 * @param data  The WorkerEvent to add to the queue for processing.
 	 */
-	public queueEvent(data: CommonWorkerEvent) {
+	public queueEvent(data: UtilityWorkerEvent) {
 		// This type guards a simple pass-through
 		super.queueEvent(data);
 	}
@@ -152,7 +119,7 @@ export abstract class AOLCommon extends WorkerClient<string> implements ServiceL
 	 * @param event  Event as enqueued by the listener.
 	 * @returns      Worker for the context associated.
 	 */
-	protected getWorker = (event: CommonWorkerEvent): Worker<string> => {
+	protected getWorker = (event: UtilityWorkerEvent): Worker<string> => {
 		// Attempt to retrieve an active worker for the context
 		const context = event.data.cookedEvent.context;
 		const retrieved = this.workers.get(context);
@@ -166,24 +133,31 @@ export abstract class AOLCommon extends WorkerClient<string> implements ServiceL
 	}
 
 	/**
-	 * Create or retrieve the singleton express app.
-	 * @returns  Singleton express server app.
+	 * Create or retrieve the express app.
+	 * @returns  Express server app.
 	 */
-	// TODO: We might not need this.
-	protected static get expressApp(): express.Express {
-		if (!AOLCommon._expressApp) {
+	protected get expressApp(): express.Express {
+		if (!this._expressApp) {
 			// Either MESSAGE_SERVICE_PORT from environment or PORT from Heroku environment
 			const port = process.env.MESSAGE_SERVICE_PORT || process.env.PORT;
 			if (!port) {
 				throw new Error('No inbound port specified for express server');
 			}
 			// Create and log an express instance
-			AOLCommon._expressApp = express();
-			AOLCommon._expressApp.use(bodyParser.json());
-			AOLCommon._expressApp.listen(port);
-			AOLCommon.logger.log(LogLevel.INFO, `---> Started ProcBot shared web server on port '${port}'`);
+			this._expressApp = express();
+			this._expressApp.use(bodyParser.json());
+			this._expressApp.listen(port);
+			this.logger.log(LogLevel.INFO, `---> Started ProcBot shared web server on port '${port}'`);
 		}
-		return AOLCommon._expressApp;
+		return this._expressApp;
+	}
+
+	/**
+	 * Retrieve the logger, here to write-protect it
+	 * @returns
+	 */
+	protected get logger(): Logger {
+		return ServiceUtilities._logger;
 	}
 
 	/**
@@ -191,7 +165,7 @@ export abstract class AOLCommon extends WorkerClient<string> implements ServiceL
 	 * @param event  Enqueued event from the listener.
 	 * @returns      Promise that resolves once the event is handled.
 	 */
-	protected handleEvent = (event: CommonEvent): Promise<void> => {
+	protected handleEvent = (event: UtilityEvent): Promise<void> => {
 		// Retrieve and execute all the listener methods, squashing their responses
 		const listeners = this.eventListeners[event.cookedEvent.type] || [];
 		return Promise.map(listeners, (listener) => {
@@ -205,7 +179,7 @@ export abstract class AOLCommon extends WorkerClient<string> implements ServiceL
 		if (!this.listening) {
 			this.listening = true;
 			this.activateListener();
-			AOLCommon.logger.log(LogLevel.INFO, `---> Started '${this.serviceName}' listener`);
+			ServiceUtilities.logger.log(LogLevel.INFO, `---> Started '${this.serviceName}' listener`);
 		}
 	}
 
