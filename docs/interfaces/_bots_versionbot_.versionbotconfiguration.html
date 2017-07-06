@@ -97,6 +97,7 @@
 								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="_bots_versionbot_.versionbotconfiguration.html#maintainers" class="tsd-kind-icon">maintainers</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="_bots_versionbot_.versionbotconfiguration.html#minimum_approvals" class="tsd-kind-icon">minimum_<wbr>approvals</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited tsd-is-not-exported"><a href="_bots_versionbot_.versionbotconfiguration.html#procbot" class="tsd-kind-icon">procbot</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="_bots_versionbot_.versionbotconfiguration.html#required_tags" class="tsd-kind-icon">required-<wbr>tags</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="_bots_versionbot_.versionbotconfiguration.html#reviewers" class="tsd-kind-icon">reviewers</a></li>
 							</ul>
 						</section>
@@ -111,7 +112,7 @@
 					<div class="tsd-signature tsd-kind-icon">maintainers<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L143">bots/versionbot.ts:143</a></li>
+							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L166">bots/versionbot.ts:166</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -126,7 +127,7 @@
 					<div class="tsd-signature tsd-kind-icon">minimum_<wbr>approvals<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L139">bots/versionbot.ts:139</a></li>
+							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L162">bots/versionbot.ts:162</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -161,12 +162,27 @@
 					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
+					<a name="required_tags" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagOptional">Optional</span> required-<wbr>tags</h3>
+					<div class="tsd-signature tsd-kind-icon">required-<wbr>tags<span class="tsd-signature-symbol">:</span> <a href="_bots_versionbot_.footertags.html" class="tsd-signature-type">FooterTags</a></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L168">bots/versionbot.ts:168</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Required commit footer tags.</p>
+						</div>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
 					<a name="reviewers" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagOptional">Optional</span> reviewers</h3>
 					<div class="tsd-signature tsd-kind-icon">reviewers<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L141">bots/versionbot.ts:141</a></li>
+							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L164">bots/versionbot.ts:164</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -251,7 +267,16 @@
 						<a href="_bots_versionbot_.filemapping.html" class="tsd-kind-icon">File<wbr>Mapping</a>
 					</li>
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
+						<a href="_bots_versionbot_.footertag.html" class="tsd-kind-icon">Footer<wbr>Tag</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
+						<a href="_bots_versionbot_.footertags.html" class="tsd-kind-icon">Footer<wbr>Tags</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
 						<a href="_bots_versionbot_.mergedata.html" class="tsd-kind-icon">Merge<wbr>Data</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
+						<a href="_bots_versionbot_.missingtag.html" class="tsd-kind-icon">Missing<wbr>Tag</a>
 					</li>
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
 						<a href="_bots_versionbot_.repofiledata.html" class="tsd-kind-icon">Repo<wbr>File<wbr>Data</a>
@@ -275,6 +300,9 @@
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-inherited tsd-is-not-exported">
 								<a href="_bots_versionbot_.versionbotconfiguration.html#procbot" class="tsd-kind-icon">procbot</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
+								<a href="_bots_versionbot_.versionbotconfiguration.html#required_tags" class="tsd-kind-icon">required-<wbr>tags</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
 								<a href="_bots_versionbot_.versionbotconfiguration.html#reviewers" class="tsd-kind-icon">reviewers</a>

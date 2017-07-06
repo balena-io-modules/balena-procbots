@@ -100,11 +100,9 @@ Ensure you also create the `procbots/versionbot/ready-to-merge` and `procbots/ve
 
 Finally you need to install the Github App into the repo. Do this by going to your 'Settings' page for the Github App (as above), selecting the appropriate App and then selecting the 'Your installations' tab. Hit the cog to the right of the organisation name, and then add the repos you want VersionBot to run on in the `Repository access` section. Remember to hit `Save`.
 
-### Tailoring ProcBots for a Repo via Configuration File
+### Tailoring VersionBot for a Repo via Configuration File
 
-ProcBots now also respond to a configuration file. This is a file with the name `.procbots.yml` in a relative location for the ProcBot running. In the case of ProcBots operating on a Github repository (such as VersionBot), this is in the root of the repository that it is working on, on the `master` branch.
-
-The configuration file uses a set of nested properties based on the class hierarchy of the ProcBots, with each class able to modify variables at run time from the configuration file.
+This is a file with the name `repository.yml` in a relative location for the ProcBot running. In the case of VersionBot, this is in the root of the repository that it is working on, on the `master` branch.
 
 ProcBots itself has a single property, `minimum_version`, which is checked to ensure that operations only get carried out should that version be satisfied. Should it not find itself to be of at least the minimum version, an error is thrown.
 
@@ -115,7 +113,102 @@ procbot:
     minimum_version: 0.5
 ```
 
-Other bots are free to add any properties they require. It should be noted that all derived bots are able to view the entire configuration file on request.
+
+#### Maintainer and Reviewer Configuration
+
+A list of valid maintainers and approved reviewers may be defined to allow VersionBot to vet those Github users who are providing review approval.
+
+The definition for these users in the configuration file is as follows:
+
+````
+minimum_approvals: <number>
+reviewers:
+    - <list of Github user names>
+maintainers:
+    - <list of Github user names>
+````
+
+* `minimum_approvals`[optional] - Denotes the minimum number of approvals required for a PR
+* `reviewers`[optional] - A list of Github user names whose reviews count towards an approval total
+* `maintainers`[optional] - A list of Github user names whose reviews count towards an approval total, of which at *least* one must be a maintainer in this list
+
+The functionality is as follows:
+* If a `reviewers` list exists, then reviews counting towards `minimum_approvals`
+    can only be met by reviewers in that list (and `maintainers`)
+* If a `maintainers` list exists, then at least one review must be from a maintainer:
+    * If a maintainer created the PR *and* there are no other maintainers, then reviews
+    from `reviewers` (if it exists) are required to make up the `minimum_approvals`
+    * If a maintainer created the PR and there *are* other maintainers, then one of the
+    remaining `maintainers` must approve the PR
+* If no `reviewers` list exists, anyone can approve; if a `maintainers` list exists
+    then at least one `maintainer` must approve
+* For any named reviewer/maintainers not added when a PR is opened, VersionBot will
+    request that they add themselves on the PR as reviewers
+
+Example:
+
+```
+minimum_approvals: 1
+reviewers:
+    - githubuser
+maintainers
+    - githubmaintainer
+```
+
+#### Required Tags in PR Commits
+
+This functionality allows repository maintainers to determine which footer tags in
+a PR are mandatory or optional.
+Tags keys are considered case insensitive, and optionally may define how many
+occurences should be present in all of the commits for a PR, as well as defining
+valid values.
+
+The `change-type` tag is *always* assumed to be present, regardless of other
+tag definitions. Should the configuration file redefine the `change-type` tag,
+then that definition will override the inbuilt one.
+
+The following shows how to format required tag definitions in the `repository.yml`
+configuration:
+
+```
+required_tags:
+    <tagname>:
+        occurrence: 'all' | 'once' | 'never'
+        values: <regexp body>
+```
+
+Both the `occurrence` and `values` properties are optional, if present:
+* `occurrence`[optional] - Determines how many occurrences of the tag should occur within a
+                          PR. Valued values are:
+                          * `once` - The tag should occur in at least one commit in the PR
+                          * `all` - The tag should occur in every commit in the PR
+                          * `never` - The tag should never occur in any commit in the PR
+* `values`[optional] - A regular expression body defining a tag's valid values.
+            This body should be defined to match values that occur after a tag prefix, and
+            should exclude the leading and trailing solidus from the expression. Bodies
+            will always be suffixed with a `$` when compiled, which ensures that a value
+            can only exist on a single line.
+            Defaults to `.*` should it not be defined.
+* `flags`[optional] - Only valid (and parsed) should the `values` property be present.
+                      This is a string consisting of the regular expression flags that
+                      pertain to the regular expression body defined in the `values`
+                      property. Valid values are: `i`, `u` and `y`. The `g` and `m`
+                      flags have no meaningful value in the tests and will be ignored.
+
+As an example, the following is a valid set of definitions for a repository,
+and includes the `change-type` tag explicitly.
+
+```
+required-tags:
+    signed-off-by:
+        occurrence: all
+    changelog-entry:
+        occurrence: never
+    change-type:
+        occurrence: once
+        values: \s*(patch|minor|major)\s*
+        flags: i
+```
 
 ## Running VersionBot
 

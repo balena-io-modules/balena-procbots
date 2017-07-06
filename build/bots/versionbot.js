@@ -80,25 +80,27 @@ class VersionBot extends procbot_1.ProcBot {
                         });
                     }
                 });
-                return Promise.filter(prEvents, (prEvent) => {
-                    const pr = prEvent.cookedEvent.data.pull_request;
-                    return this.dispatchToEmitter(this.githubEmitterName, {
-                        data: {
-                            number: pr.number,
-                            owner: pr.head.repo.owner.login,
-                            repo: pr.head.repo.name,
-                        },
-                        method: this.githubApi.issues.getIssueLabels
-                    }).then((labels) => {
-                        if (!_.every(labels, (label) => label.name !== IgnoreLabel)) {
-                            this.logger.log(logger_1.LogLevel.DEBUG, `Dropping '${registration.name}' as suppression labels are all present`);
-                            return false;
-                        }
-                        return true;
+                return Promise.delay(2000).then(() => {
+                    return Promise.filter(prEvents, (prEvent) => {
+                        const pr = prEvent.cookedEvent.data.pull_request;
+                        return this.dispatchToEmitter(this.githubEmitterName, {
+                            data: {
+                                number: pr.number,
+                                owner: pr.head.repo.owner.login,
+                                repo: pr.head.repo.name,
+                            },
+                            method: this.githubApi.issues.getIssueLabels
+                        }).then((labels) => {
+                            if (!_.every(labels, (label) => label.name !== IgnoreLabel)) {
+                                this.logger.log(logger_1.LogLevel.DEBUG, `Dropping '${registration.name}' as suppression labels are all present`);
+                                return false;
+                            }
+                            return true;
+                        });
                     });
                 });
             }).map((prEvent) => {
-                return this.checkVersioning(registration, prEvent);
+                return this.checkFooterTags(registration, prEvent);
             });
         };
         this.checkWaffleFlow = (_registration, event) => {
@@ -316,7 +318,7 @@ class VersionBot extends procbot_1.ProcBot {
                 });
             });
         };
-        this.checkVersioning = (_registration, event) => {
+        this.checkFooterTags = (_registration, event) => {
             const prEvent = event.cookedEvent.data;
             const pr = prEvent.pull_request;
             const head = pr.head;
@@ -325,45 +327,42 @@ class VersionBot extends procbot_1.ProcBot {
             const author = prEvent.sender.login;
             let committer = author;
             let lastCommit;
+            let botConfig;
             if ((event.cookedEvent.data.action !== 'opened') && (event.cookedEvent.data.action !== 'synchronize') &&
                 (event.cookedEvent.data.action !== 'labeled')) {
                 return Promise.resolve();
             }
-            this.logger.log(logger_1.LogLevel.INFO, `Checking version for ${owner}/${name}#${pr.number}`);
-            return this.dispatchToEmitter(this.githubEmitterName, {
-                data: {
+            this.logger.log(logger_1.LogLevel.INFO, `Checking footer tags for ${owner}/${name}#${pr.number}`);
+            return this.retrieveConfiguration({
+                emitter: this.githubEmitter,
+                location: {
                     owner,
-                    number: pr.number,
                     repo: name,
-                },
-                method: this.githubApi.pullRequests.getCommits
-            }).then((commits) => {
-                let changetypeFound = false;
-                for (let commit of commits) {
-                    const commitMessage = commit.commit.message;
-                    const lines = commitMessage.split('\n');
-                    const lastLine = _.findLastIndex(lines, (line) => line.match(/^\s*$/));
-                    if (lastLine > 0) {
-                        lines.splice(0, lastLine);
-                        const footer = lines.join('\n');
-                        const invalidCommit = !footer.match(/^change-type:\s*(patch|minor|major)\s*$/mi);
-                        if (!invalidCommit) {
-                            changetypeFound = true;
-                            break;
-                        }
-                    }
+                    path: RepositoryFilePath
                 }
+            }).then((config) => {
+                botConfig = config;
+                return this.dispatchToEmitter(this.githubEmitterName, {
+                    data: {
+                        owner,
+                        number: pr.number,
+                        repo: name,
+                    },
+                    method: this.githubApi.pullRequests.getCommits
+                });
+            }).then((commits) => {
+                const missingTags = this.checkCommitFooterTags(commits, botConfig);
                 if (commits.length > 0) {
                     lastCommit = commits[commits.length - 1];
                     if (lastCommit.committer) {
                         committer = lastCommit.committer.login;
                     }
                 }
-                if (changetypeFound) {
+                if (missingTags.length === 0) {
                     return this.dispatchToEmitter(this.githubEmitterName, {
                         data: {
                             context: 'Versionist',
-                            description: 'Found a valid Versionist `Change-Type` tag',
+                            description: 'Found all required commit footer tags',
                             owner,
                             repo: name,
                             sha: head.sha,
@@ -372,12 +371,17 @@ class VersionBot extends procbot_1.ProcBot {
                         method: this.githubApi.repos.createStatus
                     });
                 }
-                this.logger.log(logger_1.LogLevel.INFO, "No valid 'Change-Type' tag found, failing last commit " +
+                let tagNames = '';
+                _.each(missingTags, (tag) => {
+                    tagNames += `${tag.name}, `;
+                });
+                this.logger.log(logger_1.LogLevel.INFO, `Missing tags from accumulated commits: ${tagNames}` +
                     `for ${owner}/${name}#${pr.number}`);
+                let description = 'Missing or forbidden tags in commits, see `repository.yml`';
                 return this.dispatchToEmitter(this.githubEmitterName, {
                     data: {
                         context: 'Versionist',
-                        description: 'None of the commits in the PR have a `Change-Type` tag',
+                        description,
                         owner,
                         repo: name,
                         sha: head.sha,
@@ -618,7 +622,7 @@ class VersionBot extends procbot_1.ProcBot {
             {
                 name: 'CheckVersionistCommitStatus',
                 events: ['pull_request'],
-                listenerMethod: this.checkVersioning,
+                listenerMethod: this.checkFooterTags,
                 suppressionLabels: [IgnoreLabel],
             },
             {
@@ -973,6 +977,100 @@ class VersionBot extends procbot_1.ProcBot {
                 throw new Error(errorMessage);
             }
         }
+    }
+    checkCommitFooterTags(allCommits, config) {
+        const tagDefinitions = (config || {})['required-tags'] || {};
+        const changeType = 'change-type';
+        const tagOccurrences = ['all', 'once', 'never'];
+        const tagValueFlags = ['i', 'u', 'y', 'g', 'm'];
+        let sanitisedDefs = {};
+        let tagCounts = {};
+        const commits = _.filter(allCommits, (commit) => commit.commit.committer.name !== process.env.VERSIONBOT_NAME);
+        _.each(_.mapKeys(tagDefinitions, (_value, key) => key.toLowerCase()), (tag, tagName) => {
+            if (tagCounts[tagName]) {
+                throw new Error(`More than one occurrence of a required footer tag (${tagName}) found ` +
+                    'in configuration');
+            }
+            if (tag.occurrence) {
+                if ((typeof tag.occurrence !== 'string') ||
+                    !_.find(tagOccurrences, (occurrence) => tag.occurrence === occurrence)) {
+                    throw new Error(`Invalid occurrence value found for ${tagName} definition`);
+                }
+            }
+            if (tag.values && tag.flags) {
+                _.each(tag.flags, (char) => {
+                    if (!_.find(tagValueFlags, (flag) => flag !== char)) {
+                        throw new Error(`Invalid RegExp flags specific for ${tagName} definition`);
+                    }
+                });
+            }
+            tagCounts[tagName] = 0;
+            sanitisedDefs[tagName] = {
+                occurrence: tag.occurrence,
+                values: tag.values,
+                flags: tag.flags
+            };
+        });
+        sanitisedDefs[changeType] = sanitisedDefs[changeType] || {
+            values: '\s*(patch|minor|major)\s*',
+            flags: 'i'
+        };
+        tagCounts[changeType] = tagCounts[changeType] || 0;
+        for (let commit of commits) {
+            const commitMessage = commit.commit.message;
+            const lines = commitMessage.split('\n');
+            const lastLine = _.findLastIndex(lines, (line) => line.match(/^\s*$/));
+            if (lastLine > 0) {
+                lines.splice(0, lastLine);
+                const footer = lines.join('\n');
+                _.each(sanitisedDefs, (tag, name) => {
+                    const keyRE = new RegExp(`^${name}:(.*)$`, 'gmi');
+                    let valueRE = /.*/;
+                    if (tag.values) {
+                        valueRE = new RegExp(`${tag.values}$`, tag.flags);
+                    }
+                    let valueMatches = [];
+                    let match = keyRE.exec(footer);
+                    while (match) {
+                        valueMatches.push(match[1]);
+                        match = keyRE.exec(footer);
+                    }
+                    for (let valueMatch of valueMatches) {
+                        const valueFound = valueMatch.match(valueRE);
+                        if (valueFound) {
+                            tagCounts[name]++;
+                            break;
+                        }
+                    }
+                });
+            }
+        }
+        let tagResults = [];
+        _.each(sanitisedDefs, (tag, name) => {
+            const tagCount = tagCounts[name] || 0;
+            let tagsRequired = 0;
+            if (tag.occurrence !== 'never') {
+                tagsRequired = 1;
+                if (tag.occurrence === 'all') {
+                    tagsRequired = commits.length;
+                }
+                if (tagCount < tagsRequired) {
+                    tagResults.push({
+                        name,
+                        reason: `Not enough occurrences of ${name} tag found in PR commits`
+                    });
+                }
+            }
+            else {
+                if (tagCount > 0) {
+                    tagResults.push({
+                        name,
+                        reason: `The ${name} tag was found when it should not be present in a PR commit`
+                    });
+                }
+            }
+        });
+        return tagResults;
     }
     reportError(error) {
         this.logger.alert(logger_1.AlertLevel.ERROR, error.message);

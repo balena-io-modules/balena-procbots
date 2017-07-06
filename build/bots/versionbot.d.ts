@@ -13,7 +13,7 @@ export declare class VersionBot extends ProcBot {
     protected checkWaffleFlow: (_registration: GithubRegistration, event: ServiceEvent) => Promise<void>;
     protected addReviewers: (_registration: GithubRegistration, event: ServiceEvent) => Promise<void>;
     protected checkReviewers: (_registration: GithubRegistration, event: ServiceEvent) => Promise<void>;
-    protected checkVersioning: (_registration: GithubRegistration, event: ServiceEvent) => Promise<void>;
+    protected checkFooterTags: (_registration: GithubRegistration, event: ServiceEvent) => Promise<void>;
     protected mergePR: (_registration: GithubRegistration, event: ServiceEvent) => Promise<void>;
     private applyVersionist(versionData);
     private createCommitBlobs(repoData);
@@ -23,6 +23,7 @@ export declare class VersionBot extends ProcBot {
     private finaliseMerge;
     private stripPRAuthor(list, pullRequest);
     private checkValidMaintainer(config, event);
+    private checkCommitFooterTags(allCommits, config);
     private reportError(error);
 }
 export declare function createBot(): VersionBot;
