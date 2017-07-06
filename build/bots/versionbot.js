@@ -40,6 +40,7 @@ class VersionBot extends procbot_1.ProcBot {
             const repo = splitRepo[1];
             const commitSha = event.cookedEvent.data.sha;
             const branches = event.cookedEvent.data.branches;
+            let prEvents = [];
             if (event.cookedEvent.data.context === 'Versionist') {
                 return Promise.resolve();
             }
@@ -55,7 +56,6 @@ class VersionBot extends procbot_1.ProcBot {
                 });
             }).then((foundPrs) => {
                 const prs = _.flatten(foundPrs);
-                let prEvents = [];
                 _.each(prs, (pullRequest) => {
                     if (pullRequest.head.sha === commitSha) {
                         prEvents.push({
@@ -80,9 +80,25 @@ class VersionBot extends procbot_1.ProcBot {
                         });
                     }
                 });
-                return Promise.map(prEvents, (prEvent) => {
-                    return this.checkVersioning(registration, prEvent);
+                return Promise.filter(prEvents, (prEvent) => {
+                    const pr = prEvent.cookedEvent.data.pull_request;
+                    return this.dispatchToEmitter(this.githubEmitterName, {
+                        data: {
+                            number: pr.number,
+                            owner: pr.head.repo.owner.login,
+                            repo: pr.head.repo.name,
+                        },
+                        method: this.githubApi.issues.getIssueLabels
+                    }).then((labels) => {
+                        if (!_.every(labels, (label) => label.name !== IgnoreLabel)) {
+                            this.logger.log(logger_1.LogLevel.DEBUG, `Dropping '${registration.name}' as suppression labels are all present`);
+                            return false;
+                        }
+                        return true;
+                    });
                 });
+            }).map((prEvent) => {
+                return this.checkVersioning(registration, prEvent);
             });
         };
         this.checkWaffleFlow = (_registration, event) => {
@@ -600,40 +616,39 @@ class VersionBot extends procbot_1.ProcBot {
         }
         _.forEach([
             {
+                name: 'CheckVersionistCommitStatus',
                 events: ['pull_request'],
                 listenerMethod: this.checkVersioning,
-                name: 'CheckVersionistCommitStatus',
                 suppressionLabels: [IgnoreLabel],
             },
             {
+                name: 'CheckReviewerStatus',
                 events: ['pull_request', 'pull_request_review'],
                 listenerMethod: this.checkReviewers,
-                name: 'CheckReviewerStatus',
                 suppressionLabels: [IgnoreLabel],
             },
             {
+                name: 'CheckForWaffleFlow',
                 events: ['pull_request'],
                 listenerMethod: this.checkWaffleFlow,
-                name: 'CheckForWaffleFlow',
             },
             {
+                name: 'AddMissingReviewers',
                 events: ['pull_request'],
                 listenerMethod: this.addReviewers,
-                name: 'AddMissingReviewers',
+                suppressionLabels: [IgnoreLabel],
             },
             {
+                name: 'CheckForReadyMergeState',
                 events: ['pull_request', 'pull_request_review'],
                 listenerMethod: this.mergePR,
-                name: 'CheckForReadyMergeState',
                 suppressionLabels: [IgnoreLabel],
                 triggerLabels: [MergeLabel],
             },
             {
+                name: 'StatusChangeState',
                 events: ['status'],
                 listenerMethod: this.statusChange,
-                name: 'StatusChangeState',
-                suppressionLabels: [IgnoreLabel],
-                triggerLabels: [MergeLabel]
             }
         ], (reg) => {
             ghListener.registerEvent(reg);

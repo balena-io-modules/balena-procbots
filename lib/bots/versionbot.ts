@@ -245,42 +245,41 @@ export class VersionBot extends ProcBot {
 		// 2) PR review and label checks for merge
 		_.forEach([
 			{
+				name: 'CheckVersionistCommitStatus',
 				events: [ 'pull_request' ],
 				listenerMethod: this.checkVersioning,
-				name: 'CheckVersionistCommitStatus',
 				suppressionLabels: [ IgnoreLabel ],
 			},
 			{
+				name: 'CheckReviewerStatus',
 				events: [ 'pull_request', 'pull_request_review' ],
 				listenerMethod: this.checkReviewers,
-				name: 'CheckReviewerStatus',
 				suppressionLabels: [ IgnoreLabel ],
 			},
 			{
+				name: 'CheckForWaffleFlow',
 				events: [ 'pull_request' ],
 				listenerMethod: this.checkWaffleFlow,
-				name: 'CheckForWaffleFlow',
 			},
 			{
+				name: 'AddMissingReviewers',
 				events: [ 'pull_request' ],
 				listenerMethod: this.addReviewers,
-				name: 'AddMissingReviewers',
+				suppressionLabels: [ IgnoreLabel ],
 			},
 			{
+				name: 'CheckForReadyMergeState',
 				events: [ 'pull_request', 'pull_request_review' ],
 				listenerMethod: this.mergePR,
-				name: 'CheckForReadyMergeState',
 				suppressionLabels: [ IgnoreLabel ],
 				triggerLabels: [ MergeLabel ],
 			},
 			// Should a status change occur (Jenkins, VersionBot, etc. all succeed)
 			// then check versioning and potentially go to a merge to master.
 			{
+				name: 'StatusChangeState',
 				events: [ 'status' ],
 				listenerMethod: this.statusChange,
-				name: 'StatusChangeState',
-				suppressionLabels: [ IgnoreLabel ],
-				triggerLabels: [ MergeLabel ]
 			}
 		], (reg: GithubRegistration) => {
 			ghListener.registerEvent(reg);
@@ -302,6 +301,7 @@ export class VersionBot extends ProcBot {
 		const repo = splitRepo[1];
 		const commitSha = event.cookedEvent.data.sha;
 		const branches = event.cookedEvent.data.branches;
+		let prEvents: ServiceEvent[] = [];
 
 		// If we made the status change, we stop now!
 		if (event.cookedEvent.data.context === 'Versionist') {
@@ -322,7 +322,6 @@ export class VersionBot extends ProcBot {
 			});
 		}).then((foundPrs: GithubApiTypes.PullRequest[][]) => {
 			const prs = _.flatten(foundPrs);
-			let prEvents: ServiceEvent[] = [];
 
 			// For each PR, attempt to match the SHA to the head SHA. If we get a match
 			// we create a new prInfo and then hand them all to another map.
@@ -351,10 +350,30 @@ export class VersionBot extends ProcBot {
 				}
 			});
 
-			// For every one of these, call checkVersioning.
-			return Promise.map(prEvents, (prEvent) => {
-				return this.checkVersioning(registration, prEvent);
+			// We've an event for each PR. However, we now have to check the labels on it and a status event
+			// does not include a PR. As we have already retrieved the right PR here, we filter out any that
+			// have the suppression label on them.
+			return Promise.filter(prEvents, (prEvent) => {
+				const pr: GithubApiTypes.PullRequest = prEvent.cookedEvent.data.pull_request;
+
+				return this.dispatchToEmitter(this.githubEmitterName, {
+					data: {
+						number: pr.number,
+						owner: pr.head.repo.owner.login,
+						repo: pr.head.repo.name,
+					},
+					method: this.githubApi.issues.getIssueLabels
+				}).then((labels: GithubApiTypes.IssueLabel[]) => {
+					if (!_.every(labels, (label) => label.name !== IgnoreLabel)) {
+						this.logger.log(LogLevel.DEBUG,
+							`Dropping '${registration.name}' as suppression labels are all present`);
+						return false;
+					}
+					return true;
+				});
 			});
+		}).map((prEvent: ServiceEvent) => {
+			return this.checkVersioning(registration, prEvent);
 		});
 	}
 
