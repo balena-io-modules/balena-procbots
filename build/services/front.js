@@ -2,22 +2,23 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const front_sdk_1 = require("front-sdk");
 const path = require("path");
-const service_utilities_1 = require("./service-utilities");
-class FrontService extends service_utilities_1.ServiceUtilities {
-    constructor(data, listen) {
-        super();
+const service_scaffold_1 = require("./service-scaffold");
+class FrontService extends service_scaffold_1.ServiceScaffold {
+    constructor(data) {
+        super(data);
         this.session = new front_sdk_1.Front(data.token);
-        if (listen) {
-            this.expressApp.post('/front-dev-null', (_formData, response) => {
+        if (data.type === 0) {
+            const listenerData = data;
+            this.registerHandler('front-dev-null', (_formData, response) => {
                 response.sendStatus(200);
             });
-            this.expressApp.post(`/${FrontService._serviceName}/`, (formData, response) => {
+            this.registerHandler(listenerData.path || FrontService._serviceName, (formData, response) => {
                 this.queueData({
                     context: formData.body.conversation.id,
-                    event: formData.body.type,
                     cookedEvent: {},
                     rawEvent: formData.body,
                     source: FrontService._serviceName,
+                    type: formData.body.type,
                 });
                 response.sendStatus(200);
             });
@@ -41,11 +42,11 @@ class FrontService extends service_utilities_1.ServiceUtilities {
 FrontService._serviceName = path.basename(__filename.split('.')[0]);
 exports.FrontService = FrontService;
 function createServiceListener(data) {
-    return new FrontService(data, true);
+    return new FrontService(data);
 }
 exports.createServiceListener = createServiceListener;
 function createServiceEmitter(data) {
-    return new FrontService(data, false);
+    return new FrontService(data);
 }
 exports.createServiceEmitter = createServiceEmitter;
 

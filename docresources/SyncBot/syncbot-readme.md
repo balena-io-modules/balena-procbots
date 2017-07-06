@@ -6,11 +6,11 @@ A little Bot, using the ProcBot framework, that links communication services
 
 ### How do I set up my accounts?
 
-* Attempt the following:
-  * Ensure your Front, Discourse and Flowdock usernames match
-* If you cannot:
-  * Let the SyncBot maintenance and deployment team know your usernames don't
-    align
+* Ensure your Front, Discourse and Flowdock usernames are mappable
+    * Your Github username should work fine in Flowdock.
+    * Your Github username, with underscores instead of hyphens, should work fine in Discourse.
+    * Your Github username, with a trailing hyphen becoming a leading underscore, should work fine in Front.
+    * `Hubot, suggest username` will suggest options based on your Flowdock handle, or a provided string.
 * Get your discourse details
   * Attempt the following:
     * Sign-in to forums.resin.io
@@ -36,16 +36,8 @@ A little Bot, using the ProcBot framework, that links communication services
 ### Which entities are linked?
 
 * Flows
-  * Forums:Troubleshooting - Flowdock:public/s/community - 
-    Front:support/community
-  * Flowdock:public/s/premium - Front:support/premium (TBC)
-* Threads
-  * Public threads in linked flows get synchronised
-    * Use a `%` or `💬` at the beginning of a line to indicate the topic is
-      public
-  * Private threads remain private, but are synchronised
-    * Uses discourse's `unlisted`
-    * Without syntax, private is assumed
+  * Forums:Troubleshooting - Flowdock:public/s/community - Front:support/community
+  * Flowdock:public/s/premium - Front:support/premium
 * Comments
   * Public comments in linked threads get synchronised
     * Use a `%` or `💬` at the beginning of a line to indicate the comment is
@@ -54,17 +46,17 @@ A little Bot, using the ProcBot framework, that links communication services
     * Uses discourse's `whisper`
     * Uses front's `comment`
     * Without syntax, private is assumed
+* Threads
+  * Public threads in linked flows get synchronised
+    * Use a `%` or `💬` at the beginning of a line to indicate the topic is
+      public
+  * Private threads remain private, but are synchronised
+    * Uses discourse's `unlisted`
+    * Without syntax, private is assumed
 
 ## What usernames are valid?
 
-### Proposal
-
-* The user should use their github username, with the following considerations:
-    * The user should substitute `-` with `_` for Front.
-    * The bot will cast to lower case when searching PMs.
-    * The bot will be configured with an array of any accounts that still don't fit the pattern.
-
-### Current github username conventions
+### Currently used github username conventions
 
 fsurname
 forenames
@@ -134,6 +126,9 @@ Taken, in part, from https://github.com/join
 
 ### Intersections
 
+* Regexes given for GitHub usernames that can be migrated.
+* Throughout this I have assumed the best to be "as close to github as possible".
+
 #### Strict
 
 `/^[a-z0-9]{3,20}$/`
@@ -144,48 +139,21 @@ Taken, in part, from https://github.com/join
 
 Breaks for ForenameSurname, forename-surname, FornameSn, Nickname-, Forename-Surname, Nickname
 
-#### Substitute `-` with `_` for Front
+#### Smart
 
-`^[a-z0-9][a-z0-9\-]{1,18}[a-z0-9]$`
+* When considering whether two users are equivalent, cast username to lower case.
+    * It's fine, they all have a case insensitive username lookups.
+* When translating to and from Flowdock, it's fine.
+    * Flowdock is a strict superset of GitHub.
+* When translating to and from Front: swap hyphens and underscores.
+    * Both Front and GitHub have exactly one non-alphanumeric character they support.  They just disagree about which one.
+* When translating to and from Discourse: make trailing hyphen a leading underscore.
+    * Discourse allows underscore on the beginning but not the end.  GitHub allows hyphen on the end but not the beginning.
 
-* Must begin with a lower case alphanumeric.
-* Must only contain lower case alphanumeric or hyphens.
-* Must end with a lower case alphanumeric.
-* Maximum is 20 characters.
-* Minimum is 3 characters.
+`^[a-zA-Z0-9][a-zA-Z0-9\-]{1,19}$`
 
-Front allows underscores, but not hyphens.  GitHub allows hyphens, but not underscores.  All other services allow both
-hyphens and underscores.
-
-Breaks for ForenameSurname, ForenameSn, Nickname-, Forename-Surname, Nickname
-
-#### Cast to lowercase for Private Message lookup
-
-`^[a-zA-Z0-9]{3,20}$`
-
-* Must only contain alphanumeric.
-* Maximum is 20 characters.
-* Minimum is 3 characters.
-
-All services use case insensitive collision avoidance, so the username `TeSt` is equivalent to `test`. Those services
-that do use username as part of their API call are case insensitive for the username.
-
-This rule does not require that the actual username be entirely lower case, and only affects how the bot interacts with
-the API.
-
-Breaks for forename-surname, Nickname-, Forename-Surname
-
-#### Substitute and cast
-
-`^[a-zA-Z0-9][a-zA-Z0-9\-]{1,18}[a-zA-Z0-9]$`
-
-* Must begin with an alphanumeric.
-* Must only contain alphanumeric or hyphens.
-* Must end with an alphanumeric.
-* Maximum is 20 characters.
-* Minimum is 3 characters.
-
-Breaks for Nickname-
+* Must begin with: an alphanumeric.
+* Must only contain: alphanumeric or hyphens.
 
 ## How does SyncBot work?
 
@@ -301,113 +269,114 @@ some sanitised examples of configuration.
 
 ### Environment Variables
 
-#### MESSAGE_CONVERTER_PRIVATE_INDICATORS
+#### PROCBOT_BOTS_TO_LOAD
 
-This is a JSON encoded array of strings that may be used to indicate that a
-message is private.
+This is a string of the names of the bots that need loading by this deployment
+of ProcBots.
 
-e.g. `\["💭"]`
+e.g. `syncbot`
 
-#### MESSAGE_CONVERTER_PUBLIC_INDICATORS
-
-This is a JSON encoded array of strings that may be used to indicate that a
-message is public.
-
-e.g. `\["💬", "%"]`
-
-#### MESSAGE_SERVICE_PORT
+#### SYNCBOT_PORT
 
 This is an integer value for which port the web hooks should listen to.
 
 e.g. `4567`
 
-#### SYNCBOT_GENERIC_AUTHOR_ACCOUNTS
+#### SYNCBOT_NAME
 
-These are a set of accounts that the bot may use when a message originates from
-a user that is not configured, i.e. the public.
+This is the username of the account under which syncbot should operate.
 
-e.g.
+e.g. `syncbot`
+
+#### SYNCBOT_DATAHUB_CONSTRUCTORS
+
+This is a set of constructor objects for locations that translators may use to
+acquire extra information, e.g. tokens for the users.
+
+e.g. 
 ```json
 {
-  "flowdock":{"user":"SyncBot","token":""},
-  "discourse":{"user":"SyncBot","token":""},
-  "front":{"user":"SyncBot","token":""}
-}
-```
-
-#### SYNCBOT_SYSTEM_MESSAGE_ACCOUNTS
-
-These are a set of accounts that the bot may use for system messages, i.e.
-`Connects to ...`
-
-e.g.
-```json
-{
-  "flowdock":{"user":"SyncBot","token":""},
-  "discourse":{"user":"SyncBot","token":""},
-  "front":{"user":"SyncBot","token":""}
-}
-```
-
-#### SYNCBOT_HUB_SERVICE
-
-This is a service that the bot may use to search for user-linked values, i.e.
-`My ... token is ...`
-
-e.g. `flowdock`
-
-#### SYNCBOT_DISCOURSE_CONSTRUCTOR_OBJECT
-
-This is an object containing all the details that Discourse requires to
-configure an adapter, including which account listens to the topics.
-
-e.g.
-```json
-{
-  "instance":"forums.resin.io",
-  "token":"",
-  "username":"SyncBot"
-}
-```
-
-#### SYNCBOT_FLOWDOCK_CONSTRUCTOR_OBJECT
-This is an object containing all the details that Flowdock requires to
-configure an adapter.
-
-e.g.
-```json
-{
-  "organization":"rulemotion",
-  "token":""
-}
-```
-
-#### SYNCBOT_FRONT_CONSTRUCTOR_OBJECT
-This is an object containing all the details that Front requires to configure
-an adapter, including which channel to use to write to which inbox.
-
-e.g.
-```json
-{
-  "inbox_channels":{"":""},
-  "token":""
+  "simple": {
+    "testbot_discourse_token": "blah",
+    "testbot_discourse_username": "blah",
+    "testbot_flowdock_token": "blah"
+  },
+  "flowdock": {
+    "organization": "blah",
+    "token": "blah"
+  }
 }
 ```
 
 #### SYNCBOT_MAPPINGS
-This contains details of which flows are considered to be equivalent
+
+This is a nested array of flow definitions that should be kept mirrored.
 
 e.g.
 ```json
 [
   [
-    {"service":"discourse","flow":""},
-    {"service":"flowdock","flow":""},
-    {"service":"front","flow":""}
-  ],
-  [
-    {"service":"flowdock","flow":""},
-    {"service":"front","flow":""}
+    { "service": "blah", "flow": "blah" },
+    { "service": "blah", "flow": "blah" }
   ]
 ]
 ```
+
+#### SYNCBOT_LISTENER_CONSTRUCTORS
+
+This is a list of the construction requirements of each service that SyncBot
+listens to.
+
+e.g.
+```json
+{
+  "blah": {
+    "organization": "blah",
+    "token": "blah"
+  }
+}
+```
+
+#### MESSAGE_TRANSLATOR_PRIVACY_INDICATORS
+
+This is a JSON encoded object of strings that may be used to indicate whether a
+message is private.
+
+e.g.
+```json
+{
+  "hidden": {
+      "emoji":"💭",
+      "word":"whisper",
+      "char":"~"
+  },
+  "shown": {
+      "emoji":"💬",
+      "word":"comment",
+      "char":"%"
+  }
+}
+```
+
+#### MESSAGE_TRANSLATOR_MESSAGES_OF_THE_DAY
+
+This is a JSON encoded array of strings that may be used as footer information
+
+e.g. 
+```json
+[
+  "resin.io"
+]
+```
+
+#### MESSAGE_TRANSLATOR_IMG_BASE_URL
+
+This is a string that may be used to hide metadata in a footer
+
+e.g `https://resin.io/icons/logo.svg`
+
+#### MESSAGE_TRANSLATOR_ANCHOR_BASE_URL
+
+This is a url used to form the domain part of an invisible link encoding of metadata
+
+e.g. `http://resin.io`

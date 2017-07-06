@@ -17,461 +17,389 @@ limitations under the License.
 import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import { ProcBot } from '../framework/procbot';
-import { Messenger } from '../services/messenger';
+import { MessengerService } from '../services/messenger';
 import {
-	DataHub,
-	FlowDefinition,
-	InterimContext, MessengerAction,
-	TransmitContext,
+	BasicMessageInformation, CreateThreadResponse, FlowDefinition,
+	MessageListener, MessengerAction, MessengerEmitResponse,
+	MessengerEvent, ThreadDefinition, TransmitInformation,
 } from '../services/messenger-types';
-import {
-	ServiceEvent,
-	ServiceListenerMethod,
-	ServiceRegistration,
-} from '../services/service-types';
-import { LogLevel } from '../utils/logger';
+import { createDataHub, DataHub } from '../services/messenger/datahubs/datahub';
+import { ServiceType } from '../services/service-types';
+import { Logger, LogLevel } from '../utils/logger';
 
+/**
+ * A bot that mirrors threads across services.
+ */
 export class SyncBot extends ProcBot {
 	/**
-	 * Returns an array of the tokens in a provided context
-	 * @param event  Context to data mine for tokens
+	 * Provide a method that:
+	 *  * Encloses details available in advance.
+	 *  * Reacts to details provided by each event.
+	 * @param from       Definition, {service, flow}, of the flow being listened to.
+	 * @param to         Definition {service, flow} of the flow being emitted to.
+	 * @param messenger  Service to use to interact with the cloud.
+	 * @param logger     Logger to use to interact with the maintainers.
+	 * @returns          Function that processes events from the messenger.
 	 */
-	private static extractTokens(event: InterimContext) {
-		const secrets = [];
-		if (event.toIds.token) {
-			secrets.push(event.toIds.token);
-		}
-		if (event.sourceIds.token) {
-			secrets.push(event.sourceIds.token);
-		}
-		return secrets;
+	private static makeRouter(
+		from: FlowDefinition, to: FlowDefinition, messenger: MessengerService, logger: Logger
+	): MessageListener {
+		// This method returns a method that in turn processes events.
+		return (_registration, event: MessengerEvent) => {
+			const data = event.cookedEvent;
+			// Check that the event is one we want to synchronise.
+			if (
+				from.service === data.source.service &&
+				from.flow === data.source.flow &&
+				!_.includes(['system', to.service], data.details.genesis)
+			) {
+				// Log that we received this event.
+				const text = data.details.text;
+				logger.log(LogLevel.INFO, `---> Heard '${text}' on ${from.service}.`);
+				// Find details of any connections stored in the originating thread.
+				return SyncBot.readConnectedThread(to, messenger, data)
+				// Then comment on or create a thread
+				.then((threadDetails: MessengerEmitResponse) => {
+					// If the search resolved with a response.
+					const threadId = _.get(threadDetails, 'response.thread', false);
+					if (threadId) {
+						// Comment on the found thread
+						return SyncBot.createComment({
+							service: to.service, flow: to.flow, thread: threadId,
+						}, messenger, data)
+						// Pass through details of the thread updated
+						.then((emitResponse) => {
+							return {
+								response: {
+									thread: threadId,
+								},
+								source: emitResponse.source,
+							};
+						});
+					}
+					// Create a thread if the quest for connections didn't find any
+					return SyncBot.createThreadAndConnect(to, messenger, data);
+				})
+				// Then update the tags on the thread
+				.then((emitResponse: MessengerEmitResponse) => {
+					// If the process this far resolved with a response
+					const threadId = _.get(emitResponse, 'response.thread', false);
+					if (threadId && data.details.tags) {
+						// Request that the tags be updated
+						return SyncBot.updateTags({
+							service: to.service,
+							flow: to.flow,
+							thread: threadId,
+						}, messenger, data);
+					}
+					return emitResponse;
+				})
+				// Then report that we have passed the message on
+				.then(() => {
+					logger.log(LogLevel.INFO, `---> Emitted '${text}' to ${to.service}.`);
+				});
+			}
+			// The event received doesn't match the profile being routed, so nothing is the correct action.
+			return Promise.resolve();
+		};
 	}
 
-	// These objects store built objects, typed and indexed, to help minimise object rebuilding
-	private messengers = new Map<string, Messenger>();
-	private hub: DataHub;
+	/**
+	 * Pass to the messenger a request to update the tags.
+	 * @param  to         Definition {service, flow, thread} of the thread being emitted to.
+	 * @param  messenger  Service to use to interact with the cloud.
+	 * @param  data       Event that is being processed.
+	 * @returns           Promise to update the tags and respond with the threadId updated.
+	 */
+	private static updateTags(
+		to: ThreadDefinition, messenger: MessengerService, data: BasicMessageInformation
+	): Promise<MessengerEmitResponse> {
+		// Bundle a tag update request, it's mainly as per the `to` and `data` passed in.
+		const updateTags: TransmitInformation = {
+			action: MessengerAction.UpdateTags,
+			details: data.details,
+			source: data.source,
+			target: {
+				flow: to.flow,
+				service: to.service,
+				thread: to.thread,
+				// Perform this operation as the SyncBot user.
+				username: process.env.SYNCBOT_NAME,
+			},
+		};
+		// Request that the payload created above be sent.
+		return messenger.sendData({
+			contexts: {
+				messenger: updateTags,
+			},
+			source: 'syncbot',
+		});
+	}
 
 	/**
-	 * Creates a SyncBot using SYNCBOT_MAPPINGS and SYNCBOT_HUB_SERVICE from the environment.
-	 * @param name  Identifier for this bot, defaults to SyncBot.
+	 * Pass to the messenger a request to create a comment.
+	 * @param  to         Definition {service, flow, thread} of the thread being emitted to.
+	 * @param  messenger  Service to use to interact with the cloud.
+	 * @param  data       Event that is being processed.
+	 * @returns           Promise to create the comment and respond with the threadId updated.
 	 */
+	private static createComment(
+		to: ThreadDefinition, messenger: MessengerService, data: BasicMessageInformation
+	): Promise<MessengerEmitResponse> {
+		// Bundle a comment create request, it's a mixture of the `to` and `data` passed in.
+		const createComment: TransmitInformation = {
+			action: MessengerAction.CreateMessage,
+			details: data.details,
+			source: data.source,
+			target: {
+				flow: to.flow,
+				service: to.service,
+				thread: to.thread,
+				username: data.source.username,
+			},
+		};
+		// Request that the payload created above be sent.
+		return messenger.sendData({
+			contexts: {
+				messenger: createComment,
+			},
+			source: 'syncbot',
+		});
+	}
+
+	/**
+	 * Pass to the messenger a request to create a comment.
+	 * @param  to         Definition {service, flow, thread} of the thread being emitted to.
+	 * @param  messenger  Service to use to interact with the cloud.
+	 * @param  data       Event that is being processed.
+	 * @returns           Promise to create the comment and respond with the threadId updated.
+	 */
+	private static readConnectedThread(
+		to: FlowDefinition, messenger: MessengerService, data: BasicMessageInformation
+	): Promise<MessengerEmitResponse> {
+		// Bundle a read connection request, it's a bit weird compared to others in this file.
+		// I've typed this here to split the union type earlier, and make error reports more useful.
+		const readConnection: TransmitInformation = {
+			action: MessengerAction.ReadConnection,
+			details: data.details,
+			// If credential details are required then consult with the SyncBot user.
+			// Most of `source` doesn't matter, except `service`.
+			source: {
+				flow: to.flow,
+				message: 'duff',
+				// The service you wish to find a connection for.
+				service: to.service,
+				thread: 'duff',
+				username: process.env.SYNCBOT_NAME,
+			},
+			// This feels paradoxical because the target of the read request ...
+			// is the place the event came from.
+			target: {
+				flow: data.source.flow,
+				service: data.source.service,
+				thread: data.source.thread,
+				username: process.env.SYNCBOT_NAME,
+			},
+		};
+		// Request that the payload created above be sent, which will resolve to the threadId connected.
+		return messenger.sendData({
+			contexts: {
+				messenger: readConnection,
+			},
+			source: 'syncbot',
+		});
+	}
+
+	/**
+	 * Pass to the messenger requests to create a thread and connect.
+	 * @param  to         Definition {service, flow} of the flow being emitted to.
+	 * @param  messenger  Service to use to interact with the cloud.
+	 * @param  data       Event that is being processed.
+	 * @returns           Promise to create the thread and respond with the threadId.
+	 */
+	private static createThreadAndConnect(
+		to: FlowDefinition, messenger: MessengerService, data: BasicMessageInformation
+	): Promise<MessengerEmitResponse> {
+		// Bundle a thread creation request.
+		// I've typed this here to split the union type earlier, and make error reports more useful.
+		const createThread: TransmitInformation = {
+			action: MessengerAction.CreateThread,
+			details: data.details,
+			source: data.source,
+			target: {
+				flow: to.flow,
+				service: to.service,
+				username: data.source.username,
+			},
+		};
+		// Request that the payload created above be sent.
+		return messenger.sendData({
+			contexts: {
+				messenger: createThread,
+			},
+			source: 'syncbot',
+		}).then((emitResponse: MessengerEmitResponse) => {
+			// Insist that the response from creating a thread is a CreateThreadResponse for typing.
+			const response = emitResponse.response as CreateThreadResponse;
+			// Check that we actually got a correct resolution, not a promise that resolved with an error.
+			// I've typed this here to split the union type earlier, and make error reports more useful.
+			if (response) {
+				// Bundle a payload that can be easily mutated to each of the source and target threads.
+				const genericConnect: TransmitInformation = {
+					// #251 This could be .CreateConnection, and translated
+					action: MessengerAction.CreateMessage,
+					// A message object from the 'system'.
+					details: {
+						genesis: 'system',
+						handle: process.env.SYNCBOT_NAME,
+						hidden: true,
+						internal: true,
+						tags: data.details.tags,
+						text: 'Connects to ', // will be appended
+						title: data.details.title,
+					},
+					// this message is being created from nothing.
+					source: {
+						message: 'duff',
+						thread: 'duff',
+						flow: 'duff',
+						service: 'system',
+						username: 'duff',
+					},
+					target: {
+						flow: 'duff', // will be replaced
+						service: 'duff', // will be replaced
+						// This is happening using SyncBot's credentials.
+						username: process.env.SYNCBOT_NAME,
+						thread: 'duff' // will be replaced
+					}
+				};
+
+				// Clone and mutate the generic payload for emitting to the originating thread.
+				const updateOriginating = _.cloneDeep(genericConnect);
+				// This should update the thread that this process sourced from.
+				updateOriginating.target = {
+					flow: data.source.flow,
+					service: data.source.service,
+					username: process.env.SYNCBOT_NAME,
+					thread: data.source.thread,
+				};
+				// This connects to the thread detailed in the response from creating.
+				updateOriginating.details.text += `[${createThread.target.service} thread ${response.thread}](${response.url})`;
+
+				// Clone and mutate the generic payload for emitting to the created thread.
+				const updateCreated = _.cloneDeep(genericConnect);
+				// This should update the thread that this process created.
+				updateCreated.target = {
+					flow: createThread.target.flow,
+					service: createThread.target.service,
+					username: process.env.SYNCBOT_NAME,
+					thread: response.thread,
+				};
+				// This connects to the thread that this process sourced from.
+				updateCreated.details.text += `[${data.source.service} thread ${data.source.thread}](${data.source.url})`;
+
+				// Request that the payloads created just above be sent.
+				return Promise.all([
+					messenger.sendData({contexts: {messenger: updateOriginating}, source: 'syncbot'}),
+					messenger.sendData({contexts: {messenger: updateCreated}, source: 'syncbot'}),
+				]).return(emitResponse);
+			}
+			// If we failed to create a thread then just pass this back unmolested.
+			return Promise.resolve(emitResponse);
+		});
+	}
+
+	/**
+	 * Consults the environment for configuration and returns an array of places to seek information.
+	 * @returns  Array of DataHub objects that may be interrogated.
+	 */
+	private static makeDataHubs(): DataHub[] {
+		// Created this as its own function to scope the `let` a little
+		let dataHubArray = [];
+		try {
+			dataHubArray = JSON.parse(process.env.SYNCBOT_DATAHUB_CONSTRUCTORS);
+		} catch (error) {
+			throw new Error('SYNCBOT_DATAHUB_CONSTRUCTORS not a valid JSON array.');
+		}
+
+		const dataHubs = _.map(dataHubArray, (constructor, type: string) => {
+			return createDataHub(type, constructor);
+		});
+
+		if (dataHubs) {
+			return dataHubs;
+		}
+		throw new Error('Could not create dataHubs.');
+	}
+
+	/**
+	 * Consults the environment for configuration to create a service that aggregates many other services.
+	 * @returns  Service that wraps and translates specified sub services.
+	 */
+	private static makeMessenger(): MessengerService {
+		// Created this as its own function to scope the `let` a little
+		let listenerConstructors = [];
+		try {
+			listenerConstructors = JSON.parse(process.env.SYNCBOT_LISTENER_CONSTRUCTORS);
+		} catch (error) {
+			throw new Error('SYNCBOT_LISTENER_CONSTRUCTORS not a valid JSON array.');
+		}
+
+		const messenger = new MessengerService({
+			dataHubs: SyncBot.makeDataHubs(),
+			server: parseInt(process.env.SYNCBOT_PORT, 10),
+			subServices: listenerConstructors,
+			type: ServiceType.Listener,
+		});
+
+		if (messenger) {
+			return messenger;
+		}
+		throw new Error('Could not create Messenger.');
+	}
+
+	/**
+	 * Consults the environment to find the equivalencies between flows.
+	 * @returns  Nested array, each top level array is an array of mirrored flows.
+	 */
+	private static makeMappings(): FlowDefinition[][] {
+		// Created this as its own function so the try/catch stay close together
+		// The alternative would be a let in the super scope.
+		try {
+			return JSON.parse(process.env.SYNCBOT_MAPPINGS);
+		} catch (error) {
+			throw new Error('SYNCBOT_MAPPINGS not a valid JSON array.');
+		}
+	}
+
 	constructor(name = 'SyncBot') {
 		super(name);
-		// Register each edge in the mappings array bidirectionally
-		const mappings: FlowDefinition[][] = JSON.parse(process.env.SYNCBOT_MAPPINGS);
+		const logger = new Logger();
+		const messenger = SyncBot.makeMessenger();
+
+		// Go around all the mappings defined by the configuration.
+		const mappings = SyncBot.makeMappings();
 		for (const mapping of mappings) {
+			// Keeping track of prior, so we can find each adjacent pair.
 			let priorFlow = null;
 			for (const focusFlow of mapping) {
 				if (priorFlow) {
-					this.register(priorFlow, focusFlow);
-					this.register(focusFlow, priorFlow);
+					// Register a mirroring from the first of the pair, to the second.
+					messenger.registerEvent({
+						events: ['message'],
+						listenerMethod: SyncBot.makeRouter(priorFlow, focusFlow, messenger, logger),
+						name: `${priorFlow.service}.${priorFlow.flow}=>${focusFlow.service}.${focusFlow.flow}`,
+					});
+					// Register a mirroring from the second of the pair, to the first.
+					messenger.registerEvent({
+						events: ['message'],
+						listenerMethod: SyncBot.makeRouter(focusFlow, priorFlow, messenger, logger),
+						name: `${focusFlow.service}.${focusFlow.flow}=>${priorFlow.service}.${priorFlow.flow}`,
+					});
 				}
 				priorFlow = focusFlow;
 			}
-		}
-	}
-
-	/**
-	 * Awaken services and register the event processors.
-	 * @param from  Definition of a flow to listen to.
-	 * @param to    Definition of a flow to emit to.
-	 */
-	private register(from: FlowDefinition, to: FlowDefinition) {
-		try {
-			// Ensure that the adapters are running
-			const fromConstructor = JSON.parse(process.env[`SYNCBOT_${from.service.toUpperCase()}_CONSTRUCTOR_OBJECT`]);
-			const toConstructor = JSON.parse(process.env[`SYNCBOT_${to.service.toUpperCase()}_CONSTRUCTOR_OBJECT`]);
-			this.addServiceListener(from.service, fromConstructor);
-			this.addServiceEmitter(from.service, fromConstructor);
-			const listener = this.getListener(from.service);
-			this.addServiceEmitter(to.service, toConstructor);
-			if (listener) {
-				// Listen to and handle events
-				listener.registerEvent({
-					events: [this.getMessageService(from.service, fromConstructor).translateEventName('message')],
-					listenerMethod: this.createRouter(from, to),
-					name: `${from.service}:${from.flow}=>${to.service}:${to.flow}`,
-				});
-			}
-		} catch (error) {
-			this.logger.log(
-				LogLevel.WARN,
-				`Problem creating link from ${from.service} to ${to.service}: ${error.message}`,
-			);
-		}
-	}
-
-	/**
-	 * Create a function that will route a data payload to the specified room.
-	 * @param from  Definition of a flow to listen to.
-	 * @param to    Definition of a flow to emit to.
-	 * @returns     Function that routes the payload.
-	 */
-	private createRouter(from: FlowDefinition, to: FlowDefinition): ServiceListenerMethod {
-		// This function returns a function, watch out!
-		return (_registration: ServiceRegistration, data: ServiceEvent): Promise<void> => {
-			// Convert the raw payload from the listener into a more generic message object
-			return this.getMessageService(from.service).makeGeneric(data).then((generic) => {
-				// Check that the payload is in a flow we care about and not destined for somewhere it already is
-				if (generic.sourceIds.flow === from.flow
-					&& _.intersection([generic.source, generic.genesis], ['system', to.service]).length === 0
-				) {
-					// Transmute the receipt object into an intermediary form, providing flow id to initialise
-					const event = Messenger.initInterimContext(generic, to.service, {flow: to.flow});
-					// Attempt to find a connected thread
-					return this.useConnected(event, 'thread')
-					.then(() => {
-						// Attempt to find account details for the user
-						this.useConfiguredOrProvided(event, 'user')
-						.then(() => this.useHubOrGeneric(event, 'token'))
-						// Attempt to emit the event, massaging it first into a final form
-						.then(() => this.updateTags(event as TransmitContext))
-						.then(() => this.createComment(event as TransmitContext))
-						// Emit the status of the synchronise to console
-						.then(() => this.logSuccess(event as TransmitContext))
-						.catch((error: Error) => this.handleError(error, event));
-					})
-					.catch(() => {
-						// Attempt to find account details for the user
-						this.useConfiguredOrProvided(event, 'user')
-						.then(() => this.useHubOrGeneric(event, 'token'))
-						// Attempt to emit the event and record the connection
-						.then(() => this.createComment(event as TransmitContext))
-						.then(() => this.createConnection(event, 'thread'))
-						// Emit the status of the synchronise to console
-						.then(() => this.logSuccess(event as TransmitContext))
-						.catch((error: Error) => this.handleError(error, event));
-					});
-				}
-				// We have performed all appropriate routing, ie none
-				return Promise.resolve();
-			});
-		};
-	}
-
-	/**
-	 * Report an error back to the source of the event.
-	 * @param error  error to report.
-	 * @param event  source event that should be reflected into target context.
-	 */
-	private handleError(error: Error, event: InterimContext): void {
-		// Put this on the log service
-		this.logger.log(LogLevel.WARN, error.message);
-		this.logger.log(LogLevel.WARN, JSON.stringify(event), SyncBot.extractTokens(event));
-		// Create a message event to echo with the details
-		const echoEvent: InterimContext = {
-			action: MessengerAction.Create,
-			first: false,
-			genesis: 'system',
-			hidden: true,
-			source: 'system',
-			sourceIds: {
-				flow: '',
-				message: '',
-				thread: '',
-				user: '',
-			},
-			// Format the report for slight user-friendliness
-			text: `${event.to} reports \`${error.message}\``,
-			// Reflect the source as the to
-			to: event.source,
-			toIds: {
-				flow: event.sourceIds.flow,
-				thread: event.sourceIds.thread,
-			},
-		};
-		// Find the system account details
-		this.useSystem(echoEvent, 'user')
-		.then(() => this.useSystem(echoEvent, 'token'))
-		// Report the error
-		.then(() => this.createComment(echoEvent as TransmitContext))
-		.then(() => this.logSuccess(echoEvent as TransmitContext))
-		.catch((err) => this.logError(err, event));
-	}
-
-	/**
-	 * Retrieve or create a service that can understand the generic message format.
-	 * @param key   Name of the service to seek.
-	 * @param data  Instantiation data for the service.
-	 * @returns     Object which implements the generic message abstract.
-	 */
-	private getMessageService(key: string, data?: any): Messenger {
-		// Attempt to retrieve and return the existing messenger
-		const retrieved = this.messengers.get(key);
-		if (retrieved) {
-			return retrieved;
-		}
-		// Create, stash and return a new messenger
-		const service = require(`../services/${key}`);
-		const created = service.createMessageService(data);
-		this.messengers.set(key, created);
-		return created;
-	}
-
-	/**
-	 * Retrieve or create a data hub that can retrieve a user's data.
-	 * @param key   Name of the hub to seek.
-	 * @param data  Instantiation data for the hub.
-	 * @returns     Object which implements the data hub abstract.
-	 */
-	private getDataHub(key: string, data?: any): DataHub {
-		if (!this.hub) {
-			const service = require(`../services/${key}`);
-			this.hub = service.createDataHub(data);
-		}
-		return this.hub;
-	}
-
-	/**
-	 * Connect two threads with comments about each other.
-	 * @param event  Event with the two threads specified.
-	 * @param type   What to connect, must be thread.
-	 * @returns      Resolves when connection is stored.
-	 */
-	private createConnection(event: InterimContext, type: 'thread'): Promise<void> {
-		// Find details of the threads to pair
-		const sourceId = event.sourceIds.thread;
-		const toId = event.toIds.thread;
-		if (!sourceId || !toId) {
-			return Promise.reject(new Error(`Could not form ${type} connection`));
-		}
-		// Create a mutual common object for later tweaks
-		const genericEvent: InterimContext = {
-			action: MessengerAction.Create,
-			first: false,
-			genesis: 'system',
-			hidden: true,
-			source: 'system',
-			// System message, so not relevant
-			sourceIds: {
-				flow: '',
-				message: '',
-				thread: '',
-				user: '',
-			},
-			// These get adjusted before use
-			text: 'duff',
-			to: 'duff',
-			toIds: {},
-		};
-		// Clone and tweak to form requests for two services
-		const toEvent = _.cloneDeep(genericEvent);
-		toEvent.text = `[Connects to ${event.source} ${type} ${sourceId}](${event.sourceIds.url})`;
-		toEvent.to = event.to;
-		toEvent.toIds = event.toIds;
-		const fromEvent = _.cloneDeep(genericEvent);
-		fromEvent.text = `[Connects to ${event.to} ${type} ${toId}](${event.toIds.url})`;
-		fromEvent.to = event.source;
-		fromEvent.toIds = event.sourceIds;
-		// Dispatch these events, simplifying the resolutions
-		return Promise.all([
-			this.useSystem(fromEvent, 'user')
-			.then(() => this.useSystem(fromEvent, 'token'))
-			.then(() => this.createComment(fromEvent as TransmitContext))
-			.then(() => this.logSuccess(fromEvent as TransmitContext))
-			,
-			this.useSystem(toEvent, 'user')
-			.then(() => this.useSystem(toEvent, 'token'))
-			.then(() => this.createComment(toEvent as TransmitContext))
-			.then(() => this.logSuccess(toEvent as TransmitContext))
-		]).reduce(() => { /**/ });
-	}
-
-	/**
-	 * Pass a transmission context to the emitter.
-	 * @param event  Standardised transmission context to emit.
-	 * @returns      Promise that will resolve to the id of the created message.
-	 */
-	private createComment(event: TransmitContext): Promise<string> {
-		// Pass the event to the emitter
-		return this.getMessageService(event.to).makeSpecific(event).then((specific) => {
-			return this.dispatchToEmitter(event.to, specific)
-			.then((retVal) => {
-				// Store and return the created id
-				event.toIds.message = retVal.message;
-				event.toIds.thread = retVal.thread;
-				event.toIds.url = retVal.url;
-				return retVal.message;
-			});
-		});
-	}
-
-	/**
-	 * Pass a tag creation context to the emitter.
-	 * @param event  Standardised transmission context to emit.
-	 * @returns      Promise that will resolve once the tags are sent.
-	 */
-	private updateTags(event: TransmitContext): Promise<void> {
-		return this.getMessageService(event.to).makeTagUpdate(event).then((tagUpdate) => {
-			return this.dispatchToEmitter(event.to, tagUpdate);
-		});
-	}
-
-	/**
-	 * Record to the console some details from the event.
-	 * @param event  Event to record, will only pass on safe information.
-	 */
-	private logSuccess(event: TransmitContext): void {
-		const output = {source: event.source, title: event.title, text: event.text, target: event.to};
-		this.logger.log(LogLevel.INFO, `Synced: ${JSON.stringify(output)}`);
-	}
-
-	/**
-	 * This should be called when something really goes wrong, and in-app reports fail.
-	 * @param error  Error to report.
-	 * @param event  Event that caused the error.
-	 */
-	private logError(error: Error, event: InterimContext): void {
-		// Do what we can to make this event obvious in the logs
-		this.logger.log(LogLevel.WARN, 'v!!!v');
-		this.logger.log(LogLevel.WARN, error.message);
-		this.logger.log(LogLevel.WARN, JSON.stringify(event), SyncBot.extractTokens(event));
-		this.logger.log(LogLevel.WARN, '^!!!^');
-	}
-
-	private useHubOrGeneric(event: InterimContext, type: 'token'): Promise<string> {
-		return this.useHub(event, type)
-		.catch(() => this.useGeneric(event, type))
-		.catchThrow(new Error(`Could not find hub or generic ${type} for ${event.to}`));
-	}
-
-	/**
-	 * Use the configuration or the source data to provide the detail requested.
-	 * @param event  Event to scrutinise and mutate.
-	 * @param type   Property to search for, must be 'user'.
-	 * @returns      Resolves to the found property.
-	 */
-	private useConfiguredOrProvided(event: InterimContext, type: 'user'): Promise<string> {
-		return this.useConfigured(event, type)
-		.catch(() => this.useProvided(event, type))
-		.catchThrow(new Error(`Could not find configured or provided ${type} for ${event.to}`));
-	}
-
-	/**
-	 * Use the configuration to provide the detail requested.
-	 * @param event  Event to scrutinise and mutate.
-	 * @param type   Property to search for, must be 'user'.
-	 * @returns      Resolves to the found property.
-	 */
-	private useConfigured(event: InterimContext, type: 'user'): Promise<string> {
-		try {
-			const configuredUsernames = JSON.parse(process.env.SYNCBOT_ACCOUNTS_WITH_DIFFERING_USERNAMES);
-			const equivalence = _.find(configuredUsernames, (userDetails: {[key: string]: string}) => {
-				return userDetails[event.source] === event.sourceIds.user;
-			});
-			if (equivalence && equivalence[event.to]) {
-				event.toIds.user = equivalence[event.to];
-				return Promise.resolve(equivalence[event.to]);
-			}
-			return Promise.reject(new Error(`Could not find configured ${type} for ${event.to}`));
-		} catch (error) {
-			return Promise.reject(error);
-		}
-	}
-
-	/**
-	 * Use the source to provide the detail requested.
-	 * @param event  Event to scrutinise and mutate.
-	 * @param type   Property to search for, must be 'user'.
-	 * @returns      Resolves to the found property.
-	 */
-	private useProvided(event: InterimContext, type: 'user'): Promise<string> {
-		return new Promise<string>((resolve) => {
-			// Look in the existing object
-			if (!event.sourceIds[type]) {
-				throw new Error(`Could not find provided ${type} for ${event.to}`);
-			}
-			event.toIds[type] = event.sourceIds[type];
-			resolve(event.toIds[type]);
-		});
-	}
-
-	private useGeneric(event: InterimContext, type: 'user'|'token'): Promise<string> {
-		return new Promise<string>((resolve) => {
-			// Try to find the value specified
-			const to = event.to;
-			const genericAccounts = JSON.parse(process.env.SYNCBOT_GENERIC_AUTHOR_ACCOUNTS);
-			if (!genericAccounts[to] || !genericAccounts[to][type]) {
-				throw new Error(`Could not find generic ${type} for ${event.to}`);
-			}
-			event.toIds[type] = genericAccounts[to][type];
-			resolve(genericAccounts[to][type]);
-		});
-	}
-
-	/**
-	 * Use the environment SYNCBOT_SYSTEM_MESSAGE_ACCOUNTS to provide the detail requested.
-	 * @param event  Event to scrutinise and mutate.
-	 * @param type   Property to search for, must be 'user' or 'token'.
-	 * @returns      Resolves to the found property.
-	 */
-	private useSystem(event: InterimContext, type: 'user'|'token'): Promise<string> {
-		return new Promise<string>((resolve) => {
-			// Try to find the value specified
-			const to = event.to;
-			const systemAccounts = JSON.parse(process.env.SYNCBOT_SYSTEM_MESSAGE_ACCOUNTS);
-			if (!systemAccounts[to] || !systemAccounts[to][type]) {
-				throw new Error(`Could not find system ${type} for ${event.to}`);
-			}
-			event.toIds[type] = systemAccounts[to][type];
-			resolve(systemAccounts[to][type]);
-		});
-	}
-
-	/**
-	 * Use the thread history to provide the detail requested.
-	 * @param event  Event to scrutinise and mutate.
-	 * @param type   Property to search for, must be 'thread'.
-	 * @returns      Resolves to the found property.
-	 */
-	private useConnected(event: InterimContext, type: 'thread'): Promise<string> {
-		// Check the pretext; then capture the id text (roughly speaking include base64, exclude html tag)
-		const findBase = `Connects to ${event.to} ${type}`;
-		const findId = new RegExp(`${findBase} ([\\w\\d-+\\/=]+)`, 'i');
-		// Retrieve from the message service search a filtered thread history
-		const messageService = this.getMessageService(event.source);
-		return messageService.fetchNotes(event.sourceIds.thread, event.sourceIds.flow, findId, findBase)
-		.then((result) => {
-			// If we found any comments from the messageService, reduce them to the first id
-			const ids = result && result.length > 0 && result[0].match(findId);
-			if (ids && ids.length > 0) {
-				event.toIds.thread = ids[1];
-				return ids[1];
-			}
-			throw new Error(`Could not find connected ${type} for ${event.to}`);
-		});
-	}
-
-	/**
-	 * Use the hub service to provide the detail requested.
-	 * @param event  Event to scrutinise and mutate.
-	 * @param type   Property to search for, must be 'token'.
-	 * @returns      Resolves to the found property.
-	 */
-	private useHub(event: InterimContext, type: 'token'): Promise<string> {
-		let user: string | undefined = undefined;
-		if (event.source === process.env.SYNCBOT_HUB_SERVICE) {
-			user = event.sourceIds.user;
-		} else if (event.to === process.env.SYNCBOT_HUB_SERVICE) {
-			user = event.toIds.user;
-		}
-		if (user) {
-			try {
-				const hubName = process.env.SYNCBOT_HUB_SERVICE;
-				const hubConstructor = JSON.parse(process.env[`SYNCBOT_${hubName.toUpperCase()}_CONSTRUCTOR_OBJECT`]);
-				return this.getDataHub(hubName, hubConstructor).fetchValue(user, `${event.to} ${type}`)
-				.then((value) => {
-					event.toIds[type] = value;
-					return value;
-				})
-				.catch(() => {
-					throw new Error(`Could not find hub ${type} for ${event.to}`);
-				});
-			} catch (error) {
-				return Promise.reject(error);
-			}
-		} else {
-			return Promise.reject(new Error(`Could not find hub ${type} for ${event.to}`));
 		}
 	}
 }

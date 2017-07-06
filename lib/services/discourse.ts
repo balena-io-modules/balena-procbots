@@ -17,272 +17,93 @@
 import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import * as path from 'path';
+import { UrlOptions } from 'request';
 import * as request from 'request-promise';
-import { DiscourseConstructor, DiscourseEmitContext, DiscoursePost } from './discourse-types';
-import { Messenger } from './messenger';
+import { RequestPromiseOptions } from 'request-promise';
 import {
-	MessengerAction, MessengerEmitResponse, MessengerEvent, ReceiptContext, TransmitContext
-} from './messenger-types';
-import { ServiceEmitter, ServiceListener } from './service-types';
+	DiscourseConstructor, DiscourseEmitContext, DiscourseHandle,
+	DiscourseListenerConstructor, DiscourseResponse,
+} from './discourse-types';
+import { ServiceScaffold } from './service-scaffold';
+import { ServiceScaffoldEvent } from './service-scaffold-types';
+import { ServiceEmitter, ServiceListener, ServiceType } from './service-types';
 
-export class DiscourseService extends Messenger implements ServiceListener, ServiceEmitter {
+/**
+ * A ProcBot service for interacting with the Discourse API
+ */
+export class DiscourseService extends ServiceScaffold<string> implements ServiceListener, ServiceEmitter {
 	private static _serviceName = path.basename(__filename.split('.')[0]);
 	// There are circumstances in which the discourse web-hook will fire twice for the same post, so track.
-	private receivedPostIds = new Set<number>();
-	private data: DiscourseConstructor;
+	private postsSynced = new Set<number>();
+	private connectionDetails: DiscourseConstructor;
 
-	public constructor(data: DiscourseConstructor, listen = true) {
-		super(listen);
-		this.data = data;
-	}
-
-	/**
-	 * Promise to turn the data enqueued into a generic message format.
-	 * @param data  Raw data from the enqueue, remembering this is as dumb and quick as possible.
-	 * @returns     A promise that resolves to the generic form of the event.
-	 */
-	public makeGeneric = (data: MessengerEvent): Promise<ReceiptContext> => {
-		// Encode once the common parts of a request
-		const getGeneric = {
-			json: true,
-			method: 'GET',
-			qs: {
-				api_key: this.data.token,
-				api_username: this.data.username,
-			},
-			// appended before execution
-			uri: `https://${this.data.instance}`,
-		};
-		// Gather more complete details of the enqueued event
-		const getPost = _.cloneDeep(getGeneric);
-		getPost.uri += `/posts/${data.rawEvent.id}`;
-		const getTopic = _.cloneDeep(getGeneric);
-		getTopic.uri += `/t/${data.rawEvent.topic_id}`;
-		return Promise.props({
-			post: request(getPost),
-			topic: request(getTopic),
-		})
-		.then((details: {post: any, topic: any}) => {
-			// Gather metadata and resolve
-			const metadata = Messenger.extractMetadata(details.post.raw, 'img');
-			const first = details.post.post_number === 1;
-			return {
-				action: MessengerAction.Create,
-				first,
-				genesis: metadata.genesis || data.source,
-				// post_type 4 seems to correspond to whisper
-				hidden: first ? !details.topic.visible : details.post.post_type === 4,
-				source: DiscourseService._serviceName,
-				sourceIds: {
-					// These come in as integers, but should be strings
-					flow: details.topic.category_id.toString(),
-					message: details.post.id.toString(),
-					thread: details.post.topic_id.toString(),
-					url: getTopic.uri,
-					user: details.post.username,
-				},
-				tags: details.topic.tags,
-				text: metadata.content,
-				title: details.topic.title,
-			};
-		});
-	}
-
-	/**
-	 * Promise to turn the generic message format into a specific form to be emitted.
-	 * @param data  Generic message format object to be encoded.
-	 * @returns     Promise that resolves to the emit suitable form.
-	 */
-	public makeSpecific = (data: TransmitContext): Promise<DiscourseEmitContext> => {
-		// Attempt to find the thread ID to know if this is a new topic or not
-		const topicId = data.toIds.thread;
-		const footer = `${Messenger.stringifyMetadata(data, 'img')} ${Messenger.messageOfTheDay()}`;
-		const raw = `${data.text}\n\n---${footer}\n`;
-		const endpoint = {
-			method: 'POST',
-			qs: {
-				api_key: data.toIds.token,
-				api_username: data.toIds.user,
-			},
-			url: `https://${this.data.instance}/posts`,
-		};
-		if (!topicId) {
-			const title = data.title;
-			if (!title) {
-				throw new Error('Cannot create Discourse Thread without a title');
-			}
-			// A new topic request for discourse
-			return new Promise<DiscourseEmitContext>((resolve) => {
-				resolve({
-					endpoint,
-					payload: {
-						category: data.toIds.flow,
-						raw,
-						'tags[]': data.tags,
-						title,
-						unlist_topic: data.hidden ? 'true' : 'false',
-					}
-				});
-			});
-		}
-		// A new message request for discourse
-		return new Promise<DiscourseEmitContext>((resolve) => {
-			resolve({
-				endpoint,
-				payload: {
-					raw,
-					topic_id: topicId,
-					whisper: data.hidden ? 'true' : 'false',
-				},
-			});
-		});
-	}
-
-	// This was created on an out-of-date understanding of how things should be structured.
-	// TODO: It should be migrated as part of https://github.com/resin-io-modules/resin-procbots/issues/173
-	/**
-	 * Promise to turn the generic message format into a tag update to be emitted.
-	 * @param data  Generic message format object to be encoded.
-	 * @returns     Promise that resolves to the tag update object.
-	 */
-	public makeTagUpdate = (data: TransmitContext): Promise<DiscourseEmitContext> => {
-		const topicId = data.toIds.thread;
-		if (!topicId) {
-			throw new Error('Cannot update tags without specifying thread');
-		}
-		// Updating tags requires the topic slug, so first we're going to GET details of the topic
-		return request({
-			json: true,
-			method: 'GET',
-			qs: {
-				api_key: data.toIds.token,
-				api_username: data.toIds.user,
-			},
-			url: `https://${this.data.instance}/t/${topicId}.json`,
-		}).then((response) => {
-			return {
-				endpoint: {
-					method: 'PUT',
-					qs: {
-						api_key: data.toIds.token,
-						api_username: data.toIds.user,
-						'tags[]': data.tags ? data.tags : [],
-					},
-					url: `https://${this.data.instance}/t/${response.slug}/${topicId}.json`,
-				},
-				payload: {},
-			};
-		});
-	}
-
-	/**
-	 * Turns the generic, messenger, name for an event into a specific trigger name for this class.
-	 * @param eventType  Name of the event to translate, eg 'message'.
-	 * @returns          This class's equivalent, eg 'post'.
-	 */
-	public translateEventName(eventType: string): string {
-		const equivalents: {[key: string]: string} = {
-			message: 'post',
-		};
-		return equivalents[eventType];
-	}
-
-	/**
-	 * Promise to find the first page of comment history of a particular thread.
-	 * Will prompt the API to perform some short-listing if the regex begins with some key words.
-	 * @param thread  id of the thread to search.
-	 * @param _room   id of the room in which the thread resides.
-	 * @param filter  Criteria to match.
-	 */
-	public fetchNotes = (thread: string, _room: string, filter: RegExp): Promise<string[]> => {
-		const firstWords = filter.source.match(/^([\w\s]+)/i);
-		// Query the API
-		const getThread = firstWords ? {
-			json: true,
-			method: 'GET',
-			qs: {
-				api_key: this.data.token,
-				api_username: this.data.username,
-				term: firstWords[1],
-				'search_context[type]': 'topic',
-				'search_context[id]': thread,
-			},
-			uri: `https://${this.data.instance}/search/query`,
-		} : {
-			json: true,
-			method: 'GET',
-			qs: {
-				api_key: this.data.token,
-				api_username: this.data.username,
-			},
-			uri: `https://${this.data.instance}/t/${thread}`,
-		};
-		return request(getThread).then((threadObject) => {
-			return _.map(firstWords ? threadObject.posts : threadObject.post_stream.posts, (item: DiscoursePost) => {
-				// Clean the response down to only the text
-				return item.cooked;
-			}).filter((value: string) => {
-				// Filter the response down to only matches
-				const match = value.match(filter);
-				return match !== null && match.length > 0;
-			});
-		});
-	}
-
-	/**
-	 * Activate this service as a listener.
-	 */
-	protected activateMessageListener = (): void => {
-		// Create an endpoint for this listener and protect against double-web-hooks
-		Messenger.expressApp.post(`/${DiscourseService._serviceName}/`, (formData, response) => {
-			if (!this.receivedPostIds.has(formData.body.post.id)) {
-				this.receivedPostIds.add(formData.body.post.id);
-				// Enqueue the event as simply as possible
-				this.queueEvent({
-					data: {
-						cookedEvent: {
-							context: formData.body.post.topic_id,
-							type: 'post',
-						},
+	constructor(data: DiscourseConstructor | DiscourseListenerConstructor) {
+		super(data);
+		// #203: Verify connection data
+		this.connectionDetails = data;
+		if (data.type === ServiceType.Listener) {
+			const listenerData = <DiscourseListenerConstructor>data;
+			// Register our enqueue action for when the express instance receives a web-hook
+			this.registerHandler(listenerData.path || DiscourseService._serviceName, (formData, response) => {
+				// Check this event is new
+				if (!this.postsSynced.has(formData.body.post.id)) {
+					this.postsSynced.add(formData.body.post.id);
+					this.queueData({
+						context: formData.body.post.topic_id,
+						cookedEvent: {},
+						type: formData.headers['x-discourse-event'],
 						rawEvent: formData.body.post,
 						source: DiscourseService._serviceName,
-					},
-					workerMethod: this.handleEvent,
-				});
-			}
-			// Thank you, bye-bye
-			response.sendStatus(200);
-		});
+					});
+					response.sendStatus(200);
+				}
+			});
+		}
 	}
 
 	/**
-	 * Deliver the payload to the service. Sourcing the relevant context has already been performed.
-	 * @param data  The object to be delivered to the service.
-	 * @returns     Response from the service endpoint.
+	 * Promise to deliver the payload to the API.
+	 * @param  requestOptions Payload to be delivered, in `request` format.
+	 * @returns Promise that resolves to the response from the API call.
 	 */
-	protected sendPayload = (data: DiscourseEmitContext): Promise<MessengerEmitResponse> => {
-		// Build and send a request to the API endpoint
+	public request(requestOptions: UrlOptions & RequestPromiseOptions): Promise<DiscourseResponse> {
+		// This type massages request-promise into bluebird
+		return request(requestOptions).promise();
+	}
+
+	/**
+	 * Actually emit the data to the API.
+	 * Extracting the context will have been done by the serviceScaffold.
+	 * @param context  Context to be emitted
+	 * @returns        Promise that resolves to the API response
+	 */
+	protected emitData(context: DiscourseEmitContext): Promise<DiscourseResponse> {
+		// Inject credentials into the provided querystring
+		const qs = {
+			api_key: this.connectionDetails.token,
+			api_username: this.connectionDetails.username,
+		};
+		_.merge(qs, context.data.qs);
+		// Massage and send the context
 		const requestOptions = {
-			body: data.payload,
+			body: context.data.body,
 			json: true,
-			method: data.endpoint.method,
-			qs: data.endpoint.qs,
+			qs,
 			qsStringifyOptions: {
 				arrayFormat: 'repeat',
 			},
-			url: data.endpoint.url,
+			url: `https://${this.connectionDetails.instance}${context.data.path}`,
+			method: context.data.htmlVerb,
 		};
-		return request(requestOptions).then((resData) => {
-			// Translate the response from the API back into the message service
-			return {
-				response: {
-					message: resData.id,
-					thread: resData.topic_id,
-					url: `https://${this.data.instance}/t/${resData.topic_id}`
-				},
-				source: DiscourseService._serviceName,
-			};
-		});
+		return context.method(requestOptions);
+	}
+
+	/**
+		* Verify the event before enqueueing.  For now uses the naive approach of returning true.
+		*/
+	protected verify(_data: ServiceScaffoldEvent): boolean {
+		// #202: This to be properly implemented.
+		return true;
 	}
 
 	/**
@@ -297,8 +118,10 @@ export class DiscourseService extends Messenger implements ServiceListener, Serv
 	 * Retrieve Discourse API SDK handle (currently none).
 	 * @returns void (currently no Discourse SDK API handle).
 	 */
-	get apiHandle(): void {
-		return;
+	get apiHandle(): DiscourseHandle {
+		return {
+			discourse: this,
+		};
 	}
 }
 
@@ -306,8 +129,8 @@ export class DiscourseService extends Messenger implements ServiceListener, Serv
  * Build this class, typed and activated as a listener.
  * @returns  Service Listener object, awakened and ready to go.
  */
-export function createServiceListener(data: DiscourseConstructor): ServiceListener {
-	return new DiscourseService(data, true);
+export function createServiceListener(data: DiscourseListenerConstructor): ServiceListener {
+	return new DiscourseService(data);
 }
 
 /**
@@ -315,13 +138,5 @@ export function createServiceListener(data: DiscourseConstructor): ServiceListen
  * @returns  Service Emitter object, ready for your events.
  */
 export function createServiceEmitter(data: DiscourseConstructor): ServiceEmitter {
-	return new DiscourseService(data, false);
-}
-
-/**
- * Build this class, typed as a message service.
- * @returns  Message Service object, ready to convert events.
- */
-export function createMessageService(data: DiscourseConstructor): Messenger {
-	return new DiscourseService(data, false);
+	return new DiscourseService(data);
 }

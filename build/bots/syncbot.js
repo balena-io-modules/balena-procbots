@@ -4,292 +4,249 @@ const Promise = require("bluebird");
 const _ = require("lodash");
 const procbot_1 = require("../framework/procbot");
 const messenger_1 = require("../services/messenger");
-const messenger_types_1 = require("../services/messenger-types");
+const datahub_1 = require("../services/messenger/datahubs/datahub");
 const logger_1 = require("../utils/logger");
 class SyncBot extends procbot_1.ProcBot {
+    static makeRouter(from, to, messenger, logger) {
+        return (_registration, event) => {
+            const data = event.cookedEvent;
+            if (from.service === data.source.service &&
+                from.flow === data.source.flow &&
+                !_.includes(['system', to.service], data.details.genesis)) {
+                const text = data.details.text;
+                logger.log(logger_1.LogLevel.INFO, `---> Heard '${text}' on ${from.service}.`);
+                return SyncBot.readConnectedThread(to, messenger, data)
+                    .then((threadDetails) => {
+                    const threadId = _.get(threadDetails, 'response.thread', false);
+                    if (threadId) {
+                        return SyncBot.createComment({
+                            service: to.service, flow: to.flow, thread: threadId,
+                        }, messenger, data)
+                            .then((emitResponse) => {
+                            return {
+                                response: {
+                                    thread: threadId,
+                                },
+                                source: emitResponse.source,
+                            };
+                        });
+                    }
+                    return SyncBot.createThreadAndConnect(to, messenger, data);
+                })
+                    .then((emitResponse) => {
+                    const threadId = _.get(emitResponse, 'response.thread', false);
+                    if (threadId && data.details.tags) {
+                        return SyncBot.updateTags({
+                            service: to.service,
+                            flow: to.flow,
+                            thread: threadId,
+                        }, messenger, data);
+                    }
+                    return emitResponse;
+                })
+                    .then(() => {
+                    logger.log(logger_1.LogLevel.INFO, `---> Emitted '${text}' to ${to.service}.`);
+                });
+            }
+            return Promise.resolve();
+        };
+    }
+    static updateTags(to, messenger, data) {
+        const updateTags = {
+            action: 3,
+            details: data.details,
+            source: data.source,
+            target: {
+                flow: to.flow,
+                service: to.service,
+                thread: to.thread,
+                username: process.env.SYNCBOT_NAME,
+            },
+        };
+        return messenger.sendData({
+            contexts: {
+                messenger: updateTags,
+            },
+            source: 'syncbot',
+        });
+    }
+    static createComment(to, messenger, data) {
+        const createComment = {
+            action: 1,
+            details: data.details,
+            source: data.source,
+            target: {
+                flow: to.flow,
+                service: to.service,
+                thread: to.thread,
+                username: data.source.username,
+            },
+        };
+        return messenger.sendData({
+            contexts: {
+                messenger: createComment,
+            },
+            source: 'syncbot',
+        });
+    }
+    static readConnectedThread(to, messenger, data) {
+        const readConnection = {
+            action: 2,
+            details: data.details,
+            source: {
+                flow: to.flow,
+                message: 'duff',
+                service: to.service,
+                thread: 'duff',
+                username: process.env.SYNCBOT_NAME,
+            },
+            target: {
+                flow: data.source.flow,
+                service: data.source.service,
+                thread: data.source.thread,
+                username: process.env.SYNCBOT_NAME,
+            },
+        };
+        return messenger.sendData({
+            contexts: {
+                messenger: readConnection,
+            },
+            source: 'syncbot',
+        });
+    }
+    static createThreadAndConnect(to, messenger, data) {
+        const createThread = {
+            action: 0,
+            details: data.details,
+            source: data.source,
+            target: {
+                flow: to.flow,
+                service: to.service,
+                username: data.source.username,
+            },
+        };
+        return messenger.sendData({
+            contexts: {
+                messenger: createThread,
+            },
+            source: 'syncbot',
+        }).then((emitResponse) => {
+            const response = emitResponse.response;
+            if (response) {
+                const genericConnect = {
+                    action: 1,
+                    details: {
+                        genesis: 'system',
+                        handle: process.env.SYNCBOT_NAME,
+                        hidden: true,
+                        internal: true,
+                        tags: data.details.tags,
+                        text: 'Connects to ',
+                        title: data.details.title,
+                    },
+                    source: {
+                        message: 'duff',
+                        thread: 'duff',
+                        flow: 'duff',
+                        service: 'system',
+                        username: 'duff',
+                    },
+                    target: {
+                        flow: 'duff',
+                        service: 'duff',
+                        username: process.env.SYNCBOT_NAME,
+                        thread: 'duff'
+                    }
+                };
+                const updateOriginating = _.cloneDeep(genericConnect);
+                updateOriginating.target = {
+                    flow: data.source.flow,
+                    service: data.source.service,
+                    username: process.env.SYNCBOT_NAME,
+                    thread: data.source.thread,
+                };
+                updateOriginating.details.text += `[${createThread.target.service} thread ${response.thread}](${response.url})`;
+                const updateCreated = _.cloneDeep(genericConnect);
+                updateCreated.target = {
+                    flow: createThread.target.flow,
+                    service: createThread.target.service,
+                    username: process.env.SYNCBOT_NAME,
+                    thread: response.thread,
+                };
+                updateCreated.details.text += `[${data.source.service} thread ${data.source.thread}](${data.source.url})`;
+                return Promise.all([
+                    messenger.sendData({ contexts: { messenger: updateOriginating }, source: 'syncbot' }),
+                    messenger.sendData({ contexts: { messenger: updateCreated }, source: 'syncbot' }),
+                ]).return(emitResponse);
+            }
+            return Promise.resolve(emitResponse);
+        });
+    }
+    static makeDataHubs() {
+        let dataHubArray = [];
+        try {
+            dataHubArray = JSON.parse(process.env.SYNCBOT_DATAHUB_CONSTRUCTORS);
+        }
+        catch (error) {
+            throw new Error('SYNCBOT_DATAHUB_CONSTRUCTORS not a valid JSON array.');
+        }
+        const dataHubs = _.map(dataHubArray, (constructor, type) => {
+            return datahub_1.createDataHub(type, constructor);
+        });
+        if (dataHubs) {
+            return dataHubs;
+        }
+        throw new Error('Could not create dataHubs.');
+    }
+    static makeMessenger() {
+        let listenerConstructors = [];
+        try {
+            listenerConstructors = JSON.parse(process.env.SYNCBOT_LISTENER_CONSTRUCTORS);
+        }
+        catch (error) {
+            throw new Error('SYNCBOT_LISTENER_CONSTRUCTORS not a valid JSON array.');
+        }
+        const messenger = new messenger_1.MessengerService({
+            dataHubs: SyncBot.makeDataHubs(),
+            server: parseInt(process.env.SYNCBOT_PORT, 10),
+            subServices: listenerConstructors,
+            type: 0,
+        });
+        if (messenger) {
+            return messenger;
+        }
+        throw new Error('Could not create Messenger.');
+    }
+    static makeMappings() {
+        try {
+            return JSON.parse(process.env.SYNCBOT_MAPPINGS);
+        }
+        catch (error) {
+            throw new Error('SYNCBOT_MAPPINGS not a valid JSON array.');
+        }
+    }
     constructor(name = 'SyncBot') {
         super(name);
-        this.messengers = new Map();
-        const mappings = JSON.parse(process.env.SYNCBOT_MAPPINGS);
+        const logger = new logger_1.Logger();
+        const messenger = SyncBot.makeMessenger();
+        const mappings = SyncBot.makeMappings();
         for (const mapping of mappings) {
             let priorFlow = null;
             for (const focusFlow of mapping) {
                 if (priorFlow) {
-                    this.register(priorFlow, focusFlow);
-                    this.register(focusFlow, priorFlow);
+                    messenger.registerEvent({
+                        events: ['message'],
+                        listenerMethod: SyncBot.makeRouter(priorFlow, focusFlow, messenger, logger),
+                        name: `${priorFlow.service}.${priorFlow.flow}=>${focusFlow.service}.${focusFlow.flow}`,
+                    });
+                    messenger.registerEvent({
+                        events: ['message'],
+                        listenerMethod: SyncBot.makeRouter(focusFlow, priorFlow, messenger, logger),
+                        name: `${focusFlow.service}.${focusFlow.flow}=>${priorFlow.service}.${priorFlow.flow}`,
+                    });
                 }
                 priorFlow = focusFlow;
             }
-        }
-    }
-    static extractTokens(event) {
-        const secrets = [];
-        if (event.toIds.token) {
-            secrets.push(event.toIds.token);
-        }
-        if (event.sourceIds.token) {
-            secrets.push(event.sourceIds.token);
-        }
-        return secrets;
-    }
-    register(from, to) {
-        try {
-            const fromConstructor = JSON.parse(process.env[`SYNCBOT_${from.service.toUpperCase()}_CONSTRUCTOR_OBJECT`]);
-            const toConstructor = JSON.parse(process.env[`SYNCBOT_${to.service.toUpperCase()}_CONSTRUCTOR_OBJECT`]);
-            this.addServiceListener(from.service, fromConstructor);
-            this.addServiceEmitter(from.service, fromConstructor);
-            const listener = this.getListener(from.service);
-            this.addServiceEmitter(to.service, toConstructor);
-            if (listener) {
-                listener.registerEvent({
-                    events: [this.getMessageService(from.service, fromConstructor).translateEventName('message')],
-                    listenerMethod: this.createRouter(from, to),
-                    name: `${from.service}:${from.flow}=>${to.service}:${to.flow}`,
-                });
-            }
-        }
-        catch (error) {
-            this.logger.log(logger_1.LogLevel.WARN, `Problem creating link from ${from.service} to ${to.service}: ${error.message}`);
-        }
-    }
-    createRouter(from, to) {
-        return (_registration, data) => {
-            return this.getMessageService(from.service).makeGeneric(data).then((generic) => {
-                if (generic.sourceIds.flow === from.flow
-                    && _.intersection([generic.source, generic.genesis], ['system', to.service]).length === 0) {
-                    const event = messenger_1.Messenger.initInterimContext(generic, to.service, { flow: to.flow });
-                    return this.useConnected(event, 'thread')
-                        .then(() => {
-                        this.useConfiguredOrProvided(event, 'user')
-                            .then(() => this.useHubOrGeneric(event, 'token'))
-                            .then(() => this.updateTags(event))
-                            .then(() => this.createComment(event))
-                            .then(() => this.logSuccess(event))
-                            .catch((error) => this.handleError(error, event));
-                    })
-                        .catch(() => {
-                        this.useConfiguredOrProvided(event, 'user')
-                            .then(() => this.useHubOrGeneric(event, 'token'))
-                            .then(() => this.createComment(event))
-                            .then(() => this.createConnection(event, 'thread'))
-                            .then(() => this.logSuccess(event))
-                            .catch((error) => this.handleError(error, event));
-                    });
-                }
-                return Promise.resolve();
-            });
-        };
-    }
-    handleError(error, event) {
-        this.logger.log(logger_1.LogLevel.WARN, error.message);
-        this.logger.log(logger_1.LogLevel.WARN, JSON.stringify(event), SyncBot.extractTokens(event));
-        const echoEvent = {
-            action: messenger_types_1.MessengerAction.Create,
-            first: false,
-            genesis: 'system',
-            hidden: true,
-            source: 'system',
-            sourceIds: {
-                flow: '',
-                message: '',
-                thread: '',
-                user: '',
-            },
-            text: `${event.to} reports \`${error.message}\``,
-            to: event.source,
-            toIds: {
-                flow: event.sourceIds.flow,
-                thread: event.sourceIds.thread,
-            },
-        };
-        this.useSystem(echoEvent, 'user')
-            .then(() => this.useSystem(echoEvent, 'token'))
-            .then(() => this.createComment(echoEvent))
-            .then(() => this.logSuccess(echoEvent))
-            .catch((err) => this.logError(err, event));
-    }
-    getMessageService(key, data) {
-        const retrieved = this.messengers.get(key);
-        if (retrieved) {
-            return retrieved;
-        }
-        const service = require(`../services/${key}`);
-        const created = service.createMessageService(data);
-        this.messengers.set(key, created);
-        return created;
-    }
-    getDataHub(key, data) {
-        if (!this.hub) {
-            const service = require(`../services/${key}`);
-            this.hub = service.createDataHub(data);
-        }
-        return this.hub;
-    }
-    createConnection(event, type) {
-        const sourceId = event.sourceIds.thread;
-        const toId = event.toIds.thread;
-        if (!sourceId || !toId) {
-            return Promise.reject(new Error(`Could not form ${type} connection`));
-        }
-        const genericEvent = {
-            action: messenger_types_1.MessengerAction.Create,
-            first: false,
-            genesis: 'system',
-            hidden: true,
-            source: 'system',
-            sourceIds: {
-                flow: '',
-                message: '',
-                thread: '',
-                user: '',
-            },
-            text: 'duff',
-            to: 'duff',
-            toIds: {},
-        };
-        const toEvent = _.cloneDeep(genericEvent);
-        toEvent.text = `[Connects to ${event.source} ${type} ${sourceId}](${event.sourceIds.url})`;
-        toEvent.to = event.to;
-        toEvent.toIds = event.toIds;
-        const fromEvent = _.cloneDeep(genericEvent);
-        fromEvent.text = `[Connects to ${event.to} ${type} ${toId}](${event.toIds.url})`;
-        fromEvent.to = event.source;
-        fromEvent.toIds = event.sourceIds;
-        return Promise.all([
-            this.useSystem(fromEvent, 'user')
-                .then(() => this.useSystem(fromEvent, 'token'))
-                .then(() => this.createComment(fromEvent))
-                .then(() => this.logSuccess(fromEvent)),
-            this.useSystem(toEvent, 'user')
-                .then(() => this.useSystem(toEvent, 'token'))
-                .then(() => this.createComment(toEvent))
-                .then(() => this.logSuccess(toEvent))
-        ]).reduce(() => { });
-    }
-    createComment(event) {
-        return this.getMessageService(event.to).makeSpecific(event).then((specific) => {
-            return this.dispatchToEmitter(event.to, specific)
-                .then((retVal) => {
-                event.toIds.message = retVal.message;
-                event.toIds.thread = retVal.thread;
-                event.toIds.url = retVal.url;
-                return retVal.message;
-            });
-        });
-    }
-    updateTags(event) {
-        return this.getMessageService(event.to).makeTagUpdate(event).then((tagUpdate) => {
-            return this.dispatchToEmitter(event.to, tagUpdate);
-        });
-    }
-    logSuccess(event) {
-        const output = { source: event.source, title: event.title, text: event.text, target: event.to };
-        this.logger.log(logger_1.LogLevel.INFO, `Synced: ${JSON.stringify(output)}`);
-    }
-    logError(error, event) {
-        this.logger.log(logger_1.LogLevel.WARN, 'v!!!v');
-        this.logger.log(logger_1.LogLevel.WARN, error.message);
-        this.logger.log(logger_1.LogLevel.WARN, JSON.stringify(event), SyncBot.extractTokens(event));
-        this.logger.log(logger_1.LogLevel.WARN, '^!!!^');
-    }
-    useHubOrGeneric(event, type) {
-        return this.useHub(event, type)
-            .catch(() => this.useGeneric(event, type))
-            .catchThrow(new Error(`Could not find hub or generic ${type} for ${event.to}`));
-    }
-    useConfiguredOrProvided(event, type) {
-        return this.useConfigured(event, type)
-            .catch(() => this.useProvided(event, type))
-            .catchThrow(new Error(`Could not find configured or provided ${type} for ${event.to}`));
-    }
-    useConfigured(event, type) {
-        try {
-            const configuredUsernames = JSON.parse(process.env.SYNCBOT_ACCOUNTS_WITH_DIFFERING_USERNAMES);
-            const equivalence = _.find(configuredUsernames, (userDetails) => {
-                return userDetails[event.source] === event.sourceIds.user;
-            });
-            if (equivalence && equivalence[event.to]) {
-                event.toIds.user = equivalence[event.to];
-                return Promise.resolve(equivalence[event.to]);
-            }
-            return Promise.reject(new Error(`Could not find configured ${type} for ${event.to}`));
-        }
-        catch (error) {
-            return Promise.reject(error);
-        }
-    }
-    useProvided(event, type) {
-        return new Promise((resolve) => {
-            if (!event.sourceIds[type]) {
-                throw new Error(`Could not find provided ${type} for ${event.to}`);
-            }
-            event.toIds[type] = event.sourceIds[type];
-            resolve(event.toIds[type]);
-        });
-    }
-    useGeneric(event, type) {
-        return new Promise((resolve) => {
-            const to = event.to;
-            const genericAccounts = JSON.parse(process.env.SYNCBOT_GENERIC_AUTHOR_ACCOUNTS);
-            if (!genericAccounts[to] || !genericAccounts[to][type]) {
-                throw new Error(`Could not find generic ${type} for ${event.to}`);
-            }
-            event.toIds[type] = genericAccounts[to][type];
-            resolve(genericAccounts[to][type]);
-        });
-    }
-    useSystem(event, type) {
-        return new Promise((resolve) => {
-            const to = event.to;
-            const systemAccounts = JSON.parse(process.env.SYNCBOT_SYSTEM_MESSAGE_ACCOUNTS);
-            if (!systemAccounts[to] || !systemAccounts[to][type]) {
-                throw new Error(`Could not find system ${type} for ${event.to}`);
-            }
-            event.toIds[type] = systemAccounts[to][type];
-            resolve(systemAccounts[to][type]);
-        });
-    }
-    useConnected(event, type) {
-        const findBase = `Connects to ${event.to} ${type}`;
-        const findId = new RegExp(`${findBase} ([\\w\\d-+\\/=]+)`, 'i');
-        const messageService = this.getMessageService(event.source);
-        return messageService.fetchNotes(event.sourceIds.thread, event.sourceIds.flow, findId, findBase)
-            .then((result) => {
-            const ids = result && result.length > 0 && result[0].match(findId);
-            if (ids && ids.length > 0) {
-                event.toIds.thread = ids[1];
-                return ids[1];
-            }
-            throw new Error(`Could not find connected ${type} for ${event.to}`);
-        });
-    }
-    useHub(event, type) {
-        let user = undefined;
-        if (event.source === process.env.SYNCBOT_HUB_SERVICE) {
-            user = event.sourceIds.user;
-        }
-        else if (event.to === process.env.SYNCBOT_HUB_SERVICE) {
-            user = event.toIds.user;
-        }
-        if (user) {
-            try {
-                const hubName = process.env.SYNCBOT_HUB_SERVICE;
-                const hubConstructor = JSON.parse(process.env[`SYNCBOT_${hubName.toUpperCase()}_CONSTRUCTOR_OBJECT`]);
-                return this.getDataHub(hubName, hubConstructor).fetchValue(user, `${event.to} ${type}`)
-                    .then((value) => {
-                    event.toIds[type] = value;
-                    return value;
-                })
-                    .catch(() => {
-                    throw new Error(`Could not find hub ${type} for ${event.to}`);
-                });
-            }
-            catch (error) {
-                return Promise.reject(error);
-            }
-        }
-        else {
-            return Promise.reject(new Error(`Could not find hub ${type} for ${event.to}`));
         }
     }
 }
