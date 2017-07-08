@@ -11,10 +11,10 @@ botBody: addListener | addEmitter | requestServiceEvents | listenerMethod | list
 
 // Add a ServiceListener, with appropriate constructor.
 // Any options are set as an object or a variable declaring an object.
-addListener: setIdAs? EVENT RECEIVER FROM serviceName (object | variable)?;
+addListener: setServiceAs? EVENT RECEIVER FROM serviceName (object | variable)?;
 
 // Add a ServiceEmitter, with appropriate constructor.
-addEmitter: setIdAs? SEND QUERIES TO serviceName (object | variable)?;
+addEmitter: setServiceAs? SEND QUERIES TO serviceName (object | variable)?;
 
 // Request an event for a listener.
 requestServiceEvents: SEND events EVENTS FROM serviceName TO ID;
@@ -22,7 +22,7 @@ requestServiceEvents: SEND events EVENTS FROM serviceName TO ID;
 // Event registration is a block with an array of event names and a listener.
 events: '[' ID (',' ID)* ']';
 
-setIdAs: SET ID AS;
+setServiceAs: SET ID AS;
 setIdFrom: SET ID FROM;
 
 // Listener methods.
@@ -77,7 +77,7 @@ method: variable '(' methodList* ')';
 methodList: expr (',' expr)*;
 stringMethod: STRING '.' method;
 
-// Type rules.
+// Type rules.§
 envvar: 'envar' ID;
 
 // Keywords

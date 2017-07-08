@@ -206,7 +206,7 @@ class RASPParser extends Parser_1.Parser {
                 if (_la === RASPParser.SET) {
                     {
                         this.state = 86;
-                        this.setIdAs();
+                        this.setServiceAs();
                     }
                 }
                 this.state = 89;
@@ -263,7 +263,7 @@ class RASPParser extends Parser_1.Parser {
                 if (_la === RASPParser.SET) {
                     {
                         this.state = 97;
-                        this.setIdAs();
+                        this.setServiceAs();
                     }
                 }
                 this.state = 100;
@@ -390,9 +390,9 @@ class RASPParser extends Parser_1.Parser {
         }
         return _localctx;
     }
-    setIdAs() {
-        let _localctx = new SetIdAsContext(this._ctx, this.state);
-        this.enterRule(_localctx, 14, RASPParser.RULE_setIdAs);
+    setServiceAs() {
+        let _localctx = new SetServiceAsContext(this._ctx, this.state);
+        this.enterRule(_localctx, 14, RASPParser.RULE_setServiceAs);
         try {
             this.enterOuterAlt(_localctx, 1);
             {
@@ -1585,7 +1585,7 @@ RASPParser.RULE_addListener = 3;
 RASPParser.RULE_addEmitter = 4;
 RASPParser.RULE_requestServiceEvents = 5;
 RASPParser.RULE_events = 6;
-RASPParser.RULE_setIdAs = 7;
+RASPParser.RULE_setServiceAs = 7;
 RASPParser.RULE_setIdFrom = 8;
 RASPParser.RULE_listenerMethod = 9;
 RASPParser.RULE_listenerEventReceiver = 10;
@@ -1610,7 +1610,7 @@ RASPParser.RULE_stringMethod = 28;
 RASPParser.RULE_envvar = 29;
 RASPParser.ruleNames = [
     "init", "botDefinition", "botBody", "addListener", "addEmitter", "requestServiceEvents",
-    "events", "setIdAs", "setIdFrom", "listenerMethod", "listenerEventReceiver",
+    "events", "setServiceAs", "setIdFrom", "listenerMethod", "listenerEventReceiver",
     "listenerError", "statement", "expr", "serviceName", "variable", "object",
     "array", "property", "assignment", "r_if", "r_while", "loop", "print",
     "end", "sendQuery", "method", "methodList", "stringMethod", "envvar"
@@ -1824,7 +1824,7 @@ __decorate([
 ], RASPParser.prototype, "events", null);
 __decorate([
     RuleVersion_1.RuleVersion(0)
-], RASPParser.prototype, "setIdAs", null);
+], RASPParser.prototype, "setServiceAs", null);
 __decorate([
     RuleVersion_1.RuleVersion(0)
 ], RASPParser.prototype, "setIdFrom", null);
@@ -2036,8 +2036,8 @@ class AddListenerContext extends ParserRuleContext_1.ParserRuleContext {
     serviceName() {
         return this.getRuleContext(0, ServiceNameContext);
     }
-    setIdAs() {
-        return this.tryGetRuleContext(0, SetIdAsContext);
+    setServiceAs() {
+        return this.tryGetRuleContext(0, SetServiceAsContext);
     }
     object() {
         return this.tryGetRuleContext(0, ObjectContext);
@@ -2084,8 +2084,8 @@ class AddEmitterContext extends ParserRuleContext_1.ParserRuleContext {
     serviceName() {
         return this.getRuleContext(0, ServiceNameContext);
     }
-    setIdAs() {
-        return this.tryGetRuleContext(0, SetIdAsContext);
+    setServiceAs() {
+        return this.tryGetRuleContext(0, SetServiceAsContext);
     }
     object() {
         return this.tryGetRuleContext(0, ObjectContext);
@@ -2207,42 +2207,42 @@ __decorate([
     Decorators_2.Override
 ], EventsContext.prototype, "accept", null);
 exports.EventsContext = EventsContext;
-class SetIdAsContext extends ParserRuleContext_1.ParserRuleContext {
+class SetServiceAsContext extends ParserRuleContext_1.ParserRuleContext {
     constructor(parent, invokingState) {
         super(parent, invokingState);
     }
     SET() { return this.getToken(RASPParser.SET, 0); }
     ID() { return this.getToken(RASPParser.ID, 0); }
     AS() { return this.getToken(RASPParser.AS, 0); }
-    get ruleIndex() { return RASPParser.RULE_setIdAs; }
+    get ruleIndex() { return RASPParser.RULE_setServiceAs; }
     enterRule(listener) {
-        if (listener.enterSetIdAs)
-            listener.enterSetIdAs(this);
+        if (listener.enterSetServiceAs)
+            listener.enterSetServiceAs(this);
     }
     exitRule(listener) {
-        if (listener.exitSetIdAs)
-            listener.exitSetIdAs(this);
+        if (listener.exitSetServiceAs)
+            listener.exitSetServiceAs(this);
     }
     accept(visitor) {
-        if (visitor.visitSetIdAs)
-            return visitor.visitSetIdAs(this);
+        if (visitor.visitSetServiceAs)
+            return visitor.visitSetServiceAs(this);
         else
             return visitor.visitChildren(this);
     }
 }
 __decorate([
     Decorators_2.Override
-], SetIdAsContext.prototype, "ruleIndex", null);
+], SetServiceAsContext.prototype, "ruleIndex", null);
 __decorate([
     Decorators_2.Override
-], SetIdAsContext.prototype, "enterRule", null);
+], SetServiceAsContext.prototype, "enterRule", null);
 __decorate([
     Decorators_2.Override
-], SetIdAsContext.prototype, "exitRule", null);
+], SetServiceAsContext.prototype, "exitRule", null);
 __decorate([
     Decorators_2.Override
-], SetIdAsContext.prototype, "accept", null);
-exports.SetIdAsContext = SetIdAsContext;
+], SetServiceAsContext.prototype, "accept", null);
+exports.SetServiceAsContext = SetServiceAsContext;
 class SetIdFromContext extends ParserRuleContext_1.ParserRuleContext {
     constructor(parent, invokingState) {
         super(parent, invokingState);

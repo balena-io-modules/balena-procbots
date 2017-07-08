@@ -10,7 +10,7 @@ import { AddListenerContext } from './RASPParser';
 import { AddEmitterContext } from './RASPParser';
 import { RequestServiceEventsContext } from './RASPParser';
 import { EventsContext } from './RASPParser';
-import { SetIdAsContext } from './RASPParser';
+import { SetServiceAsContext } from './RASPParser';
 import { SetIdFromContext } from './RASPParser';
 import { ListenerMethodContext } from './RASPParser';
 import { ListenerEventReceiverContext } from './RASPParser';
@@ -118,15 +118,15 @@ export interface RASPListener extends ParseTreeListener {
 	exitEvents?: (ctx: EventsContext) => void;
 
 	/**
-	 * Enter a parse tree produced by `RASPParser.setIdAs`.
+	 * Enter a parse tree produced by `RASPParser.setServiceAs`.
 	 * @param ctx the parse tree
 	 */
-	enterSetIdAs?: (ctx: SetIdAsContext) => void;
+	enterSetServiceAs?: (ctx: SetServiceAsContext) => void;
 	/**
-	 * Exit a parse tree produced by `RASPParser.setIdAs`.
+	 * Exit a parse tree produced by `RASPParser.setServiceAs`.
 	 * @param ctx the parse tree
 	 */
-	exitSetIdAs?: (ctx: SetIdAsContext) => void;
+	exitSetServiceAs?: (ctx: SetServiceAsContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `RASPParser.setIdFrom`.

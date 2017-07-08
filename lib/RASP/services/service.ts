@@ -1,17 +1,12 @@
-import { AddEmitterContext, AddListenerContext, ServiceNameContext } from '../Antlr/RASPParser';
-import { BotDetails, ClassType, ServiceDefinition, ServiceType } from '../parser-types';
-import { GetSingletonFromRulePotentials } from '../helpers';
 import * as _ from 'lodash';
+import { AddEmitterContext, AddListenerContext, SetServiceAsContext, ServiceNameContext } from '../Antlr/RASPParser';
+import { BotDetails, ClassType, ServiceDefinition, ServiceType } from '../parser-types';
+import { ExtRASPListener } from '../parser';
 
 export class ServiceGenerator {
     public static currentServiceConstructor: any;
     public static constructorKey: string;
 
-/*
-    // The idea here is to generate required TS code on the fly for RASP definitions.
-    // It looks at the contexts and then fills in all required data as it goes. To achieve this,
-    // it fills in the ongoing bot interface so that other listeners can get a full picture of
-    // the structure of the bot.
     public static enterAddService(ctx: AddListenerContext | AddEmitterContext, bot: BotDetails): void {
         const type = (ctx instanceof AddListenerContext) ? ServiceType.Listener : ServiceType.Emitter;
         const defaultName = (type === ServiceType.Listener) ? 'defaultServiceListener' : 'defaultServiceEmitter';
@@ -19,10 +14,15 @@ export class ServiceGenerator {
         if (bot.currentService) {
             throw new Error('There is already a service definition being constructed, error');
         }
-        const assignedName = ctx.ALPHA();
+        let assignedName = '';
+        const serviceAsContext = ctx.setServiceAs();
+        if (serviceAsContext) {
+            assignedName = serviceAsContext.ID().text;
+        }
         bot.currentService = {
             type,
-            name: assignedName ? assignedName.text : defaultName
+            name: assignedName ? assignedName : defaultName
+        };
     }
 
     public static exitAddService(_ctx: AddListenerContext | AddEmitterContext, bot: BotDetails): void {
@@ -77,6 +77,7 @@ export class ServiceGenerator {
         }
     }
 
+/*
     public static enterServiceConstructor(_ctx: ServiceConstructorContext, bot: BotDetails): void {
         // Create new constructor object.
         const newConstructor = {};
@@ -106,4 +107,13 @@ export class ServiceGenerator {
         }
     }
 */
+}
+
+export function addListenerMethods(listener: ExtRASPListener, definition: BotDetails): void {
+    listener['enterAddListener'] = _.partial(ServiceGenerator.enterAddService, _, definition);
+    listener['exitAddListener'] = _.partial(ServiceGenerator.exitAddService, _, definition);
+
+    listener['enterAddEmitter'] = _.partial(ServiceGenerator.enterAddService, _, definition);
+    listener['exitAddEmitter'] = _.partial(ServiceGenerator.exitAddService, _, definition);
+    listener['enterServiceName'] = _.partial(ServiceGenerator.enterServiceName, _, definition);    
 }

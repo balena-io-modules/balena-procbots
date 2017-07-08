@@ -6,7 +6,7 @@ import { AddListenerContext } from './RASPParser';
 import { AddEmitterContext } from './RASPParser';
 import { RequestServiceEventsContext } from './RASPParser';
 import { EventsContext } from './RASPParser';
-import { SetIdAsContext } from './RASPParser';
+import { SetServiceAsContext } from './RASPParser';
 import { SetIdFromContext } from './RASPParser';
 import { ListenerMethodContext } from './RASPParser';
 import { ListenerEventReceiverContext } from './RASPParser';
@@ -37,7 +37,7 @@ export interface RASPVisitor<Result> extends ParseTreeVisitor<Result> {
     visitAddEmitter?: (ctx: AddEmitterContext) => Result;
     visitRequestServiceEvents?: (ctx: RequestServiceEventsContext) => Result;
     visitEvents?: (ctx: EventsContext) => Result;
-    visitSetIdAs?: (ctx: SetIdAsContext) => Result;
+    visitSetServiceAs?: (ctx: SetServiceAsContext) => Result;
     visitSetIdFrom?: (ctx: SetIdFromContext) => Result;
     visitListenerMethod?: (ctx: ListenerMethodContext) => Result;
     visitListenerEventReceiver?: (ctx: ListenerEventReceiverContext) => Result;

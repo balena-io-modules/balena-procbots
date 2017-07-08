@@ -65,7 +65,7 @@ export declare class RASPParser extends Parser {
     static readonly RULE_addEmitter: number;
     static readonly RULE_requestServiceEvents: number;
     static readonly RULE_events: number;
-    static readonly RULE_setIdAs: number;
+    static readonly RULE_setServiceAs: number;
     static readonly RULE_setIdFrom: number;
     static readonly RULE_listenerMethod: number;
     static readonly RULE_listenerEventReceiver: number;
@@ -104,7 +104,7 @@ export declare class RASPParser extends Parser {
     addEmitter(): AddEmitterContext;
     requestServiceEvents(): RequestServiceEventsContext;
     events(): EventsContext;
-    setIdAs(): SetIdAsContext;
+    setServiceAs(): SetServiceAsContext;
     setIdFrom(): SetIdFromContext;
     listenerMethod(): ListenerMethodContext;
     listenerEventReceiver(): ListenerEventReceiverContext;
@@ -173,7 +173,7 @@ export declare class AddListenerContext extends ParserRuleContext {
     RECEIVER(): TerminalNode;
     FROM(): TerminalNode;
     serviceName(): ServiceNameContext;
-    setIdAs(): SetIdAsContext | undefined;
+    setServiceAs(): SetServiceAsContext | undefined;
     object(): ObjectContext | undefined;
     variable(): VariableContext | undefined;
     constructor(parent: ParserRuleContext, invokingState: number);
@@ -187,7 +187,7 @@ export declare class AddEmitterContext extends ParserRuleContext {
     QUERIES(): TerminalNode;
     TO(): TerminalNode;
     serviceName(): ServiceNameContext;
-    setIdAs(): SetIdAsContext | undefined;
+    setServiceAs(): SetServiceAsContext | undefined;
     object(): ObjectContext | undefined;
     variable(): VariableContext | undefined;
     constructor(parent: ParserRuleContext, invokingState: number);
@@ -219,7 +219,7 @@ export declare class EventsContext extends ParserRuleContext {
     exitRule(listener: RASPListener): void;
     accept<Result>(visitor: RASPVisitor<Result>): Result;
 }
-export declare class SetIdAsContext extends ParserRuleContext {
+export declare class SetServiceAsContext extends ParserRuleContext {
     SET(): TerminalNode;
     ID(): TerminalNode;
     AS(): TerminalNode;

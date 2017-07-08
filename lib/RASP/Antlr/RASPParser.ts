@@ -85,7 +85,7 @@ export class RASPParser extends Parser {
 	public static readonly RULE_addEmitter = 4;
 	public static readonly RULE_requestServiceEvents = 5;
 	public static readonly RULE_events = 6;
-	public static readonly RULE_setIdAs = 7;
+	public static readonly RULE_setServiceAs = 7;
 	public static readonly RULE_setIdFrom = 8;
 	public static readonly RULE_listenerMethod = 9;
 	public static readonly RULE_listenerEventReceiver = 10;
@@ -110,7 +110,7 @@ export class RASPParser extends Parser {
 	public static readonly RULE_envvar = 29;
 	public static readonly ruleNames: string[] = [
 		"init", "botDefinition", "botBody", "addListener", "addEmitter", "requestServiceEvents", 
-		"events", "setIdAs", "setIdFrom", "listenerMethod", "listenerEventReceiver", 
+		"events", "setServiceAs", "setIdFrom", "listenerMethod", "listenerEventReceiver", 
 		"listenerError", "statement", "expr", "serviceName", "variable", "object", 
 		"array", "property", "assignment", "r_if", "r_while", "loop", "print", 
 		"end", "sendQuery", "method", "methodList", "stringMethod", "envvar"
@@ -337,7 +337,7 @@ export class RASPParser extends Parser {
 			if (_la===RASPParser.SET) {
 				{
 				this.state = 86;
-				this.setIdAs();
+				this.setServiceAs();
 				}
 			}
 
@@ -396,7 +396,7 @@ export class RASPParser extends Parser {
 			if (_la===RASPParser.SET) {
 				{
 				this.state = 97;
-				this.setIdAs();
+				this.setServiceAs();
 				}
 			}
 
@@ -525,9 +525,9 @@ export class RASPParser extends Parser {
 		return _localctx;
 	}
 	@RuleVersion(0)
-	public setIdAs(): SetIdAsContext {
-		let _localctx: SetIdAsContext = new SetIdAsContext(this._ctx, this.state);
-		this.enterRule(_localctx, 14, RASPParser.RULE_setIdAs);
+	public setServiceAs(): SetServiceAsContext {
+		let _localctx: SetServiceAsContext = new SetServiceAsContext(this._ctx, this.state);
+		this.enterRule(_localctx, 14, RASPParser.RULE_setServiceAs);
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
@@ -1961,8 +1961,8 @@ export class AddListenerContext extends ParserRuleContext {
 	public serviceName(): ServiceNameContext {
 		return this.getRuleContext(0, ServiceNameContext);
 	}
-	public setIdAs(): SetIdAsContext | undefined {
-		return this.tryGetRuleContext(0, SetIdAsContext);
+	public setServiceAs(): SetServiceAsContext | undefined {
+		return this.tryGetRuleContext(0, SetServiceAsContext);
 	}
 	public object(): ObjectContext | undefined {
 		return this.tryGetRuleContext(0, ObjectContext);
@@ -1999,8 +1999,8 @@ export class AddEmitterContext extends ParserRuleContext {
 	public serviceName(): ServiceNameContext {
 		return this.getRuleContext(0, ServiceNameContext);
 	}
-	public setIdAs(): SetIdAsContext | undefined {
-		return this.tryGetRuleContext(0, SetIdAsContext);
+	public setServiceAs(): SetServiceAsContext | undefined {
+		return this.tryGetRuleContext(0, SetServiceAsContext);
 	}
 	public object(): ObjectContext | undefined {
 		return this.tryGetRuleContext(0, ObjectContext);
@@ -2096,7 +2096,7 @@ export class EventsContext extends ParserRuleContext {
 }
 
 
-export class SetIdAsContext extends ParserRuleContext {
+export class SetServiceAsContext extends ParserRuleContext {
 	public SET(): TerminalNode { return this.getToken(RASPParser.SET, 0); }
 	public ID(): TerminalNode { return this.getToken(RASPParser.ID, 0); }
 	public AS(): TerminalNode { return this.getToken(RASPParser.AS, 0); }
@@ -2105,18 +2105,18 @@ export class SetIdAsContext extends ParserRuleContext {
 		super(parent, invokingState);
 
 	}
-	@Override public get ruleIndex(): number { return RASPParser.RULE_setIdAs; }
+	@Override public get ruleIndex(): number { return RASPParser.RULE_setServiceAs; }
 	@Override
 	public enterRule(listener: RASPListener): void {
-		if (listener.enterSetIdAs) listener.enterSetIdAs(this);
+		if (listener.enterSetServiceAs) listener.enterSetServiceAs(this);
 	}
 	@Override
 	public exitRule(listener: RASPListener): void {
-		if (listener.exitSetIdAs) listener.exitSetIdAs(this);
+		if (listener.exitSetServiceAs) listener.exitSetServiceAs(this);
 	}
 	@Override
 	public accept<Result>(visitor: RASPVisitor<Result>): Result {
-		if (visitor.visitSetIdAs) return visitor.visitSetIdAs(this);
+		if (visitor.visitSetServiceAs) return visitor.visitSetServiceAs(this);
 		else return visitor.visitChildren(this);
 	}
 }
