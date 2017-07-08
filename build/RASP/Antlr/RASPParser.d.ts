@@ -35,6 +35,7 @@ export declare class RASPParser extends Parser {
     static readonly EVENT: number;
     static readonly EVENTS: number;
     static readonly RECEIVER: number;
+    static readonly RECEIVE: number;
     static readonly FROM: number;
     static readonly SEND: number;
     static readonly QUERIES: number;
@@ -58,7 +59,6 @@ export declare class RASPParser extends Parser {
     static readonly LINE_COMMENT: number;
     static readonly WS: number;
     static readonly RULE_init: number;
-    static readonly RULE_comment: number;
     static readonly RULE_botDefinition: number;
     static readonly RULE_botBody: number;
     static readonly RULE_addListener: number;
@@ -68,16 +68,15 @@ export declare class RASPParser extends Parser {
     static readonly RULE_setIdAs: number;
     static readonly RULE_setIdFrom: number;
     static readonly RULE_listenerMethod: number;
+    static readonly RULE_listenerEventReceiver: number;
     static readonly RULE_listenerError: number;
     static readonly RULE_statement: number;
     static readonly RULE_expr: number;
     static readonly RULE_serviceName: number;
-    static readonly RULE_variableName: number;
     static readonly RULE_variable: number;
     static readonly RULE_object: number;
     static readonly RULE_array: number;
     static readonly RULE_property: number;
-    static readonly RULE_precedence: number;
     static readonly RULE_assignment: number;
     static readonly RULE_r_if: number;
     static readonly RULE_r_while: number;
@@ -99,7 +98,6 @@ export declare class RASPParser extends Parser {
     readonly serializedATN: string;
     constructor(input: TokenStream);
     init(): InitContext;
-    comment(): CommentContext;
     botDefinition(): BotDefinitionContext;
     botBody(): BotBodyContext;
     addListener(): AddListenerContext;
@@ -109,17 +107,16 @@ export declare class RASPParser extends Parser {
     setIdAs(): SetIdAsContext;
     setIdFrom(): SetIdFromContext;
     listenerMethod(): ListenerMethodContext;
+    listenerEventReceiver(): ListenerEventReceiverContext;
     listenerError(): ListenerErrorContext;
     statement(): StatementContext;
     expr(): ExprContext;
     expr(_p: number): ExprContext;
     serviceName(): ServiceNameContext;
-    variableName(): VariableNameContext;
     variable(): VariableContext;
     object(): ObjectContext;
     array(): ArrayContext;
     property(): PropertyContext;
-    precedence(): PrecedenceContext;
     assignment(): AssignmentContext;
     r_if(): R_ifContext;
     r_while(): R_whileContext;
@@ -139,17 +136,7 @@ export declare class RASPParser extends Parser {
 }
 export declare class InitContext extends ParserRuleContext {
     botDefinition(): BotDefinitionContext | undefined;
-    comment(): CommentContext | undefined;
     EOF(): TerminalNode | undefined;
-    constructor(parent: ParserRuleContext, invokingState: number);
-    readonly ruleIndex: number;
-    enterRule(listener: RASPListener): void;
-    exitRule(listener: RASPListener): void;
-    accept<Result>(visitor: RASPVisitor<Result>): Result;
-}
-export declare class CommentContext extends ParserRuleContext {
-    COMMENT(): TerminalNode | undefined;
-    LINE_COMMENT(): TerminalNode | undefined;
     constructor(parent: ParserRuleContext, invokingState: number);
     readonly ruleIndex: number;
     enterRule(listener: RASPListener): void;
@@ -168,7 +155,6 @@ export declare class BotDefinitionContext extends ParserRuleContext {
     accept<Result>(visitor: RASPVisitor<Result>): Result;
 }
 export declare class BotBodyContext extends ParserRuleContext {
-    comment(): CommentContext | undefined;
     addListener(): AddListenerContext | undefined;
     addEmitter(): AddEmitterContext | undefined;
     requestServiceEvents(): RequestServiceEventsContext | undefined;
@@ -188,7 +174,8 @@ export declare class AddListenerContext extends ParserRuleContext {
     FROM(): TerminalNode;
     serviceName(): ServiceNameContext;
     setIdAs(): SetIdAsContext | undefined;
-    expr(): ExprContext | undefined;
+    object(): ObjectContext | undefined;
+    variable(): VariableContext | undefined;
     constructor(parent: ParserRuleContext, invokingState: number);
     readonly ruleIndex: number;
     enterRule(listener: RASPListener): void;
@@ -201,7 +188,8 @@ export declare class AddEmitterContext extends ParserRuleContext {
     TO(): TerminalNode;
     serviceName(): ServiceNameContext;
     setIdAs(): SetIdAsContext | undefined;
-    expr(): ExprContext | undefined;
+    object(): ObjectContext | undefined;
+    variable(): VariableContext | undefined;
     constructor(parent: ParserRuleContext, invokingState: number);
     readonly ruleIndex: number;
     enterRule(listener: RASPListener): void;
@@ -254,8 +242,21 @@ export declare class SetIdFromContext extends ParserRuleContext {
 export declare class ListenerMethodContext extends ParserRuleContext {
     METHOD(): TerminalNode;
     ID(): TerminalNode;
+    RECEIVE(): TerminalNode | undefined;
+    listenerEventReceiver(): ListenerEventReceiverContext[];
+    listenerEventReceiver(i: number): ListenerEventReceiverContext;
     statement(): StatementContext[];
     statement(i: number): StatementContext;
+    constructor(parent: ParserRuleContext, invokingState: number);
+    readonly ruleIndex: number;
+    enterRule(listener: RASPListener): void;
+    exitRule(listener: RASPListener): void;
+    accept<Result>(visitor: RASPVisitor<Result>): Result;
+}
+export declare class ListenerEventReceiverContext extends ParserRuleContext {
+    events(): EventsContext;
+    FROM(): TerminalNode;
+    serviceName(): ServiceNameContext;
     constructor(parent: ParserRuleContext, invokingState: number);
     readonly ruleIndex: number;
     enterRule(listener: RASPListener): void;
@@ -298,7 +299,6 @@ export declare class ExprContext extends ParserRuleContext {
     stringMethod(): StringMethodContext | undefined;
     variable(): VariableContext | undefined;
     object(): ObjectContext | undefined;
-    precedence(): PrecedenceContext | undefined;
     NUMBER(): TerminalNode | undefined;
     STRING(): TerminalNode | undefined;
     BOOLEAN(): TerminalNode | undefined;
@@ -309,14 +309,6 @@ export declare class ExprContext extends ParserRuleContext {
     accept<Result>(visitor: RASPVisitor<Result>): Result;
 }
 export declare class ServiceNameContext extends ParserRuleContext {
-    ID(): TerminalNode;
-    constructor(parent: ParserRuleContext, invokingState: number);
-    readonly ruleIndex: number;
-    enterRule(listener: RASPListener): void;
-    exitRule(listener: RASPListener): void;
-    accept<Result>(visitor: RASPVisitor<Result>): Result;
-}
-export declare class VariableNameContext extends ParserRuleContext {
     ID(): TerminalNode;
     constructor(parent: ParserRuleContext, invokingState: number);
     readonly ruleIndex: number;
@@ -357,14 +349,6 @@ export declare class PropertyContext extends ParserRuleContext {
     ID(): TerminalNode;
     expr(): ExprContext[];
     expr(i: number): ExprContext;
-    constructor(parent: ParserRuleContext, invokingState: number);
-    readonly ruleIndex: number;
-    enterRule(listener: RASPListener): void;
-    exitRule(listener: RASPListener): void;
-    accept<Result>(visitor: RASPVisitor<Result>): Result;
-}
-export declare class PrecedenceContext extends ParserRuleContext {
-    expr(): ExprContext;
     constructor(parent: ParserRuleContext, invokingState: number);
     readonly ruleIndex: number;
     enterRule(listener: RASPListener): void;

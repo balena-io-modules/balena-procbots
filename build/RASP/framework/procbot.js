@@ -4,7 +4,7 @@ class ProcBotGenerator {
     static enterBotDefinition(ctx, botStructure) {
     }
     static exitBotDefinition(ctx, botStructure) {
-        botStructure.botName = ctx.ALPHA().text;
+        botStructure.botName = ctx.ID().text;
     }
 }
 exports.ProcBotGenerator = ProcBotGenerator;

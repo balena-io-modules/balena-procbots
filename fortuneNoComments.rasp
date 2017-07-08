@@ -4,6 +4,7 @@ bot(FortuneBot) {
         login: { appId: 5678, pem: 'nnnnnn', secret: '12345abc' }
     }
 
+/*
     send queries to github {
         login: { pat: 'abcdef' }
     }
@@ -21,7 +22,8 @@ bot(FortuneBot) {
         'The man on the top of the mountain did not fall there. ',
         'Though he may be out of bottled oxygen.'
     ]
-
+*/
+/*
     listenerMethod FortuneUp
         set data as { owner: serviceEvent.repository.owner.login, repo: serviceEvent.repository.name,
             number: serviceEvent.issue.number }
@@ -46,4 +48,5 @@ bot(FortuneBot) {
 
     listenerErrorMethod FortuneUp
         print 'Oh dear, an error occured! Error is' added to error
+*/
 }

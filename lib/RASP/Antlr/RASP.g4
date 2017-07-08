@@ -1,20 +1,20 @@
 grammar RASP;
 
-init: botDefinition | comment | EOF;
+init: botDefinition | EOF;
 
-comment: COMMENT | LINE_COMMENT;
-botDefinition: BOT '(' ID ')' '{' botBody (botBody)* '}';
+botDefinition: BOT '(' ID ')' '{' botBody* '}';
 
 // The bot body.
 // Methods can *only* be defined as part of the botBody, which differentiates them from calls to
 // a method inside the listenerBody.
-botBody: comment | addListener | addEmitter | requestServiceEvents | listenerMethod | listenerError | method | assignment;
+botBody: addListener | addEmitter | requestServiceEvents | listenerMethod | listenerError | method | assignment;
 
 // Add a ServiceListener, with appropriate constructor.
-addListener: setIdAs? EVENT RECEIVER FROM serviceName expr?;
+// Any options are set as an object or a variable declaring an object.
+addListener: setIdAs? EVENT RECEIVER FROM serviceName (object | variable)?;
 
 // Add a ServiceEmitter, with appropriate constructor.
-addEmitter: setIdAs? SEND QUERIES TO serviceName expr?;
+addEmitter: setIdAs? SEND QUERIES TO serviceName (object | variable)?;
 
 // Request an event for a listener.
 requestServiceEvents: SEND events EVENTS FROM serviceName TO ID;
@@ -26,7 +26,8 @@ setIdAs: SET ID AS;
 setIdFrom: SET ID FROM;
 
 // Listener methods.
-listenerMethod: METHOD ID statement*;
+listenerMethod: METHOD ID (RECEIVE listenerEventReceiver (',' listenerEventReceiver)*)? statement*;
+listenerEventReceiver: events FROM serviceName;
 listenerError: ERRORMETHOD ID statement*;
 
 statement: method |
@@ -51,18 +52,17 @@ expr: expr 'added' 'to' expr |
       stringMethod |
       variable |
       object |
-      precedence |
+      //precedence |
       NUMBER |
       STRING |
       BOOLEAN;
 
 serviceName: ID;
-variableName: ID;
+//precedence: '(' expr* ')';
 variable: ID ('.' ID)*;
 object: '{' property (',' property)* '}';
 array: ID* '[' expr (',' expr)* ']';
 property: ID (':' expr)*;
-precedence: '(' expr ')';
 
 assignment: 'set' variable 'as' expr;
 r_if: 'if' expr statement ('else' statement)*;
@@ -85,6 +85,7 @@ BOT        : 'bot';
 EVENT      : 'event';
 EVENTS     : 'events';
 RECEIVER   : 'receiver';
+RECEIVE    : 'receive';
 FROM       : 'from';
 SEND       : 'send';
 QUERIES    : 'queries';

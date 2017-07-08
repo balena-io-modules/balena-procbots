@@ -11,6 +11,6 @@ export class ProcBotGenerator {
     }
 
     public static exitBotDefinition(ctx: BotDefinitionContext, botStructure: BotDetails): void {
-        botStructure.botName = ctx.ALPHA().text;
+        botStructure.botName = ctx.ID().text;
     }
 }

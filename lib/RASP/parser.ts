@@ -15,11 +15,14 @@ import * as fs from 'fs';
 const definition: BotDetails = {};
 
 class TreeShapeListener implements RASPListener {
+    /*
     enterBotDefinition = _.partial(ProcBotGenerator.enterBotDefinition, _, definition);
     exitBotDefinition = _.partial(ProcBotGenerator.exitBotDefinition, _, definition);
     
     enterAddListener = _.partial(ServiceGenerator.enterAddService, _, definition);
     exitAddListener = _.partial(ServiceGenerator.exitAddService, _, definition);
+    */
+/*
     enterAddEmitter = _.partial(ServiceGenerator.enterAddService, _, definition);
     exitAddEmitter = _.partial(ServiceGenerator.exitAddService, _, definition);
     enterServiceName = _.partial(ServiceGenerator.enterServiceName, _, definition);
@@ -30,6 +33,7 @@ class TreeShapeListener implements RASPListener {
     enterRequestEvents(ctx: RequestServiceEventsContext) {
         console.log('enter request');
     }
+*/
 }
 
 // Create the lexer and parser

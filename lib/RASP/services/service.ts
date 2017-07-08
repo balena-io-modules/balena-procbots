@@ -1,4 +1,4 @@
-import { AddEmitterContext, AddListenerContext, ServiceConstructorContext, ServiceConstructorPairContext, ServiceNameContext } from '../Antlr/RASPParser';
+import { AddEmitterContext, AddListenerContext, ServiceNameContext } from '../Antlr/RASPParser';
 import { BotDetails, ClassType, ServiceDefinition, ServiceType } from '../parser-types';
 import { GetSingletonFromRulePotentials } from '../helpers';
 import * as _ from 'lodash';
@@ -7,6 +7,7 @@ export class ServiceGenerator {
     public static currentServiceConstructor: any;
     public static constructorKey: string;
 
+/*
     // The idea here is to generate required TS code on the fly for RASP definitions.
     // It looks at the contexts and then fills in all required data as it goes. To achieve this,
     // it fills in the ongoing bot interface so that other listeners can get a full picture of
@@ -22,7 +23,6 @@ export class ServiceGenerator {
         bot.currentService = {
             type,
             name: assignedName ? assignedName.text : defaultName
-        };
     }
 
     public static exitAddService(_ctx: AddListenerContext | AddEmitterContext, bot: BotDetails): void {
@@ -105,4 +105,5 @@ export class ServiceGenerator {
             conObj[key] = value;
         }
     }
+*/
 }

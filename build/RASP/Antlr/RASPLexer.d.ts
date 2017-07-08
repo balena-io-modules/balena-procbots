@@ -30,6 +30,7 @@ export declare class RASPLexer extends Lexer {
     static readonly EVENT: number;
     static readonly EVENTS: number;
     static readonly RECEIVER: number;
+    static readonly RECEIVE: number;
     static readonly FROM: number;
     static readonly SEND: number;
     static readonly QUERIES: number;
