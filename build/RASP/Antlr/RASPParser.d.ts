@@ -35,7 +35,7 @@ export declare class RASPParser extends Parser {
     static readonly EVENT: number;
     static readonly EVENTS: number;
     static readonly RECEIVER: number;
-    static readonly RECEIVE: number;
+    static readonly RECEIVES: number;
     static readonly FROM: number;
     static readonly SEND: number;
     static readonly QUERIES: number;
@@ -242,7 +242,7 @@ export declare class SetIdFromContext extends ParserRuleContext {
 export declare class ListenerMethodContext extends ParserRuleContext {
     METHOD(): TerminalNode;
     ID(): TerminalNode;
-    RECEIVE(): TerminalNode | undefined;
+    RECEIVES(): TerminalNode | undefined;
     listenerEventReceiver(): ListenerEventReceiverContext[];
     listenerEventReceiver(i: number): ListenerEventReceiverContext;
     statement(): StatementContext[];

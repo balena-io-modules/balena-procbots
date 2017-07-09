@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const _ = require("lodash");
 const RASPParser_1 = require("../Antlr/RASPParser");
+const helpers_1 = require("../helpers");
 class ServiceGenerator {
     static enterAddService(ctx, bot) {
         const type = (ctx instanceof RASPParser_1.AddListenerContext) ? 0 : 1;
@@ -48,6 +49,11 @@ class ServiceGenerator {
             name: bot.currentService.name,
             type: 0
         });
+        if (bot.currentExpression) {
+            helpers_1.DebugExpression(bot.currentExpression);
+            bot.currentService.constructDetails = bot.currentExpression;
+            bot.currentExpression = undefined;
+        }
         bot.currentService = undefined;
     }
     static enterServiceName(ctx, bot) {

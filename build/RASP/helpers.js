@@ -51,5 +51,52 @@ function FindAllFiles(dir, level = 0, filter, excludeDirs = []) {
     return findEntries(dir, 0).return(files);
 }
 exports.FindAllFiles = FindAllFiles;
+function DebugExpression(expr, indent = 0) {
+    const lookupType = (id) => {
+        switch (id) {
+            case 2:
+                return 'Object';
+            case 1:
+                return 'Property';
+            case 0:
+                return 'Variable';
+            case 31:
+                return 'NUMBER';
+            case 33:
+                return 'BOOLEAN';
+            case 32:
+                return 'STRING';
+        }
+    };
+    const print = (message) => {
+        let finalMessage = '';
+        for (let loop = 0; loop < indent; loop++) {
+            finalMessage += ' ';
+        }
+        console.log(`${finalMessage}${message}`);
+    };
+    print(`| ${lookupType(expr.type)}`);
+    switch (expr.type) {
+        case 2:
+            const objExpr = expr;
+            for (let prop of objExpr.properties) {
+                DebugExpression(prop, indent + 1);
+            }
+            break;
+        case 1:
+            const propExpr = expr;
+            print(`\\ ${propExpr.name}:`);
+            DebugExpression(propExpr.value, indent + 1);
+            break;
+        case 31:
+        case 33:
+        case 32:
+            print(`- ${expr.value}`);
+            break;
+        default:
+            console.log(`Don't know how to deal with this type: ${expr.type}`);
+    }
+}
+exports.DebugExpression = DebugExpression;
 
 //# sourceMappingURL=helpers.js.map

@@ -1,14 +1,14 @@
-bot(FortuneBot) {
+bot(FortuneBot)
     set ghListener as event receiver from github {
         port: 1234, path: '/',
         login: { appId: 5678, pem: 'nnnnnn', secret: '12345abc' }
     }
 
-/*
     send queries to github {
         login: { pat: 'abcdef' }
     }
 
+/*
     send [ pull_request, pull_request_review ] events from github to FortuneUp
 
     set Fortunes as [
@@ -19,12 +19,11 @@ bot(FortuneBot) {
         'The energy is within you. Money is Coming!',
         'Darkness is only succesful when there is no light. Don\'t forget about light!',
         'Encourage your peers. To write ProcBots.',
-        'The man on the top of the mountain did not fall there. ',
+        'The man on the top of the mountain did not fall there. '
         'Though he may be out of bottled oxygen.'
     ]
-*/
-/*
-    listenerMethod FortuneUp
+
+    listenerMethod FortuneUp // receives [ pull_request, pull_request_review ] events from github
         set data as { owner: serviceEvent.repository.owner.login, repo: serviceEvent.repository.name,
             number: serviceEvent.issue.number }
 
@@ -49,4 +48,3 @@ bot(FortuneBot) {
     listenerErrorMethod FortuneUp
         print 'Oh dear, an error occured! Error is' added to error
 */
-}

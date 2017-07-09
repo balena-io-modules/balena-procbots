@@ -2,6 +2,7 @@ import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import * as FS from 'fs';
 import { sep } from 'path';
+import { Expression, ExpressionOp, ObjectExpression, PropertyExpression } from './parser-types';
 
 const fs: any = Promise.promisifyAll(FS);
 
@@ -59,4 +60,60 @@ export function FindAllFiles(dir: string, level: number = 0, filter: string | un
     }
 
     return findEntries(dir, 0).return(files);
+}
+
+export function DebugExpression(expr: Expression, indent: number = 0) {
+    // Print the type
+    const lookupType = (id: ExpressionOp) => {
+        switch (id) {
+            case ExpressionOp.Object:
+                return 'Object';
+            case ExpressionOp.Property:
+                return 'Property';
+            case ExpressionOp.Variable:
+                return 'Variable';
+            case ExpressionOp.NUMBER:
+                return 'NUMBER';
+            case ExpressionOp.BOOLEAN:
+                return 'BOOLEAN';
+            case ExpressionOp.STRING:
+                return 'STRING';
+
+        }
+    }
+
+    const print = (message: string) => {
+        let finalMessage = '';
+        for (let loop = 0; loop < indent; loop++) {
+            finalMessage += ' ';
+        }
+        console.log(`${finalMessage}${message}`);
+    }
+
+    print(`| ${lookupType(expr.type)}`);
+
+    // Determine how to get the children, if any.
+    switch (expr.type) {
+        case ExpressionOp.Object:
+            const objExpr = <ObjectExpression>expr;
+            for (let prop of objExpr.properties) {
+                DebugExpression(prop, indent + 1);
+            }
+            break;
+
+        case ExpressionOp.Property:
+            const propExpr = <PropertyExpression>expr;
+            print(`\\ ${propExpr.name}:`);
+            DebugExpression(propExpr.value, indent + 1);
+            break;
+
+        case ExpressionOp.NUMBER:
+        case ExpressionOp.BOOLEAN:
+        case ExpressionOp.STRING:
+            print(`- ${expr.value}`);
+            break;
+
+        default:
+            console.log(`Don't know how to deal with this type: ${expr.type}`);
+    }
 }

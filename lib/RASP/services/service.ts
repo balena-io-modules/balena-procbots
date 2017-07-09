@@ -1,6 +1,7 @@
 import * as _ from 'lodash';
 import { AddEmitterContext, AddListenerContext, SetServiceAsContext, ServiceNameContext } from '../Antlr/RASPParser';
 import { BotDetails, ClassType, ServiceDefinition, ServiceType } from '../parser-types';
+import { DebugExpression } from '../helpers';
 import { ExtRASPListener } from '../parser';
 
 export class ServiceGenerator {
@@ -63,6 +64,13 @@ export class ServiceGenerator {
             type: ClassType.ServiceListener
         });
 
+        // We may well have an object for initialisation. This is the currentExpression.
+        if (bot.currentExpression) {
+            DebugExpression(bot.currentExpression);
+            bot.currentService.constructDetails = bot.currentExpression;
+            bot.currentExpression = undefined;
+        }
+
         // Reset the current service.
         bot.currentService = undefined;
     }
@@ -76,44 +84,12 @@ export class ServiceGenerator {
             bot.currentService.serviceName = name;
         }
     }
-
-/*
-    public static enterServiceConstructor(_ctx: ServiceConstructorContext, bot: BotDetails): void {
-        // Create new constructor object.
-        const newConstructor = {};
-
-        // If we have no stack (empty array), then we push this on.
-        if (bot.currentService && !bot.currentService.constructDetails) {
-            bot.currentService.constructDetails = newConstructor;
-        } else {
-            // Use the previous keyname to create a new nested constructor.
-            ServiceGenerator.currentServiceConstructor[ServiceGenerator.constructorKey] = newConstructor;
-        }
-        ServiceGenerator.currentServiceConstructor = newConstructor;
-    }
-
-    // All of the types are unique, so we actually have to ensure that only one per constructor is present
-    public static enterServiceConstructorPair(ctx: ServiceConstructorPairContext, bot: BotDetails): void {
-        const conObj = ServiceGenerator.currentServiceConstructor;
-        const text = ctx.text.split(':');
-        const key = text[0];
-        const value = text[1];
-        ServiceGenerator.constructorKey = key;
-
-        // If this is a nested child, we return here as we'll be caught further down.
-        if (!_.startsWith(value, '{')) {
-            // Else just assign.
-            conObj[key] = value;
-        }
-    }
-*/
 }
 
 export function addListenerMethods(listener: ExtRASPListener, definition: BotDetails): void {
     listener['enterAddListener'] = _.partial(ServiceGenerator.enterAddService, _, definition);
     listener['exitAddListener'] = _.partial(ServiceGenerator.exitAddService, _, definition);
-
     listener['enterAddEmitter'] = _.partial(ServiceGenerator.enterAddService, _, definition);
     listener['exitAddEmitter'] = _.partial(ServiceGenerator.exitAddService, _, definition);
-    listener['enterServiceName'] = _.partial(ServiceGenerator.enterServiceName, _, definition);    
+    listener['enterServiceName'] = _.partial(ServiceGenerator.enterServiceName, _, definition);
 }

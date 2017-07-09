@@ -2,7 +2,7 @@ grammar RASP;
 
 init: botDefinition | EOF;
 
-botDefinition: BOT '(' ID ')' '{' botBody* '}';
+botDefinition: BOT '(' ID ')' botBody*;
 
 // The bot body.
 // Methods can *only* be defined as part of the botBody, which differentiates them from calls to
@@ -26,7 +26,7 @@ setServiceAs: SET ID AS;
 setIdFrom: SET ID FROM;
 
 // Listener methods.
-listenerMethod: METHOD ID (RECEIVE listenerEventReceiver (',' listenerEventReceiver)*)? statement*;
+listenerMethod: METHOD ID (RECEIVES listenerEventReceiver (',' listenerEventReceiver)*)? statement*;
 listenerEventReceiver: events FROM serviceName;
 listenerError: ERRORMETHOD ID statement*;
 
@@ -58,7 +58,10 @@ expr: expr 'added' 'to' expr |
       BOOLEAN;
 
 serviceName: ID;
-//precedence: '(' expr* ')';
+// Bugger, this doesn't work, but it should. Suspect issue with the TS parser generation code
+// is not allowing for parentheses in the parser because of mistaking it for TS. grun happily accepts
+// it (as expected).
+//precedence: '(' expr+ ')';
 variable: ID ('.' ID)*;
 object: '{' property (',' property)* '}';
 array: ID* '[' expr (',' expr)* ']';
@@ -85,7 +88,7 @@ BOT        : 'bot';
 EVENT      : 'event';
 EVENTS     : 'events';
 RECEIVER   : 'receiver';
-RECEIVE    : 'receive';
+RECEIVES   : 'receives';
 FROM       : 'from';
 SEND       : 'send';
 QUERIES    : 'queries';
