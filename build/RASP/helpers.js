@@ -60,6 +60,10 @@ function DebugExpression(expr, indent = 0) {
                 return 'Property';
             case 0:
                 return 'Variable';
+            case 3:
+                return 'Array';
+            case 0:
+                return 'Variable';
             case 31:
                 return 'NUMBER';
             case 33:
@@ -87,6 +91,17 @@ function DebugExpression(expr, indent = 0) {
             const propExpr = expr;
             print(`\\ ${propExpr.name}:`);
             DebugExpression(propExpr.value, indent + 1);
+            break;
+        case 3:
+            const arrayExpr = expr;
+            for (let value of arrayExpr.values) {
+                DebugExpression(value, indent + 1);
+            }
+            break;
+        case 0:
+            const varExpr = expr;
+            print(`\\ ${varExpr.name}:`);
+            DebugExpression(varExpr.value, indent + 1);
             break;
         case 31:
         case 33:

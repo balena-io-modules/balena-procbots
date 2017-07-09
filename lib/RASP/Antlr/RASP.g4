@@ -27,7 +27,7 @@ setIdFrom: SET ID FROM;
 
 // Listener methods.
 listenerMethod: METHOD ID (RECEIVES listenerEventReceiver (',' listenerEventReceiver)*)? statement*;
-listenerEventReceiver: events FROM serviceName;
+listenerEventReceiver: events EVENTS FROM serviceName; // This needs to get shared with requestServiceEvents
 listenerError: ERRORMETHOD ID statement*;
 
 statement: method |
@@ -64,7 +64,7 @@ serviceName: ID;
 //precedence: '(' expr+ ')';
 variable: ID ('.' ID)*;
 object: '{' property (',' property)* '}';
-array: ID* '[' expr (',' expr)* ']';
+array: ID? '[' expr (',' expr)* ']';
 property: ID (':' expr)*;
 
 assignment: 'set' variable 'as' expr;

@@ -255,6 +255,7 @@ export declare class ListenerMethodContext extends ParserRuleContext {
 }
 export declare class ListenerEventReceiverContext extends ParserRuleContext {
     events(): EventsContext;
+    EVENTS(): TerminalNode;
     FROM(): TerminalNode;
     serviceName(): ServiceNameContext;
     constructor(parent: ParserRuleContext, invokingState: number);
@@ -337,8 +338,7 @@ export declare class ObjectContext extends ParserRuleContext {
 export declare class ArrayContext extends ParserRuleContext {
     expr(): ExprContext[];
     expr(i: number): ExprContext;
-    ID(): TerminalNode[];
-    ID(i: number): TerminalNode;
+    ID(): TerminalNode | undefined;
     constructor(parent: ParserRuleContext, invokingState: number);
     readonly ruleIndex: number;
     enterRule(listener: RASPListener): void;

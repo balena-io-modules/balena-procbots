@@ -1,5 +1,7 @@
 import { GithubConstructor, GithubListenerConstructor } from '../services/github-types';
 
+// Class types
+
 export const enum ClassType {
     ServiceListener,
     ServiceEmitter,
@@ -11,6 +13,8 @@ export interface ClassVariable {
     name: string;
     type: ClassType;
 }
+
+// Services
 
 export const enum ServiceType {
     Listener = 0,
@@ -24,7 +28,32 @@ export interface ServiceDefinition {
     constructDetails?: any;
 }
 
-// assignment:
+// Events and EventListeners
+
+export interface EventRegistration {
+    serviceName?: string;    // Service events come from
+    events?: string[];       // Events themselves
+    methodName: string;     // Method the events are going to
+}
+
+// Statements
+
+export const enum StatementOp {
+    Assign = 0,
+}
+
+export interface Statement {
+    type: StatementOp;
+}
+
+export interface AssignmentStatement extends Statement {
+    type: StatementOp.Assign;
+    name: string;
+    value: Expression;
+}
+
+// Expressions
+
 // expressions have a type, which denotes what they are
 // the will have a text section if they pertain to a name
 // (variable, property, ID, NUMBER, STRING, etc.)
@@ -114,24 +143,12 @@ Others will need to ensure they assign the right values based on those already f
 by precedence.
 
 */
-export const enum StatementOp {
-    ASSIGN = 0,
-}
-
-export interface Statement {
-    type: StatementOp;
-}
-
-export interface Assignment extends Statement {
-    type: StatementOp.ASSIGN;
-    name: string;
-    value: Expression;
-}
 
 export const enum ExpressionOp {
     Variable = 0,
     Property = 1,
     Object = 2,
+    Array = 3,
 
     ID = 30,
     NUMBER = 31,
@@ -164,17 +181,28 @@ export interface VariableExpression extends Expression {
     value: Expression;
 }
 
+export interface ArrayExpression extends Expression {
+    type: ExpressionOp.Array;
+    name?: string; // If it has a name, then we're using it as an index type
+    values: Expression[];
+}
+
+// Bot details
+
 export interface BotDetails {
     // Overall details.
     botName?: string;
     classVariables?: any[]; // The private variables that need setting. Such as assigned service variables
     listeners?: ServiceDefinition[];
     emitters?: ServiceDefinition[];
-    registrations?: any[];
+    registrations?: EventRegistration[];
+    assignments?: Statement[];
     listenerMethods?: any[];
 
     // Current details
     currentService?: ServiceDefinition;
-    currentRegistration?: any;
+    currentEventRegistration?: EventRegistration;
     currentExpression?: Expression;
+    currentStatement?: Statement;
+    currentListenerMethod?: any;
 }

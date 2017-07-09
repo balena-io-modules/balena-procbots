@@ -2,7 +2,8 @@ import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import * as FS from 'fs';
 import { sep } from 'path';
-import { Expression, ExpressionOp, ObjectExpression, PropertyExpression } from './parser-types';
+import { ArrayExpression, Expression, ExpressionOp, ObjectExpression, PropertyExpression,
+        VariableExpression } from './parser-types';
 
 const fs: any = Promise.promisifyAll(FS);
 
@@ -72,6 +73,10 @@ export function DebugExpression(expr: Expression, indent: number = 0) {
                 return 'Property';
             case ExpressionOp.Variable:
                 return 'Variable';
+            case ExpressionOp.Array:
+                return 'Array';
+            case ExpressionOp.Variable:
+                return 'Variable';
             case ExpressionOp.NUMBER:
                 return 'NUMBER';
             case ExpressionOp.BOOLEAN:
@@ -105,6 +110,19 @@ export function DebugExpression(expr: Expression, indent: number = 0) {
             const propExpr = <PropertyExpression>expr;
             print(`\\ ${propExpr.name}:`);
             DebugExpression(propExpr.value, indent + 1);
+            break;
+
+        case ExpressionOp.Array:
+            const arrayExpr = <ArrayExpression>expr;
+            for (let value of arrayExpr.values) {
+                DebugExpression(value, indent + 1);
+            }
+            break;
+
+        case ExpressionOp.Variable:
+            const varExpr = <VariableExpression>expr;
+            print(`\\ ${varExpr.name}:`);
+            DebugExpression(varExpr.value, indent + 1);
             break;
 
         case ExpressionOp.NUMBER:

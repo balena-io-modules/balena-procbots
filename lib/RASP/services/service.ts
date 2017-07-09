@@ -5,9 +5,6 @@ import { DebugExpression } from '../helpers';
 import { ExtRASPListener } from '../parser';
 
 export class ServiceGenerator {
-    public static currentServiceConstructor: any;
-    public static constructorKey: string;
-
     public static enterAddService(ctx: AddListenerContext | AddEmitterContext, bot: BotDetails): void {
         const type = (ctx instanceof AddListenerContext) ? ServiceType.Listener : ServiceType.Emitter;
         const defaultName = (type === ServiceType.Listener) ? 'defaultServiceListener' : 'defaultServiceEmitter';
@@ -66,7 +63,7 @@ export class ServiceGenerator {
 
         // We may well have an object for initialisation. This is the currentExpression.
         if (bot.currentExpression) {
-            DebugExpression(bot.currentExpression);
+            //DebugExpression(bot.currentExpression);
             bot.currentService.constructDetails = bot.currentExpression;
             bot.currentExpression = undefined;
         }
@@ -82,6 +79,8 @@ export class ServiceGenerator {
         }
         if (bot.currentService) {
             bot.currentService.serviceName = name;
+        } else if (bot.currentEventRegistration) {
+            bot.currentEventRegistration.serviceName = name;
         }
     }
 }
