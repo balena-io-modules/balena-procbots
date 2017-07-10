@@ -86,7 +86,19 @@ class DiscourseService extends messenger_1.Messenger {
             });
         };
         this.fetchNotes = (thread, _room, filter) => {
-            const getThread = {
+            const firstWords = filter.source.match(/^([\w\s]+)/i);
+            const getThread = firstWords ? {
+                json: true,
+                method: 'GET',
+                qs: {
+                    'api_key': this.data.token,
+                    'api_username': this.data.username,
+                    'term': firstWords[1],
+                    'search_context[type]': 'topic',
+                    'search_context[id]': thread,
+                },
+                uri: `https://${this.data.instance}/search/query`,
+            } : {
                 json: true,
                 method: 'GET',
                 qs: {
@@ -96,7 +108,7 @@ class DiscourseService extends messenger_1.Messenger {
                 uri: `https://${this.data.instance}/t/${thread}`,
             };
             return request(getThread).then((threadObject) => {
-                return _.map(threadObject.post_stream.posts, (item) => {
+                return _.map(firstWords ? threadObject.posts : threadObject.post_stream.posts, (item) => {
                     return item.cooked;
                 }).filter((value) => {
                     const match = value.match(filter);

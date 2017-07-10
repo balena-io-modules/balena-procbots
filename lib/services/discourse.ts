@@ -145,14 +145,27 @@ export class DiscourseService extends Messenger implements ServiceListener, Serv
 	}
 
 	/**
-	 * Promise to find the comment history of a particular thread.
+	 * Promise to find the first page of comment history of a particular thread.
+	 * Will prompt the API to perform some short-listing if the regex begins with some key words.
 	 * @param thread  id of the thread to search.
 	 * @param _room   id of the room in which the thread resides.
 	 * @param filter  Criteria to match.
 	 */
 	public fetchNotes = (thread: string, _room: string, filter: RegExp): Promise<string[]> => {
+		const firstWords = filter.source.match(/^([\w\s]+)/i);
 		// Query the API
-		const getThread = {
+		const getThread = firstWords ? {
+			json: true,
+			method: 'GET',
+			qs: {
+				'api_key': this.data.token,
+				'api_username': this.data.username,
+				'term': firstWords[1],
+				'search_context[type]': 'topic',
+				'search_context[id]': thread,
+			},
+			uri: `https://${this.data.instance}/search/query`,
+		} : {
 			json: true,
 			method: 'GET',
 			qs: {
@@ -162,7 +175,7 @@ export class DiscourseService extends Messenger implements ServiceListener, Serv
 			uri: `https://${this.data.instance}/t/${thread}`,
 		};
 		return request(getThread).then((threadObject) => {
-			return _.map(threadObject.post_stream.posts, (item: DiscoursePost) => {
+			return _.map(firstWords ? threadObject.posts : threadObject.post_stream.posts, (item: DiscoursePost) => {
 				// Clean the response down to only the text
 				return item.cooked;
 			}).filter((value: string) => {
