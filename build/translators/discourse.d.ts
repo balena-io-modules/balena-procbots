@@ -1,7 +1,6 @@
 import * as Promise from 'bluebird';
-import { DiscourseConstructor, DiscourseEmitContext } from './discourse-types';
+import { DiscourseConstructor } from './discourse-types';
 import { Messenger } from './messenger';
-import { MessageEmitResponse, TransmitContext } from './messenger-types';
 import { ServiceEmitter, ServiceListener } from './service-types';
 export declare class DiscourseService extends Messenger implements ServiceListener, ServiceEmitter {
     private static _serviceName;
@@ -9,11 +8,11 @@ export declare class DiscourseService extends Messenger implements ServiceListen
     private data;
     constructor(data: DiscourseConstructor, listen?: boolean);
     makeGeneric: (data: any) => Promise<any>;
-    makeSpecific: (data: TransmitContext) => Promise<DiscourseEmitContext>;
+    makeSpecific: (data: any) => Promise<any>;
     translateEventName(eventType: string): string;
     fetchNotes: (thread: string, _room: string, filter: RegExp) => Promise<string[]>;
     protected activateMessageListener: () => void;
-    protected sendPayload: (data: DiscourseEmitContext) => Promise<MessageEmitResponse>;
+    protected sendPayload: (data: any) => Promise<any>;
     readonly serviceName: string;
     readonly apiHandle: void;
 }

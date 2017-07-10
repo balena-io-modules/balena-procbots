@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import { Session } from 'flowdock';
-import { MessengerEmitContext } from './messenger-types';
+import { MessageEmitContext } from './messenger-types';
 import { ServiceAPIHandle } from './service-types';
 
 export interface FlowdockMessagePayload {
@@ -35,7 +35,7 @@ export interface FlowdockInboxPayload {
 	roomId: string;
 }
 
-export interface FlowdockEmitContext extends MessengerEmitContext {
+export interface FlowdockEmitContext extends MessageEmitContext {
 	endpoint: {
 		token: string;
 		url: string;

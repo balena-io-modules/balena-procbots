@@ -1,7 +1,7 @@
 import * as Promise from 'bluebird';
-import { FlowdockConstructor, FlowdockEmitContext, FlowdockHandle } from './flowdock-types';
+import { FlowdockConstructor, FlowdockHandle } from './flowdock-types';
 import { Messenger } from './messenger';
-import { DataHub, MessageEmitResponse, TransmitContext } from './messenger-types';
+import { DataHub } from './messenger-types';
 import { ServiceEmitter, ServiceListener } from './service-types';
 export declare class FlowdockService extends Messenger implements ServiceEmitter, ServiceListener, DataHub {
     private static _serviceName;
@@ -9,12 +9,12 @@ export declare class FlowdockService extends Messenger implements ServiceEmitter
     private data;
     constructor(data: FlowdockConstructor, listen?: boolean);
     makeGeneric: (data: any) => Promise<any>;
-    makeSpecific: (data: TransmitContext) => Promise<FlowdockEmitContext>;
+    makeSpecific: (data: any) => Promise<any>;
     translateEventName(eventType: string): string;
     fetchNotes: (thread: string, room: string, filter: RegExp, search?: string | undefined) => Promise<string[]>;
     fetchValue(user: string, key: string): Promise<string>;
     protected activateMessageListener: () => void;
-    protected sendPayload: (data: FlowdockEmitContext) => Promise<MessageEmitResponse>;
+    protected sendPayload: (data: any) => Promise<any>;
     private fetchPrivateMessages(username, filter);
     private fetchUserId;
     private fetchFromSession;

@@ -32,7 +32,7 @@ class DiscourseService extends messenger_1.Messenger {
                 const metadata = messenger_1.Messenger.extractMetadata(details.post.raw);
                 const first = details.post.post_number === 1;
                 return {
-                    action: messenger_types_1.MessageAction.Create,
+                    action: messenger_types_1.MessengerAction.Create,
                     first,
                     genesis: metadata.genesis || data.source,
                     hidden: first ? !details.topic.visible : details.post.post_type === 4,

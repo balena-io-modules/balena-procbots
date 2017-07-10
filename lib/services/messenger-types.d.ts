@@ -21,12 +21,12 @@ import {
 	ServiceEmitResponse,
 } from './service-types';
 
-export enum MessengerAction {
+export enum MessageAction {
 	Create,
 }
 
 // Generic forms of message objects
-export interface MessengerIds {
+export interface MessageIds {
 	user?: string;
 	message?: string;
 	thread?: string;
@@ -34,54 +34,47 @@ export interface MessengerIds {
 	flow?: string;
 	url?: string;
 }
-export interface MessengerContext {
-	action: MessengerAction;
-	first: boolean;
-	genesis: string;
-	hidden: boolean;
-	source: string;
-	sourceIds?: MessengerIds;
-	text: string;
-	title?: string;
-}
-
-// Message objects suitable for the receipt of messages
-export interface ReceiptIds extends MessengerIds {
+export interface ReceiptIds extends MessageIds {
 	user: string;
 	message: string;
 	thread: string;
 	flow: string;
 }
-export interface ReceiptContext extends MessengerContext {
+export interface MessageContext {
+	action: MessageAction;
+	first: boolean;
+	genesis: string;
+	hidden: boolean;
+	source: string;
 	sourceIds: ReceiptIds;
+	text: string;
+	title?: string;
 }
 
 // Message objects suitable for the handling of messages
-export interface InterimContext extends MessengerContext {
-	sourceIds: ReceiptIds;
+export interface InterimContext extends MessageContext {
 	to: string;
-	toIds: MessengerIds;
+	toIds: MessageIds;
 }
 
 // Message objects suitable for the transmission of messages
-export interface TransmitIds extends MessengerIds {
+export interface TransmitIds extends MessageIds {
 	user: string;
 	token: string;
 	flow: string;
 }
-export interface TransmitContext extends MessengerContext {
-	sourceIds: ReceiptIds;
+export interface TransmitContext extends MessageContext {
 	to: string;
 	toIds: TransmitIds;
 }
 
-export interface MessengerEmitContext extends ServiceEmitContext {
+export interface MessageEmitContext extends ServiceEmitContext {
 	endpoint: object;
 	meta?: any;
 	payload: object;
 }
 
-export interface MessengerEmitResponse extends ServiceEmitResponse {
+export interface MessageEmitResponse extends ServiceEmitResponse {
 	response?: {
 		message: string;
 		thread: string;

@@ -17,15 +17,24 @@
 import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import {
-	InterimContext, MessengerIds,
-	Metadata, ReceiptContext,
-	TransmitContext,
-} from '../../services/messenger-types';
+	InterimContext, MessageContext, MessageIds,
+	Metadata, TransmitContext,
+} from '../services/messenger-types';
 import {
 	ServiceEmitContext, ServiceEvent,
-} from '../../services/service-types';
+} from '../services/service-types';
 
 export abstract class MessageTranslator {
+	/**
+	 * Retrieves and loads a Translator by name.
+	 * @param name  The name of the Translator to load.
+	 * @param data  The constructor object for the createTranslator method.
+	 * @return      The newly instantiated Translator.
+	 */
+	public static newTranslator(name: string, data: any): MessageTranslator {
+		return require(name).createTranslator(data);
+	}
+
 	/**
 	 * Make a handle context, using a receipt context and some extra information.
 	 * @param event  Event to be converted.
@@ -33,7 +42,7 @@ export abstract class MessageTranslator {
 	 * @param toIds  Pre-populate the toIds, if desired.
 	 * @returns      Newly created context for handling a message.
 	 */
-	public static initInterimContext(event: ReceiptContext, to: string, toIds: MessengerIds = {}): InterimContext {
+	public static initInterimContext(event: MessageContext, to: string, toIds: MessageIds = {}): InterimContext {
 		return {
 			// Details from the ReceiptContext
 			action: event.action,
@@ -51,32 +60,12 @@ export abstract class MessageTranslator {
 	}
 
 	/**
-	 * Retrieve from the environment array of strings to use as indicators of visibility
-	 * @returns  Object of arrays of indicators, shown and hidden.
-	 */
-	protected static getIndicatorArrays(): { 'shown': string[], 'hidden': string[] } {
-		let shown;
-		let hidden;
-		try {
-			// Retrieve publicity indicators from the environment
-			shown = JSON.parse(process.env.MESSAGE_TRANSLATOR_PUBLIC_INDICATORS);
-			hidden = JSON.parse(process.env.MESSAGE_TRANSLATOR_PRIVATE_INDICATORS);
-		} catch (error) {
-			throw new Error('Message convertor environment variables not set correctly');
-		}
-		if (shown.length === 0 || hidden.length === 0) {
-			throw new Error('Message convertor environment variables not set correctly');
-		}
-		return { hidden, shown };
-	}
-
-	/**
 	 * Encode the metadata of an event into a string to embed in the message.
 	 * @param data    Event to gather details from.
 	 * @param format  Optional, markdown or plaintext, defaults to markdown.
 	 * @returns       Text with data embedded.
 	 */
-	protected static stringifyMetadata(data: TransmitContext, format: 'markdown'|'plaintext' = 'markdown'): string {
+	protected static stringifyMetadata(data: MessageContext, format: 'markdown'|'plaintext' = 'markdown'): string {
 		const indicators = MessageTranslator.getIndicatorArrays();
 		// Build the content with the indicator and genesis at the front
 		switch (format) {
@@ -120,7 +109,41 @@ export abstract class MessageTranslator {
 		};
 	}
 
-	public abstract makeGenericReceiptContext(data: ServiceEvent): Promise<ReceiptContext>;
-	public abstract makeSpecificEmitContext(data: TransmitContext): Promise<ServiceEmitContext>;
-	public abstract getSpecificEventName(eventName: string): string;
+	/**
+	 * Retrieve from the environment array of strings to use as indicators of visibility
+	 * @returns  Object of arrays of indicators, shown and hidden.
+	 */
+	private static getIndicatorArrays(): { 'shown': string[], 'hidden': string[] } {
+		let shown;
+		let hidden;
+		try {
+			// Retrieve publicity indicators from the environment
+			shown = JSON.parse(process.env.MESSAGE_TRANSLATOR_PUBLIC_INDICATORS);
+			hidden = JSON.parse(process.env.MESSAGE_TRANSLATOR_PRIVATE_INDICATORS);
+		} catch (error) {
+			throw new Error('Message convertor environment variables not set correctly');
+		}
+		if (shown.length === 0 || hidden.length === 0) {
+			throw new Error('Message convertor environment variables not set correctly');
+		}
+		return { hidden, shown };
+	}
+
+	/**
+	 * Translate the provided data, enqueued by the service, into a message context
+	 * @param data  Data in the form raw to the service
+	 */
+	public abstract dataIntoMessage(data: ServiceEvent): Promise<MessageContext>;
+
+	/**
+	 * Translate the provided message context into an emit context
+	 * @param message  Standard form of the message
+	 */
+	public abstract messageIntoEmit(message: TransmitContext): Promise<ServiceEmitContext>;
+
+	/**
+	 * Translate the provided generic name for an event into the service events to listen to
+	 * @param eventName  Generic name for an event
+	 */
+	public abstract eventIntoEvents(eventName: string): string[];
 }

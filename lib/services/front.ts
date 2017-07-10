@@ -17,7 +17,7 @@
 import { Front } from 'front-sdk';
 import * as path from 'path';
 import {
-	FrontConstructor, FrontEmitMethod,
+	FrontConnectionDetails, FrontEmitMethod,
 	FrontEndpointDefinition, FrontHandle
 } from './front-types';
 import { ServiceEmitter, ServiceListener } from './service-types';
@@ -25,13 +25,15 @@ import { ServiceUtilities } from './service-utilities';
 
 export class FrontService extends ServiceUtilities implements ServiceListener, ServiceEmitter {
 	private static _serviceName = path.basename(__filename.split('.')[0]);
+
+	/** Underlying SDK object that we route requests to */
 	private session: Front;
 
 	/**
 	 * Connect to the service, used as part of construction.
 	 * @param data  Object containing the required details for the service.
 	 */
-	protected connect(data: FrontConstructor) {
+	protected connect(data: FrontConnectionDetails) {
 		this.session = new Front(data.token);
 	}
 
@@ -46,19 +48,24 @@ export class FrontService extends ServiceUtilities implements ServiceListener, S
 		});
 		// Create an endpoint for this listener and enqueue events
 		this.expressApp.post(`/${FrontService._serviceName}/`, (formData, response) => {
-			this.queueEvent({
-				data: {
-					cookedEvent: {
-						context: formData.body.conversation.id,
-						event: formData.body.type,
-					},
-					rawEvent: formData.body,
-					source: FrontService._serviceName,
+			this.queueData({
+				cookedEvent: {
+					context: formData.body.conversation.id,
+					event: formData.body.type,
 				},
-				workerMethod: this.handleEvent,
+				rawEvent: formData.body,
+				source: FrontService._serviceName,
 			});
 			response.sendStatus(200);
 		});
+	}
+
+	/**
+	 * Verify the event before enqueueing.  For now uses the naive approach of returning true.
+	 */
+	protected verify(): boolean {
+		// TODO: This to be properly implemented.
+		return true;
 	}
 
 	/**
@@ -104,7 +111,7 @@ export class FrontService extends ServiceUtilities implements ServiceListener, S
  * Build this class, typed and activated as a listener.
  * @returns  Service Listener object, awakened and ready to go.
  */
-export function createServiceListener(data: FrontConstructor): ServiceListener {
+export function createServiceListener(data: FrontConnectionDetails): ServiceListener {
 	return new FrontService(data, true);
 }
 
@@ -112,6 +119,6 @@ export function createServiceListener(data: FrontConstructor): ServiceListener {
  * Build this class, typed as an emitter.
  * @returns  Service Emitter object, ready for your events.
  */
-export function createServiceEmitter(data: FrontConstructor): ServiceEmitter {
+export function createServiceEmitter(data: FrontConnectionDetails): ServiceEmitter {
 	return new FrontService(data, false);
 }

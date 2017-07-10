@@ -28,7 +28,7 @@ import {
 } from './service-types';
 import {
 	UtilityEmitContext, UtilityEmitMethod, UtilityEndpointDefinition,
-	UtilityEvent, UtilityWorkerEvent
+	UtilityWorkerData, UtilityWorkerEvent
 } from './service-utilities-types';
 
 /**
@@ -45,11 +45,12 @@ import {
  * In exchange you agree to:
  * - provide a `startListening` method to activate this class as a listener, calling queueEvent as required.
  * - provide a `connect` method to connect this class to the service, called during construction and only once.
- * - provide a `getEmitter` method that finds a method which will take a payload and promise to resolve.
+ * - provide a `getEmitter` method that finds an emitter method which will take a payload and promise to resolve.
+ * - provide a `verify` function, which should check that incoming data is from the correct sender.
  * - provide a `serviceName` getter, which because it is based on file path cannot be inherited away.
  * - provide a `apiHandle` getter, which should return the underlying object that executes the requests.
- * - enqueue your events with `context` and `event` in cookedData.
- * - receive your `sendData` according to UtilityEmitContext.
+ * - enqueue your events with `context` and `event` in cookedData, as per `UtilityWorkerData`.
+ * - accept outgoing `sendData` according to UtilityEmitContext.
  */
 export abstract class ServiceUtilities extends WorkerClient<string> implements ServiceListener, ServiceEmitter {
 	/** A place to put output for debug and reference. */
@@ -136,8 +137,15 @@ export abstract class ServiceUtilities extends WorkerClient<string> implements S
 	 * Queue an event ready for running in a child, here to type guard.
 	 * @param data  The WorkerEvent to add to the queue for processing.
 	 */
-	protected queueEvent(data: UtilityWorkerEvent) {
-		super.queueEvent(data);
+	protected queueData(data: UtilityWorkerData) {
+		if (this.verify(data)) {
+			super.queueEvent({
+				data,
+				workerMethod: this.handleEvent
+			});
+		} else {
+			this.logger.log(LogLevel.WARN, `Received event failed verification.`);
+		}
 	}
 
 	/** Awaken this class as a listener. */
@@ -154,6 +162,12 @@ export abstract class ServiceUtilities extends WorkerClient<string> implements S
 	 * @param data  Object containing the required details for the service.
 	 */
 	protected abstract connect(data: object): void
+
+	/**
+	 * Verify the event before enqueueing.  A naive approach could be to simply return true, but that must be explicit.
+	 * @param data  The data object that was enqueued.
+	 */
+	protected abstract verify(data: UtilityWorkerData): boolean
 
 	/**
 	 * Get a Worker object for the provided event, threaded by context.
@@ -203,14 +217,14 @@ export abstract class ServiceUtilities extends WorkerClient<string> implements S
 
 	/**
 	 * Pass an event to registered listenerMethods.
-	 * @param event  Enqueued event from the listener.
-	 * @returns      Promise that resolves once the event is handled.
+	 * @param data  Enqueued data from the listener.
+	 * @returns     Promise that resolves once the event is handled.
 	 */
-	protected handleEvent = (event: UtilityEvent): Promise<void> => {
+	protected handleEvent = (data: UtilityWorkerData): Promise<void> => {
 		// Retrieve and execute all the listener methods, squashing their responses
-		const listeners = this.eventListeners[event.cookedEvent.type] || [];
+		const listeners = this.eventListeners[data.cookedEvent.event] || [];
 		return Promise.map(listeners, (listener) => {
-			return listener.listenerMethod(listener, event);
+			return listener.listenerMethod(listener, data);
 		}).return();
 	}
 

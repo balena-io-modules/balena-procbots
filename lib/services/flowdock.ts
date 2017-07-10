@@ -22,7 +22,7 @@ import * as request from 'request-promise';
 import { FlowdockConstructor, FlowdockEmitContext, FlowdockHandle, FlowdockMessage } from './flowdock-types';
 import { Messenger } from './messenger';
 import {
-	DataHub, MessengerAction, MessengerEmitResponse, MessengerEvent, ReceiptContext, TransmitContext
+	DataHub, MessageAction, MessageEmitResponse, MessengerEvent, ReceiptContext, TransmitContext
 } from './messenger-types';
 import { ServiceEmitter, ServiceListener } from './service-types';
 
@@ -52,7 +52,7 @@ export class FlowdockService extends Messenger implements ServiceEmitter, Servic
 			const userId = data.rawEvent.user;
 			const org = this.data.organization;
 			const returnValue = {
-				action: MessengerAction.Create,
+				action: MessageAction.Create,
 				first: data.rawEvent.id === data.rawEvent.thread.initial_message,
 				genesis: metadata.genesis || data.source,
 				hidden: metadata.hidden,
@@ -212,7 +212,7 @@ export class FlowdockService extends Messenger implements ServiceEmitter, Servic
 	 * @param data  The object to be delivered to the service.
 	 * @returns     Response from the service endpoint.
 	 */
-	protected sendPayload = (data: FlowdockEmitContext): Promise<MessengerEmitResponse> => {
+	protected sendPayload = (data: FlowdockEmitContext): Promise<MessageEmitResponse> => {
 		// Extract a couple of details from the environment
 		const token = new Buffer(data.endpoint.token).toString('base64');
 		// Post to the API

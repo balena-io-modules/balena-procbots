@@ -21,7 +21,7 @@ import * as request from 'request-promise';
 import { DiscourseConstructor, DiscourseEmitContext, DiscoursePost } from './discourse-types';
 import { Messenger } from './messenger';
 import {
-	MessengerAction, MessengerEmitResponse, MessengerEvent, ReceiptContext, TransmitContext
+	MessageAction, MessageEmitResponse, MessengerEvent, ReceiptContext, TransmitContext
 } from './messenger-types';
 import { ServiceEmitter, ServiceListener } from './service-types';
 
@@ -67,7 +67,7 @@ export class DiscourseService extends Messenger implements ServiceListener, Serv
 			const metadata = Messenger.extractMetadata(details.post.raw);
 			const first = details.post.post_number === 1;
 			return {
-				action: MessengerAction.Create,
+				action: MessageAction.Create,
 				first,
 				genesis: metadata.genesis || data.source,
 				// post_type 4 seems to correspond to whisper
@@ -204,7 +204,7 @@ export class DiscourseService extends Messenger implements ServiceListener, Serv
 	 * @param data  The object to be delivered to the service.
 	 * @returns     Response from the service endpoint.
 	 */
-	protected sendPayload = (data: DiscourseEmitContext): Promise<MessengerEmitResponse> => {
+	protected sendPayload = (data: DiscourseEmitContext): Promise<MessageEmitResponse> => {
 		// Build and send a request to the API endpoint
 		const requestOptions = {
 			body: data.payload,

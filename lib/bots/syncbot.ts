@@ -21,7 +21,7 @@ import { Messenger } from '../services/messenger';
 import {
 	DataHub,
 	FlowDefinition,
-	InterimContext, MessengerAction,
+	InterimContext, MessageAction,
 	TransmitContext,
 } from '../services/messenger-types';
 import {
@@ -159,7 +159,7 @@ export class SyncBot extends ProcBot {
 		this.logger.log(LogLevel.WARN, JSON.stringify(event), SyncBot.extractTokens(event));
 		// Create a message event to echo with the details
 		const fromEvent: InterimContext = {
-			action: MessengerAction.Create,
+			action: MessageAction.Create,
 			first: false,
 			genesis: 'system',
 			hidden: true,
@@ -236,7 +236,7 @@ export class SyncBot extends ProcBot {
 		}
 		// Create a mutual common object for later tweaks
 		const genericEvent: InterimContext = {
-			action: MessengerAction.Create,
+			action: MessageAction.Create,
 			first: false,
 			genesis: 'system',
 			hidden: true,
@@ -467,3 +467,75 @@ export class SyncBot extends ProcBot {
 export function createBot(): SyncBot {
 	return new SyncBot(process.env.SYNCBOT_NAME);
 }
+
+/**
+ * Just a dump of orphaned code
+ */
+
+// From Front
+// /**
+//  * Promise to find the comment history of a particular thread.
+//  * @param thread  id of the thread to search.
+//  * @param _room   id of the room in which the thread resides.
+//  * @param filter  Criteria to match.
+//  */
+// public fetchNotes = (thread: string, _room: string, filter: RegExp): Promise<string[]> => {
+// 	return this.session.conversation.listComments({conversation_id: thread})
+// 		.then((comments) => {
+// 			return _.filter(comments._results, (value) => {
+// 				return filter.test(value.body);
+// 			}).map((value) => {
+// 				return value.body;
+// 			});
+// 		});
+// }
+// /**
+//  * Find the ID of a user specified by username.
+//  * @param username  Target username to search for.
+//  * @returns         Promise that resolves to the user id.
+//  */
+// private fetchUserId = (username: string): Promise<string|undefined> => {
+// 	// Request a list of all teammates
+// 	const getTeammates = {
+// 		headers: {
+// 			authorization: `Bearer ${this.data.token}`
+// 		},
+// 		json: true,
+// 		method: 'GET',
+// 		uri: 'https://api2.frontapp.com/teammates',
+// 	};
+// 	return request(getTeammates).then((teammates: {_results: Array<{username: string, id: string}>}) => {
+// 		// Resolve to the ID of the first matching teammate
+// 		const teammate = _.find(teammates._results, (eachTeammate) => {
+// 			return eachTeammate.username === username;
+// 		});
+// 		if (teammate) {
+// 			return teammate.id;
+// 		}
+// 	});
+// }
+// /**
+//  * Attempt to find a recent conversation ID from it's subject line.
+//  * Done by subject because the conversation_reference provided is sometimes junk.
+//  * @param subject       Target subject line to search for.
+//  * @param attemptsLeft  Since conversations take time to propagate this method may recurse.
+//  * @returns             Promise that resolves to the ID of the conversation.
+//  */
+// private findConversation = (subject: string, attemptsLeft: number = 10): Promise<string> => {
+// 	// Find all the recent conversations
+// 	return this.session.conversation.list().then((response) => {
+// 		// Filter these down to matching conversations
+// 		const conversationsMatched = _.filter(response._results, (conversation) => {
+// 			return conversation.subject === subject;
+// 		});
+// 		// Return the most recent, if any
+// 		if (conversationsMatched.length > 0) {
+// 			return conversationsMatched[0].id;
+// 		}
+// 		// Recurse up to the specified number of times
+// 		if (attemptsLeft > 1) {
+// 			return this.findConversation(subject, attemptsLeft - 1);
+// 		}
+// 		throw new Error('Could not find relevant conversation.');
+// 	});
+// }

@@ -83,7 +83,7 @@ class SyncBot extends procbot_1.ProcBot {
         this.logger.log(logger_1.LogLevel.WARN, error.message);
         this.logger.log(logger_1.LogLevel.WARN, JSON.stringify(event), SyncBot.extractTokens(event));
         const fromEvent = {
-            action: messenger_types_1.MessengerAction.Create,
+            action: messenger_types_1.MessageAction.Create,
             first: false,
             genesis: 'system',
             hidden: true,
@@ -131,7 +131,7 @@ class SyncBot extends procbot_1.ProcBot {
             return Promise.reject(new Error(`Could not form ${type} connection`));
         }
         const genericEvent = {
-            action: messenger_types_1.MessengerAction.Create,
+            action: messenger_types_1.MessageAction.Create,
             first: false,
             genesis: 'system',
             hidden: true,

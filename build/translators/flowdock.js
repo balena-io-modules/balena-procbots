@@ -19,7 +19,7 @@ class FlowdockService extends messenger_1.Messenger {
                 const userId = data.rawEvent.user;
                 const org = this.data.organization;
                 const returnValue = {
-                    action: messenger_types_1.MessageAction.Create,
+                    action: messenger_types_1.MessengerAction.Create,
                     first: data.rawEvent.id === data.rawEvent.thread.initial_message,
                     genesis: metadata.genesis || data.source,
                     hidden: metadata.hidden,

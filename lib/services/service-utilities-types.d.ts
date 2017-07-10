@@ -19,28 +19,36 @@ import TypedError = require('typed-error');
 import { WorkerEvent } from '../framework/worker';
 import { ServiceEmitContext, ServiceEvent } from './service-types';
 
+/** Function skeleton that is used to empower serviceUtility to assume a single argument and a Promise resolution */
 export type UtilityEmitMethod = (payload?: object) => Promise<any>;
 
-export interface UtilityEvent extends ServiceEvent {
+/** Data object the ensures the existence of context and event for serviceUtilities. */
+export interface UtilityWorkerData extends ServiceEvent {
 	cookedEvent: {
 		context: string;
 		event: string;
 		[key: string]: any;
 	};
-	rawEvent: any;
-	source: string;
 }
+
+/** Incoming event object that guarantees some details about the data for serviceUtilities generic handling. */
 export interface UtilityWorkerEvent extends WorkerEvent {
-	data: UtilityEvent;
+	data: UtilityWorkerData;
 }
+
+/** Outgoing event object that guarantees an endpoint definition and payload for serviceUtilities. */
 export interface UtilityEmitContext extends ServiceEmitContext {
 	endpoint: UtilityEndpointDefinition;
 	passThrough?: UtilityData;
 	payload?: UtilityData;
 }
+
+/** A dumb type intended as an inheritance root. */
 export interface UtilityEndpointDefinition {
 	[key: string]: any;
 }
+
+/** A dumb type intended as an inheritance root. */
 export interface UtilityData {
 	[key: string]: any;
 }

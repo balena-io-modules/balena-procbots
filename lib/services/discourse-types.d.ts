@@ -14,7 +14,7 @@
  limitations under the License.
  */
 
-import { MessengerEmitContext } from './messenger-types';
+import { MessageEmitContext } from './messenger-types';
 
 export interface DiscourseBasePayload {
 	raw: string;
@@ -31,7 +31,7 @@ export interface DiscourseTopicPayload extends DiscourseBasePayload {
 	unlist_topic: string; // 'true'|'false';
 }
 
-export interface DiscourseEmitContext extends MessengerEmitContext {
+export interface DiscourseEmitContext extends MessageEmitContext {
 	endpoint: {
 		api_key: string;
 		api_username: string;
