@@ -36,6 +36,12 @@ export interface EventRegistration {
     methodName: string;     // Method the events are going to
 }
 
+export interface ListenerMethod {
+    name: string;
+    events?: EventRegistration[];
+    statements?: Statement[];
+}
+
 // Statements
 
 export const enum StatementOp {
@@ -145,15 +151,31 @@ by precedence.
 */
 
 export const enum ExpressionOp {
+    // Rules
     Variable = 0,
     Property = 1,
     Object = 2,
     Array = 3,
 
-    ID = 30,
-    NUMBER = 31,
-    STRING = 32,
-    BOOLEAN = 33
+    // Arithmetic
+    Add = 10,
+    Subtract = 11,
+    Multiply = 12,
+    Divide = 13,
+
+    // Logical
+    AND = 20,
+    OR = 21,
+
+    // Tests
+    EQUALS = 30,
+    NOTEQUALS = 31,
+
+    // Atoms
+    ID = 40,
+    NUMBER = 41,
+    STRING = 42,
+    BOOLEAN = 43
 }
 
 export interface Expression {
@@ -162,6 +184,12 @@ export interface Expression {
     value?: any;
 
     assignChild(expr: Expression): void;
+}
+
+export interface ArithmeticExpression extends Expression {
+    type: ExpressionOp.Add | ExpressionOp.Subtract | ExpressionOp.Multiply | ExpressionOp.Divide;
+    operandOne: Expression;
+    operandTwo: Expression;
 }
 
 export interface ObjectExpression extends Expression {
@@ -197,12 +225,12 @@ export interface BotDetails {
     emitters?: ServiceDefinition[];
     registrations?: EventRegistration[];
     assignments?: Statement[];
-    listenerMethods?: any[];
+    listenerMethods?: ListenerMethod[];
 
     // Current details
     currentService?: ServiceDefinition;
     currentEventRegistration?: EventRegistration;
     currentExpression?: Expression;
     currentStatement?: Statement;
-    currentListenerMethod?: any;
+    currentListenerMethod?: ListenerMethod;
 }

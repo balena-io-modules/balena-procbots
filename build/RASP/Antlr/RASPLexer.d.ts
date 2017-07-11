@@ -19,13 +19,6 @@ export declare class RASPLexer extends Lexer {
     static readonly T__13: number;
     static readonly T__14: number;
     static readonly T__15: number;
-    static readonly T__16: number;
-    static readonly T__17: number;
-    static readonly T__18: number;
-    static readonly T__19: number;
-    static readonly T__20: number;
-    static readonly T__21: number;
-    static readonly T__22: number;
     static readonly BOT: number;
     static readonly EVENT: number;
     static readonly EVENTS: number;
@@ -37,6 +30,13 @@ export declare class RASPLexer extends Lexer {
     static readonly TO: number;
     static readonly SET: number;
     static readonly AS: number;
+    static readonly ADDED: number;
+    static readonly SUBTRACTED: number;
+    static readonly MULTIPLIED: number;
+    static readonly DIVIDED: number;
+    static readonly BY: number;
+    static readonly AND: number;
+    static readonly OR: number;
     static readonly IS: number;
     static readonly NOT: number;
     static readonly QUERY: number;

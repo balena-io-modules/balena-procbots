@@ -2,7 +2,7 @@ import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import * as FS from 'fs';
 import { sep } from 'path';
-import { ArrayExpression, Expression, ExpressionOp, ObjectExpression, PropertyExpression,
+import { ArithmeticExpression, ArrayExpression, Expression, ExpressionOp, ObjectExpression, PropertyExpression,
         VariableExpression } from './parser-types';
 
 const fs: any = Promise.promisifyAll(FS);
@@ -77,6 +77,16 @@ export function DebugExpression(expr: Expression, indent: number = 0) {
                 return 'Array';
             case ExpressionOp.Variable:
                 return 'Variable';
+
+            case ExpressionOp.Add:
+                return '+';
+            case ExpressionOp.Subtract:
+                return '-';
+            case ExpressionOp.Multiply:
+                return '*';
+            case ExpressionOp.Divide:
+                return '/';
+
             case ExpressionOp.NUMBER:
                 return 'NUMBER';
             case ExpressionOp.BOOLEAN:
@@ -99,6 +109,7 @@ export function DebugExpression(expr: Expression, indent: number = 0) {
 
     // Determine how to get the children, if any.
     switch (expr.type) {
+        // Types
         case ExpressionOp.Object:
             const objExpr = <ObjectExpression>expr;
             for (let prop of objExpr.properties) {
@@ -122,9 +133,23 @@ export function DebugExpression(expr: Expression, indent: number = 0) {
         case ExpressionOp.Variable:
             const varExpr = <VariableExpression>expr;
             print(`\\ ${varExpr.name}:`);
-            DebugExpression(varExpr.value, indent + 1);
+            // If we have a value, then this is of an assignment type, else it's a reference
+            if (varExpr.value) {
+                DebugExpression(varExpr.value, indent + 1);
+            }
             break;
 
+        // Arithmetic
+        case ExpressionOp.Add:
+        case ExpressionOp.Subtract:
+        case ExpressionOp.Multiply:
+        case ExpressionOp.Divide:
+            const arithmeticExpr = <ArithmeticExpression>expr;
+            DebugExpression(arithmeticExpr.operandOne, indent + 1);
+            DebugExpression(arithmeticExpr.operandTwo, indent + 1);
+            break;
+
+        // Atoms
         case ExpressionOp.NUMBER:
         case ExpressionOp.BOOLEAN:
         case ExpressionOp.STRING:

@@ -39,14 +39,22 @@ statement: method |
            sendQuery |
            end;
 
-expr: expr 'added' 'to' expr |
-      expr 'subtracted' 'by' expr |
-      expr 'multiplied' 'by' expr |
-      expr 'divided' 'by' expr |
-      expr 'and' expr |
-      expr 'or' expr |
+assignment: 'set' variable 'as' expr;
+r_if: 'if' expr statement ('else' statement)*;
+r_while: 'while' expr statement;
+loop: 'loop' 'from' expr 'to' expr;
+print: 'print' expr;
+end: 'end';
+sendQuery: setIdFrom? QUERY ID* object;
+
+expr: expr MULTIPLIED BY expr |
+      expr DIVIDED BY expr |
+      expr ADDED TO expr |
+      expr SUBTRACTED BY expr |
+      expr AND expr |
+      expr OR expr |
       expr IS expr |
-      expr IS NOT expr |
+      expr IS NOT expr|
       array |
       method |
       stringMethod |
@@ -67,14 +75,6 @@ object: '{' property (',' property)* '}';
 array: ID? '[' expr (',' expr)* ']';
 property: ID (':' expr)*;
 
-assignment: 'set' variable 'as' expr;
-r_if: 'if' expr statement ('else' statement)*;
-r_while: 'while' expr statement;
-loop: 'loop' 'from' expr 'to' expr;
-print: 'print' expr;
-end: 'end';
-sendQuery: setIdFrom? QUERY ID* object;
-
 // This needs work, we want to be able to call methods without parentheses, as if they were properties
 method: variable '(' methodList* ')';
 methodList: expr (',' expr)*;
@@ -84,22 +84,29 @@ stringMethod: STRING '.' method;
 envvar: 'envar' ID;
 
 // Keywords
-BOT        : 'bot';
-EVENT      : 'event';
-EVENTS     : 'events';
-RECEIVER   : 'receiver';
-RECEIVES   : 'receives';
-FROM       : 'from';
-SEND       : 'send';
-QUERIES    : 'queries';
-TO         : 'to';
-SET        : 'set';
-AS         : 'as';
-IS         : 'is';
-NOT        : 'not';
-QUERY      : 'query';
-METHOD     : 'listenerMethod';
-ERRORMETHOD: 'listenerErrorMethod';
+BOT         : 'bot';
+EVENT       : 'event';
+EVENTS      : 'events';
+RECEIVER    : 'receiver';
+RECEIVES    : 'receives';
+FROM        : 'from';
+SEND        : 'send';
+QUERIES     : 'queries';
+TO          : 'to';
+SET         : 'set';
+AS          : 'as';
+ADDED       : 'added';
+SUBTRACTED  : 'subtracted';
+MULTIPLIED  : 'multiplied';
+DIVIDED     : 'divided';
+BY          : 'by';
+AND         : 'and';
+OR          : 'or';
+IS          : 'is';
+NOT         : 'not';
+QUERY       : 'query';
+METHOD      : 'listenerMethod';
+ERRORMETHOD : 'listenerErrorMethod';
 
 fragment DIGIT   : [0-9];
 fragment ALPHA   : [a-zA-Z];

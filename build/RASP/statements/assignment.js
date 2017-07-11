@@ -25,17 +25,22 @@ class AssignmentStatementGenerator {
             helpers_1.DebugExpression(bot.currentExpression);
         }
         if (bot.currentListenerMethod) {
+            if (!bot.currentListenerMethod.statements) {
+                bot.currentListenerMethod.statements = [];
+            }
+            assignmentContext = bot.currentListenerMethod.statements;
         }
         else {
             if (!bot.assignments) {
                 bot.assignments = [];
             }
             assignmentContext = bot.assignments;
-            if (bot.currentStatement) {
-                assignmentContext.push(bot.currentStatement);
-            }
+        }
+        if (bot.currentStatement) {
+            assignmentContext.push(bot.currentStatement);
         }
         bot.currentStatement = undefined;
+        bot.currentExpression = undefined;
     }
 }
 exports.AssignmentStatementGenerator = AssignmentStatementGenerator;

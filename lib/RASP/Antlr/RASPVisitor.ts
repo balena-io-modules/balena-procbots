@@ -16,12 +16,6 @@ import { ListenerMethodContext } from './RASPParser';
 import { ListenerEventReceiverContext } from './RASPParser';
 import { ListenerErrorContext } from './RASPParser';
 import { StatementContext } from './RASPParser';
-import { ExprContext } from './RASPParser';
-import { ServiceNameContext } from './RASPParser';
-import { VariableContext } from './RASPParser';
-import { ObjectContext } from './RASPParser';
-import { ArrayContext } from './RASPParser';
-import { PropertyContext } from './RASPParser';
 import { AssignmentContext } from './RASPParser';
 import { R_ifContext } from './RASPParser';
 import { R_whileContext } from './RASPParser';
@@ -29,6 +23,12 @@ import { LoopContext } from './RASPParser';
 import { PrintContext } from './RASPParser';
 import { EndContext } from './RASPParser';
 import { SendQueryContext } from './RASPParser';
+import { ExprContext } from './RASPParser';
+import { ServiceNameContext } from './RASPParser';
+import { VariableContext } from './RASPParser';
+import { ObjectContext } from './RASPParser';
+import { ArrayContext } from './RASPParser';
+import { PropertyContext } from './RASPParser';
 import { MethodContext } from './RASPParser';
 import { MethodListContext } from './RASPParser';
 import { StringMethodContext } from './RASPParser';
@@ -135,48 +135,6 @@ export interface RASPVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitStatement?: (ctx: StatementContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by `RASPParser.expr`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitExpr?: (ctx: ExprContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by `RASPParser.serviceName`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitServiceName?: (ctx: ServiceNameContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by `RASPParser.variable`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitVariable?: (ctx: VariableContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by `RASPParser.object`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitObject?: (ctx: ObjectContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by `RASPParser.array`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitArray?: (ctx: ArrayContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by `RASPParser.property`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitProperty?: (ctx: PropertyContext) => Result;
-
-	/**
 	 * Visit a parse tree produced by `RASPParser.assignment`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -224,6 +182,48 @@ export interface RASPVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitSendQuery?: (ctx: SendQueryContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `RASPParser.expr`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitExpr?: (ctx: ExprContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `RASPParser.serviceName`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitServiceName?: (ctx: ServiceNameContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `RASPParser.variable`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitVariable?: (ctx: VariableContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `RASPParser.object`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitObject?: (ctx: ObjectContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `RASPParser.array`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitArray?: (ctx: ArrayContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `RASPParser.property`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitProperty?: (ctx: PropertyContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `RASPParser.method`.

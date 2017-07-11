@@ -35,17 +35,22 @@ export class AssignmentStatementGenerator implements AssignmentStatement {
         }
         if (bot.currentListenerMethod) {
             // We'd set context to the listener method.
+            if (!bot.currentListenerMethod.statements) {
+                bot.currentListenerMethod.statements = [];
+            }
+            assignmentContext = bot.currentListenerMethod.statements;
         } else {
             if (!bot.assignments) {
                 bot.assignments = [];
             }
             assignmentContext = bot.assignments;
-            if (bot.currentStatement) {
-                assignmentContext.push(bot.currentStatement);
-            }
         }
         // Do assignment here
+        if (bot.currentStatement) {
+            assignmentContext.push(bot.currentStatement);
+        }
         bot.currentStatement = undefined;
+        bot.currentExpression = undefined;
     }
 }
 

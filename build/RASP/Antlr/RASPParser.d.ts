@@ -24,13 +24,6 @@ export declare class RASPParser extends Parser {
     static readonly T__13: number;
     static readonly T__14: number;
     static readonly T__15: number;
-    static readonly T__16: number;
-    static readonly T__17: number;
-    static readonly T__18: number;
-    static readonly T__19: number;
-    static readonly T__20: number;
-    static readonly T__21: number;
-    static readonly T__22: number;
     static readonly BOT: number;
     static readonly EVENT: number;
     static readonly EVENTS: number;
@@ -42,6 +35,13 @@ export declare class RASPParser extends Parser {
     static readonly TO: number;
     static readonly SET: number;
     static readonly AS: number;
+    static readonly ADDED: number;
+    static readonly SUBTRACTED: number;
+    static readonly MULTIPLIED: number;
+    static readonly DIVIDED: number;
+    static readonly BY: number;
+    static readonly AND: number;
+    static readonly OR: number;
     static readonly IS: number;
     static readonly NOT: number;
     static readonly QUERY: number;
@@ -71,12 +71,6 @@ export declare class RASPParser extends Parser {
     static readonly RULE_listenerEventReceiver: number;
     static readonly RULE_listenerError: number;
     static readonly RULE_statement: number;
-    static readonly RULE_expr: number;
-    static readonly RULE_serviceName: number;
-    static readonly RULE_variable: number;
-    static readonly RULE_object: number;
-    static readonly RULE_array: number;
-    static readonly RULE_property: number;
     static readonly RULE_assignment: number;
     static readonly RULE_r_if: number;
     static readonly RULE_r_while: number;
@@ -84,6 +78,12 @@ export declare class RASPParser extends Parser {
     static readonly RULE_print: number;
     static readonly RULE_end: number;
     static readonly RULE_sendQuery: number;
+    static readonly RULE_expr: number;
+    static readonly RULE_serviceName: number;
+    static readonly RULE_variable: number;
+    static readonly RULE_object: number;
+    static readonly RULE_array: number;
+    static readonly RULE_property: number;
     static readonly RULE_method: number;
     static readonly RULE_methodList: number;
     static readonly RULE_stringMethod: number;
@@ -110,13 +110,6 @@ export declare class RASPParser extends Parser {
     listenerEventReceiver(): ListenerEventReceiverContext;
     listenerError(): ListenerErrorContext;
     statement(): StatementContext;
-    expr(): ExprContext;
-    expr(_p: number): ExprContext;
-    serviceName(): ServiceNameContext;
-    variable(): VariableContext;
-    object(): ObjectContext;
-    array(): ArrayContext;
-    property(): PropertyContext;
     assignment(): AssignmentContext;
     r_if(): R_ifContext;
     r_while(): R_whileContext;
@@ -124,6 +117,13 @@ export declare class RASPParser extends Parser {
     print(): PrintContext;
     end(): EndContext;
     sendQuery(): SendQueryContext;
+    expr(): ExprContext;
+    expr(_p: number): ExprContext;
+    serviceName(): ServiceNameContext;
+    variable(): VariableContext;
+    object(): ObjectContext;
+    array(): ArrayContext;
+    property(): PropertyContext;
     method(): MethodContext;
     methodList(): MethodListContext;
     stringMethod(): StringMethodContext;
@@ -290,71 +290,6 @@ export declare class StatementContext extends ParserRuleContext {
     exitRule(listener: RASPListener): void;
     accept<Result>(visitor: RASPVisitor<Result>): Result;
 }
-export declare class ExprContext extends ParserRuleContext {
-    expr(): ExprContext[];
-    expr(i: number): ExprContext;
-    IS(): TerminalNode | undefined;
-    NOT(): TerminalNode | undefined;
-    array(): ArrayContext | undefined;
-    method(): MethodContext | undefined;
-    stringMethod(): StringMethodContext | undefined;
-    variable(): VariableContext | undefined;
-    object(): ObjectContext | undefined;
-    NUMBER(): TerminalNode | undefined;
-    STRING(): TerminalNode | undefined;
-    BOOLEAN(): TerminalNode | undefined;
-    constructor(parent: ParserRuleContext, invokingState: number);
-    readonly ruleIndex: number;
-    enterRule(listener: RASPListener): void;
-    exitRule(listener: RASPListener): void;
-    accept<Result>(visitor: RASPVisitor<Result>): Result;
-}
-export declare class ServiceNameContext extends ParserRuleContext {
-    ID(): TerminalNode;
-    constructor(parent: ParserRuleContext, invokingState: number);
-    readonly ruleIndex: number;
-    enterRule(listener: RASPListener): void;
-    exitRule(listener: RASPListener): void;
-    accept<Result>(visitor: RASPVisitor<Result>): Result;
-}
-export declare class VariableContext extends ParserRuleContext {
-    ID(): TerminalNode[];
-    ID(i: number): TerminalNode;
-    constructor(parent: ParserRuleContext, invokingState: number);
-    readonly ruleIndex: number;
-    enterRule(listener: RASPListener): void;
-    exitRule(listener: RASPListener): void;
-    accept<Result>(visitor: RASPVisitor<Result>): Result;
-}
-export declare class ObjectContext extends ParserRuleContext {
-    property(): PropertyContext[];
-    property(i: number): PropertyContext;
-    constructor(parent: ParserRuleContext, invokingState: number);
-    readonly ruleIndex: number;
-    enterRule(listener: RASPListener): void;
-    exitRule(listener: RASPListener): void;
-    accept<Result>(visitor: RASPVisitor<Result>): Result;
-}
-export declare class ArrayContext extends ParserRuleContext {
-    expr(): ExprContext[];
-    expr(i: number): ExprContext;
-    ID(): TerminalNode | undefined;
-    constructor(parent: ParserRuleContext, invokingState: number);
-    readonly ruleIndex: number;
-    enterRule(listener: RASPListener): void;
-    exitRule(listener: RASPListener): void;
-    accept<Result>(visitor: RASPVisitor<Result>): Result;
-}
-export declare class PropertyContext extends ParserRuleContext {
-    ID(): TerminalNode;
-    expr(): ExprContext[];
-    expr(i: number): ExprContext;
-    constructor(parent: ParserRuleContext, invokingState: number);
-    readonly ruleIndex: number;
-    enterRule(listener: RASPListener): void;
-    exitRule(listener: RASPListener): void;
-    accept<Result>(visitor: RASPVisitor<Result>): Result;
-}
 export declare class AssignmentContext extends ParserRuleContext {
     variable(): VariableContext;
     expr(): ExprContext;
@@ -413,6 +348,79 @@ export declare class SendQueryContext extends ParserRuleContext {
     setIdFrom(): SetIdFromContext | undefined;
     ID(): TerminalNode[];
     ID(i: number): TerminalNode;
+    constructor(parent: ParserRuleContext, invokingState: number);
+    readonly ruleIndex: number;
+    enterRule(listener: RASPListener): void;
+    exitRule(listener: RASPListener): void;
+    accept<Result>(visitor: RASPVisitor<Result>): Result;
+}
+export declare class ExprContext extends ParserRuleContext {
+    expr(): ExprContext[];
+    expr(i: number): ExprContext;
+    MULTIPLIED(): TerminalNode | undefined;
+    BY(): TerminalNode | undefined;
+    DIVIDED(): TerminalNode | undefined;
+    ADDED(): TerminalNode | undefined;
+    TO(): TerminalNode | undefined;
+    SUBTRACTED(): TerminalNode | undefined;
+    AND(): TerminalNode | undefined;
+    OR(): TerminalNode | undefined;
+    IS(): TerminalNode | undefined;
+    NOT(): TerminalNode | undefined;
+    array(): ArrayContext | undefined;
+    method(): MethodContext | undefined;
+    stringMethod(): StringMethodContext | undefined;
+    variable(): VariableContext | undefined;
+    object(): ObjectContext | undefined;
+    NUMBER(): TerminalNode | undefined;
+    STRING(): TerminalNode | undefined;
+    BOOLEAN(): TerminalNode | undefined;
+    constructor(parent: ParserRuleContext, invokingState: number);
+    readonly ruleIndex: number;
+    enterRule(listener: RASPListener): void;
+    exitRule(listener: RASPListener): void;
+    accept<Result>(visitor: RASPVisitor<Result>): Result;
+}
+export declare class ServiceNameContext extends ParserRuleContext {
+    ID(): TerminalNode;
+    constructor(parent: ParserRuleContext, invokingState: number);
+    readonly ruleIndex: number;
+    enterRule(listener: RASPListener): void;
+    exitRule(listener: RASPListener): void;
+    accept<Result>(visitor: RASPVisitor<Result>): Result;
+}
+export declare class VariableContext extends ParserRuleContext {
+    ID(): TerminalNode[];
+    ID(i: number): TerminalNode;
+    constructor(parent: ParserRuleContext, invokingState: number);
+    readonly ruleIndex: number;
+    enterRule(listener: RASPListener): void;
+    exitRule(listener: RASPListener): void;
+    accept<Result>(visitor: RASPVisitor<Result>): Result;
+}
+export declare class ObjectContext extends ParserRuleContext {
+    property(): PropertyContext[];
+    property(i: number): PropertyContext;
+    constructor(parent: ParserRuleContext, invokingState: number);
+    readonly ruleIndex: number;
+    enterRule(listener: RASPListener): void;
+    exitRule(listener: RASPListener): void;
+    accept<Result>(visitor: RASPVisitor<Result>): Result;
+}
+export declare class ArrayContext extends ParserRuleContext {
+    expr(): ExprContext[];
+    expr(i: number): ExprContext;
+    ID(): TerminalNode | undefined;
+    constructor(parent: ParserRuleContext, invokingState: number);
+    readonly ruleIndex: number;
+    enterRule(listener: RASPListener): void;
+    exitRule(listener: RASPListener): void;
+    accept<Result>(visitor: RASPVisitor<Result>): Result;
+}
+export declare class PropertyContext extends ParserRuleContext {
+    ID(): TerminalNode;
+    expr(): ExprContext[];
+    expr(i: number): ExprContext;
     constructor(parent: ParserRuleContext, invokingState: number);
     readonly ruleIndex: number;
     enterRule(listener: RASPListener): void;

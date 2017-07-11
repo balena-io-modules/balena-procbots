@@ -64,11 +64,19 @@ function DebugExpression(expr, indent = 0) {
                 return 'Array';
             case 0:
                 return 'Variable';
-            case 31:
+            case 10:
+                return '+';
+            case 11:
+                return '-';
+            case 12:
+                return '*';
+            case 13:
+                return '/';
+            case 41:
                 return 'NUMBER';
-            case 33:
+            case 43:
                 return 'BOOLEAN';
-            case 32:
+            case 42:
                 return 'STRING';
         }
     };
@@ -101,11 +109,21 @@ function DebugExpression(expr, indent = 0) {
         case 0:
             const varExpr = expr;
             print(`\\ ${varExpr.name}:`);
-            DebugExpression(varExpr.value, indent + 1);
+            if (varExpr.value) {
+                DebugExpression(varExpr.value, indent + 1);
+            }
             break;
-        case 31:
-        case 33:
-        case 32:
+        case 10:
+        case 11:
+        case 12:
+        case 13:
+            const arithmeticExpr = expr;
+            DebugExpression(arithmeticExpr.operandOne, indent + 1);
+            DebugExpression(arithmeticExpr.operandTwo, indent + 1);
+            break;
+        case 41:
+        case 43:
+        case 42:
             print(`- ${expr.value}`);
             break;
         default:

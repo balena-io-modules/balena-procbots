@@ -23,8 +23,8 @@ export class VariableExpressionGenerator implements VariableExpression {
         for (let part of ctx.ID()) {
             if (!firstPart) {
                 variableExpr.name += '.';
-                firstPart = false;
             }
+            firstPart = false;
             variableExpr.name += part.text;
         }
 

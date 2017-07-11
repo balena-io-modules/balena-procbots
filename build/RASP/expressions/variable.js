@@ -13,8 +13,8 @@ class VariableExpressionGenerator {
         for (let part of ctx.ID()) {
             if (!firstPart) {
                 variableExpr.name += '.';
-                firstPart = false;
             }
+            firstPart = false;
             variableExpr.name += part.text;
         }
         botStructure.currentExpression = variableExpr;

@@ -21,14 +21,15 @@ bot(FortuneBot)
         'The man on the top of the mountain did not fall there. Though he may be out of bottled oxygen.'
     ]
 
-/*
+
     listenerMethod FortuneUp // receives [ pull_request, pull_request_review ] events from github
         set data as { owner: serviceEvent.repository.owner.login, repo: serviceEvent.repository.name,
             number: serviceEvent.issue.number }
 
         //set comments from query githubEmitter { method: githubEmitter.issues.getComments, data }
         set comments from query { method: issues.getComments, data }
-        
+
+/*        
         if comments.length is 0
             print 'There were no comments to read'
             end
