@@ -18,17 +18,15 @@ import TypedError = require('typed-error');
 import * as Promise from 'bluebird';
 import * as bodyParser from 'body-parser';
 import * as express from 'express';
-import * as _ from 'lodash';
 import { Worker } from '../framework/worker';
 import { WorkerClient } from '../framework/worker-client';
 import { Logger, LogLevel } from '../utils/logger';
 import {
-	ServiceAPIHandle, ServiceEmitRequest, ServiceEmitResponse,
+	ServiceAPIHandle, ServiceEmitContext, ServiceEmitRequest, ServiceEmitResponse,
 	ServiceEmitter, ServiceListener, ServiceRegistration,
 } from './service-types';
 import {
-	UtilityEmitContext, UtilityEmitMethod, UtilityEndpointDefinition,
-	UtilityWorkerData, UtilityWorkerEvent
+	UtilityServiceEvent, UtilityWorkerEvent
 } from './service-utilities-types';
 
 /**
@@ -38,19 +36,19 @@ import {
  * - A connect then listen constructor flow.
  * - An express app, if asked for, and a logger.
  * - An event registration and handling standard.
- * - Context presence-check and extraction around sending data.
+ * - Checks for and extracts data from context.
  * - A standard way of getting contextualised workers.
- * - A single-call wrapper around becoming a listener.
+ * - Ensure activating as a listener only gets called once.
  *
  * In exchange you agree to:
- * - provide a `startListening` method to activate this class as a listener, calling queueEvent as required.
  * - provide a `connect` method to connect this class to the service, called during construction and only once.
- * - provide a `getEmitter` method that finds an emitter method which will take a payload and promise to resolve.
+ * - provide a `startListening` method to activate this class as a listener, calling queueEvent as required.
+ * - provide a `emitData` method, takes a ServiceEmitContext and returns a promise.
  * - provide a `verify` function, which should check that incoming data is from the correct sender.
  * - provide a `serviceName` getter, which because it is based on file path cannot be inherited away.
  * - provide a `apiHandle` getter, which should return the underlying object that executes the requests.
- * - enqueue your events with `context` and `event` in cookedData, as per `UtilityWorkerData`.
- * - accept outgoing `sendData` according to UtilityEmitContext.
+ * - enqueue your events with `context` and `event` in cookedData, as per `UtilityServiceEvent`.
+ * - send your data with `endpoint` definition, as per `UtilityServiceEmitContext`.
  */
 export abstract class ServiceUtilities extends WorkerClient<string> implements ServiceListener, ServiceEmitter {
 	/** A place to put output for debug and reference. */
@@ -100,15 +98,13 @@ export abstract class ServiceUtilities extends WorkerClient<string> implements S
 	 */
 	public sendData(data: ServiceEmitRequest): Promise<ServiceEmitResponse> {
 		try {
-			const context = data.contexts[this.serviceName] as UtilityEmitContext;
+			const context = data.contexts[this.serviceName] as ServiceEmitContext;
 			if (context) {
 				return new Promise<ServiceEmitResponse>((resolve) => {
-					this.getEmitter(context.endpoint)(context.payload)
+					this.emitData(context)
 					.then((response) => {
-						const protectParameters = {};
-						_.merge(protectParameters, context.passThrough, response);
 						resolve({
-							response: protectParameters,
+							response,
 							source: this.serviceName,
 						});
 					})
@@ -137,37 +133,38 @@ export abstract class ServiceUtilities extends WorkerClient<string> implements S
 	 * Queue an event ready for running in a child, here to type guard.
 	 * @param data  The WorkerEvent to add to the queue for processing.
 	 */
-	protected queueData(data: UtilityWorkerData) {
+	protected queueData(data: UtilityServiceEvent) {
 		if (this.verify(data)) {
 			super.queueEvent({
 				data,
 				workerMethod: this.handleEvent
 			});
 		} else {
-			this.logger.log(LogLevel.WARN, `Received event failed verification.`);
+			this.logger.log(LogLevel.WARN, `Event failed verification.`);
 		}
 	}
-
-	/** Awaken this class as a listener. */
-	protected abstract startListening(): void;
-
-	/**
-	 * Return a method that will: emit a payload to the service, resolving to whatever you wish
-	 * @param data  Definition of the emitter to create
-	 */
-	protected abstract getEmitter(data: UtilityEndpointDefinition): UtilityEmitMethod;
 
 	/**
 	 * Connect to the service, used as part of construction.
 	 * @param data  Object containing the required details for the service.
 	 */
-	protected abstract connect(data: object): void
+	protected abstract connect(data: any): void
+
+	/**
+	 * Emit a payload to the endpoint defined, resolving when done.
+	 * endpoint  Definition of the endpoint to emit to.
+	 * payload   Data to be delivered.
+	 */
+	protected abstract emitData(data: ServiceEmitContext): Promise<any>;
+
+	/** Awaken this class as a listener. */
+	protected abstract startListening(): void;
 
 	/**
 	 * Verify the event before enqueueing.  A naive approach could be to simply return true, but that must be explicit.
 	 * @param data  The data object that was enqueued.
 	 */
-	protected abstract verify(data: UtilityWorkerData): boolean
+	protected abstract verify(data: UtilityServiceEvent): boolean
 
 	/**
 	 * Get a Worker object for the provided event, threaded by context.
@@ -220,7 +217,7 @@ export abstract class ServiceUtilities extends WorkerClient<string> implements S
 	 * @param data  Enqueued data from the listener.
 	 * @returns     Promise that resolves once the event is handled.
 	 */
-	protected handleEvent = (data: UtilityWorkerData): Promise<void> => {
+	protected handleEvent = (data: UtilityServiceEvent): Promise<void> => {
 		// Retrieve and execute all the listener methods, squashing their responses
 		const listeners = this.eventListeners[data.cookedEvent.event] || [];
 		return Promise.map(listeners, (listener) => {

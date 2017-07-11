@@ -14,7 +14,8 @@
  limitations under the License.
  */
 
-import { MessageEmitContext } from './messenger-types';
+import { ServiceEmitContext } from './service-types';
+import { UtilityServiceEvent } from './service-utilities-types';
 
 export interface DiscourseBasePayload {
 	raw: string;
@@ -31,21 +32,21 @@ export interface DiscourseTopicPayload extends DiscourseBasePayload {
 	unlist_topic: string; // 'true'|'false';
 }
 
-export interface DiscourseEmitContext extends MessageEmitContext {
-	endpoint: {
-		api_key: string;
-		api_username: string;
-	};
-	payload: DiscoursePostPayload | DiscourseTopicPayload;
+export type DiscoursePayload = DiscoursePostPayload | DiscourseTopicPayload;
+
+export type DiscourseResponse = any;
+
+export interface DiscourseEmitContext extends ServiceEmitContext {
+	method: string;
+	path: string;
+	payload: DiscoursePayload;
 }
 
-export interface DiscoursePost {
-	cooked: string;
-	[key: string]: string;
-}
-
-export interface DiscourseConstructor {
+export interface DiscourseConnectionDetails {
 	token: string;
 	username: string;
 	instance: string;
+}
+
+export interface DiscourseEvent extends UtilityServiceEvent {
 }

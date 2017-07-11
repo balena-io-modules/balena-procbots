@@ -14,26 +14,25 @@
  limitations under the License.
  */
 
-import * as Promise from 'bluebird';
 import { ConversationComments, Front, RequestData, ResponseData, Status } from 'front-sdk';
-import { ServiceAPIHandle } from './service-types';
-import { UtilityEmitContext, UtilityEndpointDefinition, UtilityWorkerData } from './service-utilities-types';
+import { ServiceAPIHandle, ServiceEmitContext } from './service-types';
+import { UtilityServiceEvent } from './service-utilities-types';
 
-export type FrontEmitMethod = (payload?: RequestData) => Promise<ResponseData|Status|void|ConversationComments>;
+export type FrontResponse = ResponseData|Status|void|ConversationComments;
 
-export interface FrontEndpointDefinition extends UtilityEndpointDefinition {
+export interface FrontEmitContext extends ServiceEmitContext {
 	objectType: string;
 	action: string;
-}
-export interface FrontEmitContext extends UtilityEmitContext {
-	endpoint: FrontEndpointDefinition;
 	payload: RequestData;
 }
+
 export interface FrontHandle extends ServiceAPIHandle {
 	front: Front;
 }
+
 export interface FrontConnectionDetails {
 	token: string;
 }
-export interface FrontWorkerData extends UtilityWorkerData {
+
+export interface FrontEvent extends UtilityServiceEvent {
 }

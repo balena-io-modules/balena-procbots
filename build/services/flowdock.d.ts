@@ -1,27 +1,17 @@
 import * as Promise from 'bluebird';
-import { FlowdockConstructor, FlowdockEmitContext, FlowdockHandle } from './flowdock-types';
-import { Messenger } from './messenger';
-import { DataHub, MessageEmitResponse, TransmitContext } from './messenger-types';
+import { FlowdockConnectionDetails, FlowdockEmitContext, FlowdockHandle, FlowdockResponse } from './flowdock-types';
 import { ServiceEmitter, ServiceListener } from './service-types';
-export declare class FlowdockService extends Messenger implements ServiceEmitter, ServiceListener, DataHub {
+import { ServiceUtilities } from './service-utilities';
+export declare class FlowdockService extends ServiceUtilities implements ServiceEmitter, ServiceListener {
     private static _serviceName;
     private session;
-    private data;
-    constructor(data: FlowdockConstructor, listen?: boolean);
-    makeGeneric: (data: any) => Promise<any>;
-    makeSpecific: (data: TransmitContext) => Promise<FlowdockEmitContext>;
-    translateEventName(eventType: string): string;
-    fetchNotes: (thread: string, room: string, filter: RegExp, search?: string | undefined) => Promise<string[]>;
-    fetchValue(user: string, key: string): Promise<string>;
-    protected activateMessageListener: () => void;
-    protected sendPayload: (data: FlowdockEmitContext) => Promise<MessageEmitResponse>;
-    private fetchPrivateMessages(username, filter);
-    private fetchUserId;
-    private fetchFromSession;
+    private org;
+    protected connect(data: FlowdockConnectionDetails): void;
+    protected emitData(context: FlowdockEmitContext): Promise<FlowdockResponse>;
+    protected startListening(): void;
+    protected verify(): boolean;
     readonly serviceName: string;
     readonly apiHandle: FlowdockHandle;
 }
-export declare function createServiceListener(data: FlowdockConstructor): ServiceListener;
-export declare function createServiceEmitter(data: FlowdockConstructor): ServiceEmitter;
-export declare function createMessageService(data: FlowdockConstructor): Messenger;
-export declare function createDataHub(data: FlowdockConstructor): DataHub;
+export declare function createServiceListener(data: FlowdockConnectionDetails): ServiceListener;
+export declare function createServiceEmitter(data: FlowdockConnectionDetails): ServiceEmitter;

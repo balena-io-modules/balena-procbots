@@ -14,11 +14,13 @@
  limitations under the License.
  */
 
-import { Front } from 'front-sdk';
+import * as Promise from 'bluebird';
+import { Front, RequestData } from 'front-sdk';
 import * as path from 'path';
+
 import {
-	FrontConnectionDetails, FrontEmitMethod,
-	FrontEndpointDefinition, FrontHandle
+	FrontConnectionDetails, FrontEmitContext,
+	FrontEvent, FrontHandle, FrontResponse,
 } from './front-types';
 import { ServiceEmitter, ServiceListener } from './service-types';
 import { ServiceUtilities } from './service-utilities';
@@ -35,6 +37,27 @@ export class FrontService extends ServiceUtilities implements ServiceListener, S
 	 */
 	protected connect(data: FrontConnectionDetails) {
 		this.session = new Front(data.token);
+	}
+
+	/**
+	 * Return a method that will: emit RequestData to the service, resolving to ResponseData
+	 * @param context  Context to be emitted
+	 */
+	protected emitData(context: FrontEmitContext): Promise<FrontResponse> {
+		const sessionEndpoints: {
+			[key: string]: {
+				[key: string]: (payload: RequestData) => Promise<FrontResponse>;
+			}
+		} = {
+			comment: this.session.comment,
+			// At the moment .list, specifically optional params, causes a problem.
+			// conversation: this.session.conversation,
+			// At the moment .list, specifically it not taking params, causes a problem.
+			// inbox: this.session.inbox,
+			message: this.session.message,
+			topic: this.session.topic,
+		};
+		return sessionEndpoints[context.objectType][context.action](context.payload);
 	}
 
 	/**
@@ -63,29 +86,9 @@ export class FrontService extends ServiceUtilities implements ServiceListener, S
 	/**
 	 * Verify the event before enqueueing.  For now uses the naive approach of returning true.
 	 */
-	protected verify(): boolean {
+	protected verify(_data: FrontEvent): boolean {
 		// TODO: This to be properly implemented.
 		return true;
-	}
-
-	/**
-	 * Return a method that will: emit RequestData to the service, resolving to ResponseData
-	 * @param data  Definition of the emitter to return
-	 */
-	protected getEmitter(data: FrontEndpointDefinition): FrontEmitMethod {
-		const sessionEndpoints: {
-			[key: string]: {
-				[key: string]: FrontEmitMethod;
-			}
-		} = {
-			comment: this.session.comment,
-			conversation: this.session.conversation,
-			// At the moment .list, specifically it not taking params, causes a problem.
-			// inbox: this.session.inbox,
-			message: this.session.message,
-			topic: this.session.topic,
-		};
-		return sessionEndpoints[data.objectType][data.action];
 	}
 
 	/**

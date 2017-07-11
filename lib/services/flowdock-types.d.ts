@@ -15,8 +15,8 @@ limitations under the License.
 */
 
 import { Session } from 'flowdock';
-import { MessageEmitContext } from './messenger-types';
-import { ServiceAPIHandle } from './service-types';
+import {ServiceAPIHandle, ServiceEmitContext} from './service-types';
+import {  UtilityServiceEvent } from './service-utilities-types';
 
 export interface FlowdockMessagePayload {
 	content: string;
@@ -35,29 +35,28 @@ export interface FlowdockInboxPayload {
 	roomId: string;
 }
 
-export interface FlowdockEmitContext extends MessageEmitContext {
-	endpoint: {
-		token: string;
-		url: string;
-	};
-	meta?: {
-		flow: string;
-		org: string;
-	};
-	payload: FlowdockInboxPayload | FlowdockMessagePayload;
-}
-
-export interface FlowdockMessage {
-	content: string;
-	[key: string]: string;
-}
-
 /** The Flowdock API SDK handle type. */
 export interface FlowdockHandle extends ServiceAPIHandle {
 	flowdock: Session;
 }
 
-export interface FlowdockConstructor {
+export type FlowdockPayload = FlowdockMessagePayload | FlowdockInboxPayload;
+
+export type FlowdockResponse = any;
+
+export interface FlowdockEmitContext extends ServiceEmitContext {
+	method: string;
+	path: string;
+	payload: FlowdockPayload;
+}
+
+export interface FlowdockConnectionDetails {
 	organization: string;
 	token: string;
+}
+
+export interface FlowdockEvent extends UtilityServiceEvent {
+	cookedData: {
+		flow: string;
+	};
 }

@@ -1,22 +1,17 @@
 import * as Promise from 'bluebird';
-import { DiscourseConstructor, DiscourseEmitContext } from './discourse-types';
-import { Messenger } from './messenger';
-import { MessageEmitResponse, TransmitContext } from './messenger-types';
+import { DiscourseConnectionDetails, DiscourseEmitContext, DiscourseEvent, DiscourseResponse } from './discourse-types';
 import { ServiceEmitter, ServiceListener } from './service-types';
-export declare class DiscourseService extends Messenger implements ServiceListener, ServiceEmitter {
+import { ServiceUtilities } from './service-utilities';
+export declare class DiscourseService extends ServiceUtilities implements ServiceListener, ServiceEmitter {
     private static _serviceName;
     private postsSynced;
-    private data;
-    constructor(data: DiscourseConstructor, listen?: boolean);
-    makeGeneric: (data: any) => Promise<any>;
-    makeSpecific: (data: TransmitContext) => Promise<DiscourseEmitContext>;
-    translateEventName(eventType: string): string;
-    fetchNotes: (thread: string, _room: string, filter: RegExp) => Promise<string[]>;
-    protected activateMessageListener: () => void;
-    protected sendPayload: (data: DiscourseEmitContext) => Promise<MessageEmitResponse>;
+    private connectionDetails;
+    protected connect(data: DiscourseConnectionDetails): void;
+    protected emitData(context: DiscourseEmitContext): Promise<DiscourseResponse>;
+    protected startListening(): void;
+    protected verify(_data: DiscourseEvent): boolean;
     readonly serviceName: string;
     readonly apiHandle: void;
 }
-export declare function createServiceListener(data: DiscourseConstructor): ServiceListener;
-export declare function createServiceEmitter(data: DiscourseConstructor): ServiceEmitter;
-export declare function createMessageService(data: DiscourseConstructor): Messenger;
+export declare function createServiceListener(data: DiscourseConnectionDetails): ServiceListener;
+export declare function createServiceEmitter(data: DiscourseConnectionDetails): ServiceEmitter;

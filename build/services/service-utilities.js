@@ -4,7 +4,6 @@ const TypedError = require("typed-error");
 const Promise = require("bluebird");
 const bodyParser = require("body-parser");
 const express = require("express");
-const _ = require("lodash");
 const worker_1 = require("../framework/worker");
 const worker_client_1 = require("../framework/worker-client");
 const logger_1 = require("../utils/logger");
@@ -56,12 +55,10 @@ class ServiceUtilities extends worker_client_1.WorkerClient {
             const context = data.contexts[this.serviceName];
             if (context) {
                 return new Promise((resolve) => {
-                    this.getEmitter(context.endpoint)(context.payload)
+                    this.emitData(context)
                         .then((response) => {
-                        const protectParameters = {};
-                        _.merge(protectParameters, context.passThrough, response);
                         resolve({
-                            response: protectParameters,
+                            response,
                             source: this.serviceName,
                         });
                     })

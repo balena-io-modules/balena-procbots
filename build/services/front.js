@@ -7,6 +7,14 @@ class FrontService extends service_utilities_1.ServiceUtilities {
     connect(data) {
         this.session = new front_sdk_1.Front(data.token);
     }
+    emitData(context) {
+        const sessionEndpoints = {
+            comment: this.session.comment,
+            message: this.session.message,
+            topic: this.session.topic,
+        };
+        return sessionEndpoints[context.objectType][context.action](context.payload);
+    }
     startListening() {
         this.expressApp.post('/front-dev-null', (_formData, response) => {
             response.sendStatus(200);
@@ -23,17 +31,8 @@ class FrontService extends service_utilities_1.ServiceUtilities {
             response.sendStatus(200);
         });
     }
-    verify() {
+    verify(_data) {
         return true;
-    }
-    getEmitter(data) {
-        const sessionEndpoints = {
-            comment: this.session.comment,
-            conversation: this.session.conversation,
-            message: this.session.message,
-            topic: this.session.topic,
-        };
-        return sessionEndpoints[data.objectType][data.action];
     }
     get serviceName() {
         return FrontService._serviceName;

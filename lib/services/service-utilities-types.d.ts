@@ -14,16 +14,12 @@
  limitations under the License.
  */
 
-import * as Promise from 'bluebird';
 import TypedError = require('typed-error');
 import { WorkerEvent } from '../framework/worker';
-import { ServiceEmitContext, ServiceEvent } from './service-types';
-
-/** Function skeleton that is used to empower serviceUtility to assume a single argument and a Promise resolution */
-export type UtilityEmitMethod = (payload?: object) => Promise<any>;
+import { ServiceEvent } from './service-types';
 
 /** Data object the ensures the existence of context and event for serviceUtilities. */
-export interface UtilityWorkerData extends ServiceEvent {
+export interface UtilityServiceEvent extends ServiceEvent {
 	cookedEvent: {
 		context: string;
 		event: string;
@@ -33,22 +29,5 @@ export interface UtilityWorkerData extends ServiceEvent {
 
 /** Incoming event object that guarantees some details about the data for serviceUtilities generic handling. */
 export interface UtilityWorkerEvent extends WorkerEvent {
-	data: UtilityWorkerData;
-}
-
-/** Outgoing event object that guarantees an endpoint definition and payload for serviceUtilities. */
-export interface UtilityEmitContext extends ServiceEmitContext {
-	endpoint: UtilityEndpointDefinition;
-	passThrough?: UtilityData;
-	payload?: UtilityData;
-}
-
-/** A dumb type intended as an inheritance root. */
-export interface UtilityEndpointDefinition {
-	[key: string]: any;
-}
-
-/** A dumb type intended as an inheritance root. */
-export interface UtilityData {
-	[key: string]: any;
+	data: UtilityServiceEvent;
 }
