@@ -1,9 +1,12 @@
 import * as Promise from 'bluebird';
+import TypedError = require('typed-error');
 import { Worker, WorkerEvent } from '../framework/worker';
 import { WorkerClient } from '../framework/worker-client';
 import { GithubConfigLocation, GithubConstructor, GithubHandle, GithubListenerConstructor, GithubRegistration } from './github-types';
 import { ServiceEmitRequest, ServiceEmitResponse, ServiceEmitter, ServiceEvent, ServiceListener } from './service-types';
-export declare class GithubError extends TypeError {
+export declare class GithubError extends TypedError {
+    name: string;
+    stack: string;
     message: string;
     documentationUrl: string;
     type: string;
@@ -14,7 +17,8 @@ export declare class GithubService extends WorkerClient<string> implements Servi
     protected authToken: string;
     protected pem: string;
     protected githubApi: any;
-    private integrationId;
+    private appId;
+    private userPat;
     private eventTriggers;
     private ghApiAccept;
     private _serviceName;

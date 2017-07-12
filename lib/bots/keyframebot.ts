@@ -40,7 +40,13 @@ const tempCleanup = Promise.promisify(cleanup);
  * A custom HTTP error to pass back in event of deployment failure.
  */
 class HTTPError extends TypedError {
-	/** Message error from the Github API. */
+	/** Name of the error. */
+	public name: string;
+	/** Stack trace. */
+	public stack: string;
+	/** Message error from HTTP. */
+	public message: string;
+	/** HTTP error code. */
 	public httpCode: number;
 	/** Type of the error, to distinguish it from GithubError. */
 	public type = 'HttpError';

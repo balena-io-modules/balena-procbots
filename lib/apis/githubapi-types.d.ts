@@ -106,21 +106,8 @@ export interface Merge {
 }
 
 export interface PullRequest {
-	head: {
-		ref: string;
-		repo: {
-			owner: {
-				login: string;
-			}
-			name: string;
-		};
-		sha: string;
-	};
-	base: {
-		label: string;
-		ref: string;
-		sha: string;
-	};
+	head: Repo;
+	base: Repo;
 	html_url: string;
 	mergeable: boolean;
 	mergeable_state: string;
@@ -132,6 +119,17 @@ export interface PullRequest {
 }
 
 export interface Blob {
+	sha: string;
+}
+
+export interface Repo {
+	ref: string;
+	repo: {
+		owner: {
+			login: string;
+		}
+		name: string;
+	};
 	sha: string;
 }
 

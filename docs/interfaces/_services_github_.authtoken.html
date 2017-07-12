@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>KeyframeDetails | Resin ProcBots</title>
+	<title>AuthToken | Resin ProcBots</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -54,13 +54,13 @@
 					<a href="../globals.html">Globals</a>
 				</li>
 				<li>
-					<a href="../modules/_bots_keyframebot_.html">&quot;bots/keyframebot&quot;</a>
+					<a href="../modules/_services_github_.html">&quot;services/github&quot;</a>
 				</li>
 				<li>
-					<a href="_bots_keyframebot_.keyframedetails.html">KeyframeDetails</a>
+					<a href="_services_github_.authtoken.html">AuthToken</a>
 				</li>
 			</ul>
-			<h1>Interface KeyframeDetails</h1>
+			<h1>Interface AuthToken</h1>
 		</div>
 	</div>
 </header>
@@ -70,7 +70,7 @@
 			<section class="tsd-panel tsd-comment">
 				<div class="tsd-comment tsd-typography">
 					<div class="lead">
-						<p>Details a keyframe for deployment,</p>
+						<p>Github Authentication Token.</p>
 					</div>
 				</div>
 			</section>
@@ -78,7 +78,7 @@
 				<h3>Hierarchy</h3>
 				<ul class="tsd-hierarchy">
 					<li>
-						<span class="target">KeyframeDetails</span>
+						<span class="target">AuthToken</span>
 					</li>
 				</ul>
 			</section>
@@ -89,8 +89,8 @@
 						<section class="tsd-index-section tsd-is-not-exported">
 							<h3>Properties</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="_bots_keyframebot_.keyframedetails.html#environment" class="tsd-kind-icon">environment</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="_bots_keyframebot_.keyframedetails.html#version" class="tsd-kind-icon">version</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="_services_github_.authtoken.html#expires_at" class="tsd-kind-icon">expires_<wbr>at</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="_services_github_.authtoken.html#token" class="tsd-kind-icon">token</a></li>
 							</ul>
 						</section>
 					</div>
@@ -99,40 +99,32 @@
 			<section class="tsd-panel-group tsd-member-group tsd-is-not-exported">
 				<h2>Properties</h2>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-					<a name="environment" class="tsd-anchor"></a>
-					<h3>environment</h3>
-					<div class="tsd-signature tsd-kind-icon">environment<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+					<a name="expires_at" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagOptional">Optional</span> expires_<wbr>at</h3>
+					<div class="tsd-signature tsd-kind-icon">expires_<wbr>at<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-<<<<<<< HEAD
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/keyframebot.ts#L69">bots/keyframebot.ts:69</a></li>
-=======
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/keyframebot.ts#L76">bots/keyframebot.ts:76</a></li>
->>>>>>> Fix issue with TypeDoc that was using local file paths for definitions.
+							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/github.ts#L56">services/github.ts:56</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
 						<div class="lead">
-							<p>The environment in which to deploy the keyframe.</p>
+							<p>When the token expires.</p>
 						</div>
 					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-					<a name="version" class="tsd-anchor"></a>
-					<h3>version</h3>
-					<div class="tsd-signature tsd-kind-icon">version<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+					<a name="token" class="tsd-anchor"></a>
+					<h3>token</h3>
+					<div class="tsd-signature tsd-kind-icon">token<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-<<<<<<< HEAD
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/keyframebot.ts#L67">bots/keyframebot.ts:67</a></li>
-=======
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/keyframebot.ts#L74">bots/keyframebot.ts:74</a></li>
->>>>>>> Fix issue with TypeDoc that was using local file paths for definitions.
+							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/github.ts#L54">services/github.ts:54</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
 						<div class="lead">
-							<p>Version of the keyframe.</p>
+							<p>Token itself.</p>
 						</div>
 					</div>
 				</section>
@@ -147,7 +139,7 @@
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_app_.html">"app"</a>
 					</li>
-					<li class="current tsd-kind-external-module">
+					<li class=" tsd-kind-external-module">
 						<a href="../modules/_bots_keyframebot_.html">"bots/keyframebot"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
@@ -174,7 +166,7 @@
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_services_front_.html">"services/front"</a>
 					</li>
-					<li class=" tsd-kind-external-module">
+					<li class="current tsd-kind-external-module">
 						<a href="../modules/_services_github_.html">"services/github"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
@@ -193,56 +185,35 @@
 			</nav>
 			<nav class="tsd-navigation secondary menu-sticky">
 				<ul class="before-current">
-					<li class=" tsd-kind-class tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="../classes/_bots_keyframebot_.httperror.html" class="tsd-kind-icon">HTTPError</a>
+					<li class=" tsd-kind-class tsd-parent-kind-external-module">
+						<a href="../classes/_services_github_.githuberror.html" class="tsd-kind-icon">Github<wbr>Error</a>
 					</li>
 					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="../classes/_bots_keyframebot_.keyframebot.html" class="tsd-kind-icon">Keyframe<wbr>Bot</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="_bots_keyframebot_.deploymentdetails.html" class="tsd-kind-icon">Deployment<wbr>Details</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="_bots_keyframebot_.environments.html" class="tsd-kind-icon">Environments</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_bots_keyframebot_.keyframebotconstructor.html" class="tsd-kind-icon">Keyframe<wbr>Bot<wbr>Constructor</a>
+						<a href="../classes/_services_github_.githubservice.html" class="tsd-kind-icon">Github<wbr>Service</a>
 					</li>
 				</ul>
 				<ul class="current">
 					<li class="current tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="_bots_keyframebot_.keyframedetails.html" class="tsd-kind-icon">Keyframe<wbr>Details</a>
+						<a href="_services_github_.authtoken.html" class="tsd-kind-icon">Auth<wbr>Token</a>
 						<ul>
 							<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-								<a href="_bots_keyframebot_.keyframedetails.html#environment" class="tsd-kind-icon">environment</a>
+								<a href="_services_github_.authtoken.html#expires_at" class="tsd-kind-icon">expires_<wbr>at</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-								<a href="_bots_keyframebot_.keyframedetails.html#version" class="tsd-kind-icon">version</a>
+								<a href="_services_github_.authtoken.html#token" class="tsd-kind-icon">token</a>
 							</li>
 						</ul>
 					</li>
 				</ul>
 				<ul class="after-current">
-					<li class=" tsd-kind-variable tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="../modules/_bots_keyframebot_.html#deploykeyframepath" class="tsd-kind-icon">Deploy<wbr>Keyframe<wbr>Path</a>
-					</li>
-					<li class=" tsd-kind-variable tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="../modules/_bots_keyframebot_.html#deploykeyframeport" class="tsd-kind-icon">Deploy<wbr>Keyframe<wbr>Port</a>
-					</li>
-					<li class=" tsd-kind-variable tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="../modules/_bots_keyframebot_.html#githubport" class="tsd-kind-icon">Github<wbr>Port</a>
-					</li>
-					<li class=" tsd-kind-variable tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="../modules/_bots_keyframebot_.html#keyframefilename" class="tsd-kind-icon">Keyframe<wbr>Filename</a>
-					</li>
-					<li class=" tsd-kind-variable tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="../modules/_bots_keyframebot_.html#tempcleanup" class="tsd-kind-icon">temp<wbr>Cleanup</a>
-					</li>
-					<li class=" tsd-kind-variable tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="../modules/_bots_keyframebot_.html#tempmkdir" class="tsd-kind-icon">temp<wbr>Mkdir</a>
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
+						<a href="_services_github_.labeldetails.html" class="tsd-kind-icon">Label<wbr>Details</a>
 					</li>
 					<li class=" tsd-kind-function tsd-parent-kind-external-module">
-						<a href="../modules/_bots_keyframebot_.html#createbot" class="tsd-kind-icon">create<wbr>Bot</a>
+						<a href="../modules/_services_github_.html#createserviceemitter" class="tsd-kind-icon">create<wbr>Service<wbr>Emitter</a>
+					</li>
+					<li class=" tsd-kind-function tsd-parent-kind-external-module">
+						<a href="../modules/_services_github_.html#createservicelistener" class="tsd-kind-icon">create<wbr>Service<wbr>Listener</a>
 					</li>
 				</ul>
 			</nav>

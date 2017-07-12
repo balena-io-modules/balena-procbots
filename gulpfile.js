@@ -28,7 +28,7 @@ gulp.task('tslint', () => {
 
 gulp.task('typedoc', (done) => {
 	exec('`npm bin`/typedoc --name "Resin ProcBots" --module commonjs --target ES6 --excludeExternals ' +
-		'--externalPattern **/typings/*.d.ts --gitRevision master --media docresources --out docs/ lib/', () => {
+		'--gitRevision master --media docresources --out docs/ lib/', () => {
 			exec('touch docs/.nojekyll');
 			done();
 		});
