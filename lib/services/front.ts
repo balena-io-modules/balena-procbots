@@ -196,6 +196,10 @@ export class FrontService extends Messenger implements ServiceListener, ServiceE
 						archive: false,
 					},
 					subject: details.conversation.subject,
+					// Yes, this is the best place I've found to cite the author of a message for now. SyncBot channels
+					// do not actually use their outgoing triggers anyway, so it doesn't matter *too* much.
+					// But it is still wrong.
+					to: [data.toIds.user],
 					type: 'message',
 				},
 			};
