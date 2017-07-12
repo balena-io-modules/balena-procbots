@@ -13,7 +13,7 @@ const TypedError = require("typed-error");
 const worker_1 = require("../framework/worker");
 const worker_client_1 = require("../framework/worker-client");
 const logger_1 = require("../utils/logger");
-class GithubError extends TypeError {
+class GithubError extends TypedError {
     constructor(error) {
         super(error);
         this.type = 'GithubError';
@@ -99,12 +99,15 @@ class GithubService extends worker_client_1.WorkerClient {
                 }
             }).return();
         };
-        if (constObj.loginType.type !== 'integration') {
-            throw new Error('Do not yet support non-Integration type clients');
+        if (constObj.authentication.type === 'app') {
+            const appLogin = constObj.authentication;
+            this.appId = appLogin.appId;
+            this.pem = appLogin.pem;
         }
-        constObj.loginType = constObj.loginType;
-        this.integrationId = constObj.loginType.integrationId;
-        this.pem = constObj.loginType.pem;
+        else {
+            const userLogin = constObj.authentication;
+            this.userPat = userLogin.pat;
+        }
         this.githubApi = new GithubApi({
             Promise: Promise,
             headers: {
@@ -281,6 +284,7 @@ class GithubService extends worker_client_1.WorkerClient {
         });
     }
     authenticate() {
+<<<<<<< HEAD
         const privatePem = new Buffer(this.pem, 'base64').toString();
         const payload = {
             exp: Math.floor((Date.now() / 1000)) + (10 * 50),
@@ -300,17 +304,45 @@ class GithubService extends worker_client_1.WorkerClient {
         return request.get(installationsOpts).then((installations) => {
             const tokenUrl = installations[0].access_tokens_url;
             const tokenOpts = {
+=======
+        let tokenPromise;
+        if (this.appId) {
+            const privatePem = new Buffer(this.pem, 'base64').toString();
+            const payload = {
+                exp: Math.floor((Date.now() / 1000)) + (10 * 50),
+                iat: Math.floor((Date.now() / 1000)),
+                iss: this.appId
+            };
+            const jwToken = jwt.sign(payload, privatePem, { algorithm: 'RS256' });
+            const appOpts = {
+>>>>>>> Initial WIP.
                 headers: {
                     Accept: 'application/vnd.github.machine-man-preview+json',
                     Authorization: `Bearer ${jwToken}`,
                     'User-Agent': 'request'
                 },
                 json: true,
-                method: 'POST',
-                url: tokenUrl
+                url: 'https://api.github.com/app/installations'
             };
-            return request.post(tokenOpts);
-        }).then((tokenDetails) => {
+            tokenPromise = request.get(appOpts).then((apps) => {
+                const tokenUrl = apps[0].access_tokens_url;
+                const tokenOpts = {
+                    headers: {
+                        Accept: 'application/vnd.github.machine-man-preview+json',
+                        Authorization: `Bearer ${jwToken}`,
+                        'User-Agent': 'request'
+                    },
+                    json: true,
+                    method: 'POST',
+                    url: tokenUrl
+                };
+                return request.post(tokenOpts);
+            });
+        }
+        else {
+            tokenPromise = Promise.resolve({ token: this.userPat });
+        }
+        return tokenPromise.then((tokenDetails) => {
             this.authToken = tokenDetails.token;
             this.githubApi.authenticate({
                 token: this.authToken,
@@ -318,7 +350,8 @@ class GithubService extends worker_client_1.WorkerClient {
             });
             this.logger.log(logger_1.LogLevel.INFO, `Reauthenticated with Github. Will expire at ${tokenDetails.expires_at}`);
             this.logger.log(logger_1.LogLevel.DEBUG, `token for manual fiddling is: ${tokenDetails.token}`);
-            this.logger.log(logger_1.LogLevel.DEBUG, `token expires at: ${tokenDetails.expires_at}`);
+            this.logger.log(logger_1.LogLevel.DEBUG, tokenDetails.expires_at ? `token expires at: ${tokenDetails.expires_at}` :
+                'token does not expire');
             this.logger.log(logger_1.LogLevel.DEBUG, 'Base curl command:');
             this.logger.log(logger_1.LogLevel.DEBUG, `curl -XGET -H "Authorization: token ${tokenDetails.token}" ` +
                 `-H "Accept: ${this.ghApiAccept}" https://api.github.com/`);
