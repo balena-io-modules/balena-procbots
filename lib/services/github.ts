@@ -28,8 +28,8 @@ import * as GithubApiTypes from '../apis/githubapi-types';
 import { Worker, WorkerEvent } from '../framework/worker';
 import { WorkerClient } from '../framework/worker-client';
 import { AlertLevel, Logger, LogLevel } from '../utils/logger';
-import { GithubConfigLocation, GithubConstructor, GithubEmitRequestContext, GithubHandle, GithubIntegration,
-	GithubListenerConstructor, GithubRegistration } from './github-types';
+import { GithubApp, GithubConfigLocation, GithubConstructor, GithubEmitRequestContext, GithubHandle,
+	GithubListenerConstructor, GithubPAT, GithubRegistration } from './github-types';
 import { ServiceEmitContext, ServiceEmitRequest, ServiceEmitResponse, ServiceEmitter,
 	ServiceEvent, ServiceListener } from './service-types';
 
@@ -48,12 +48,25 @@ interface LabelDetails {
 	};
 }
 
+/** Github Authentication Token. */
+interface AuthToken {
+	/** Token itself. */
+	token: string;
+	/** When the token expires. */
+	expires_at?: string;
+}
+
 /** Github Error. */
-export class GithubError extends TypeError {
+export class GithubError extends TypedError {
+	/** Name of the error. */
+	public name: string;
+	/** Stack trace. */
+	public stack: string;
 	/** Message error from the Github API. */
 	public message: string;
 	/** Documentation URL pertaining to the error. */
 	public documentationUrl: string;
+	/** Error type. */
 	public type = 'GithubError';
 
 	/** Should the error returned not be from the Github API but from the
@@ -84,7 +97,8 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 	protected authToken: string;
 	protected pem: string;
 	protected githubApi: any;
-	private integrationId: number;
+	private appId: number;
+	private userPat: string;
 	private eventTriggers: GithubRegistration[] = [];
 	// This is the current voodoo to allow all API calls to succeed.
 	// Accept: 'application/vnd.github.black-cat-preview+json' is now out of date
@@ -101,14 +115,16 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 		super();
 
 		// Determine type of service.
-		if (constObj.loginType.type !== 'integration') {
-			throw new Error('Do not yet support non-Integration type clients');
-		}
-		constObj.loginType = <GithubIntegration>constObj.loginType;
+		if (constObj.authentication.type === 'app') {
+			const appLogin = <GithubApp>constObj.authentication;
 
-		// Set the Integration ID.
-		this.integrationId = constObj.loginType.integrationId;
-		this.pem = constObj.loginType.pem;
+			// Set the App ID
+			this.appId = appLogin.appId;
+			this.pem = appLogin.pem;
+		} else {
+			const userLogin = <GithubPAT>constObj.authentication;
+			this.userPat = userLogin.pat;
+		}
 
 		// The `github` module is a bit behind the preview API. We may have to override
 		// some of the methods here (PR review comments for a start).
@@ -136,7 +152,7 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 
 				// If there's a repository, we use the full name as the context,
 				// else we use a generic. Generic contexts can occur on events that
-				// are not linked to a repo (adding/removing repo from Integration,
+				// are not linked to a repo (adding/removing repo from App,
 				// creating a user, deleting a user, etc.)
 				if (repository) {
 					context = repository.full_name;
@@ -488,42 +504,51 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 	 * @returns  Promise fulfilled once authentication has occurred.
 	 */
 	protected authenticate(): Promise<void> {
+		// Authentication depends on App or PAT.
+		let tokenPromise: Promise<AuthToken>;
+
+		if (this.appId) {
 		// Initialise JWTs
-		const privatePem = new Buffer(this.pem, 'base64').toString();
-		const payload = {
-			exp: Math.floor((Date.now() / 1000)) + (10 * 50),
-			iat: Math.floor((Date.now() / 1000)),
-			iss: this.integrationId
-		};
-		const jwToken = jwt.sign(payload, privatePem, { algorithm: 'RS256' });
-		const installationsOpts = {
-			headers: {
-				Accept: 'application/vnd.github.machine-man-preview+json',
-				Authorization: `Bearer ${jwToken}`,
-				'User-Agent': 'request'
-			},
-			json: true,
-			url: 'https://api.github.com/integration/installations'
-		};
-
-		return request.get(installationsOpts).then((installations) => {
-			// Get the URL for the token.
-			const tokenUrl = installations[0].access_tokens_url;
-
-			// Request new token.
-			const tokenOpts: any = {
+			const privatePem = new Buffer(this.pem, 'base64').toString();
+			const payload = {
+				exp: Math.floor((Date.now() / 1000)) + (10 * 50),
+				iat: Math.floor((Date.now() / 1000)),
+				iss: this.appId
+			};
+			const jwToken = jwt.sign(payload, privatePem, { algorithm: 'RS256' });
+			const appOpts = {
 				headers: {
 					Accept: 'application/vnd.github.machine-man-preview+json',
 					Authorization: `Bearer ${jwToken}`,
 					'User-Agent': 'request'
 				},
 				json: true,
-				method: 'POST',
-				url: tokenUrl
+				url: 'https://api.github.com/app/installations'
 			};
 
-			return request.post(tokenOpts);
-		}).then((tokenDetails) => {
+			tokenPromise = request.get(appOpts).then((apps) => {
+				// Get the URL for the token.
+				const tokenUrl = apps[0].access_tokens_url;
+
+				// Request new token.
+				const tokenOpts: any = {
+					headers: {
+						Accept: 'application/vnd.github.machine-man-preview+json',
+						Authorization: `Bearer ${jwToken}`,
+						'User-Agent': 'request'
+					},
+					json: true,
+					method: 'POST',
+					url: tokenUrl
+				};
+
+				return request.post(tokenOpts);
+			});
+		} else {
+			tokenPromise = Promise.resolve({ token: this.userPat });
+		}
+
+		return tokenPromise.then((tokenDetails) => {
 			// We also need to take into account the expiry date, which will require a new kickoff.
 			this.authToken = tokenDetails.token;
 			this.githubApi.authenticate({
@@ -535,7 +560,8 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 
 			// For debug.
 			this.logger.log(LogLevel.DEBUG, `token for manual fiddling is: ${tokenDetails.token}`);
-			this.logger.log(LogLevel.DEBUG, `token expires at: ${tokenDetails.expires_at}`);
+			this.logger.log(LogLevel.DEBUG, tokenDetails.expires_at ? `token expires at: ${tokenDetails.expires_at}` :
+				'token does not expire');
 			this.logger.log(LogLevel.DEBUG, 'Base curl command:');
 			this.logger.log(LogLevel.DEBUG,
 				`curl -XGET -H "Authorization: token ${tokenDetails.token}" ` +

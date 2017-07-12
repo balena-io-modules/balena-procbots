@@ -22,12 +22,12 @@ import { ServiceAPIHandle, ServiceEmitContext, ServiceEvent, ServiceListenerMeth
 	ServiceType } from './service-types';
 
 /** The Github service can be used as either an Integration or a User. */
-type GithubLoginType = 'integration' | 'user';
+type GithubLoginType = 'app' | 'pat';
 
 /** Allows a service to login to Github as an Integration, using the ID. */
-export interface GithubIntegration {
-	/** Integration ID of the Github Integration to run as. */
-	integrationId: number;
+export interface GithubApp {
+	/** App ID of the Github Integration to run as. */
+	appId: number;
 	/** The Github PEM as an encoded Base64 value. */
 	pem: string;
 	/** Type of service ('listener' or 'emitter'). */
@@ -35,11 +35,9 @@ export interface GithubIntegration {
 }
 
 /** Allows a service to login to Github as a user, using username and Personal Access Token. */
-export interface GithubUser {
+export interface GithubPAT {
 	/** The PAT for the user to login as. */
 	pat: string;
-	/** The username of the user to login as. */
-	user: string;
 	/** Type of service ('listener' or 'emitter'). */
 	type: GithubLoginType;
 }
@@ -48,8 +46,8 @@ export interface GithubUser {
 export interface GithubConstructor {
 	/** Client name (eg. VersionBot). */
 	client: string;
-	/** Whether to run the service as an Integration or a User. */
-	loginType: GithubIntegration | GithubUser;
+	/** Whether to run the service as an App or a User. */
+	authentication: GithubApp | GithubPAT;
 	/** Type of service ('listener' or 'emitter'). */
 	type: ServiceType;
 }
