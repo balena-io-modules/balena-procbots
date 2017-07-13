@@ -10,6 +10,7 @@ const messenger_types_1 = require("./messenger-types");
 class FlowdockService extends messenger_1.Messenger {
     constructor(data, listen = true) {
         super(listen);
+        this.receivedPostIds = new Set();
         this.makeGeneric = (data) => {
             return new Promise((resolve) => {
                 const metadata = messenger_1.Messenger.extractMetadata(data.rawEvent.content);
@@ -93,7 +94,8 @@ class FlowdockService extends messenger_1.Messenger {
                 }
                 const stream = this.session.stream(Object.keys(flowIdToFlowName));
                 stream.on('message', (message) => {
-                    if (message.event === 'message') {
+                    if (message.event === 'message' && !this.receivedPostIds.has(message.id)) {
+                        this.receivedPostIds.add(message.id);
                         this.queueEvent({
                             data: {
                                 cookedEvent: {

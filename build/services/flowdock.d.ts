@@ -5,6 +5,7 @@ import { DataHub, MessengerEmitResponse, MessengerEvent, ReceiptContext, Transmi
 import { ServiceEmitter, ServiceListener } from './service-types';
 export declare class FlowdockService extends Messenger implements ServiceEmitter, ServiceListener, DataHub {
     private static _serviceName;
+    private receivedPostIds;
     private session;
     private data;
     constructor(data: FlowdockConstructor, listen?: boolean);

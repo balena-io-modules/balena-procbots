@@ -28,7 +28,7 @@ import { ServiceEmitter, ServiceListener } from './service-types';
 export class DiscourseService extends Messenger implements ServiceListener, ServiceEmitter {
 	private static _serviceName = path.basename(__filename.split('.')[0]);
 	// There are circumstances in which the discourse web-hook will fire twice for the same post, so track.
-	private postsSynced = new Set<number>();
+	private receivedPostIds = new Set<number>();
 	private data: DiscourseConstructor;
 
 	public constructor(data: DiscourseConstructor, listen = true) {
@@ -179,8 +179,8 @@ export class DiscourseService extends Messenger implements ServiceListener, Serv
 	protected activateMessageListener = (): void => {
 		// Create an endpoint for this listener and protect against double-web-hooks
 		Messenger.app.post(`/${DiscourseService._serviceName}/`, (formData, response) => {
-			if(!this.postsSynced.has(formData.body.post.id)) {
-				this.postsSynced.add(formData.body.post.id);
+			if(!this.receivedPostIds.has(formData.body.post.id)) {
+				this.receivedPostIds.add(formData.body.post.id);
 				// Enqueue the event as simply as possible
 				this.queueEvent({
 					data: {

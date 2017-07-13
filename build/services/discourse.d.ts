@@ -5,7 +5,7 @@ import { MessengerEmitResponse, MessengerEvent, ReceiptContext, TransmitContext 
 import { ServiceEmitter, ServiceListener } from './service-types';
 export declare class DiscourseService extends Messenger implements ServiceListener, ServiceEmitter {
     private static _serviceName;
-    private postsSynced;
+    private receivedPostIds;
     private data;
     constructor(data: DiscourseConstructor, listen?: boolean);
     makeGeneric: (data: MessengerEvent) => Promise<ReceiptContext>;
