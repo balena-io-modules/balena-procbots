@@ -28,6 +28,8 @@ import { ServiceEmitter, ServiceListener } from './service-types';
 
 export class FlowdockService extends Messenger implements ServiceEmitter, ServiceListener, DataHub {
 	private static _serviceName = path.basename(__filename.split('.')[0]);
+	// There are circumstances in which one flowdock event will be received more than once, so track.
+	private receivedPostIds = new Set<number>();
 	private session: Session;
 	private data: FlowdockConstructor;
 
@@ -184,7 +186,8 @@ export class FlowdockService extends Messenger implements ServiceEmitter, Servic
 			const stream = this.session.stream(Object.keys(flowIdToFlowName));
 			// Listen to messages and check they are messages
 			stream.on('message', (message: any) => {
-				if (message.event === 'message') {
+				if (message.event === 'message' && !this.receivedPostIds.has(message.id)) {
+					this.receivedPostIds.add(message.id);
 					// Enqueue new message events
 					this.queueEvent({
 						data: {

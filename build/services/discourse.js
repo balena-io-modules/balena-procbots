@@ -9,7 +9,7 @@ const messenger_types_1 = require("./messenger-types");
 class DiscourseService extends messenger_1.Messenger {
     constructor(data, listen = true) {
         super(listen);
-        this.postsSynced = new Set();
+        this.receivedPostIds = new Set();
         this.makeGeneric = (data) => {
             const getGeneric = {
                 json: true,
@@ -106,8 +106,8 @@ class DiscourseService extends messenger_1.Messenger {
         };
         this.activateMessageListener = () => {
             messenger_1.Messenger.app.post(`/${DiscourseService._serviceName}/`, (formData, response) => {
-                if (!this.postsSynced.has(formData.body.post.id)) {
-                    this.postsSynced.add(formData.body.post.id);
+                if (!this.receivedPostIds.has(formData.body.post.id)) {
+                    this.receivedPostIds.add(formData.body.post.id);
                     this.queueEvent({
                         data: {
                             cookedEvent: {
