@@ -44,6 +44,7 @@ class DiscourseService extends messenger_1.Messenger {
                         url: getTopic.uri,
                         user: details.post.username,
                     },
+                    tags: details.topic.tags,
                     text: metadata.content,
                     title: details.topic.title,
                 };
@@ -54,8 +55,12 @@ class DiscourseService extends messenger_1.Messenger {
             const footer = `${messenger_1.Messenger.stringifyMetadata(data, 'img')} ${messenger_1.Messenger.messageOfTheDay()}`;
             const raw = `${data.text}\n\n---${footer}\n`;
             const endpoint = {
-                api_key: data.toIds.token,
-                api_username: data.toIds.user,
+                method: 'POST',
+                qs: {
+                    api_key: data.toIds.token,
+                    api_username: data.toIds.user,
+                },
+                url: `https://${this.data.instance}/posts`,
             };
             if (!topicId) {
                 const title = data.title;
@@ -68,6 +73,7 @@ class DiscourseService extends messenger_1.Messenger {
                         payload: {
                             category: data.toIds.flow,
                             raw,
+                            'tags[]': data.tags,
                             title,
                             unlist_topic: data.hidden ? 'true' : 'false',
                         }
@@ -85,15 +91,43 @@ class DiscourseService extends messenger_1.Messenger {
                 });
             });
         };
+        this.makeTagUpdate = (data) => {
+            const topicId = data.toIds.thread;
+            if (!topicId) {
+                throw new Error('Cannot update tags without specifying thread');
+            }
+            return request({
+                json: true,
+                method: 'GET',
+                qs: {
+                    api_key: data.toIds.token,
+                    api_username: data.toIds.user,
+                },
+                url: `https://${this.data.instance}/t/${topicId}.json`,
+            }).then((response) => {
+                return {
+                    endpoint: {
+                        method: 'PUT',
+                        qs: {
+                            api_key: data.toIds.token,
+                            api_username: data.toIds.user,
+                            'tags[]': data.tags ? data.tags : [],
+                        },
+                        url: `https://${this.data.instance}/t/${response.slug}/${topicId}.json`,
+                    },
+                    payload: {},
+                };
+            });
+        };
         this.fetchNotes = (thread, _room, filter) => {
             const firstWords = filter.source.match(/^([\w\s]+)/i);
             const getThread = firstWords ? {
                 json: true,
                 method: 'GET',
                 qs: {
-                    'api_key': this.data.token,
-                    'api_username': this.data.username,
-                    'term': firstWords[1],
+                    api_key: this.data.token,
+                    api_username: this.data.username,
+                    term: firstWords[1],
                     'search_context[type]': 'topic',
                     'search_context[id]': thread,
                 },
@@ -139,10 +173,14 @@ class DiscourseService extends messenger_1.Messenger {
             const requestOptions = {
                 body: data.payload,
                 json: true,
-                qs: data.endpoint,
-                url: `https://${this.data.instance}/posts`
+                method: data.endpoint.method,
+                qs: data.endpoint.qs,
+                qsStringifyOptions: {
+                    arrayFormat: 'repeat',
+                },
+                url: data.endpoint.url,
             };
-            return request.post(requestOptions).then((resData) => {
+            return request(requestOptions).then((resData) => {
                 return {
                     response: {
                         message: resData.id,

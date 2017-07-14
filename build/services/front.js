@@ -48,6 +48,9 @@ class FrontService extends messenger_1.Messenger {
                 const first = details.comments._results.length + details.messages._results.length === 1;
                 const metadataFormat = details.event.type === 'comment' ? 'human' : 'img';
                 const metadata = messenger_1.Messenger.extractMetadata(message.body, metadataFormat);
+                const tags = _.map(details.event.conversation.tags, (tag) => {
+                    return tag.name;
+                });
                 let author = 'Unknown';
                 if (message.author) {
                     author = message.author.username;
@@ -72,6 +75,7 @@ class FrontService extends messenger_1.Messenger {
                         url: `https://app.frontapp.com/open/${details.event.conversation.id}`,
                         user: author,
                     },
+                    tags,
                     text: metadata.content,
                     title: details.event.conversation.subject,
                 };
@@ -99,6 +103,7 @@ class FrontService extends messenger_1.Messenger {
                             },
                             options: {
                                 archive: false,
+                                tags: data.tags,
                             },
                             sender: {
                                 handle: data.toIds.user,
@@ -142,6 +147,21 @@ class FrontService extends messenger_1.Messenger {
                         type: 'message',
                     },
                 };
+            });
+        };
+        this.makeTagUpdate = (data) => {
+            const topicId = data.toIds.thread;
+            if (!topicId) {
+                throw new Error('Cannot update tags without specifying thread');
+            }
+            return Promise.resolve({
+                endpoint: {
+                    method: this.apiHandle.front.conversation.update,
+                },
+                payload: {
+                    conversation_id: topicId,
+                    tags: data.tags ? data.tags : [],
+                },
             });
         };
         this.activateMessageListener = () => {

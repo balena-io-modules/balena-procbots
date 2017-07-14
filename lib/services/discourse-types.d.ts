@@ -27,16 +27,22 @@ export interface DiscoursePostPayload extends DiscourseBasePayload {
 
 export interface DiscourseTopicPayload extends DiscourseBasePayload {
 	category: string;
+	'tags[]'?: string[];
 	title: string;
 	unlist_topic: string; // 'true'|'false';
 }
 
 export interface DiscourseEmitContext extends MessengerEmitContext {
 	endpoint: {
-		api_key: string;
-		api_username: string;
+		method: string;
+		qs: {
+			api_key: string;
+			api_username: string;
+			'tags[]'?: string[];
+		};
+		url: string;
 	};
-	payload: DiscoursePostPayload | DiscourseTopicPayload;
+	payload: DiscoursePostPayload | DiscourseTopicPayload | {};
 }
 
 export interface DiscoursePost {

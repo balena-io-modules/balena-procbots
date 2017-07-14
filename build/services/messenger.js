@@ -48,6 +48,7 @@ class Messenger extends worker_client_1.WorkerClient {
             hidden: event.hidden,
             source: event.source,
             sourceIds: event.sourceIds,
+            tags: event.tags,
             text: event.text,
             title: event.title,
             to,

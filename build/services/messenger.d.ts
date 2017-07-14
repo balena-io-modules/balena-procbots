@@ -21,6 +21,7 @@ export declare abstract class Messenger extends WorkerClient<string | null> impl
     abstract fetchNotes: (thread: string, room: string, filter: RegExp, search?: string) => Promise<string[]>;
     abstract makeGeneric: (data: MessengerEvent) => Promise<ReceiptContext>;
     abstract makeSpecific: (data: TransmitContext) => Promise<ServiceEmitContext>;
+    abstract makeTagUpdate: (data: TransmitContext) => Promise<ServiceEmitContext>;
     protected abstract activateMessageListener: () => void;
     protected abstract sendPayload: (data: ServiceEmitContext) => Promise<MessengerEmitResponse>;
     private listening;

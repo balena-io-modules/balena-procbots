@@ -53,7 +53,7 @@ export class SyncBot extends ProcBot {
 
 	/**
 	 * Creates a SyncBot using SYNCBOT_MAPPINGS and SYNCBOT_HUB_SERVICE from the environment.
-	 * @param name	identifier for this bot, defaults to SyncBot.
+	 * @param name  Identifier for this bot, defaults to SyncBot.
 	 */
 	constructor(name = 'SyncBot') {
 		super(name);
@@ -105,7 +105,7 @@ export class SyncBot extends ProcBot {
 	 * Create a function that will route a data payload to the specified room.
 	 * @param from  Definition of a flow to listen to.
 	 * @param to    Definition of a flow to emit to.
-	 * @returns function that routes the payload.
+	 * @returns     Function that routes the payload.
 	 */
 	private createRouter(from: FlowDefinition, to: FlowDefinition): ServiceListenerMethod {
 		// This function returns a function, watch out!
@@ -125,7 +125,8 @@ export class SyncBot extends ProcBot {
 						this.useConfiguredOrProvided(event, 'user')
 						.then(() => this.useHubOrGeneric(event, 'token'))
 						// Attempt to emit the event, massaging it first into a final form
-						.then(() => this.create(event as TransmitContext))
+						.then(() => this.updateTags(event as TransmitContext))
+						.then(() => this.createComment(event as TransmitContext))
 						// Emit the status of the synchronise to console
 						.then(() => this.logSuccess(event as TransmitContext))
 						.catch((error: Error) => this.handleError(error, event));
@@ -135,7 +136,7 @@ export class SyncBot extends ProcBot {
 						this.useConfiguredOrProvided(event, 'user')
 						.then(() => this.useHubOrGeneric(event, 'token'))
 						// Attempt to emit the event and record the connection
-						.then(() => this.create(event as TransmitContext))
+						.then(() => this.createComment(event as TransmitContext))
 						.then(() => this.createConnection(event, 'thread'))
 						// Emit the status of the synchronise to console
 						.then(() => this.logSuccess(event as TransmitContext))
@@ -158,7 +159,7 @@ export class SyncBot extends ProcBot {
 		this.logger.log(LogLevel.WARN, error.message);
 		this.logger.log(LogLevel.WARN, JSON.stringify(event), SyncBot.extractTokens(event));
 		// Create a message event to echo with the details
-		const fromEvent: InterimContext = {
+		const echoEvent: InterimContext = {
 			action: MessengerAction.Create,
 			first: false,
 			genesis: 'system',
@@ -180,11 +181,11 @@ export class SyncBot extends ProcBot {
 			},
 		};
 		// Find the system account details
-		this.useSystem(fromEvent, 'user')
-		.then(() => this.useSystem(fromEvent, 'token'))
+		this.useSystem(echoEvent, 'user')
+		.then(() => this.useSystem(echoEvent, 'token'))
 		// Report the error
-		.then(() => this.create(fromEvent as TransmitContext))
-		.then(() => this.logSuccess(fromEvent as TransmitContext))
+		.then(() => this.createComment(echoEvent as TransmitContext))
+		.then(() => this.logSuccess(echoEvent as TransmitContext))
 		.catch((err) => this.logError(err, event));
 	}
 
@@ -266,12 +267,12 @@ export class SyncBot extends ProcBot {
 		return Promise.all([
 			this.useSystem(fromEvent, 'user')
 			.then(() => this.useSystem(fromEvent, 'token'))
-			.then(() => this.create(fromEvent as TransmitContext))
+			.then(() => this.createComment(fromEvent as TransmitContext))
 			.then(() => this.logSuccess(fromEvent as TransmitContext))
 			,
 			this.useSystem(toEvent, 'user')
 			.then(() => this.useSystem(toEvent, 'token'))
-			.then(() => this.create(toEvent as TransmitContext))
+			.then(() => this.createComment(toEvent as TransmitContext))
 			.then(() => this.logSuccess(toEvent as TransmitContext))
 		]).reduce(() => { /**/ });
 	}
@@ -281,7 +282,7 @@ export class SyncBot extends ProcBot {
 	 * @param event  Standardised transmission context to emit.
 	 * @returns      Promise that will resolve to the id of the created message.
 	 */
-	private create(event: TransmitContext): Promise<string> {
+	private createComment(event: TransmitContext): Promise<string> {
 		// Pass the event to the emitter
 		return this.getMessageService(event.to).makeSpecific(event).then((specific) => {
 			return this.dispatchToEmitter(event.to, specific)
@@ -292,6 +293,17 @@ export class SyncBot extends ProcBot {
 				event.toIds.url = retVal.url;
 				return retVal.message;
 			});
+		});
+	}
+
+	/**
+	 * Pass a tag creation context to the emitter.
+	 * @param event  Standardised transmission context to emit.
+	 * @returns      Promise that will resolve once the tags are sent.
+	 */
+	private updateTags(event: TransmitContext): Promise<void> {
+		return this.getMessageService(event.to).makeTagUpdate(event).then((tagUpdate) => {
+			return this.dispatchToEmitter(event.to, tagUpdate);
 		});
 	}
 

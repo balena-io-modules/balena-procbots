@@ -10,6 +10,7 @@ export declare class DiscourseService extends Messenger implements ServiceListen
     constructor(data: DiscourseConstructor, listen?: boolean);
     makeGeneric: (data: MessengerEvent) => Promise<ReceiptContext>;
     makeSpecific: (data: TransmitContext) => Promise<DiscourseEmitContext>;
+    makeTagUpdate: (data: TransmitContext) => Promise<DiscourseEmitContext>;
     translateEventName(eventType: string): string;
     fetchNotes: (thread: string, _room: string, filter: RegExp) => Promise<string[]>;
     protected activateMessageListener: () => void;

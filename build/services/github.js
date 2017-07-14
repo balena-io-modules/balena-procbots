@@ -290,8 +290,8 @@ class GithubService extends worker_client_1.WorkerClient {
         const jwToken = jwt.sign(payload, privatePem, { algorithm: 'RS256' });
         const installationsOpts = {
             headers: {
-                'Accept': 'application/vnd.github.machine-man-preview+json',
-                'Authorization': `Bearer ${jwToken}`,
+                Accept: 'application/vnd.github.machine-man-preview+json',
+                Authorization: `Bearer ${jwToken}`,
                 'User-Agent': 'request'
             },
             json: true,
@@ -301,8 +301,8 @@ class GithubService extends worker_client_1.WorkerClient {
             const tokenUrl = installations[0].access_tokens_url;
             const tokenOpts = {
                 headers: {
-                    'Accept': 'application/vnd.github.machine-man-preview+json',
-                    'Authorization': `Bearer ${jwToken}`,
+                    Accept: 'application/vnd.github.machine-man-preview+json',
+                    Authorization: `Bearer ${jwToken}`,
                     'User-Agent': 'request'
                 },
                 json: true,

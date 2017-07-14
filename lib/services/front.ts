@@ -89,6 +89,9 @@ export class FrontService extends Messenger implements ServiceListener, ServiceE
 			const first = details.comments._results.length + details.messages._results.length === 1;
 			const metadataFormat = details.event.type === 'comment' ? 'human' : 'img';
 			const metadata = Messenger.extractMetadata(message.body, metadataFormat);
+			const tags = _.map(details.event.conversation.tags, (tag: {name: string}) => {
+				return tag.name;
+			});
 			// Attempt to find the author of a message from the various places front might store it
 			let author = 'Unknown';
 			if (message.author) {
@@ -114,6 +117,7 @@ export class FrontService extends Messenger implements ServiceListener, ServiceE
 					url: `https://app.frontapp.com/open/${details.event.conversation.id}`,
 					user: author,
 				},
+				tags,
 				text: metadata.content,
 				title: details.event.conversation.subject,
 			};
@@ -151,6 +155,7 @@ export class FrontService extends Messenger implements ServiceListener, ServiceE
 						},
 						options: {
 							archive: false,
+							tags: data.tags,
 						},
 						sender: {
 							handle: data.toIds.user,
@@ -194,6 +199,29 @@ export class FrontService extends Messenger implements ServiceListener, ServiceE
 					type: 'message',
 				},
 			};
+		});
+	}
+
+	// This was created on an out-of-date understanding of how things should be structured.
+	// TODO: It should be migrated as part of https://github.com/resin-io-modules/resin-procbots/issues/173
+	/**
+	 * Promise to turn the generic message format into a tag update to be emitted.
+	 * @param data  Generic message format object to be encoded.
+	 * @returns     Promise that resolves to the tag update object.
+	 */
+	public makeTagUpdate = (data: TransmitContext): Promise<FrontEmitContext> => {
+		const topicId = data.toIds.thread;
+		if (!topicId) {
+			throw new Error('Cannot update tags without specifying thread');
+		}
+		return Promise.resolve({
+			endpoint: {
+				method: this.apiHandle.front.conversation.update,
+			},
+			payload: {
+				conversation_id: topicId,
+				tags: data.tags ? data.tags : [],
+			},
 		});
 	}
 

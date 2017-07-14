@@ -59,6 +59,7 @@ export abstract class Messenger extends WorkerClient<string|null> implements Ser
 			hidden: event.hidden,
 			source: event.source,
 			sourceIds: event.sourceIds,
+			tags: event.tags,
 			text: event.text,
 			title: event.title,
 			// Details from the arguments
@@ -227,11 +228,18 @@ export abstract class Messenger extends WorkerClient<string|null> implements Ser
 	public abstract makeGeneric: (data: MessengerEvent) => Promise<ReceiptContext>;
 
 	/**
-	 * Promise to turn a generic message format into a form suitable for emitting.
+	 * Promise to turn a generic message format into a form suitable for emitting to create a message.
 	 * @param data  Generic message format to encode.
 	 * @returns     A promise that resolves to an emit context, which is as dumb as possible.
 	 */
 	public abstract makeSpecific: (data: TransmitContext) => Promise<ServiceEmitContext>;
+
+	/**
+	 * Promise to turn a generic message format into a form suitable for emitting to update tags.
+	 * @param data  Generic message format to encode.
+	 * @returns     A promise that resolves to an emit context, which is as dumb as possible.
+	 */
+	public abstract makeTagUpdate: (data: TransmitContext) => Promise<ServiceEmitContext>;
 
 	/** Awaken this class as a listener. */
 	protected abstract activateMessageListener: () => void;

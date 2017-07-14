@@ -19,7 +19,7 @@ import { Front, RequestData, ResponseData, Status } from 'front-sdk';
 import { MessengerEmitContext } from './messenger-types';
 import { ServiceAPIHandle } from './service-types';
 
-export type FrontEmitMethod = (param: RequestData) => Promise<ResponseData|Status>;
+export type FrontEmitMethod = (param: RequestData) => Promise<ResponseData|Status|void>;
 
 export interface FrontEmitContext extends MessengerEmitContext {
 	endpoint: {

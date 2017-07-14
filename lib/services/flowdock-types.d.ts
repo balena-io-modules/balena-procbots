@@ -18,25 +18,34 @@ import { Session } from 'flowdock';
 import { MessengerEmitContext } from './messenger-types';
 import { ServiceAPIHandle } from './service-types';
 
+/** A payload template for posting to the main stream of a room */
 export interface FlowdockMessagePayload {
 	content: string;
 	event: string;
 	external_user_name?: string;
+	tags?: string[];
 	thread_id?: string;
 	flow?: string;
 }
 
+/** A payload template for posting to the integration panel of a room */
 export interface FlowdockInboxPayload {
 	content: string;
 	from_address: string;
 	source: string;
 	subject: string;
-	tags?: string[];
 	roomId: string;
 }
 
+/** A payload template, rather sparse but feel free to expand, for updating messages. */
+export interface FlowdockMessageUpdatePayload {
+	tags?: string[];
+}
+
+/** A template for emitting data to flowdock */
 export interface FlowdockEmitContext extends MessengerEmitContext {
 	endpoint: {
+		method: string;
 		token: string;
 		url: string;
 	};
@@ -44,9 +53,10 @@ export interface FlowdockEmitContext extends MessengerEmitContext {
 		flow: string;
 		org: string;
 	};
-	payload: FlowdockInboxPayload | FlowdockMessagePayload;
+	payload: FlowdockInboxPayload | FlowdockMessagePayload | FlowdockMessageUpdatePayload;
 }
 
+/** A message template, rather sparse and ripe for expansion */
 export interface FlowdockMessage {
 	content: string;
 	[key: string]: string;
@@ -57,6 +67,7 @@ export interface FlowdockHandle extends ServiceAPIHandle {
 	flowdock: Session;
 }
 
+/** The details required to build a Flowdock session */
 export interface FlowdockConstructor {
 	organization: string;
 	token: string;

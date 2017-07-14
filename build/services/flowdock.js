@@ -12,7 +12,31 @@ class FlowdockService extends messenger_1.Messenger {
         super(listen);
         this.receivedPostIds = new Set();
         this.makeGeneric = (data) => {
-            return new Promise((resolve) => {
+            const org = this.data.organization;
+            const flow = data.cookedEvent.flow;
+            const initialMessageID = data.rawEvent.thread.initial_message;
+            const tagFilter = (tag) => {
+                return !/^:/.test(tag);
+            };
+            return this.fetchFromSession(`/flows/${org}/${flow}/messages/${initialMessageID}`)
+                .then((initialMessage) => {
+                if (data.rawEvent.tags.filter(tagFilter).length > 0) {
+                    return this.sendPayload({
+                        endpoint: {
+                            method: 'PUT',
+                            token: this.data.token,
+                            url: `https://api.flowdock.com/flows/${org}/${flow}/messages/${initialMessageID}`
+                        },
+                        payload: {
+                            tags: _.concat(data.rawEvent.tags, initialMessage.tags).filter(tagFilter),
+                        },
+                    }).then(() => {
+                        return initialMessage;
+                    });
+                }
+                return initialMessage;
+            })
+                .then((initialMessage) => {
                 const emojiMetadata = messenger_1.Messenger.extractMetadata(data.rawEvent.content, 'emoji');
                 const charMetadata = messenger_1.Messenger.extractMetadata(data.rawEvent.content, 'char');
                 const compiledMetadata = {
@@ -21,10 +45,8 @@ class FlowdockService extends messenger_1.Messenger {
                     content: emojiMetadata.genesis ? emojiMetadata.content : charMetadata.content,
                 };
                 const titleAndText = compiledMetadata.content.match(/^(.*)\n--\n((?:\r|\n|.)*)$/);
-                const flow = data.cookedEvent.flow;
                 const thread = data.rawEvent.thread_id;
                 const userId = data.rawEvent.user;
-                const org = this.data.organization;
                 const first = data.rawEvent.id === data.rawEvent.thread.initial_message;
                 const returnValue = {
                     action: messenger_types_1.MessengerAction.Create,
@@ -39,20 +61,19 @@ class FlowdockService extends messenger_1.Messenger {
                         url: `https://www.flowdock.com/app/${org}/${flow}/threads/${thread}`,
                         user: 'duff',
                     },
+                    tags: _.concat(data.rawEvent.tags, initialMessage.tags).filter(tagFilter),
                     text: first && titleAndText ? titleAndText[2] : compiledMetadata.content,
                     title: first && titleAndText ? titleAndText[1] : undefined,
                 };
                 if (data.rawEvent.external_user_name) {
                     returnValue.sourceIds.user = data.rawEvent.external_user_name;
-                    resolve(returnValue);
+                    return returnValue;
                 }
-                else {
-                    this.fetchFromSession(`/organizations/${org}/users/${userId}`)
-                        .then((user) => {
-                        returnValue.sourceIds.user = user.nick;
-                        resolve(returnValue);
-                    });
-                }
+                return this.fetchFromSession(`/organizations/${org}/users/${userId}`)
+                    .then((user) => {
+                    returnValue.sourceIds.user = user.nick;
+                    return returnValue;
+                });
             });
         };
         this.makeSpecific = (data) => {
@@ -62,6 +83,7 @@ class FlowdockService extends messenger_1.Messenger {
             return new Promise((resolve) => {
                 resolve({
                     endpoint: {
+                        method: 'POST',
                         token: data.toIds.token,
                         url: `https://api.flowdock.com/flows/${org}/${flow}/messages/`,
                     },
@@ -73,9 +95,30 @@ class FlowdockService extends messenger_1.Messenger {
                         content: titleText + data.text + messenger_1.Messenger.stringifyMetadata(data, 'emoji'),
                         event: 'message',
                         external_user_name: data.toIds.token === this.data.token ? data.toIds.user.substring(0, 16) : undefined,
+                        tags: data.first ? data.tags : undefined,
                         thread_id: data.toIds.thread,
                     },
                 });
+            });
+        };
+        this.makeTagUpdate = (data) => {
+            const topicId = data.toIds.thread;
+            if (!topicId) {
+                throw new Error('Cannot update tags without specifying thread');
+            }
+            const org = this.data.organization;
+            const flow = data.toIds.flow;
+            return this.fetchFromSession(`/flows/${org}/${flow}/threads/${topicId}`).then((threadObj) => {
+                return {
+                    endpoint: {
+                        method: 'PUT',
+                        token: data.toIds.token,
+                        url: `https://api.flowdock.com/flows/${org}/${flow}/messages/${threadObj.initial_message}`,
+                    },
+                    payload: {
+                        tags: data.tags ? data.tags : [],
+                    },
+                };
             });
         };
         this.fetchNotes = (thread, room, filter, search) => {
@@ -127,13 +170,14 @@ class FlowdockService extends messenger_1.Messenger {
             const requestOpts = {
                 body: data.payload,
                 headers: {
-                    'Authorization': `Basic ${token}`,
+                    Authorization: `Basic ${token}`,
                     'X-flowdock-wait-for-message': true,
                 },
                 json: true,
+                method: data.endpoint.method,
                 url: data.endpoint.url,
             };
-            return request.post(requestOpts).then((resData) => {
+            return request(requestOpts).then((resData) => {
                 const thread = resData.thread_id;
                 const org = data.meta ? data.meta.org : '';
                 const flow = data.meta ? data.meta.flow : '';

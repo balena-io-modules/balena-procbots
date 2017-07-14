@@ -81,6 +81,7 @@ export class DiscourseService extends Messenger implements ServiceListener, Serv
 					url: getTopic.uri,
 					user: details.post.username,
 				},
+				tags: details.topic.tags,
 				text: metadata.content,
 				title: details.topic.title,
 			};
@@ -98,8 +99,12 @@ export class DiscourseService extends Messenger implements ServiceListener, Serv
 		const footer = `${Messenger.stringifyMetadata(data, 'img')} ${Messenger.messageOfTheDay()}`;
 		const raw = `${data.text}\n\n---${footer}\n`;
 		const endpoint = {
-			api_key: data.toIds.token,
-			api_username: data.toIds.user,
+			method: 'POST',
+			qs: {
+				api_key: data.toIds.token,
+				api_username: data.toIds.user,
+			},
+			url: `https://${this.data.instance}/posts`,
 		};
 		if (!topicId) {
 			const title = data.title;
@@ -113,6 +118,7 @@ export class DiscourseService extends Messenger implements ServiceListener, Serv
 					payload: {
 						category: data.toIds.flow,
 						raw,
+						'tags[]': data.tags,
 						title,
 						unlist_topic: data.hidden ? 'true' : 'false',
 					}
@@ -129,6 +135,43 @@ export class DiscourseService extends Messenger implements ServiceListener, Serv
 					whisper: data.hidden ? 'true' : 'false',
 				},
 			});
+		});
+	}
+
+	// This was created on an out-of-date understanding of how things should be structured.
+	// TODO: It should be migrated as part of https://github.com/resin-io-modules/resin-procbots/issues/173
+	/**
+	 * Promise to turn the generic message format into a tag update to be emitted.
+	 * @param data  Generic message format object to be encoded.
+	 * @returns     Promise that resolves to the tag update object.
+	 */
+	public makeTagUpdate = (data: TransmitContext): Promise<DiscourseEmitContext> => {
+		const topicId = data.toIds.thread;
+		if (!topicId) {
+			throw new Error('Cannot update tags without specifying thread');
+		}
+		// Updating tags requires the topic slug, so first we're going to GET details of the topic
+		return request({
+			json: true,
+			method: 'GET',
+			qs: {
+				api_key: data.toIds.token,
+				api_username: data.toIds.user,
+			},
+			url: `https://${this.data.instance}/t/${topicId}.json`,
+		}).then((response) => {
+			return {
+				endpoint: {
+					method: 'PUT',
+					qs: {
+						api_key: data.toIds.token,
+						api_username: data.toIds.user,
+						'tags[]': data.tags ? data.tags : [],
+					},
+					url: `https://${this.data.instance}/t/${response.slug}/${topicId}.json`,
+				},
+				payload: {},
+			};
 		});
 	}
 
@@ -158,9 +201,9 @@ export class DiscourseService extends Messenger implements ServiceListener, Serv
 			json: true,
 			method: 'GET',
 			qs: {
-				'api_key': this.data.token,
-				'api_username': this.data.username,
-				'term': firstWords[1],
+				api_key: this.data.token,
+				api_username: this.data.username,
+				term: firstWords[1],
 				'search_context[type]': 'topic',
 				'search_context[id]': thread,
 			},
@@ -222,10 +265,14 @@ export class DiscourseService extends Messenger implements ServiceListener, Serv
 		const requestOptions = {
 			body: data.payload,
 			json: true,
-			qs: data.endpoint,
-			url: `https://${this.data.instance}/posts`
+			method: data.endpoint.method,
+			qs: data.endpoint.qs,
+			qsStringifyOptions: {
+				arrayFormat: 'repeat',
+			},
+			url: data.endpoint.url,
 		};
-		return request.post(requestOptions).then((resData) => {
+		return request(requestOptions).then((resData) => {
 			// Translate the response from the API back into the message service
 			return {
 				response: {
