@@ -1,15 +1,7 @@
 import * as Promise from 'bluebird';
 import { ServiceEmitRequest, ServiceEmitResponse, ServiceEmitter, ServiceListener } from '../services/service-types';
 import { Logger } from '../utils/logger';
-<<<<<<< HEAD
 import { ConfigurationLocation, ProcBotConfiguration } from './procbot-types';
-=======
-import { ProcBotConfiguration } from './procbot-types';
-<<<<<<< HEAD
-import { BotDefinitionContext } from '../RASP/Antlr/RASPParser';
->>>>>>> Add start of generator.
-=======
->>>>>>> Update current WIP.
 export declare class ProcBot {
     protected _botname: string;
     protected logger: Logger;

@@ -36,9 +36,9 @@ gulp.task('typedoc', (done) => {
 });
 
 gulp.task('generateParsers', (cb) => {
-    exec('`npm bin`/antlr4ts -visitor lib/RASP/Antlr/RASP.g4', (err) => {
-        cb(err);
-    });
+	exec('`npm bin`/antlr4ts -visitor lib/RASP/Antlr/RASP.g4', (err) => {
+		cb(err);
+	});
 });
 
 //gulp.task('build', [ 'tslint', 'typescript', 'typedoc' ]);

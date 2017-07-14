@@ -31,13 +31,13 @@ listenerEventReceiver: events EVENTS FROM serviceName; // This needs to get shar
 listenerError: ERRORMETHOD ID statement*;
 
 statement: method |
-           assignment |
-           r_if |
-           r_while |
-           loop |
-           print |
-           sendQuery |
-           end;
+		   assignment |
+		   r_if |
+		   r_while |
+		   loop |
+		   print |
+		   sendQuery |
+		   end;
 
 assignment: 'set' variable 'as' expr;
 r_if: 'if' expr statement ('else' 'if' statement)* ('else' statement)?;
@@ -48,22 +48,22 @@ end: 'end';
 sendQuery: setIdFrom? QUERY ID* object;
 
 expr: expr MULTIPLIED BY expr |
-      expr DIVIDED BY expr |
-      expr ADDED TO expr |
-      expr SUBTRACTED BY expr |
-      expr AND expr |
-      expr OR expr |
-      expr IS expr |
-      expr IS NOT expr|
-      array |
-      method |
-      stringMethod |
-      variable |
-      object |
-      //precedence |
-      NUMBER |
-      STRING |
-      BOOLEAN;
+	  expr DIVIDED BY expr |
+	  expr ADDED TO expr |
+	  expr SUBTRACTED BY expr |
+	  expr AND expr |
+	  expr OR expr |
+	  expr IS expr |
+	  expr IS NOT expr|
+	  array |
+	  method |
+	  stringMethod |
+	  variable |
+	  object |
+	  //precedence |
+	  NUMBER |
+	  STRING |
+	  BOOLEAN;
 
 serviceName: ID;
 // Bugger, this doesn't work, but it should. Suspect issue with the TS parser generation code
@@ -84,43 +84,43 @@ stringMethod: STRING '.' method;
 envvar: 'envar' ID;
 
 // Keywords
-BOT         : 'bot';
-EVENT       : 'event';
-EVENTS      : 'events';
-RECEIVER    : 'receiver';
-RECEIVES    : 'receives';
-FROM        : 'from';
-SEND        : 'send';
-QUERIES     : 'queries';
-TO          : 'to';
-SET         : 'set';
-AS          : 'as';
-ADDED       : 'added';
+BOT		 : 'bot';
+EVENT	   : 'event';
+EVENTS	  : 'events';
+RECEIVER	: 'receiver';
+RECEIVES	: 'receives';
+FROM		: 'from';
+SEND		: 'send';
+QUERIES	 : 'queries';
+TO		  : 'to';
+SET		 : 'set';
+AS		  : 'as';
+ADDED	   : 'added';
 SUBTRACTED  : 'subtracted';
 MULTIPLIED  : 'multiplied';
-DIVIDED     : 'divided';
-BY          : 'by';
-AND         : 'and';
-OR          : 'or';
-IS          : 'is';
-NOT         : 'not';
-QUERY       : 'query';
-METHOD      : 'listenerMethod';
+DIVIDED	 : 'divided';
+BY		  : 'by';
+AND		 : 'and';
+OR		  : 'or';
+IS		  : 'is';
+NOT		 : 'not';
+QUERY	   : 'query';
+METHOD	  : 'listenerMethod';
 ERRORMETHOD : 'listenerErrorMethod';
 
 fragment DIGIT   : [0-9];
 fragment ALPHA   : [a-zA-Z];
-fragment HEX     : [a-fA-F0-9];
+fragment HEX	 : [a-fA-F0-9];
 
-STRING      : '\'' (ESC|.)*? '\'';
-ESC         : '\\' [btnr'\\];
-ID          : ALPHA (ALPHA | DIGIT | '_' | '-')*;
-BOOLEAN     : 'true' | 'false';
-NUMBER      : INT | FLOAT | HEXNUMBER;
-FLOAT       : DIGIT+ '.' DIGIT+ |
-              '.' DIGIT+;
-INT         : DIGIT+;
+STRING	  : '\'' (ESC|.)*? '\'';
+ESC		 : '\\' [btnr'\\];
+ID		  : ALPHA (ALPHA | DIGIT | '_' | '-')*;
+BOOLEAN	 : 'true' | 'false';
+NUMBER	  : INT | FLOAT | HEXNUMBER;
+FLOAT	   : DIGIT+ '.' DIGIT+ |
+			  '.' DIGIT+;
+INT		 : DIGIT+;
 HEXNUMBER   : HEX+;
-COMMENT     : '/*' .*? '*/' -> skip;
+COMMENT	 : '/*' .*? '*/' -> skip;
 LINE_COMMENT: '//' .*? '\n' -> skip;
-WS          :  [ \t\r\n]+ -> skip;
+WS		  :  [ \t\r\n]+ -> skip;

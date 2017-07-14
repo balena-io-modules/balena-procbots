@@ -25,8 +25,8 @@ const definition: BotDetails = {};
 // It's got several downsides, but a wonderful upside is we can just add new
 // listener modules/methods and not have to update this file.
 export class ExtRASPListener implements RASPListener {
-    // Yes, yes. I should be shot.
-    [method: string]: object;
+	// Yes, yes. I should be shot.
+	[method: string]: object;
 }
 
 // Create the lexer and parser
@@ -45,17 +45,17 @@ const listener = new ExtRASPListener();
 
 // Add all of the required methods dynamically.
 FindAllFiles(__dirname, 1, '.js', [ 'Antlr' ]).then((files) => {
-    // Require them, and if they have an addListenerMethods method, call it
-    // on the parser.
-    return Promise.map(files, (file: string) => {
-        let parserExtension = require(file);
-        if (parserExtension.addListenerMethods) {
-            parserExtension.addListenerMethods(listener, definition);
-        }
-    });
+	// Require them, and if they have an addListenerMethods method, call it
+	// on the parser.
+	return Promise.map(files, (file: string) => {
+		let parserExtension = require(file);
+		if (parserExtension.addListenerMethods) {
+			parserExtension.addListenerMethods(listener, definition);
+		}
+	});
 }).then(() => {
-    // Let's go!
-    ParseTreeWalker.DEFAULT.walk(listener, tree);
-    console.log(definition);
+	// Let's go!
+	ParseTreeWalker.DEFAULT.walk(listener, tree);
+	console.log(definition);
 });
 
