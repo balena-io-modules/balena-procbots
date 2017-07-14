@@ -24,6 +24,8 @@ Builds the main RASP files (and ProcBots) and then runs the parser app. Currentl
 
 ## More Info
 
+The grammar is currently defined in `lib/RASP/Antlr/RASP.g4`. Running it in `antlr4ts` generates the parser/lexers in the `lib/RASP/Antlr` directory that is included by `lib/RASP/parser.ts` to actually walk a source file. The grammar shows the rules used to create the language.
+
 The parser uses a set of ANTLR listeners to walk through the file to parse and lex/parse it. It creates a top level structure defined in the interfaces of `lib/RASP/parser-types.d.ts` which defines the bot to be created, as well as:
 
 * An array of ServiceListeners to include
