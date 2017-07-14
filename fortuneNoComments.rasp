@@ -26,10 +26,12 @@ bot(FortuneBot)
         set data as { owner: serviceEvent.repository.owner.login, repo: serviceEvent.repository.name,
             number: serviceEvent.issue.number }
 
+        set lastComment as 123 added to some.thing subtracted by 12
+
+/*
         //set comments from query githubEmitter { method: githubEmitter.issues.getComments, data }
         set comments from query { method: issues.getComments, data }
 
-/*        
         if comments.length is 0
             print 'There were no comments to read'
             end

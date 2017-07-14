@@ -40,7 +40,7 @@ statement: method |
            end;
 
 assignment: 'set' variable 'as' expr;
-r_if: 'if' expr statement ('else' statement)*;
+r_if: 'if' expr statement ('else' 'if' statement)* ('else' statement)?;
 r_while: 'while' expr statement;
 loop: 'loop' 'from' expr 'to' expr;
 print: 'print' expr;

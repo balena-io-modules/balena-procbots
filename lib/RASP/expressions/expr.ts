@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import { ExprContext } from '../Antlr/RASPParser';
 import { ArithmeticExpressionGenerator } from './arithmetic';
-import { ArithmeticExpression, BotDetails, Expression, ExpressionOp } from '../parser-types';
+import { BotDetails, Expression, ExpressionOp } from '../parser-types';
 import { ExtRASPListener } from '../parser';
 
 export class ExpressionGenerator implements Expression {

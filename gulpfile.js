@@ -41,4 +41,5 @@ gulp.task('generateParsers', (cb) => {
     });
 });
 
-gulp.task('build', [ 'tslint', 'typescript', 'typedoc' ]);
+//gulp.task('build', [ 'tslint', 'typescript', 'typedoc' ]);
+gulp.task('build', [ 'typescript', ]);
