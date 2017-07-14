@@ -144,6 +144,7 @@ class FrontService extends messenger_1.Messenger {
                             archive: false,
                         },
                         subject: details.conversation.subject,
+                        to: [data.toIds.user],
                         type: 'message',
                     },
                 };
