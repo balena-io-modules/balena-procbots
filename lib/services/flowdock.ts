@@ -98,7 +98,7 @@ export class FlowdockService extends Messenger implements ServiceEmitter, Servic
 	 */
 	public makeSpecific = (data: TransmitContext): Promise<FlowdockEmitContext> => {
 		// Build a string for the title, if appropriate.
-		const titleText = data.first && data.title ? data.title + '\n--\n' : '';
+		const titleText = data.toIds.thread ? '' : data.title + '\n--\n';
 		const org = this.data.organization;
 		const flow = data.toIds.flow;
 		return new Promise<FlowdockEmitContext>((resolve) => {

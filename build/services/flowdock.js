@@ -56,7 +56,7 @@ class FlowdockService extends messenger_1.Messenger {
             });
         };
         this.makeSpecific = (data) => {
-            const titleText = data.first && data.title ? data.title + '\n--\n' : '';
+            const titleText = data.toIds.thread ? '' : data.title + '\n--\n';
             const org = this.data.organization;
             const flow = data.toIds.flow;
             return new Promise((resolve) => {
