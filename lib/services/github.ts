@@ -94,6 +94,7 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 
 	/**
 	 * Constructor for both the ServiceListener and ServiceEmitter.
+	 *
 	 * @param constObj  Construction object for either ServiceListener or ServiceEmitter.
 	 */
 	constructor(constObj: GithubListenerConstructor | GithubConstructor) {
@@ -216,6 +217,7 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 
 	/**
 	 * Create a new event triggered action for the list.
+	 *
 	 * @param registration  A GithubRegistration object detailing the events required by the client.
 	 */
 	public registerEvent(registration: GithubRegistration): void {
@@ -228,6 +230,7 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 	 * reference the `per_page` or `page` properties, these will be honoured, else page
 	 * fetches will start at 0 with the default 30 entries per page
 	 * Fetches will occur until there are no pages left to fetch.
+	 *
 	 * @param data  A ServiceEmitRequest detailling the call to make and associated data.
 	 * @returns     A ServiceEmitResponse comprised from the response from Github.
 	 */
@@ -319,6 +322,7 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 
 	/**
 	 * Get the name of the Github service.
+	 *
 	 * @returns  The name of the service.
 	 */
 	get serviceName(): string {
@@ -333,6 +337,15 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 		return {
 			github: this.githubApi
 		};
+	}
+
+	/**
+	 * Retrieve the authentication token for Github Service.
+	 *
+	 * @returns  Current Github authentication token.
+	 */
+	get authenticationToken(): string {
+		return this.authToken;
 	}
 
 	/**
@@ -382,6 +395,7 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 
 	/**
 	 * Handles all Github events to trigger actions, should the parameters meet those registered.
+	 *
 	 * @param event  A ServiceEvent created from the event sent by Github.
 	 * @returns      Promise that is fulfilled once all processing of the event has completed.
 	 */
@@ -470,6 +484,7 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 
 	/**
 	 * Authenticate against the Github API and Installation environment (for Integrations).
+	 *
 	 * @returns  Promise fulfilled once authentication has occurred.
 	 */
 	protected authenticate(): Promise<void> {
@@ -531,6 +546,7 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 
 /**
  * Create a new Github ServiceListener.
+ *
  * @param constObj  Constructor for the ServiceListener.
  * @returns         A new instance of the ServiceListener.
  */
@@ -540,6 +556,7 @@ export function createServiceListener(constObj: GithubListenerConstructor): Serv
 
 /**
  * Create a new Github ServiceEmitter.
+ *
  * @param constObj  Constructor for the ServiceEmitter.
  * @returns         A new instance of the ServiceEmitter.
  */

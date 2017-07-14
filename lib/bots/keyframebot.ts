@@ -16,7 +16,6 @@ limitations under the License.
 /* tslint:disable: max-classes-per-file */
 import * as Promise from 'bluebird';
 import * as bodyParser from 'body-parser';
-import * as ChildProcess from 'child_process';
 import * as express from 'express';
 import * as GithubApi from 'github';
 import * as jwtDecode from 'jwt-decode';
@@ -26,14 +25,14 @@ import * as path from 'path';
 import { cleanup, track } from 'temp';
 import * as GithubApiTypes from '../apis/githubapi-types';
 import { ProcBot } from '../framework/procbot';
-import { GithubError } from '../services/github';
+import { GithubError, GithubService } from '../services/github';
 import { GithubCookedData, GithubHandle, GithubRegistration } from '../services/github-types';
 import { ServiceEvent } from '../services/service-types';
+import { BuildCommand, ExecuteCommand } from '../utils/environment';
 import { AlertLevel, LogLevel } from '../utils/logger';
 import TypedError = require('typed-error');
 import resinSdk = require('resin-sdk');
 
-const exec: (command: string, options?: any) => Promise<{}> = Promise.promisify(ChildProcess.exec);
 const tempMkdir = Promise.promisify(track().mkdir);
 const tempCleanup = Promise.promisify(cleanup);
 
@@ -129,7 +128,7 @@ export interface KeyframeBotConstructor {
 //    (ie. most engineers), to request this. They can do so by sending a payload of:
 //    '{ environment: <string>, version: <string> }' to it, along with their resin.io user token:
 //
-//    curl -XPOST http://<server>:7788/deploykeyframe -H 'Authorization: token <blah> \
+//    curl -XPOST http://<server>:7789/deploykeyframe -H 'Authorization: token <blah>' \
 //    -H 'Content-Type: application/json' -d '{"version": "v4.4.0", "environment": "test"}'
 // 5. If the version is valid, and the user is confirmed as a resin.io admin, then a new branch
 //    in the given environment is created based off `master`, and the keyframe is committed to it.
@@ -143,9 +142,11 @@ export interface KeyframeBotConstructor {
 //    * Carry out deploy to the correct environment from the PR
 //    * On succesful deploy, kick VersionBot to merge the PR to `master`
 export class KeyframeBot extends ProcBot {
-	/** Github ServiceListener. */
+	/** Github ServiceListener name. */
 	private githubListenerName: string;
 	/** Github ServiceEmitter. */
+	private githubEmitter: GithubService;
+	/** Github ServiceEmitter name. */
 	private githubEmitterName: string;
 	/** Instance of Github SDK API in use. */
 	private githubApi: GithubApi;
@@ -203,6 +204,7 @@ export class KeyframeBot extends ProcBot {
 		if (!ghEmitter) {
 			throw new Error("Couldn't create a Github emitter");
 		}
+		this.githubEmitter = <GithubService>ghEmitter;
 		this.githubListenerName = ghListener.serviceName;
 		this.githubEmitterName = ghEmitter.serviceName;
 
@@ -269,11 +271,8 @@ export class KeyframeBot extends ProcBot {
 		const repo = head.repo.name;
 		const prNumber = pr.number;
 		let branchName = pr.head.ref;
-		const authToken = cookedEvent.githubAuthToken;
+		let authToken: string;
 		let fullPath = '';
-		const cliCommand = (command: string) => {
-			return exec(command, { cwd: fullPath });
-		};
 
 		// Ensure we only lint on an open and a synchronise.
 		if ((event.cookedEvent.data.action !== 'opened') && (event.cookedEvent.data.action !== 'synchronize')) {
@@ -282,14 +281,30 @@ export class KeyframeBot extends ProcBot {
 
 		this.logger.log(LogLevel.INFO, `Linting ${owner}/${repo}#${prNumber} keyframe for issues`);
 
-		// Create a new temporary directory for the repo holding the keyframe.
-		return tempMkdir(`keyframebot-${repo}-${pr.number}_`).then((tempDir: string) => {
+		// Ensure that there's actually a keyframe in the PR. If there isn't, we don't
+		// even bother cloning for a lint.
+		return this.dispatchToEmitter(this.githubEmitterName, {
+			data: {
+				owner,
+				repo,
+				path: 'keyframe.yml'
+			},
+			method: this.githubApi.repos.getContent
+		}).then(() => {
+			// Successful path get means the file exists.
+			authToken = this.githubEmitter.authenticationToken;
+
+			// Create a new temporary directory for the repo holding the keyframe.
+			return tempMkdir(`keyframebot-${repo}-${pr.number}_`);
+		}).then((tempDir: string) => {
 			fullPath = `${tempDir}${path.sep}`;
 
 			return Promise.mapSeries([
-				`git clone https://${authToken}:${authToken}@github.com/${owner}/${repo} ${fullPath}`,
-				`git checkout ${branchName}`
-			], cliCommand);
+				BuildCommand('git', ['clone', `https://${authToken}:${authToken}@github.com/${owner}/${repo}`,
+					fullPath],
+					{ cwd: fullPath, retries: 3 }),
+				BuildCommand('git', ['checkout', branchName], { cwd: fullPath })
+			], ExecuteCommand);
 		}).then(() => {
 			// Lint the keyframe
 			// For this we need the base SHA and the last commit SHA for the PR.
@@ -336,6 +351,18 @@ export class KeyframeBot extends ProcBot {
 					method: this.githubApi.repos.createStatus,
 				});
 			});
+		}).catch((error: Error) => {
+			// Generic 'could not lint the PR' error.
+			this.dispatchToEmitter(this.githubEmitterName, {
+				data: {
+					body: 'Unable to lint keyframe for this PR.',
+					number: prNumber,
+					owner,
+					repo
+				},
+				method: this.githubApi.issues.createComment
+			});
+			this.reportError(error);
 		}).finally(tempCleanup);
 	}
 
@@ -379,8 +406,9 @@ export class KeyframeBot extends ProcBot {
 			}
 
 			if (!_.includes(decodedToken.permissions, 'admin.home')) {
-				// Ensure it's a 401 so anyone without rights doesn't know it exists.
-				throw new HTTPError(401, 'Invalid access rights');
+				// Ensure it's a 401 so anyone without rights doesn't know it exists,
+				// and use the same message as an invalid token.
+				throw new HTTPError(401, 'The token is invalid');
 			}
 
 			// Get the right environment.
@@ -452,7 +480,7 @@ export class KeyframeBot extends ProcBot {
 			// I guess we could look at repo, but that's a bit horrible. See if there's a variables file?
 			// Talk to Jack.
 			res.sendStatus(200);
-		}).catch((err: GithubError | HTTPError) => {
+		}).catch((err: GithubError | HTTPError | Error) => {
 			let errorCode = (err instanceof HTTPError) ? err.httpCode : 500;
 			this.reportError(err);
 			res.status(errorCode).send(err.message);
@@ -670,7 +698,7 @@ export class KeyframeBot extends ProcBot {
 	 *
 	 * @param error  The error to report.
 	 */
-	private reportError(error: GithubError | HTTPError): void {
+	private reportError(error: GithubError | HTTPError | Error): void {
 		// Log to console.
 		this.logger.alert(AlertLevel.ERROR, error.message);
 	}

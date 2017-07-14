@@ -24,6 +24,7 @@ export declare class GithubService extends WorkerClient<string> implements Servi
     sendData(data: ServiceEmitRequest): Promise<ServiceEmitResponse>;
     readonly serviceName: string;
     readonly apiHandle: GithubHandle;
+    readonly authenticationToken: string;
     getConfigurationFile(details: GithubConfigLocation): Promise<string | void>;
     protected handleGithubEvent: (event: ServiceEvent) => Promise<void>;
     protected authenticate(): Promise<void>;
