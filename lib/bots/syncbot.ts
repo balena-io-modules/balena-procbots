@@ -126,7 +126,7 @@ export class SyncBot extends ProcBot {
 						.then(() => this.useHubOrGeneric(event, 'token'))
 						// Attempt to emit the event, massaging it first into a final form
 						.then(() => this.create(event as TransmitContext))
-						// Emit the status of the synchronise, console and in-app
+						// Emit the status of the synchronise to console
 						.then(() => this.logSuccess(event as TransmitContext))
 						.catch((error: Error) => this.handleError(error, event));
 					})
@@ -137,7 +137,7 @@ export class SyncBot extends ProcBot {
 						// Attempt to emit the event and record the connection
 						.then(() => this.create(event as TransmitContext))
 						.then(() => this.createConnection(event, 'thread'))
-						// Emit the status of the synchronise, console and in-app
+						// Emit the status of the synchronise to console
 						.then(() => this.logSuccess(event as TransmitContext))
 						.catch((error: Error) => this.handleError(error, event));
 					});

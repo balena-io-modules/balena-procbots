@@ -70,6 +70,11 @@ export interface MessengerEmitResponse extends ServiceEmitResponse {
         url?: string;
     };
 }
+export interface PublicityIndicator {
+    emoji: string;
+    word: string;
+    char: string;
+}
 export interface Metadata {
     genesis: string | null;
     hidden: boolean;

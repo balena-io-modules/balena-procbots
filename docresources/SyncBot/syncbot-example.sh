@@ -62,8 +62,20 @@ export SYNCBOT_FRONT_CONSTRUCTOR_OBJECT="{
 }"
 
 # Details for the Message Converter hub
-export MESSAGE_CONVERTOR_PRIVATE_INDICATORS="[\"💭\"]"
-export MESSAGE_CONVERTOR_PUBLIC_INDICATORS="[\"💬\", \"%\"]"
+export MESSAGE_CONVERTOR_PRIVACY_INDICATORS_OBJECT="{
+    \"emoji\":\"💭\",
+    \"word\":\"whisper\",
+    \"char\":\"~\"
+}"
+export MESSAGE_CONVERTOR_PUBLICITY_INDICATORS_OBJECT="{
+    \"emoji\":\"💬\",
+    \"word\":\"comment\",
+    \"char\":\"%\"
+}"
+export MESSAGE_CONVERTOR_IMG_BASE_URL="http://example.com/logo.svg"
+export MESSAGE_CONVERTOR_MESSAGES_OF_THE_DAY="[
+    \"resin.io - for IoT fleets.\"
+]"
 
 # Do the thing
 npm start

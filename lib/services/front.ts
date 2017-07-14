@@ -87,7 +87,8 @@ export class FrontService extends Messenger implements ServiceListener, ServiceE
 			// Pre-calculate a couple of values, to save line width
 			const message = details.event.target.data;
 			const first = details.comments._results.length + details.messages._results.length === 1;
-			const metadata = Messenger.extractMetadata(message.text || message.body);
+			const metadataFormat = details.event.type === 'comment' ? 'human' : 'img';
+			const metadata = Messenger.extractMetadata(message.body, metadataFormat);
 			// Attempt to find the author of a message from the various places front might store it
 			let author = 'Unknown';
 			if (message.author) {
@@ -135,13 +136,14 @@ export class FrontService extends Messenger implements ServiceListener, ServiceE
 			}
 			return this.fetchUserId(data.toIds.user).then((userId) => {
 				// The specific form that may be emitted
+				const footer = `${Messenger.stringifyMetadata(data, 'img')} ${Messenger.messageOfTheDay()}`;
 				return {
 					endpoint: {
 						method: this.apiHandle.front.message.send,
 					},
 					payload: {
 						author_id: userId,
-						body: `${data.text}<hr/><br/>${Messenger.stringifyMetadata(data, 'plaintext')}`,
+						body: `${data.text}<hr/>${footer}`,
 						// Find the relevant channel for the inbox
 						channel_id: this.data.inbox_channels[data.toIds.flow],
 						metadata: {
@@ -164,31 +166,33 @@ export class FrontService extends Messenger implements ServiceListener, ServiceE
 			userId: this.fetchUserId(data.toIds.user)
 		}).then((details: {conversation: Conversation, userId: string}) => {
 			if (data.hidden) {
+				const footer = `${Messenger.stringifyMetadata(data, 'human')}`;
 				return {
 					endpoint: {
 						method: this.apiHandle.front.comment.create,
 					},
 					payload: {
 						author_id: details.userId,
-						body: `${data.text}\n\n---\n${Messenger.stringifyMetadata(data, 'plaintext')}`,
+						body: `${data.text}${footer}`,
 						conversation_id: conversationId,
 					}
 				};
 			}
+			const footer = `${Messenger.stringifyMetadata(data, 'img')} ${Messenger.messageOfTheDay()}`;
 			return {
 				endpoint: {
 					method: this.apiHandle.front.message.reply,
 				},
 				payload: {
 					author_id: details.userId,
-					body: `${data.text}<hr/><br/>${Messenger.stringifyMetadata(data, 'plaintext')}`,
+					body: `${data.text}<hr/>${footer}`,
 					conversation_id: conversationId,
 					options: {
 						archive: false,
 					},
 					subject: details.conversation.subject,
-					type: data.hidden ? 'comment' : 'message',
-				}
+					type: 'message',
+				},
 			};
 		});
 	}
@@ -210,11 +214,11 @@ export class FrontService extends Messenger implements ServiceListener, ServiceE
 	 */
 	protected activateMessageListener = (): void => {
 		// This swallows response attempts to the channel, since we notice them on the inbox instead
-		Messenger.app.post('/front-dev-null', (_formData, response) => {
+		Messenger.expressApp.post('/front-dev-null', (_formData, response) => {
 			response.sendStatus(200);
 		});
 		// Create an endpoint for this listener and enqueue events
-		Messenger.app.post(`/${FrontService._serviceName}/`, (formData, response) => {
+		Messenger.expressApp.post(`/${FrontService._serviceName}/`, (formData, response) => {
 			this.queueEvent({
 				data: {
 					cookedEvent: {

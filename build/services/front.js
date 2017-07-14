@@ -46,7 +46,8 @@ class FrontService extends messenger_1.Messenger {
                 .then((details) => {
                 const message = details.event.target.data;
                 const first = details.comments._results.length + details.messages._results.length === 1;
-                const metadata = messenger_1.Messenger.extractMetadata(message.text || message.body);
+                const metadataFormat = details.event.type === 'comment' ? 'human' : 'img';
+                const metadata = messenger_1.Messenger.extractMetadata(message.body, metadataFormat);
                 let author = 'Unknown';
                 if (message.author) {
                     author = message.author.username;
@@ -84,13 +85,14 @@ class FrontService extends messenger_1.Messenger {
                     throw new Error('Cannot create Front Conversation without a title');
                 }
                 return this.fetchUserId(data.toIds.user).then((userId) => {
+                    const footer = `${messenger_1.Messenger.stringifyMetadata(data, 'img')} ${messenger_1.Messenger.messageOfTheDay()}`;
                     return {
                         endpoint: {
                             method: this.apiHandle.front.message.send,
                         },
                         payload: {
                             author_id: userId,
-                            body: `${data.text}<hr/><br/>${messenger_1.Messenger.stringifyMetadata(data, 'plaintext')}`,
+                            body: `${data.text}<hr/>${footer}`,
                             channel_id: this.data.inbox_channels[data.toIds.flow],
                             metadata: {
                                 thread_ref: data.sourceIds.thread,
@@ -112,39 +114,41 @@ class FrontService extends messenger_1.Messenger {
                 userId: this.fetchUserId(data.toIds.user)
             }).then((details) => {
                 if (data.hidden) {
+                    const footer = `${messenger_1.Messenger.stringifyMetadata(data, 'human')}`;
                     return {
                         endpoint: {
                             method: this.apiHandle.front.comment.create,
                         },
                         payload: {
                             author_id: details.userId,
-                            body: `${data.text}\n\n---\n${messenger_1.Messenger.stringifyMetadata(data, 'plaintext')}`,
+                            body: `${data.text}${footer}`,
                             conversation_id: conversationId,
                         }
                     };
                 }
+                const footer = `${messenger_1.Messenger.stringifyMetadata(data, 'img')} ${messenger_1.Messenger.messageOfTheDay()}`;
                 return {
                     endpoint: {
                         method: this.apiHandle.front.message.reply,
                     },
                     payload: {
                         author_id: details.userId,
-                        body: `${data.text}<hr/><br/>${messenger_1.Messenger.stringifyMetadata(data, 'plaintext')}`,
+                        body: `${data.text}<hr/>${footer}`,
                         conversation_id: conversationId,
                         options: {
                             archive: false,
                         },
                         subject: details.conversation.subject,
-                        type: data.hidden ? 'comment' : 'message',
-                    }
+                        type: 'message',
+                    },
                 };
             });
         };
         this.activateMessageListener = () => {
-            messenger_1.Messenger.app.post('/front-dev-null', (_formData, response) => {
+            messenger_1.Messenger.expressApp.post('/front-dev-null', (_formData, response) => {
                 response.sendStatus(200);
             });
-            messenger_1.Messenger.app.post(`/${FrontService._serviceName}/`, (formData, response) => {
+            messenger_1.Messenger.expressApp.post(`/${FrontService._serviceName}/`, (formData, response) => {
                 this.queueEvent({
                     data: {
                         cookedEvent: {

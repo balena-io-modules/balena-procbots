@@ -58,39 +58,76 @@ class Messenger extends worker_client_1.WorkerClient {
         let shown;
         let hidden;
         try {
-            shown = JSON.parse(process.env.MESSAGE_CONVERTOR_PUBLIC_INDICATORS);
-            hidden = JSON.parse(process.env.MESSAGE_CONVERTOR_PRIVATE_INDICATORS);
+            shown = JSON.parse(process.env.MESSAGE_CONVERTOR_PUBLICITY_INDICATORS_OBJECT);
+            hidden = JSON.parse(process.env.MESSAGE_CONVERTOR_PRIVACY_INDICATORS_OBJECT);
         }
         catch (error) {
-            throw new Error('Message convertor environment variables not set correctly');
+            throw new Error('Message convertor environment variables not set correctly, indicators not json');
         }
         if (shown.length === 0 || hidden.length === 0) {
-            throw new Error('Message convertor environment variables not set correctly');
+            throw new Error('Message convertor environment variables not set correctly, indicators zero length');
         }
         return { hidden, shown };
     }
-    static stringifyMetadata(data, format = 'markdown') {
+    static stringifyMetadata(data, format) {
         const indicators = Messenger.getIndicatorArrays();
-        switch (format) {
-            case 'markdown':
-                return `[${data.hidden ? indicators.hidden[0] : indicators.shown[0]}](${data.source})`;
-            case 'plaintext':
-                return `${data.hidden ? indicators.hidden[0] : indicators.shown[0]}:${data.source}`;
+        switch (format.toLowerCase()) {
+            case 'human':
+                return `\n(${data.hidden ? indicators.hidden.word : indicators.shown.word} from ${data.source})`;
+            case 'emoji':
+                return `\n[${data.hidden ? indicators.hidden.emoji : indicators.shown.emoji}](${data.source})`;
+            case 'img':
+                const baseUrl = process.env.MESSAGE_CONVERTOR_IMG_BASE_URL;
+                const hidden = data.hidden ? indicators.hidden.word : indicators.shown.word;
+                const querystring = `?hidden=${hidden}&source=${encodeURI(data.source)}`;
+                return `\n<img src="${baseUrl}${querystring}" height="18" />`;
             default:
                 throw new Error(`${format} format not recognised`);
         }
     }
-    static extractMetadata(message) {
+    static extractMetadata(message, format) {
         const indicators = Messenger.getIndicatorArrays();
-        const visible = indicators.shown.join('|\\');
-        const hidden = indicators.hidden.join('|\\');
-        const findMetadata = new RegExp(`(?:^|\\r|\\n)(?:\\s*)\\[?(${hidden}|${visible})\\]?:?\\(?(\\w*)\\)?`, 'i');
-        const metadata = message.match(findMetadata);
+        const wordCapture = `(${indicators.hidden.word}|${indicators.shown.word})`;
+        const beginsLine = `(?:^|\\r|\\n)(?:\\s*)`;
+        switch (format.toLowerCase()) {
+            case 'human':
+                const parensRegex = new RegExp(`${beginsLine}\\(${wordCapture} from (\\w*)\\)`, 'i');
+                return Messenger.metadataByRegex(message, parensRegex);
+            case 'emoji':
+                const emojiCapture = `(${indicators.hidden.emoji}|${indicators.shown.emoji})`;
+                const emojiRegex = new RegExp(`${beginsLine}\\[${emojiCapture}\\]\\((\\w*)\\)`, 'i');
+                return Messenger.metadataByRegex(message, emojiRegex);
+            case 'img':
+                const baseUrl = _.escapeRegExp(process.env.MESSAGE_CONVERTOR_IMG_BASE_URL);
+                const querystring = `\\?hidden=${wordCapture}&source=(\\w*)`;
+                const imgRegex = new RegExp(`${beginsLine}<img src="${baseUrl}${querystring}" height="18" \/>`, 'i');
+                return Messenger.metadataByRegex(message, imgRegex);
+            case 'char':
+                const charCapture = `(${indicators.hidden.char}|${indicators.shown.char})`;
+                const charRegex = new RegExp(`${beginsLine}${charCapture}`, 'i');
+                return Messenger.metadataByRegex(message, charRegex);
+            default:
+                throw new Error(`${format} format not recognised`);
+        }
+    }
+    static messageOfTheDay() {
+        try {
+            const messages = JSON.parse(process.env.MESSAGE_CONVERTOR_MESSAGES_OF_THE_DAY);
+            const daysSinceDatum = Math.floor(new Date().getTime() / 86400000);
+            return messages[daysSinceDatum % messages.length];
+        }
+        catch (error) {
+            throw new Error('Message convertor environment variables not set correctly, motd not json');
+        }
+    }
+    static metadataByRegex(message, regex) {
+        const indicators = Messenger.getIndicatorArrays();
+        const metadata = message.match(regex);
         if (metadata) {
             return {
-                content: message.replace(findMetadata, '').trim(),
+                content: message.replace(regex, '').trim(),
                 genesis: metadata[2] || null,
-                hidden: !_.includes(indicators.shown, metadata[1]),
+                hidden: !_.includes(_.values(indicators.shown), metadata[1]),
             };
         }
         return {
@@ -99,22 +136,22 @@ class Messenger extends worker_client_1.WorkerClient {
             hidden: true,
         };
     }
-    static get app() {
-        if (!Messenger._app) {
+    static get expressApp() {
+        if (!Messenger._expressApp) {
             const port = process.env.MESSAGE_SERVICE_PORT || process.env.PORT;
             if (!port) {
                 throw new Error('No inbound port specified for express server');
             }
-            Messenger._app = express();
-            Messenger._app.use(bodyParser.json());
-            Messenger._app.listen(port);
+            Messenger._expressApp = express();
+            Messenger._expressApp.use(bodyParser.json());
+            Messenger._expressApp.listen(port);
             Messenger.logger.log(logger_1.LogLevel.INFO, `---> Started MessageService shared web server on port '${port}'`);
         }
-        return Messenger._app;
+        return Messenger._expressApp;
     }
     registerEvent(registration) {
         for (const event of registration.events) {
-            if (this._eventListeners[event] == null) {
+            if (!this._eventListeners[event]) {
                 this._eventListeners[event] = [];
             }
             this._eventListeners[event].push(registration);

@@ -13,17 +13,24 @@ class FlowdockService extends messenger_1.Messenger {
         this.receivedPostIds = new Set();
         this.makeGeneric = (data) => {
             return new Promise((resolve) => {
-                const metadata = messenger_1.Messenger.extractMetadata(data.rawEvent.content);
-                const titleAndText = metadata.content.match(/^(.*)\n--\n((?:\r|\n|.)*)$/);
+                const emojiMetadata = messenger_1.Messenger.extractMetadata(data.rawEvent.content, 'emoji');
+                const charMetadata = messenger_1.Messenger.extractMetadata(data.rawEvent.content, 'char');
+                const compiledMetadata = {
+                    genesis: emojiMetadata.genesis || charMetadata.genesis || data.source,
+                    hidden: emojiMetadata.hidden && charMetadata.hidden,
+                    content: emojiMetadata.genesis ? emojiMetadata.content : charMetadata.content,
+                };
+                const titleAndText = compiledMetadata.content.match(/^(.*)\n--\n((?:\r|\n|.)*)$/);
                 const flow = data.cookedEvent.flow;
                 const thread = data.rawEvent.thread_id;
                 const userId = data.rawEvent.user;
                 const org = this.data.organization;
+                const first = data.rawEvent.id === data.rawEvent.thread.initial_message;
                 const returnValue = {
                     action: messenger_types_1.MessengerAction.Create,
-                    first: data.rawEvent.id === data.rawEvent.thread.initial_message,
-                    genesis: metadata.genesis || data.source,
-                    hidden: metadata.hidden,
+                    first,
+                    genesis: compiledMetadata.genesis,
+                    hidden: compiledMetadata.hidden,
                     source: data.source,
                     sourceIds: {
                         message: data.rawEvent.id,
@@ -32,8 +39,8 @@ class FlowdockService extends messenger_1.Messenger {
                         url: `https://www.flowdock.com/app/${org}/${flow}/threads/${thread}`,
                         user: 'duff',
                     },
-                    text: titleAndText ? titleAndText[2] : metadata.content,
-                    title: titleAndText ? titleAndText[1] : undefined,
+                    text: first && titleAndText ? titleAndText[2] : compiledMetadata.content,
+                    title: first && titleAndText ? titleAndText[1] : undefined,
                 };
                 if (data.rawEvent.external_user_name) {
                     returnValue.sourceIds.user = data.rawEvent.external_user_name;
@@ -63,7 +70,7 @@ class FlowdockService extends messenger_1.Messenger {
                         org,
                     },
                     payload: {
-                        content: titleText + data.text + '\n' + messenger_1.Messenger.stringifyMetadata(data),
+                        content: titleText + data.text + messenger_1.Messenger.stringifyMetadata(data, 'emoji'),
                         event: 'message',
                         external_user_name: data.toIds.token === this.data.token ? data.toIds.user.substring(0, 16) : undefined,
                         thread_id: data.toIds.thread,
@@ -111,7 +118,7 @@ class FlowdockService extends messenger_1.Messenger {
                     }
                 });
             });
-            messenger_1.Messenger.app.get(`/${FlowdockService._serviceName}/`, (_formData, response) => {
+            messenger_1.Messenger.expressApp.get(`/${FlowdockService._serviceName}/`, (_formData, response) => {
                 response.sendStatus(200);
             });
         };
