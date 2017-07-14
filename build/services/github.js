@@ -244,6 +244,9 @@ class GithubService extends worker_client_1.WorkerClient {
             github: this.githubApi
         };
     }
+    get authenticationToken() {
+        return this.authToken;
+    }
     getConfigurationFile(details) {
         const owner = details.location.owner;
         const repo = details.location.repo;

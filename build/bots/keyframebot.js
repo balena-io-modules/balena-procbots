@@ -2,7 +2,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const Promise = require("bluebird");
 const bodyParser = require("body-parser");
-const ChildProcess = require("child_process");
 const express = require("express");
 const jwtDecode = require("jwt-decode");
 const keyframeControl = require("keyfctl");
@@ -10,10 +9,10 @@ const _ = require("lodash");
 const path = require("path");
 const temp_1 = require("temp");
 const procbot_1 = require("../framework/procbot");
+const environment_1 = require("../utils/environment");
 const logger_1 = require("../utils/logger");
 const TypedError = require("typed-error");
 const resinSdk = require("resin-sdk");
-const exec = Promise.promisify(ChildProcess.exec);
 const tempMkdir = Promise.promisify(temp_1.track().mkdir);
 const tempCleanup = Promise.promisify(temp_1.cleanup);
 class HTTPError extends TypedError {
@@ -39,21 +38,29 @@ class KeyframeBot extends procbot_1.ProcBot {
             const repo = head.repo.name;
             const prNumber = pr.number;
             let branchName = pr.head.ref;
-            const authToken = cookedEvent.githubAuthToken;
+            let authToken;
             let fullPath = '';
-            const cliCommand = (command) => {
-                return exec(command, { cwd: fullPath });
-            };
             if ((event.cookedEvent.data.action !== 'opened') && (event.cookedEvent.data.action !== 'synchronize')) {
                 return Promise.resolve();
             }
             this.logger.log(logger_1.LogLevel.INFO, `Linting ${owner}/${repo}#${prNumber} keyframe for issues`);
-            return tempMkdir(`keyframebot-${repo}-${pr.number}_`).then((tempDir) => {
+            return this.dispatchToEmitter(this.githubEmitterName, {
+                data: {
+                    owner,
+                    repo,
+                    path: 'keyframe.yml'
+                },
+                method: this.githubApi.repos.getContent
+            }).then(() => {
+                authToken = this.githubEmitter.authenticationToken;
+                return tempMkdir(`keyframebot-${repo}-${pr.number}_`);
+            }).then((tempDir) => {
                 fullPath = `${tempDir}${path.sep}`;
                 return Promise.mapSeries([
-                    `git clone https://${authToken}:${authToken}@github.com/${owner}/${repo} ${fullPath}`,
-                    `git checkout ${branchName}`
-                ], cliCommand);
+                    environment_1.BuildCommand('git', ['clone', `https://${authToken}:${authToken}@github.com/${owner}/${repo}`,
+                        fullPath], { cwd: fullPath, retries: 3 }),
+                    environment_1.BuildCommand('git', ['checkout', branchName], { cwd: fullPath })
+                ], environment_1.ExecuteCommand);
             }).then(() => {
                 const baseSha = pr.base.sha;
                 const headSha = pr.head.sha;
@@ -91,6 +98,17 @@ class KeyframeBot extends procbot_1.ProcBot {
                         method: this.githubApi.repos.createStatus,
                     });
                 });
+            }).catch((error) => {
+                this.dispatchToEmitter(this.githubEmitterName, {
+                    data: {
+                        body: 'Unable to lint keyframe for this PR.',
+                        number: prNumber,
+                        owner,
+                        repo
+                    },
+                    method: this.githubApi.issues.createComment
+                });
+                this.reportError(error);
             }).finally(tempCleanup);
         };
         this.deployKeyframe = (req, res) => {
@@ -120,7 +138,7 @@ class KeyframeBot extends procbot_1.ProcBot {
                     throw new Error('Cannot decode token into JWT object');
                 }
                 if (!_.includes(decodedToken.permissions, 'admin.home')) {
-                    throw new HTTPError(401, 'Invalid access rights');
+                    throw new HTTPError(401, 'The token is invalid');
                 }
                 const envRepo = this.environments[environment];
                 if (!envRepo) {
@@ -376,6 +394,7 @@ class KeyframeBot extends procbot_1.ProcBot {
         if (!ghEmitter) {
             throw new Error("Couldn't create a Github emitter");
         }
+        this.githubEmitter = ghEmitter;
         this.githubListenerName = ghListener.serviceName;
         this.githubEmitterName = ghEmitter.serviceName;
         this.githubApi = ghEmitter.apiHandle.github;

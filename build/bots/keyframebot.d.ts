@@ -11,6 +11,7 @@ export interface KeyframeBotConstructor {
 }
 export declare class KeyframeBot extends ProcBot {
     private githubListenerName;
+    private githubEmitter;
     private githubEmitterName;
     private githubApi;
     private expressApp;
