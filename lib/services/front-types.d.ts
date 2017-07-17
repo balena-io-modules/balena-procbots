@@ -32,6 +32,9 @@ export interface FrontHandle extends ServiceAPIHandle {
 
 export interface FrontConnectionDetails {
 	token: string;
+	channelPerInbox?: {
+		[inbox: string]: string;
+	};
 }
 
 export interface FrontEvent extends UtilityServiceEvent {

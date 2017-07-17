@@ -87,7 +87,7 @@ export class FrontService extends ServiceUtilities implements ServiceListener, S
 	 * Verify the event before enqueueing.  For now uses the naive approach of returning true.
 	 */
 	protected verify(_data: FrontEvent): boolean {
-		// TODO: This to be properly implemented.
+		// #204: This to be properly implemented.
 		return true;
 	}
 

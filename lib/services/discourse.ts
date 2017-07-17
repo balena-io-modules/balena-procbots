@@ -35,7 +35,7 @@ export class DiscourseService extends ServiceUtilities implements ServiceListene
 	 * @param data  Object containing the required details for Discourse.
 	 */
 	protected connect(data: DiscourseConnectionDetails): void {
-		// TODO: Verify connection data
+		// #203: Verify connection data
 		this.connectionDetails = data;
 	}
 
@@ -68,7 +68,8 @@ export class DiscourseService extends ServiceUtilities implements ServiceListene
 					data: {
 						cookedEvent: {
 							context: formData.body.post.topic_id,
-							type: 'post' // TODO: I'm sure there's something in the headers that could improve this
+							// #201: I'm sure there's something in the headers that could improve this
+							type: 'post'
 						},
 						rawEvent: formData.body.post,
 						source: DiscourseService._serviceName,
@@ -84,7 +85,7 @@ export class DiscourseService extends ServiceUtilities implements ServiceListene
 	 * Verify the event before enqueueing.  For now uses the naive approach of returning true.
 	 */
 	protected verify(_data: DiscourseEvent): boolean {
-		// TODO: This to be properly implemented.
+		// #202: This to be properly implemented.
 		return true;
 	}
 

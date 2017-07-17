@@ -16,10 +16,10 @@
 
 import * as Promise from 'bluebird';
 import * as _ from 'lodash';
+import * as request from 'request-promise';
 import { DiscourseConnectionDetails, DiscourseEmitContext, DiscourseEvent } from '../../services/discourse-types';
 import { MessageAction, MessageContext, TransmitContext } from '../../services/messenger-types';
 import { Translator } from './translator';
-import request = require('request');
 
 export class DiscourseTranslator extends Translator {
 	private connectionDetails: DiscourseConnectionDetails;
