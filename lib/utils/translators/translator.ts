@@ -19,10 +19,10 @@ import * as _ from 'lodash';
 import {
 	InterimContext, MessageContext, MessageIds,
 	Metadata, TransmitContext,
-} from '../services/messenger-types';
+} from '../../services/messenger-types';
 import {
 	ServiceEmitContext, ServiceEvent,
-} from '../services/service-types';
+} from '../../services/service-types';
 
 export abstract class MessageTranslator {
 	/**
@@ -130,10 +130,10 @@ export abstract class MessageTranslator {
 	}
 
 	/**
-	 * Translate the provided data, enqueued by the service, into a message context
-	 * @param data  Data in the form raw to the service
+	 * Translate the provided event, enqueued by the service, into a message context
+	 * @param event  Data in the form raw to the service
 	 */
-	public abstract dataIntoMessage(data: ServiceEvent): Promise<MessageContext>;
+	public abstract eventIntoMessage(event: ServiceEvent): Promise<MessageContext>;
 
 	/**
 	 * Translate the provided message context into an emit context
@@ -145,5 +145,5 @@ export abstract class MessageTranslator {
 	 * Translate the provided generic name for an event into the service events to listen to
 	 * @param eventName  Generic name for an event
 	 */
-	public abstract eventIntoEvents(eventName: string): string[];
+	public abstract eventNameIntoTriggers(eventName: string): string[];
 }
