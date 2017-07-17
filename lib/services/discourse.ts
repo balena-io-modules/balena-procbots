@@ -235,7 +235,7 @@ export class DiscourseService extends Messenger implements ServiceListener, Serv
 	protected activateMessageListener = (): void => {
 		// Create an endpoint for this listener and protect against double-web-hooks
 		Messenger.expressApp.post(`/${DiscourseService._serviceName}/`, (formData, response) => {
-			if(!this.receivedPostIds.has(formData.body.post.id)) {
+			if (!this.receivedPostIds.has(formData.body.post.id)) {
 				this.receivedPostIds.add(formData.body.post.id);
 				// Enqueue the event as simply as possible
 				this.queueEvent({

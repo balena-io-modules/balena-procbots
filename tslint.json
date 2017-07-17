@@ -4,7 +4,8 @@
         "indent": [ true, "tabs" ],
         "jsdoc-format": false,
         "whitespace": [
-            false,
+            true,
+            "check-branch",
             "check-type"
         ],
         "arrow-parens": false,

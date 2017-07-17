@@ -401,7 +401,7 @@ export class KeyframeBot extends ProcBot {
 		resin.auth.loginWithToken(token).then(() => {
 			try {
 				decodedToken = jwtDecode(token);
-			} catch(_err) {
+			} catch (_err) {
 				throw new Error('Cannot decode token into JWT object');
 			}
 
