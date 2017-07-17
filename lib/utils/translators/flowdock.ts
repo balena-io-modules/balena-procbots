@@ -16,8 +16,8 @@ limitations under the License.
 
 import * as Promise from 'bluebird';
 import { Session } from 'flowdock';
-import { FlowdockConnectionDetails, FlowdockEmitContext, FlowdockEvent } from '../services/flowdock-types';
-import { MessageContext, TransmitContext } from '../services/messenger-types';
+import { FlowdockConnectionDetails, FlowdockEmitContext, FlowdockEvent } from '../../services/flowdock-types';
+import { MessageContext, TransmitContext } from '../../services/messenger-types';
 import { MessageTranslator } from './translator';
 
 // TODO: Implement
@@ -31,7 +31,7 @@ export class FlowdockTranslator extends MessageTranslator {
 		this.org = data.organization;
 	}
 
-	public dataIntoMessage(_data: FlowdockEvent): Promise<MessageContext> {
+	public eventIntoMessage(_event: FlowdockEvent): Promise<MessageContext> {
 		throw new Error('Method not implemented.');
 	}
 
@@ -39,7 +39,7 @@ export class FlowdockTranslator extends MessageTranslator {
 		throw new Error('Method not implemented.');
 	}
 
-	public eventIntoEvents(_eventName: string): string[] {
+	public eventNameIntoTriggers(_eventName: string): string[] {
 		throw new Error('Method not implemented.');
 	}
 }

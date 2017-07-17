@@ -3,8 +3,8 @@ import * as express from 'express';
 import { Worker } from '../framework/worker';
 import { WorkerClient } from '../framework/worker-client';
 import { Logger } from '../utils/logger';
-import { ServiceAPIHandle, ServiceEmitRequest, ServiceEmitResponse, ServiceEmitter, ServiceListener, ServiceRegistration } from './service-types';
-import { UtilityServiceEmitContext, UtilityServiceEvent, UtilityWorkerEvent } from './service-utilities-types';
+import { ServiceAPIHandle, ServiceEmitContext, ServiceEmitRequest, ServiceEmitResponse, ServiceEmitter, ServiceListener, ServiceRegistration } from './service-types';
+import { UtilityServiceEvent, UtilityWorkerEvent } from './service-utilities-types';
 export declare abstract class ServiceUtilities extends WorkerClient<string> implements ServiceListener, ServiceEmitter {
     private _logger;
     private _expressApp;
@@ -15,7 +15,7 @@ export declare abstract class ServiceUtilities extends WorkerClient<string> impl
     sendData(data: ServiceEmitRequest): Promise<ServiceEmitResponse>;
     protected queueData(data: UtilityServiceEvent): void;
     protected abstract connect(data: any): void;
-    protected abstract emitData(data: UtilityServiceEmitContext): Promise<any>;
+    protected abstract emitData(data: ServiceEmitContext): Promise<any>;
     protected abstract startListening(): void;
     protected abstract verify(data: UtilityServiceEvent): boolean;
     protected getWorker: (event: UtilityWorkerEvent) => Worker<string>;

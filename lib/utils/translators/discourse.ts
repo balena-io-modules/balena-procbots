@@ -15,8 +15,8 @@
  */
 
 import * as Promise from 'bluebird';
-import { DiscourseConnectionDetails, DiscourseEmitContext, DiscourseEvent } from '../services/discourse-types';
-import { MessageContext, TransmitContext } from '../services/messenger-types';
+import { DiscourseConnectionDetails, DiscourseEmitContext, DiscourseEvent } from '../../services/discourse-types';
+import { MessageContext, TransmitContext } from '../../services/messenger-types';
 import { MessageTranslator } from './translator';
 
 // TODO: Implement
@@ -28,7 +28,7 @@ export class DiscourseTranslator extends MessageTranslator {
 		this.connectionDetails = data;
 	}
 
-	public dataIntoMessage(_data: DiscourseEvent): Promise<MessageContext> {
+	public eventIntoMessage(_data: DiscourseEvent): Promise<MessageContext> {
 		throw new Error('Method not implemented.');
 	}
 
@@ -36,7 +36,7 @@ export class DiscourseTranslator extends MessageTranslator {
 		throw new Error('Method not implemented.');
 	}
 
-	public eventIntoEvents(_eventName: string): string[] {
+	public eventNameIntoTriggers(_eventName: string): string[] {
 		throw new Error('Method not implemented.');
 	}
 }

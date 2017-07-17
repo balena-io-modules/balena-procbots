@@ -92,7 +92,7 @@ class ServiceUtilities extends worker_client_1.WorkerClient {
             });
         }
         else {
-            this.logger.log(logger_1.LogLevel.WARN, `Received event failed verification.`);
+            this.logger.log(logger_1.LogLevel.WARN, `Event failed verification.`);
         }
     }
     get expressApp() {

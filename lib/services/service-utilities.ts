@@ -33,8 +33,9 @@ import {
  * A utility class to handle a bunch of the repetitive work associated with being a ServiceListener and ServiceEmitter
  *
  * This class provides:
- * - A connect then listen constructor flow.
- * - An express app, if asked for, and a logger.
+ * - An always connect then maybe listen constructor flow.
+ * - An express app, if asked for.
+ * - A logger.
  * - An event registration and handling standard.
  * - Checks for and extracts data from context.
  * - A standard way of getting contextualised workers.
@@ -43,12 +44,11 @@ import {
  * In exchange you agree to:
  * - provide a `connect` method to connect this class to the service, called during construction and only once.
  * - provide a `startListening` method to activate this class as a listener, calling queueEvent as required.
- * - provide a `emitData` method, takes a ServiceEmitContext and returns a promise.
- * - provide a `verify` function, which should check that incoming data is from the correct sender.
+ * - provide a `emitData` method which takes a ServiceEmitContext and returns a promise.
+ * - provide a `verify` function which should check that incoming data isn't spoofed.
  * - provide a `serviceName` getter, which because it is based on file path cannot be inherited away.
  * - provide a `apiHandle` getter, which should return the underlying object that executes the requests.
  * - enqueue your events with `context` and `event` in cookedData, as per `UtilityServiceEvent`.
- * - send your data with `endpoint` definition, as per `UtilityServiceEmitContext`.
  */
 export abstract class ServiceUtilities extends WorkerClient<string> implements ServiceListener, ServiceEmitter {
 	/** A place to put output for debug and reference. */
@@ -71,7 +71,7 @@ export abstract class ServiceUtilities extends WorkerClient<string> implements S
 	constructor(data: object, listen: boolean) {
 		super();
 		this.connect(data);
-		this.logger.log(LogLevel.INFO, `---> Connected '${this.serviceName}'.`);
+		this.logger.log(LogLevel.INFO, `---> '${this.serviceName}' connected.`);
 		if (listen) {
 			this.listen();
 		}

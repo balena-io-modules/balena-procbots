@@ -16,8 +16,8 @@
 
 import * as Promise from 'bluebird';
 import { Front } from 'front-sdk';
-import { FrontConnectionDetails, FrontEmitContext, FrontEvent } from '../services/front-types';
-import { MessageContext, TransmitContext } from '../services/messenger-types';
+import { FrontConnectionDetails, FrontEmitContext, FrontEvent } from '../../services/front-types';
+import { MessageContext, TransmitContext } from '../../services/messenger-types';
 import { MessageTranslator } from './translator';
 
 // TODO: Implement
@@ -34,7 +34,7 @@ export class FrontTranslator extends MessageTranslator {
 	 * Translate the provided data, enqueued by the service, into a message context
 	 * @param _data  Data in the form raw to the service
 	 */
-	public dataIntoMessage(_data: FrontEvent): Promise<MessageContext> {
+	public eventIntoMessage(_data: FrontEvent): Promise<MessageContext> {
 		throw new Error('Method not implemented.');
 	}
 
@@ -50,7 +50,7 @@ export class FrontTranslator extends MessageTranslator {
 	 * Translate the provided generic name for an event into the service events to listen to
 	 * @param _eventName  Generic name for an event
 	 */
-	public eventIntoEvents(_eventName: string): string[] {
+	public eventNameIntoTriggers(_eventName: string): string[] {
 		throw new Error('Method not implemented.');
 	}
 
