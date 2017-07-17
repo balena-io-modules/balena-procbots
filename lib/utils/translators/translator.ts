@@ -24,17 +24,7 @@ import {
 	ServiceEmitContext, ServiceEvent,
 } from '../../services/service-types';
 
-export abstract class MessageTranslator {
-	/**
-	 * Retrieves and loads a Translator by name.
-	 * @param name  The name of the Translator to load.
-	 * @param data  The constructor object for the createTranslator method.
-	 * @return      The newly instantiated Translator.
-	 */
-	public static newTranslator(name: string, data: any): MessageTranslator {
-		return require(name).createTranslator(data);
-	}
-
+export abstract class Translator {
 	/**
 	 * Make a handle context, using a receipt context and some extra information.
 	 * @param event  Event to be converted.
@@ -66,7 +56,7 @@ export abstract class MessageTranslator {
 	 * @returns       Text with data embedded.
 	 */
 	protected static stringifyMetadata(data: MessageContext, format: 'markdown'|'plaintext' = 'markdown'): string {
-		const indicators = MessageTranslator.getIndicatorArrays();
+		const indicators = Translator.getIndicatorArrays();
 		// Build the content with the indicator and genesis at the front
 		switch (format) {
 			case 'markdown':
@@ -84,7 +74,7 @@ export abstract class MessageTranslator {
 	 * @returns        Object of content, genesis and hidden.
 	 */
 	protected static extractMetadata(message: string): Metadata {
-		const indicators = MessageTranslator.getIndicatorArrays();
+		const indicators = Translator.getIndicatorArrays();
 		const visible = indicators.shown.join('|\\');
 		const hidden = indicators.hidden.join('|\\');
 		// Anchored with new line; followed by whitespace.
@@ -143,7 +133,17 @@ export abstract class MessageTranslator {
 
 	/**
 	 * Translate the provided generic name for an event into the service events to listen to
-	 * @param eventName  Generic name for an event
+	 * @param name  Generic name for an event
 	 */
-	public abstract eventNameIntoTriggers(eventName: string): string[];
+	public abstract eventNameIntoTriggers(name: string): string[];
+}
+
+/**
+ * Retrieves and loads a Translator by name.
+ * @param name  The name of the Translator to load.
+ * @param data  The constructor object for the createTranslator method.
+ * @return      The newly instantiated Translator.
+ */
+export function createTranslator(name: string, data: any): Translator {
+	return require(name).createTranslator(data);
 }

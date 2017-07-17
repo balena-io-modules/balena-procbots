@@ -18,10 +18,10 @@ import * as Promise from 'bluebird';
 import { Front } from 'front-sdk';
 import { FrontConnectionDetails, FrontEmitContext, FrontEvent } from '../../services/front-types';
 import { MessageContext, TransmitContext } from '../../services/messenger-types';
-import { MessageTranslator } from './translator';
+import { Translator } from './translator';
 
 // TODO: Implement
-export class FrontTranslator extends MessageTranslator {
+export class FrontTranslator extends Translator {
 	/** Underlying SDK object to query for data */
 	private session: Front;
 
@@ -196,6 +196,6 @@ export class FrontTranslator extends MessageTranslator {
 	// }
 }
 
-export function createTranslator(data: FrontConnectionDetails): MessageTranslator {
+export function createTranslator(data: FrontConnectionDetails): Translator {
 	return new FrontTranslator(data);
 }

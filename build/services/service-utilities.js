@@ -37,7 +37,7 @@ class ServiceUtilities extends worker_client_1.WorkerClient {
             }
         };
         this.connect(data);
-        this.logger.log(logger_1.LogLevel.INFO, `---> Connected '${this.serviceName}'.`);
+        this.logger.log(logger_1.LogLevel.INFO, `---> '${this.serviceName}' connected.`);
         if (listen) {
             this.listen();
         }
