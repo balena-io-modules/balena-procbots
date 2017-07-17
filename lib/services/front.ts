@@ -273,7 +273,7 @@ export class FrontService extends Messenger implements ServiceListener, ServiceE
 	 */
 	protected sendPayload = (data: FrontEmitContext): Promise<MessengerEmitResponse> => {
 		return data.endpoint.method(data.payload).then(() => {
-			if(data.payload.conversation_id) {
+			if (data.payload.conversation_id) {
 				return Promise.resolve({
 					response: {
 						message: `${data.payload.author_id}:${new Date().getTime()}`,

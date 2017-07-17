@@ -59,10 +59,10 @@ export class SyncBot extends ProcBot {
 		super(name);
 		// Register each edge in the mappings array bidirectionally
 		const mappings: FlowDefinition[][] = JSON.parse(process.env.SYNCBOT_MAPPINGS);
-		for(const mapping of mappings) {
+		for (const mapping of mappings) {
 			let priorFlow = null;
-			for(const focusFlow of mapping) {
-				if(priorFlow) {
+			for (const focusFlow of mapping) {
+				if (priorFlow) {
 					this.register(priorFlow, focusFlow);
 					this.register(focusFlow, priorFlow);
 				}
