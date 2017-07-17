@@ -47,7 +47,7 @@ class FrontService extends messenger_1.Messenger {
                 const message = details.event.target.data;
                 const first = details.comments._results.length + details.messages._results.length === 1;
                 const metadataFormat = details.event.type === 'comment' ? 'human' : 'img';
-                const metadata = messenger_1.Messenger.extractMetadata(message.body, metadataFormat);
+                const metadata = messenger_1.Messenger.extractMetadata(message.text || message.body, metadataFormat);
                 const tags = _.map(details.event.conversation.tags, (tag) => {
                     return tag.name;
                 });

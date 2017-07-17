@@ -88,7 +88,7 @@ export class FrontService extends Messenger implements ServiceListener, ServiceE
 			const message = details.event.target.data;
 			const first = details.comments._results.length + details.messages._results.length === 1;
 			const metadataFormat = details.event.type === 'comment' ? 'human' : 'img';
-			const metadata = Messenger.extractMetadata(message.body, metadataFormat);
+			const metadata = Messenger.extractMetadata(message.text || message.body, metadataFormat);
 			const tags = _.map(details.event.conversation.tags, (tag: {name: string}) => {
 				return tag.name;
 			});

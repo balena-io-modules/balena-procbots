@@ -77,7 +77,15 @@ class FlowdockService extends messenger_1.Messenger {
             });
         };
         this.makeSpecific = (data) => {
+            const lengthLimit = 8096;
             const titleText = data.toIds.thread ? '' : data.title + '\n--\n';
+            const footerText = messenger_1.Messenger.stringifyMetadata(data, 'emoji');
+            let trimText = '\n\n`... about xx% shown.`';
+            const trimmedText = data.text.substr(0, lengthLimit - titleText.length - trimText.length - footerText.length);
+            trimText = trimText.replace('xx', Math.floor((100 * trimmedText.length) / data.text.length).toString(10));
+            const bodyText = (titleText.length + data.text.length + footerText.length) < lengthLimit
+                ? data.text
+                : trimmedText + trimText;
             const org = this.data.organization;
             const flow = data.toIds.flow;
             return new Promise((resolve) => {
@@ -92,7 +100,7 @@ class FlowdockService extends messenger_1.Messenger {
                         org,
                     },
                     payload: {
-                        content: titleText + data.text + messenger_1.Messenger.stringifyMetadata(data, 'emoji'),
+                        content: `${titleText}${bodyText}${footerText}`,
                         event: 'message',
                         external_user_name: data.toIds.token === this.data.token ? data.toIds.user.substring(0, 16) : undefined,
                         tags: data.first ? data.tags : undefined,
