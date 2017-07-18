@@ -80,13 +80,13 @@ export abstract class Messenger extends WorkerClient<string|null> implements Ser
 		let hidden;
 		try {
 			// Retrieve publicity indicators from the environment
-			shown = JSON.parse(process.env.MESSAGE_CONVERTOR_PUBLICITY_INDICATORS_OBJECT);
-			hidden = JSON.parse(process.env.MESSAGE_CONVERTOR_PRIVACY_INDICATORS_OBJECT);
+			shown = JSON.parse(process.env.MESSAGE_CONVERTER_PUBLICITY_INDICATORS_OBJECT);
+			hidden = JSON.parse(process.env.MESSAGE_CONVERTER_PRIVACY_INDICATORS_OBJECT);
 		} catch (error) {
-			throw new Error('Message convertor environment variables not set correctly, indicators not json');
+			throw new Error('Message converter environment variables not set correctly, indicators not json');
 		}
 		if (shown.length === 0 || hidden.length === 0) {
-			throw new Error('Message convertor environment variables not set correctly, indicators zero length');
+			throw new Error('Message converter environment variables not set correctly, indicators zero length');
 		}
 		return { hidden, shown };
 	}
@@ -106,7 +106,7 @@ export abstract class Messenger extends WorkerClient<string|null> implements Ser
 			case 'emoji':
 				return `\n[${data.hidden ? indicators.hidden.emoji : indicators.shown.emoji}](${data.source})`;
 			case 'img':
-				const baseUrl = process.env.MESSAGE_CONVERTOR_IMG_BASE_URL;
+				const baseUrl = process.env.MESSAGE_CONVERTER_IMG_BASE_URL;
 				const hidden = data.hidden ? indicators.hidden.word : indicators.shown.word;
 				const querystring = `?hidden=${hidden}&source=${encodeURI(data.source)}`;
 				return `\n<img src="${baseUrl}${querystring}" height="18" />`;
@@ -134,7 +134,7 @@ export abstract class Messenger extends WorkerClient<string|null> implements Ser
 				const emojiRegex = new RegExp(`${beginsLine}\\[${emojiCapture}\\]\\((\\w*)\\)`, 'i');
 				return Messenger.metadataByRegex(message, emojiRegex);
 			case 'img':
-				const baseUrl = _.escapeRegExp(process.env.MESSAGE_CONVERTOR_IMG_BASE_URL);
+				const baseUrl = _.escapeRegExp(process.env.MESSAGE_CONVERTER_IMG_BASE_URL);
 				const querystring = `\\?hidden=${wordCapture}&source=(\\w*)`;
 				const imgRegex = new RegExp(`${beginsLine}<img src="${baseUrl}${querystring}" height="18" \/>`, 'i');
 				return Messenger.metadataByRegex(message, imgRegex);
@@ -153,11 +153,11 @@ export abstract class Messenger extends WorkerClient<string|null> implements Ser
 	 */
 	protected static messageOfTheDay(): string {
 		try {
-			const messages = JSON.parse(process.env.MESSAGE_CONVERTOR_MESSAGES_OF_THE_DAY);
+			const messages = JSON.parse(process.env.MESSAGE_CONVERTER_MESSAGES_OF_THE_DAY);
 			const daysSinceDatum = Math.floor(new Date().getTime() / 86400000);
 			return messages[daysSinceDatum % messages.length];
 		} catch (error) {
-			throw new Error('Message convertor environment variables not set correctly, motd not json');
+			throw new Error('Message converter environment variables not set correctly, motd not json');
 		}
 	}
 

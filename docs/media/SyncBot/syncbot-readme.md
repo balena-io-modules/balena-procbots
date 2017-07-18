@@ -169,14 +169,14 @@ some sanitised examples of configuration.
 
 ### Environment Variables
 
-#### MESSAGE_CONVERTOR_PRIVATE_INDICATORS
+#### MESSAGE_CONVERTER_PRIVATE_INDICATORS
 
 This is a JSON encoded array of strings that may be used to indicate that a
 message is private.
 
 e.g. `\["💭"]`
 
-#### MESSAGE_CONVERTOR_PUBLIC_INDICATORS
+#### MESSAGE_CONVERTER_PUBLIC_INDICATORS
 
 This is a JSON encoded array of strings that may be used to indicate that a
 message is public.
