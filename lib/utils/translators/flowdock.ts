@@ -33,7 +33,7 @@ export class FlowdockTranslator implements Translator.Translator {
 	 * Translate the provided event, enqueued by the service, into a message context
 	 * @param event  Data in the form raw to the service
 	 */
-	public eventIntoCreateMessage(event: FlowdockEvent): Promise<MessageContext> {
+	public eventIntoMessage(event: FlowdockEvent): Promise<MessageContext> {
 		// Separate out some parts of the message
 		const metadata = Translator.extractMetadata(event.rawEvent.content);
 		const titleAndText = metadata.content.match(/^(.*)\n--\n((?:\r|\n|.)*)$/);
@@ -73,7 +73,7 @@ export class FlowdockTranslator implements Translator.Translator {
 	 * Translate the provided message context into an emit context
 	 * @param message  Standard form of the message
 	 */
-	public messageIntoEmit(message: TransmitContext): Promise<FlowdockEmitContext> {
+	public messageIntoEmitCreateMessage(message: TransmitContext): Promise<FlowdockEmitContext> {
 		// Build a string for the title, if appropriate.
 		const titleText = message.first && message.title ? message.title + '\n--\n' : '';
 		return new Promise<FlowdockEmitContext>((resolve) => {

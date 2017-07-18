@@ -41,7 +41,7 @@ export class FrontTranslator implements Translator.Translator {
 	 * Translate the provided data, enqueued by the service, into a message context
 	 * @param event  Data in the form raw to the service
 	 */
-	public eventIntoCreateMessage(event: FrontEvent): Promise<MessageContext> {
+	public eventIntoMessage(event: FrontEvent): Promise<MessageContext> {
 		// Calculate common request details once
 		const getGeneric = {
 			headers: {
@@ -107,7 +107,7 @@ export class FrontTranslator implements Translator.Translator {
 	 * Translate the provided message context into an emit context
 	 * @param message  Standard form of the message
 	 */
-	public messageIntoEmit(message: TransmitContext): Promise<FrontEmitContext> {
+	public messageIntoEmitCreateMessage(message: TransmitContext): Promise<FrontEmitContext> {
 		// Attempt to find the thread ID to know if this is a new conversation or not
 		const conversationId = message.toIds.thread;
 		if (!conversationId) {

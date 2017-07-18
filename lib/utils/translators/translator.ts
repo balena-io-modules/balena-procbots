@@ -29,13 +29,19 @@ export interface Translator {
 	 * Translate the provided event, enqueued by the service, into a message context
 	 * @param event  Data in the form raw to the service
 	 */
-	eventIntoCreateMessage(event: ServiceEvent): Promise<MessageContext>;
+	eventIntoMessage(event: ServiceEvent): Promise<MessageContext>;
 
 	/**
-	 * Translate the provided message context into an emit context
+	 * Translate the provided message context into an emit context that will retrieve the thread history
 	 * @param message  Standard form of the message
 	 */
-	messageIntoEmit(message: TransmitContext): Promise<ServiceEmitContext>;
+	messageIntoEmitReadHistory(message: MessageContext): Promise<ServiceEmitContext>;
+
+	/**
+	 * Translate the provided message context into an emit context that will create the message
+	 * @param message  Standard form of the message
+	 */
+	messageIntoEmitCreateMessage(message: TransmitContext): Promise<ServiceEmitContext>;
 
 	/**
 	 * Translate the provided generic name for an event into the service events to listen to

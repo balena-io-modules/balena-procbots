@@ -32,7 +32,7 @@ export class DiscourseTranslator implements Translator.Translator {
 	 * Translate the provided event, enqueued by the service, into a message context
 	 * @param event  Data in the form raw to the service
 	 */
-	public eventIntoCreateMessage(event: DiscourseEvent): Promise<MessageContext> {
+	public eventIntoMessage(event: DiscourseEvent): Promise<MessageContext> {
 		// Encode once the common parts of a request
 		const getGeneric = {
 			json: true,
@@ -82,7 +82,7 @@ export class DiscourseTranslator implements Translator.Translator {
 	 * Translate the provided message context into an emit context
 	 * @param message  Standard form of the message
 	 */
-	public messageIntoEmit(message: TransmitContext): Promise<DiscourseEmitContext> {
+	public messageIntoEmitCreateMessage(message: TransmitContext): Promise<DiscourseEmitContext> {
 		// Attempt to find the thread ID to know if this is a new topic or not
 		const topicId = message.toIds.thread;
 		if (!topicId) {
