@@ -32,7 +32,6 @@ import {
 import { LogLevel } from '../utils/logger';
 
 // TODO: Rework this whole thing
-// TODO: Work out where to do the search through history stuff
 export class SyncBot extends ProcBot {
 	/**
 	 * Returns an array of the tokens in a provided context
