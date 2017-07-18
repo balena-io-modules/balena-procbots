@@ -88,7 +88,7 @@ export class FrontService extends Messenger implements ServiceListener, ServiceE
 			const message = details.event.target.data;
 			const first = details.comments._results.length + details.messages._results.length === 1;
 			const metadataFormat = details.event.type === 'comment' ? 'human' : 'img';
-			const metadata = Messenger.extractMetadata(message.text || message.body, metadataFormat);
+			const metadata = Messenger.extractMetadata(message.body, metadataFormat);
 			const tags = _.map(details.event.conversation.tags, (tag: {name: string}) => {
 				return tag.name;
 			});
@@ -118,7 +118,7 @@ export class FrontService extends Messenger implements ServiceListener, ServiceE
 					user: author,
 				},
 				tags,
-				text: metadata.content,
+				text: message.text || metadata.content,
 				title: details.event.conversation.subject,
 			};
 		});
@@ -196,10 +196,6 @@ export class FrontService extends Messenger implements ServiceListener, ServiceE
 						archive: false,
 					},
 					subject: details.conversation.subject,
-					// Yes, this is the best place I've found to cite the author of a message for now. SyncBot channels
-					// do not actually use their outgoing triggers anyway, so it doesn't matter *too* much.
-					// But it is still wrong.
-					to: [data.toIds.user],
 					type: 'message',
 				},
 			};
