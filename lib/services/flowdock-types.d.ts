@@ -50,6 +50,12 @@ export interface FlowdockEmitContext extends ServiceEmitContext {
 	payload: FlowdockPayload;
 }
 
+/** A message template, rather sparse and ripe for expansion */
+export interface FlowdockMessage {
+	content: string;
+	[key: string]: string;
+}
+
 export interface FlowdockConnectionDetails {
 	organization: string;
 	token: string;

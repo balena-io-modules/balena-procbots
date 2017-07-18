@@ -24,7 +24,6 @@ import {
 import { ServiceEmitter, ServiceListener } from './service-types';
 import { ServiceUtilities } from './service-utilities';
 
-// TODO: Work out how to do dataHub stuff
 export class FlowdockService extends ServiceUtilities implements ServiceEmitter, ServiceListener {
 	private static _serviceName = path.basename(__filename.split('.')[0]);
 	private session: Session;

@@ -1,3 +1,4 @@
+import * as Promise from 'bluebird';
 export interface DataHub {
     fetchValue(user: string, value: string): Promise<string>;
 }

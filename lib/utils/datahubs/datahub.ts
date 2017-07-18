@@ -14,6 +14,8 @@
  limitations under the License.
  */
 
+import * as Promise from 'bluebird';
+
 /** A definition for a service that allows the retrieval of user-set values. */
 export interface DataHub {
 	/**

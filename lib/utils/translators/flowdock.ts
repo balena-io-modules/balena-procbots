@@ -20,7 +20,6 @@ import { FlowdockConnectionDetails, FlowdockEmitContext, FlowdockEvent } from '.
 import { MessageAction, MessageContext, TransmitContext } from '../../services/messenger-types';
 import * as Translator from './translator';
 
-// TODO: Implement
 export class FlowdockTranslator implements Translator.Translator {
 	private session: Session;
 	private organization: string;

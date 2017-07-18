@@ -14,8 +14,10 @@
  limitations under the License.
  */
 
+import * as Promise from 'bluebird';
 import { Session } from 'flowdock';
-import { FlowdockConnectionDetails } from '../../services/flowdock-types';
+import * as _ from 'lodash';
+import { FlowdockConnectionDetails, FlowdockMessage } from '../../services/flowdock-types';
 import { DataHub } from './datahub';
 
 export class FlowdockDataHub implements DataHub {
@@ -33,10 +35,11 @@ export class FlowdockDataHub implements DataHub {
 	 * @param key   Name of the value to retrieve.
 	 * @returns     Promise that resolves to the value.
 	 */
-	public fetchValue(user: string, value: string): Promise<string> {
+	public fetchValue(user: string, key: string): Promise<string> {
 		// Retrieve a particular regex from the 1-1 message history of the user
 		const findKey = new RegExp(`My ${key} is (\\S+)`, 'i');
-		return this.fetchPrivateMessages(user, findKey).then((valueArray) => {
+		return this.fetchPrivateMessages(user, findKey)
+		.then((valueArray) => {
 			const value = valueArray[valueArray.length - 1].match(findKey);
 			if (value) {
 				return value[1];
@@ -44,6 +47,69 @@ export class FlowdockDataHub implements DataHub {
 			throw new Error(`Could not find value $key for $user`);
 		});
 	}
+
+	/**
+	 * Search for recent private messages with our account that match on username and regex.
+	 * @param username  Scope of the private messages to search.
+	 * @param filter    Narrow our search to just matches.
+	 * @returns         Promise that resolves to the message strings.
+	 */
+	private fetchPrivateMessages(username: string, filter: RegExp): Promise<string[]> {
+		// Fetch the id then 1-1 history associated with the username
+		return this.fetchUserId(username)
+		.then((userId) => {
+			return this.fetchFromSession(`/private/${userId}/messages`)
+				.then((fetchedMessages) => {
+					// Prune and clean the message history to text of interest
+					return _.filter(fetchedMessages, (message: FlowdockMessage) => {
+						return filter.test(message.content);
+					}).map((message: FlowdockMessage) => {
+						return message.content;
+					});
+				});
+		});
+	}
+
+	/**
+	 * Fetch a user's id from their username.
+	 * @param username  Username to search for.
+	 * @returns         id of the user.
+	 */
+	private fetchUserId = (username: string): Promise<string | undefined> => {
+		// Get all the users of the service
+		return this.fetchFromSession(`/organizations/${this.organization}/users`)
+			.then((foundUsers) => {
+				// Generate an array of user objects with matching username
+				const matchingUsers = _.filter(foundUsers, (eachUser: any) => {
+					return eachUser.nick === username;
+				});
+				// Return id if we've exactly one user for a particular username
+				if (matchingUsers.length === 1) {
+					return(matchingUsers[0].id);
+				}
+			});
+	}
+
+	/**
+	 * Utility function to structure the flowdock session as a promise a little.
+	 * @param path    Endpoint to retrieve.
+	 * @param search  Optional, some words which may be used to shortlist the results.
+	 * @returns       Response from the session.
+	 */
+	private fetchFromSession = (path: string, search?: string): Promise<any> => {
+		return new Promise<any>((resolve, reject) => {
+			// The flowdock service both emits and calls back the error.
+			// We're wrapping the emit in a promise reject and ignoring the call back
+			this.session.on('error', reject);
+			this.session.get(path, {search}, (_error?: Error, result?: any) => {
+				this.session.removeListener('error', reject);
+				if (result) {
+					resolve(result);
+				}
+			});
+		});
+	}
+
 }
 
 export function createTranslator(data: FlowdockConnectionDetails): DataHub {
