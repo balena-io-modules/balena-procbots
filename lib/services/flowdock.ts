@@ -120,8 +120,16 @@ export class FlowdockService extends Messenger implements ServiceEmitter, Servic
 	 * @returns     Promise that resolves to the emit suitable form.
 	 */
 	public makeSpecific = (data: TransmitContext): Promise<FlowdockEmitContext> => {
-		// Build a string for the title, if appropriate.
+		// Calculate details such as title, footer and snipped message, if appropriate.
+		const lengthLimit = 8096;
 		const titleText = data.toIds.thread ? '' : data.title + '\n--\n';
+		const footerText = Messenger.stringifyMetadata(data, 'emoji');
+		let trimText = '\n\n`... about xx% shown.`';
+		const trimmedText = data.text.substr(0, lengthLimit - titleText.length - trimText.length - footerText.length);
+		trimText = trimText.replace('xx', Math.floor((100*trimmedText.length)/data.text.length).toString(10));
+		const bodyText = (titleText.length + data.text.length + footerText.length) < lengthLimit
+			? data.text
+			: trimmedText + trimText;
 		const org = this.data.organization;
 		const flow = data.toIds.flow;
 		return new Promise<FlowdockEmitContext>((resolve) => {
@@ -137,7 +145,7 @@ export class FlowdockService extends Messenger implements ServiceEmitter, Servic
 				},
 				payload: {
 					// The concatenated string, of various data nuggets, to emit
-					content: titleText + data.text + Messenger.stringifyMetadata(data, 'emoji'),
+					content: `${titleText}${bodyText}${footerText}`,
 					event: 'message',
 					external_user_name:
 					// If this is using the generic token, then they must be an external user, so indicate this
