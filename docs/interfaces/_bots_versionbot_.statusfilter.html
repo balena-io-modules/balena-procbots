@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>EncodedFile | Resin ProcBots</title>
+	<title>StatusFilter | Resin ProcBots</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -57,10 +57,10 @@
 					<a href="../modules/_bots_versionbot_.html">&quot;bots/versionbot&quot;</a>
 				</li>
 				<li>
-					<a href="_bots_versionbot_.encodedfile.html">EncodedFile</a>
+					<a href="_bots_versionbot_.statusfilter.html">StatusFilter</a>
 				</li>
 			</ul>
-			<h1>Interface EncodedFile</h1>
+			<h1>Interface StatusFilter</h1>
 		</div>
 	</div>
 </header>
@@ -70,7 +70,12 @@
 			<section class="tsd-panel tsd-comment">
 				<div class="tsd-comment tsd-typography">
 					<div class="lead">
-						<p>Stores data for a file retrieved from Github.</p>
+						<p>Allows the filtering of results from the <code>checkStatuses</code> method.
+						Depending on the <code>includedContexts</code> flag, results returned from the method:</p>
+						<ul>
+							<li>Only include results from contexts listed in the <code>contexts</code> property (<code>includedContexts</code> is <code>true</code>)</li>
+							<li>Only include results from contexts not listed in the <code>contexts</code> property (<code>includedContexts</code> is <code>false</code>)</li>
+						</ul>
 					</div>
 				</div>
 			</section>
@@ -78,12 +83,7 @@
 				<h3>Hierarchy</h3>
 				<ul class="tsd-hierarchy">
 					<li>
-						<a href="_bots_versionbot_.filemapping.html" class="tsd-signature-type">FileMapping</a>
-						<ul class="tsd-hierarchy">
-							<li>
-								<span class="target">EncodedFile</span>
-							</li>
-						</ul>
+						<span class="target">StatusFilter</span>
 					</li>
 				</ul>
 			</section>
@@ -94,10 +94,8 @@
 						<section class="tsd-index-section tsd-is-not-exported">
 							<h3>Properties</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="_bots_versionbot_.encodedfile.html#blobsha" class="tsd-kind-icon">blob<wbr>Sha</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited tsd-is-not-exported"><a href="_bots_versionbot_.encodedfile.html#encoding" class="tsd-kind-icon">encoding</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited tsd-is-not-exported"><a href="_bots_versionbot_.encodedfile.html#file" class="tsd-kind-icon">file</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="_bots_versionbot_.encodedfile.html#treeentry" class="tsd-kind-icon">tree<wbr>Entry</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="_bots_versionbot_.statusfilter.html#contexts" class="tsd-kind-icon">contexts</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="_bots_versionbot_.statusfilter.html#includecontexts" class="tsd-kind-icon">include<wbr>Contexts</a></li>
 							</ul>
 						</section>
 					</div>
@@ -106,64 +104,32 @@
 			<section class="tsd-panel-group tsd-member-group tsd-is-not-exported">
 				<h2>Properties</h2>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-					<a name="blobsha" class="tsd-anchor"></a>
-					<h3>blob<wbr>Sha</h3>
-					<div class="tsd-signature tsd-kind-icon">blob<wbr>Sha<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+					<a name="contexts" class="tsd-anchor"></a>
+					<h3>contexts</h3>
+					<div class="tsd-signature tsd-kind-icon">contexts<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L45">bots/versionbot.ts:45</a></li>
+							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L204">bots/versionbot.ts:204</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
 						<div class="lead">
-							<p>The SHA for the blob that is the file.</p>
-						</div>
-					</div>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited tsd-is-not-exported">
-					<a name="encoding" class="tsd-anchor"></a>
-					<h3>encoding</h3>
-					<div class="tsd-signature tsd-kind-icon">encoding<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
-					<aside class="tsd-sources">
-						<p>Inherited from <a href="_bots_versionbot_.filemapping.html">FileMapping</a>.<a href="_bots_versionbot_.filemapping.html#encoding">encoding</a></p>
-						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L53">bots/versionbot.ts:53</a></li>
-						</ul>
-					</aside>
-					<div class="tsd-comment tsd-typography">
-						<div class="lead">
-							<p>The current format of encoding (&#39;utf-8&#39;, &#39;base64&#39; etc.)</p>
-						</div>
-					</div>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited tsd-is-not-exported">
-					<a name="file" class="tsd-anchor"></a>
-					<h3>file</h3>
-					<div class="tsd-signature tsd-kind-icon">file<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
-					<aside class="tsd-sources">
-						<p>Inherited from <a href="_bots_versionbot_.filemapping.html">FileMapping</a>.<a href="_bots_versionbot_.filemapping.html#file">file</a></p>
-						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L51">bots/versionbot.ts:51</a></li>
-						</ul>
-					</aside>
-					<div class="tsd-comment tsd-typography">
-						<div class="lead">
-							<p>The file contents.</p>
+							<p>The list of status contexts to include or exclude.</p>
 						</div>
 					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-					<a name="treeentry" class="tsd-anchor"></a>
-					<h3>tree<wbr>Entry</h3>
-					<div class="tsd-signature tsd-kind-icon">tree<wbr>Entry<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">TreeEntry</span></div>
+					<a name="includecontexts" class="tsd-anchor"></a>
+					<h3>include<wbr>Contexts</h3>
+					<div class="tsd-signature tsd-kind-icon">include<wbr>Contexts<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L43">bots/versionbot.ts:43</a></li>
+							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L202">bots/versionbot.ts:202</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
 						<div class="lead">
-							<p>The git tree entry the file belongs in.</p>
+							<p>Whether this filter includes tags that should be included or excluded.</p>
 						</div>
 					</div>
 				</section>
@@ -233,27 +199,9 @@
 					<li class=" tsd-kind-class tsd-parent-kind-external-module">
 						<a href="../classes/_bots_versionbot_.versionbot.html" class="tsd-kind-icon">Version<wbr>Bot</a>
 					</li>
-				</ul>
-				<ul class="current">
-					<li class="current tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
 						<a href="_bots_versionbot_.encodedfile.html" class="tsd-kind-icon">Encoded<wbr>File</a>
-						<ul>
-							<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-								<a href="_bots_versionbot_.encodedfile.html#blobsha" class="tsd-kind-icon">blob<wbr>Sha</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-inherited tsd-is-not-exported">
-								<a href="_bots_versionbot_.encodedfile.html#encoding" class="tsd-kind-icon">encoding</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-inherited tsd-is-not-exported">
-								<a href="_bots_versionbot_.encodedfile.html#file" class="tsd-kind-icon">file</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-								<a href="_bots_versionbot_.encodedfile.html#treeentry" class="tsd-kind-icon">tree<wbr>Entry</a>
-							</li>
-						</ul>
 					</li>
-				</ul>
-				<ul class="after-current">
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
 						<a href="_bots_versionbot_.fserror.html" class="tsd-kind-icon">FSError</a>
 					</li>
@@ -278,9 +226,21 @@
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
 						<a href="_bots_versionbot_.reviewermap.html" class="tsd-kind-icon">Reviewer<wbr>Map</a>
 					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
+				</ul>
+				<ul class="current">
+					<li class="current tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
 						<a href="_bots_versionbot_.statusfilter.html" class="tsd-kind-icon">Status<wbr>Filter</a>
+						<ul>
+							<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
+								<a href="_bots_versionbot_.statusfilter.html#contexts" class="tsd-kind-icon">contexts</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
+								<a href="_bots_versionbot_.statusfilter.html#includecontexts" class="tsd-kind-icon">include<wbr>Contexts</a>
+							</li>
+						</ul>
 					</li>
+				</ul>
+				<ul class="after-current">
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
 						<a href="_bots_versionbot_.statusresult.html" class="tsd-kind-icon">Status<wbr>Result</a>
 					</li>

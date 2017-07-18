@@ -61,19 +61,18 @@ Finally you need to create a new private key for your Integration. Hit the 'Gene
 
 Download the key and then create a Base64 string from it. It will be required later.
 
-## Secret Key, Webhook Token and Integration ID
+## Secret Key, Webhook Token, App ID and User PAT
 
 `VersionBot` requires the following environment variables:
 
 * `VERSIONBOT_WEBHOOK_SECRET`: The 20 digit hex key used to authenticate messages.
 * `VERSIONBOT_INTEGRATION_ID`: The ID given on Integration creation, a unique identifier.
 * `VERSIONBOT_PEM`: The Base64 encoded private key generated on Integration creation.
+* `VERSIONBOT_USER`: A User PAT that has admin rights on a repository.
 * `VERSIONBOT_NAME`: The name shown in commits and merges for PRs by the Integration.
 * `VERSIONBOT_EMAIL`: Email address for the bot, (can be an empty string).
 
 You'll need to fill these fields out in `.vscode/launch.json` before debugging (if you're running this on the CLI, set envvars accordingly). If you're running on Resin, these must be set as Application envvars.
-
-Ask Heds how this works if unsure.
 
 ## Initialising a Repo
 
@@ -112,7 +111,6 @@ Example:
 procbot:
     minimum_version: 0.5
 ```
-
 
 #### Maintainer and Reviewer Configuration
 
@@ -209,6 +207,21 @@ required-tags:
         values: \s*(patch|minor|major)\s*
         flags: i
 ```
+
+#### Overriding Advanced Status Checks on Merge (Quick Merging)
+
+Normally, all required status checks need to pass once VersionBot has bumped a PR version to allow merging. This means that after the version bump has occurred, required CIs (such as Circle, Jenkins or Travis) need to have completed a build with the versionbumped files (usually a Changelog and package manifest) before a merge will occur.
+
+However, there are cases where this is not ideal, especially in cases where a build can take an exceptionally long time to complete. In these cases, the mere act of version bumping can cause delays which are not deemed acceptable.
+
+To counteract this, a repostory can be configured so that required status checks post-version bump are ignored (apart from a check for approved reviews for the PR and valid commit tags). This can be achieved by adding the following to the `repository.yml` configuration file in a repository:
+
+```
+override_status_merge: <boolean>
+```
+
+If `false` (or not present), then status checks will still be required to complete before merging occurs.
+If `true`, then merging will occur instantly as long as the `Reviewers` and `Versionist` status checks are successful.
 
 ## Running VersionBot
 

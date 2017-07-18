@@ -33,6 +33,8 @@ const MergeLabel = 'procbots/versionbot/ready-to-merge';
 const IgnoreLabel = 'procbots/versionbot/no-checks';
 const AppHandle = 'app';
 const UserHandle = 'user';
+const StatusVersionist = 'Versionist';
+const StatusReviewers = 'Reviewers';
 class VersionBot extends procbot_1.ProcBot {
     constructor(integration, name, email, pemString, webhook, pat) {
         super(name);
@@ -42,7 +44,7 @@ class VersionBot extends procbot_1.ProcBot {
             const repo = splitRepo[1];
             const commitSha = event.cookedEvent.data.sha;
             let prEvents = [];
-            if (event.cookedEvent.data.context === 'Versionist') {
+            if (event.cookedEvent.data.context === StatusVersionist) {
                 return Promise.resolve();
             }
             return this.dispatchToEmitter(AppHandle, {
@@ -305,7 +307,7 @@ class VersionBot extends procbot_1.ProcBot {
                 }
                 return this.dispatchToEmitter(AppHandle, {
                     data: {
-                        context: 'Reviewers',
+                        context: StatusReviewers,
                         description: status,
                         owner,
                         repo,
@@ -360,7 +362,7 @@ class VersionBot extends procbot_1.ProcBot {
                 if (missingTags.length === 0) {
                     return this.dispatchToEmitter(AppHandle, {
                         data: {
-                            context: 'Versionist',
+                            context: StatusVersionist,
                             description: 'Found all required commit footer tags',
                             owner,
                             repo: name,
@@ -379,7 +381,7 @@ class VersionBot extends procbot_1.ProcBot {
                 let description = 'Missing or forbidden tags in commits, see `repository.yml`';
                 return this.dispatchToEmitter(AppHandle, {
                     data: {
-                        context: 'Versionist',
+                        context: StatusVersionist,
                         description,
                         owner,
                         repo: name,
@@ -389,7 +391,10 @@ class VersionBot extends procbot_1.ProcBot {
                     method: this.githubAppApi.repos.createStatus,
                 });
             }).then(() => {
-                return this.checkStatuses(pr);
+                return this.checkStatuses(pr, {
+                    includeContexts: false,
+                    contexts: [StatusReviewers]
+                });
             }).then((checkStatus) => {
                 if (checkStatus === StatusChecks.Failed) {
                     const lastCommitTimestamp = Date.parse(lastCommit.commit.committer.date);
@@ -552,25 +557,32 @@ class VersionBot extends procbot_1.ProcBot {
         this.finaliseMerge = (data, prInfo) => {
             const owner = prInfo.head.repo.owner.login;
             const repo = prInfo.head.repo.name;
-            return this.checkStatuses(prInfo).then((checkStatus) => {
+            let botConfig;
+            return this.retrieveConfiguration({
+                emitter: this.githubAppEmitter,
+                location: {
+                    owner,
+                    repo,
+                    path: RepositoryFilePath
+                }
+            }).then((config) => {
+                botConfig = config;
+                const overrideStatuses = (botConfig || {})['override_status_merge'] || false;
+                const statusFilter = !overrideStatuses ? undefined : {
+                    includeContexts: true,
+                    contexts: [StatusVersionist, StatusReviewers]
+                };
+                return this.checkStatuses(prInfo, statusFilter);
+            }).then((checkStatus) => {
                 if (checkStatus === StatusChecks.Passed) {
                     return this.getVersionBotCommits(prInfo).then((commitMessage) => {
                         if (commitMessage) {
-                            return this.retrieveConfiguration({
-                                emitter: this.githubAppEmitter,
-                                location: {
-                                    owner,
-                                    repo,
-                                    path: RepositoryFilePath
-                                }
-                            }).then((config) => {
-                                if (data.action === 'labeled') {
-                                    this.checkValidMaintainer(config, data);
-                                }
-                                return this.mergeToMaster({
-                                    commitVersion: commitMessage,
-                                    pullRequest: prInfo
-                                });
+                            if (data.action === 'labeled') {
+                                this.checkValidMaintainer(botConfig, data);
+                            }
+                            return this.mergeToMaster({
+                                commitVersion: commitMessage,
+                                pullRequest: prInfo
                             }).then(() => {
                                 this.logger.log(logger_1.LogLevel.INFO, `MergePR: Merged ${owner}/${repo}#${prInfo.number}`);
                             }).catch((err) => {
@@ -624,12 +636,12 @@ class VersionBot extends procbot_1.ProcBot {
         }
         this.githubListenerName = ghListener.serviceName;
         this.githubAppEmitter = ghAppEmitter;
-        this.githubUserEmitter = ghAppEmitter;
+        this.githubUserEmitter = ghUserEmitter;
         this.githubAppApi = this.githubAppEmitter.apiHandle.github;
         if (!this.githubAppApi) {
             throw new Error('No Github App API instance found');
         }
-        this.githubUserApi = this.githubAppEmitter.apiHandle.github;
+        this.githubUserApi = this.githubUserEmitter.apiHandle.github;
         if (!this.githubUserApi) {
             throw new Error('No Github User API instance found');
         }
@@ -836,14 +848,14 @@ class VersionBot extends procbot_1.ProcBot {
         const owner = pr.base.repo.owner.login;
         const repo = pr.base.repo.name;
         const prNumber = pr.number;
-        return this.dispatchToEmitter(AppHandle, {
+        return this.dispatchToEmitter(UserHandle, {
             data: {
                 commit_title: `Auto-merge for PR #${prNumber} via ${process.env.VERSIONBOT_NAME}`,
                 number: prNumber,
                 owner,
                 repo
             },
-            method: this.githubAppApi.pullRequests.merge
+            method: this.githubUserApi.pullRequests.merge
         }).then((mergedData) => {
             return this.dispatchToEmitter(AppHandle, {
                 data: {
@@ -907,7 +919,7 @@ class VersionBot extends procbot_1.ProcBot {
             });
         });
     }
-    checkStatuses(prInfo) {
+    checkStatuses(prInfo, filter) {
         const base = prInfo.base;
         const head = prInfo.head;
         const owner = base.repo.owner.login;
@@ -940,7 +952,13 @@ class VersionBot extends procbot_1.ProcBot {
             _.each(protectedContexts, (proContext) => {
                 _.each(statuses.statuses, (status) => {
                     if (_.startsWith(status.context, proContext)) {
-                        if (status.context !== 'Reviewers') {
+                        let includeContext = true;
+                        if (filter) {
+                            includeContext = filter.includeContexts ?
+                                _.find(filter.contexts, (context) => context === status.context) !== undefined :
+                                !_.find(filter.contexts, (context) => context === status.context);
+                        }
+                        if (includeContext) {
                             statusResults.push({
                                 name: status.context,
                                 state: statusLUT[status.state]
