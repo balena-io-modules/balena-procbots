@@ -9,7 +9,7 @@ class DiscourseTranslator {
     constructor(data) {
         this.connectionDetails = data;
     }
-    eventIntoCreateMessage(event) {
+    eventIntoMessage(event) {
         const getGeneric = {
             json: true,
             method: 'GET',
@@ -48,7 +48,7 @@ class DiscourseTranslator {
             };
         });
     }
-    messageIntoEmit(message) {
+    messageIntoEmitCreateMessage(message) {
         const topicId = message.toIds.thread;
         if (!topicId) {
             const title = message.title;
@@ -56,6 +56,7 @@ class DiscourseTranslator {
                 throw new Error('Cannot create Discourse Thread without a title');
             }
             return Promise.resolve({
+                json: true,
                 method: 'POST',
                 path: '/posts',
                 payload: {
@@ -67,6 +68,7 @@ class DiscourseTranslator {
             });
         }
         return Promise.resolve({
+            json: true,
             method: 'POST',
             path: '/posts',
             payload: {
@@ -75,6 +77,32 @@ class DiscourseTranslator {
                 whisper: message.hidden ? 'true' : 'false',
             },
         });
+    }
+    messageIntoEmitReadHistory(message, shortlist) {
+        const firstWords = shortlist.source.match(/^([\w\s]+)/i);
+        if (firstWords) {
+            return {
+                json: true,
+                method: 'GET',
+                qs: {
+                    'api_key': this.connectionDetails.token,
+                    'api_username': this.connectionDetails.username,
+                    'term': firstWords[1],
+                    'search_context[type]': 'topic',
+                    'search_context[id]': message.sourceIds.thread,
+                },
+                uri: `https://${this.connectionDetails.instance}/search/query`,
+            };
+        }
+        return {
+            json: true,
+            method: 'GET',
+            qs: {
+                api_key: this.connectionDetails.token,
+                api_username: this.connectionDetails.username,
+            },
+            uri: `https://${this.connectionDetails.instance}/t/${message.sourceIds.thread}`,
+        };
     }
     eventNameIntoTriggers(name) {
         const equivalents = {

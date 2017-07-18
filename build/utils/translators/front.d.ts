@@ -7,8 +7,9 @@ export declare class FrontTranslator implements Translator.Translator {
     private token;
     private channelPerInbox;
     constructor(data: FrontConnectionDetails);
-    eventIntoCreateMessage(event: FrontEvent): Promise<MessageContext>;
-    messageIntoEmit(message: TransmitContext): Promise<FrontEmitContext>;
+    eventIntoMessage(event: FrontEvent): Promise<MessageContext>;
+    messageIntoEmitCreateMessage(message: TransmitContext): Promise<FrontEmitContext>;
+    messageIntoEmitReadHistory(_message: MessageContext): Promise<FrontEmitContext>;
     eventNameIntoTriggers(name: string): string[];
     private fetchUserId;
 }

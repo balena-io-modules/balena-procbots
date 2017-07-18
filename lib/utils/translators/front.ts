@@ -38,8 +38,8 @@ export class FrontTranslator implements Translator.Translator {
 	}
 
 	/**
-	 * Translate the provided data, enqueued by the service, into a message context
-	 * @param event  Data in the form raw to the service
+	 * Translate the provided data, enqueued by the service, into a message context.
+	 * @param event  Data in the form raw to the service.
 	 */
 	public eventIntoMessage(event: FrontEvent): Promise<MessageContext> {
 		// Calculate common request details once
@@ -104,8 +104,8 @@ export class FrontTranslator implements Translator.Translator {
 	}
 
 	/**
-	 * Translate the provided message context into an emit context
-	 * @param message  Standard form of the message
+	 * Translate the provided message context into an emit context.
+	 * @param message  Standard form of the message.
 	 */
 	public messageIntoEmitCreateMessage(message: TransmitContext): Promise<FrontEmitContext> {
 		// Attempt to find the thread ID to know if this is a new conversation or not
@@ -174,8 +174,24 @@ export class FrontTranslator implements Translator.Translator {
 	}
 
 	/**
-	 * Translate the provided generic name for an event into the service events to listen to
-	 * @param name  Generic name for an event
+	 * Translate the provided message context into an emit context that will retrieve the thread history.
+	 * @param message     Standard form of the message.
+	 * @param _shortlist  *DO NOT RELY ON THIS BEING USED.*  Purely optional optimisation.
+	 *                    If the endpoint supports it then it may use this to shortlist the responses.
+	 */
+	public messageIntoEmitReadThread(message: MessageContext, _shortlist?: RegExp): Promise<FrontEmitContext> {
+		return Promise.resolve({
+			action: 'listComments',
+			objectType: 'conversation',
+			payload: {
+				conversation_id: message.sourceIds.thread,
+			},
+		});
+	}
+
+	/**
+	 * Translate the provided generic name for an event into the service events to listen to.
+	 * @param name  Generic name for an event.
 	 */
 	public eventNameIntoTriggers(name: string): string[] {
 		const equivalents: {[key: string]: string[]} = {

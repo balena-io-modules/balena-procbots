@@ -15,6 +15,7 @@
  */
 
 import * as Promise from 'bluebird';
+import * as _ from 'lodash';
 import * as path from 'path';
 import * as request from 'request-promise';
 import {
@@ -41,13 +42,15 @@ export class DiscourseService extends ServiceUtilities implements ServiceListene
 
 	protected emitData(context: DiscourseEmitContext): Promise<DiscourseResponse> {
 		return new Promise((resolve) => {
+			const qs = {
+				api_key: this.connectionDetails.token,
+				api_username: this.connectionDetails.username,
+			};
+			_.merge(qs, context.qs);
 			const requestOptions = {
 				body: context.payload,
 				json: true,
-				qs: {
-					api_key: this.connectionDetails.token,
-					api_username: this.connectionDetails.username,
-				},
+				qs,
 				url: `https://${this.connectionDetails.instance}/${context.path}`,
 				method: context.method,
 			};

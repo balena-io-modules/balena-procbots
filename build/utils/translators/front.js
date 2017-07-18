@@ -30,7 +30,7 @@ class FrontTranslator {
         this.token = data.token;
         this.channelPerInbox = data.channelPerInbox || {};
     }
-    eventIntoCreateMessage(event) {
+    eventIntoMessage(event) {
         const getGeneric = {
             headers: {
                 authorization: `Bearer ${this.token}`
@@ -86,7 +86,7 @@ class FrontTranslator {
             };
         });
     }
-    messageIntoEmit(message) {
+    messageIntoEmitCreateMessage(message) {
         const conversationId = message.toIds.thread;
         if (!conversationId) {
             const subject = message.title;
@@ -146,6 +146,9 @@ class FrontTranslator {
                 }
             };
         });
+    }
+    messageIntoEmitReadHistory(_message) {
+        throw new Error();
     }
     eventNameIntoTriggers(name) {
         const equivalents = {

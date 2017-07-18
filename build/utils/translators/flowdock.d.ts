@@ -6,8 +6,9 @@ export declare class FlowdockTranslator implements Translator.Translator {
     private session;
     private organization;
     constructor(data: FlowdockConnectionDetails);
-    eventIntoCreateMessage(event: FlowdockEvent): Promise<MessageContext>;
-    messageIntoEmit(message: TransmitContext): Promise<FlowdockEmitContext>;
+    eventIntoMessage(event: FlowdockEvent): Promise<MessageContext>;
+    messageIntoEmitCreateMessage(message: TransmitContext): Promise<FlowdockEmitContext>;
+    messageIntoEmitReadHistory(_message: MessageContext): Promise<FlowdockEmitContext>;
     eventNameIntoTriggers(name: string): string[];
     private fetchFromSession;
 }

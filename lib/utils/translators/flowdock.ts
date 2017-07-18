@@ -30,8 +30,8 @@ export class FlowdockTranslator implements Translator.Translator {
 	}
 
 	/**
-	 * Translate the provided event, enqueued by the service, into a message context
-	 * @param event  Data in the form raw to the service
+	 * Translate the provided event, enqueued by the service, into a message context.
+	 * @param event  Data in the form raw to the service.
 	 */
 	public eventIntoMessage(event: FlowdockEvent): Promise<MessageContext> {
 		// Separate out some parts of the message
@@ -70,8 +70,8 @@ export class FlowdockTranslator implements Translator.Translator {
 	}
 
 	/**
-	 * Translate the provided message context into an emit context
-	 * @param message  Standard form of the message
+	 * Translate the provided message context into an emit context.
+	 * @param message  Standard form of the message.
 	 */
 	public messageIntoEmitCreateMessage(message: TransmitContext): Promise<FlowdockEmitContext> {
 		// Build a string for the title, if appropriate.
@@ -96,8 +96,33 @@ export class FlowdockTranslator implements Translator.Translator {
 	}
 
 	/**
-	 * Translate the provided generic name for an event into the service events to listen to
-	 * @param name  Generic name for an event
+	 * Translate the provided message context into an emit context that will retrieve the thread history.
+	 * @param message    Standard form of the message.
+	 * @param shortlist  *DO NOT RELY ON THIS BEING USED.*  Purely optional optimisation.
+	 *                   If the endpoint supports it then it may use this to shortlist the responses.
+	 */
+	public messageIntoEmitReadThread(message: MessageContext, shortlist?: RegExp): Promise<FlowdockEmitContext> {
+		// Query the API
+		const org = this.organization;
+		const firstWords = shortlist && shortlist.source.match(/^([\w\s]+)/i);
+		if (firstWords) {
+			return Promise.resolve({
+				method: 'GET',
+				path: `/flows/${org}/${message.sourceIds.flow}/threads/${message.sourceIds.thread}/messages`,
+				payload: {
+					search: firstWords[1],
+				},
+			});
+		}
+		return Promise.resolve({
+			method: 'GET',
+			path: `/flows/${org}/${message.sourceIds.flow}/threads/${message.sourceIds.thread}/messages`,
+		});
+	}
+
+	/**
+	 * Translate the provided generic name for an event into the service events to listen to.
+	 * @param name  Generic name for an event.
 	 */
 	public eventNameIntoTriggers(name: string): string[] {
 		const equivalents: {[key: string]: string[]} = {

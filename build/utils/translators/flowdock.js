@@ -20,7 +20,7 @@ class FlowdockTranslator {
         this.session = new flowdock_1.Session(data.token);
         this.organization = data.organization;
     }
-    eventIntoCreateMessage(event) {
+    eventIntoMessage(event) {
         const metadata = Translator.extractMetadata(event.rawEvent.content);
         const titleAndText = metadata.content.match(/^(.*)\n--\n((?:\r|\n|.)*)$/);
         const flow = event.cookedEvent.flow;
@@ -53,7 +53,7 @@ class FlowdockTranslator {
             return (returnValue);
         });
     }
-    messageIntoEmit(message) {
+    messageIntoEmitCreateMessage(message) {
         const titleText = message.first && message.title ? message.title + '\n--\n' : '';
         return new Promise((resolve) => {
             resolve({
@@ -66,6 +66,9 @@ class FlowdockTranslator {
                 },
             });
         });
+    }
+    messageIntoEmitReadHistory(_message) {
+        throw new Error();
     }
     eventNameIntoTriggers(name) {
         const equivalents = {

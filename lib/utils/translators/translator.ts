@@ -26,26 +26,32 @@ import {
 
 export interface Translator {
 	/**
-	 * Translate the provided event, enqueued by the service, into a message context
-	 * @param event  Data in the form raw to the service
+	 * Translate the provided event, enqueued by the service, into a message context.
+	 * @param event  Data in the form raw to the service.
 	 */
 	eventIntoMessage(event: ServiceEvent): Promise<MessageContext>;
 
 	/**
-	 * Translate the provided message context into an emit context that will retrieve the thread history
-	 * @param message  Standard form of the message
-	 */
-	messageIntoEmitReadHistory(message: MessageContext): Promise<ServiceEmitContext>;
-
-	/**
-	 * Translate the provided message context into an emit context that will create the message
-	 * @param message  Standard form of the message
+	 * Translate the provided message context into an emit context that will create the message.
+	 * @param message  Standard form of the message.
 	 */
 	messageIntoEmitCreateMessage(message: TransmitContext): Promise<ServiceEmitContext>;
 
+	// messageIntoEmitCreateTopic
+
+	// messageIntoEmitUpdateTags
+
 	/**
-	 * Translate the provided generic name for an event into the service events to listen to
-	 * @param name  Generic name for an event
+	 * Translate the provided message context into an emit context that will retrieve the thread history.
+	 * @param message    Standard form of the message.
+	 * @param shortlist  *DO NOT RELY ON THIS BEING USED.*
+	 *                   Optional, if the endpoint supports it then it may use this to shortlist the responses.
+	 */
+	messageIntoEmitReadThread(message: MessageContext, shortlist?: RegExp): Promise<ServiceEmitContext>;
+
+	/**
+	 * Translate the provided generic name for an event into the service events to listen to.
+	 * @param name  Generic name for an event.
 	 */
 	eventNameIntoTriggers(name: string): string[];
 }
@@ -125,7 +131,7 @@ export function extractMetadata(message: string): Metadata {
 }
 
 /**
- * Retrieve from the environment array of strings to use as indicators of visibility
+ * Retrieve from the environment array of strings to use as indicators of visibility.
  * @returns  Object of arrays of indicators, shown and hidden.
  */
 function getIndicatorArrays(): { 'shown': string[], 'hidden': string[] } {

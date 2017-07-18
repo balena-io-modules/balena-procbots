@@ -37,9 +37,11 @@ export type DiscoursePayload = DiscoursePostPayload | DiscourseTopicPayload;
 export type DiscourseResponse = any;
 
 export interface DiscourseEmitContext extends ServiceEmitContext {
+	json: boolean;
 	method: string;
 	path: string;
-	payload: DiscoursePayload;
+	payload?: DiscoursePayload;
+	qs?: { [key: string]: string };
 }
 
 export interface DiscourseConnectionDetails {

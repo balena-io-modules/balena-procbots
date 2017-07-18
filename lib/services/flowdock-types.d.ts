@@ -35,19 +35,23 @@ export interface FlowdockInboxPayload {
 	roomId: string;
 }
 
+export interface FlowdockSearchPayload {
+	search: string;
+}
+
 /** The Flowdock API SDK handle type. */
 export interface FlowdockHandle extends ServiceAPIHandle {
 	flowdock: Session;
 }
 
-export type FlowdockPayload = FlowdockMessagePayload | FlowdockInboxPayload;
+export type FlowdockPayload = FlowdockMessagePayload | FlowdockInboxPayload | FlowdockSearchPayload;
 
 export type FlowdockResponse = any;
 
 export interface FlowdockEmitContext extends ServiceEmitContext {
 	method: string;
 	path: string;
-	payload: FlowdockPayload;
+	payload?: FlowdockPayload;
 }
 
 /** A message template, rather sparse and ripe for expansion */

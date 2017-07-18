@@ -29,8 +29,8 @@ export class DiscourseTranslator implements Translator.Translator {
 	}
 
 	/**
-	 * Translate the provided event, enqueued by the service, into a message context
-	 * @param event  Data in the form raw to the service
+	 * Translate the provided event, enqueued by the service, into a message context.
+	 * @param event  Data in the form raw to the service.
 	 */
 	public eventIntoMessage(event: DiscourseEvent): Promise<MessageContext> {
 		// Encode once the common parts of a request
@@ -79,8 +79,8 @@ export class DiscourseTranslator implements Translator.Translator {
 	}
 
 	/**
-	 * Translate the provided message context into an emit context
-	 * @param message  Standard form of the message
+	 * Translate the provided message context into an emit context.
+	 * @param message  Standard form of the message.
 	 */
 	public messageIntoEmitCreateMessage(message: TransmitContext): Promise<DiscourseEmitContext> {
 		// Attempt to find the thread ID to know if this is a new topic or not
@@ -92,6 +92,7 @@ export class DiscourseTranslator implements Translator.Translator {
 			}
 			// A new topic request for discourse
 			return Promise.resolve({
+				json: true,
 				method: 'POST',
 				path: '/posts',
 				payload: {
@@ -104,6 +105,7 @@ export class DiscourseTranslator implements Translator.Translator {
 		}
 		// A new message request for discourse
 		return Promise.resolve({
+			json: true,
 			method: 'POST',
 			path: '/posts',
 			payload: {
@@ -115,8 +117,35 @@ export class DiscourseTranslator implements Translator.Translator {
 	}
 
 	/**
-	 * Translate the provided generic name for an event into the service events to listen to
-	 * @param name  Generic name for an event
+	 * Translate the provided message context into an emit context that will retrieve the thread history.
+	 * @param message    Standard form of the message.
+	 * @param shortlist  *DO NOT RELY ON THIS BEING USED.*  Purely optional optimisation.
+	 *                   If the endpoint supports it then it may use this to shortlist the responses.
+	 */
+	public messageIntoEmitReadThread(message: MessageContext, shortlist?: RegExp): Promise<DiscourseEmitContext> {
+		const firstWords = shortlist && shortlist.source.match(/^([\w\s]+)/i);
+		if (firstWords) {
+			return Promise.resolve({
+				json: true,
+				method: 'GET',
+				qs: {
+					'term': firstWords[1],
+					'search_context[type]': 'topic',
+					'search_context[id]': message.sourceIds.thread,
+				},
+				path: '/search/query',
+			});
+		}
+		return Promise.resolve({
+			json: true,
+			method: 'GET',
+			path: `/t/${message.sourceIds.thread}`,
+		});
+	}
+
+	/**
+	 * Translate the provided generic name for an event into the service events to listen to.
+	 * @param name  Generic name for an event.
 	 */
 	public eventNameIntoTriggers(name: string): string[] {
 		const equivalents: {[key: string]: string[]} = {

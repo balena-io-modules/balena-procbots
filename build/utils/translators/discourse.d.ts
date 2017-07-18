@@ -5,8 +5,9 @@ import * as Translator from './translator';
 export declare class DiscourseTranslator implements Translator.Translator {
     private connectionDetails;
     constructor(data: DiscourseConnectionDetails);
-    eventIntoCreateMessage(event: DiscourseEvent): Promise<MessageContext>;
-    messageIntoEmit(message: TransmitContext): Promise<DiscourseEmitContext>;
+    eventIntoMessage(event: DiscourseEvent): Promise<MessageContext>;
+    messageIntoEmitCreateMessage(message: TransmitContext): Promise<DiscourseEmitContext>;
+    messageIntoEmitReadHistory(message: MessageContext, shortlist: RegExp): Promise<DiscourseEmitContext>;
     eventNameIntoTriggers(name: string): string[];
 }
 export declare function createTranslator(data: DiscourseConnectionDetails): Translator.Translator;
