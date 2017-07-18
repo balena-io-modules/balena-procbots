@@ -4,13 +4,12 @@ const Promise = require("bluebird");
 const _ = require("lodash");
 const request = require("request-promise");
 const messenger_types_1 = require("../../services/messenger-types");
-const translator_1 = require("./translator");
-class DiscourseTranslator extends translator_1.Translator {
+const Translator = require("./translator");
+class DiscourseTranslator {
     constructor(data) {
-        super();
         this.connectionDetails = data;
     }
-    eventIntoMessage(event) {
+    eventIntoCreateMessage(event) {
         const getGeneric = {
             json: true,
             method: 'GET',
@@ -29,7 +28,7 @@ class DiscourseTranslator extends translator_1.Translator {
             topic: request(getTopic),
         })
             .then((details) => {
-            const metadata = translator_1.Translator.extractMetadata(details.post.raw);
+            const metadata = Translator.extractMetadata(details.post.raw);
             const first = details.post.post_number === 1;
             return {
                 action: messenger_types_1.MessageAction.Create,
@@ -61,7 +60,7 @@ class DiscourseTranslator extends translator_1.Translator {
                 path: '/posts',
                 payload: {
                     category: message.toIds.flow,
-                    raw: `${message.text}\n\n---\n${translator_1.Translator.stringifyMetadata(message)}`,
+                    raw: `${message.text}\n\n---\n${Translator.stringifyMetadata(message)}`,
                     title,
                     unlist_topic: message.hidden ? 'true' : 'false',
                 },
@@ -71,7 +70,7 @@ class DiscourseTranslator extends translator_1.Translator {
             method: 'POST',
             path: '/posts',
             payload: {
-                raw: `${message.text}\n\n---\n${translator_1.Translator.stringifyMetadata(message)}`,
+                raw: `${message.text}\n\n---\n${Translator.stringifyMetadata(message)}`,
                 topic_id: topicId,
                 whisper: message.hidden ? 'true' : 'false',
             },

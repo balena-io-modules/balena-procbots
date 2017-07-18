@@ -5,10 +5,9 @@ const front_sdk_1 = require("front-sdk");
 const _ = require("lodash");
 const request = require("request-promise");
 const messenger_types_1 = require("../../services/messenger-types");
-const translator_1 = require("./translator");
-class FrontTranslator extends translator_1.Translator {
+const Translator = require("./translator");
+class FrontTranslator {
     constructor(data) {
-        super();
         this.fetchUserId = (username) => {
             const getTeammates = {
                 headers: {
@@ -31,7 +30,7 @@ class FrontTranslator extends translator_1.Translator {
         this.token = data.token;
         this.channelPerInbox = data.channelPerInbox || {};
     }
-    eventIntoMessage(event) {
+    eventIntoCreateMessage(event) {
         const getGeneric = {
             headers: {
                 authorization: `Bearer ${this.token}`
@@ -57,7 +56,7 @@ class FrontTranslator extends translator_1.Translator {
             .then((details) => {
             const message = details.event.target.data;
             const first = details.comments._results.length + details.messages._results.length === 1;
-            const metadata = translator_1.Translator.extractMetadata(message.text || message.body);
+            const metadata = Translator.extractMetadata(message.text || message.body);
             let author = 'Unknown';
             if (message.author) {
                 author = message.author.username;
@@ -100,7 +99,7 @@ class FrontTranslator extends translator_1.Translator {
                     objectType: 'message',
                     payload: {
                         author_id: userId,
-                        body: `${message.text}<hr/><br/>${translator_1.Translator.stringifyMetadata(message, 'plaintext')}`,
+                        body: `${message.text}<hr/><br/>${Translator.stringifyMetadata(message, 'plaintext')}`,
                         channel_id: this.channelPerInbox[message.toIds.flow],
                         metadata: {
                             thread_ref: message.sourceIds.thread,
@@ -127,7 +126,7 @@ class FrontTranslator extends translator_1.Translator {
                     objectType: 'comment',
                     payload: {
                         author_id: details.userId,
-                        body: `${message.text}\n\n---\n${translator_1.Translator.stringifyMetadata(message, 'plaintext')}`,
+                        body: `${message.text}\n\n---\n${Translator.stringifyMetadata(message, 'plaintext')}`,
                         conversation_id: conversationId,
                     }
                 };
@@ -137,7 +136,7 @@ class FrontTranslator extends translator_1.Translator {
                 objectType: 'message',
                 payload: {
                     author_id: details.userId,
-                    body: `${message.text}<hr/><br/>${translator_1.Translator.stringifyMetadata(message, 'plaintext')}`,
+                    body: `${message.text}<hr/><br/>${Translator.stringifyMetadata(message, 'plaintext')}`,
                     conversation_id: conversationId,
                     options: {
                         archive: false,
