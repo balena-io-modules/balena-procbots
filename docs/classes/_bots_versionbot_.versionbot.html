@@ -170,11 +170,6 @@
 							<ul class="tsd-parameters">
 								<li>
 									<h5>integration: <span class="tsd-signature-type">number</span></h5>
-									<div class="tsd-comment tsd-typography">
-										<div class="lead">
-											<p>Github App ID.</p>
-										</div>
-									</div>
 								</li>
 								<li>
 									<h5>name: <span class="tsd-signature-type">string</span></h5>
@@ -186,6 +181,11 @@
 								</li>
 								<li>
 									<h5>email: <span class="tsd-signature-type">string</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<div class="lead">
+											<p>Email ID to use for commits.</p>
+										</div>
+									</div>
 								</li>
 								<li>
 									<h5>pemString: <span class="tsd-signature-type">string</span></h5>
@@ -218,7 +218,7 @@
 					<aside class="tsd-sources">
 						<p>Inherited from <a href="_framework_procbot_.procbot.html">ProcBot</a>.<a href="_framework_procbot_.procbot.html#_botname">_botname</a></p>
 						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L37">framework/procbot.ts:37</a></li>
+							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L48">framework/procbot.ts:48</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -248,7 +248,7 @@
 					</aside>
 					<div class="tsd-comment tsd-typography">
 						<div class="lead">
-							<p>Instance of Github SDK API in use.</p>
+							<p>Instance of Github SDK API in use for App.</p>
 						</div>
 					</div>
 				</section>
@@ -263,7 +263,7 @@
 					</aside>
 					<div class="tsd-comment tsd-typography">
 						<div class="lead">
-							<p>Github ServiceEmitter.</p>
+							<p>Github App ServiceEmitter.</p>
 						</div>
 					</div>
 				</section>
@@ -304,7 +304,7 @@
 					<aside class="tsd-sources">
 						<p>Inherited from <a href="_framework_procbot_.procbot.html">ProcBot</a>.<a href="_framework_procbot_.procbot.html#logger">logger</a></p>
 						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L38">framework/procbot.ts:38</a></li>
+							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L49">framework/procbot.ts:49</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -321,7 +321,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L596">bots/versionbot.ts:596</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L597">bots/versionbot.ts:597</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -366,13 +366,13 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_framework_procbot_.procbot.html">ProcBot</a>.<a href="_framework_procbot_.procbot.html#addserviceemitter">addServiceEmitter</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L135">framework/procbot.ts:135</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L139">framework/procbot.ts:139</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
 									<p>Add a new type of ServiceEmitter to the client.
-									Should the ServiceEmitter already exist on the client, this will do nothing.</p>
+									Should the ServiceEmitter already exist on the client with the handle/name, this will do nothing.</p>
 								</div>
 							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -391,7 +391,7 @@
 								<span class="tsd-signature-symbol"> | </span>
 								<span class="tsd-signature-type">void</span>
 							</h4>
-							<p>The constructed ServiceEmitter or void should it already exist or fail.</p>
+							<p>The constructed or pre-existing ServiceEmitter or void on failure.</p>
 						</li>
 					</ul>
 				</section>
@@ -406,13 +406,13 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_framework_procbot_.procbot.html">ProcBot</a>.<a href="_framework_procbot_.procbot.html#addservicelistener">addServiceListener</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L116">framework/procbot.ts:116</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L127">framework/procbot.ts:127</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
 									<p>Add a new type of ServiceListener to the client.
-									Should the ServiceListener already exist on the client, this will do nothing.</p>
+									Should the ServiceListener already exist on the client with the handle/name, this will do nothing.</p>
 								</div>
 							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -431,7 +431,7 @@
 								<span class="tsd-signature-symbol"> | </span>
 								<span class="tsd-signature-type">void</span>
 							</h4>
-							<p>The constructed ServiceListener or void should it already exist or fail.</p>
+							<p>The constructed or pre-existing ServiceListener or void on failure.</p>
 						</li>
 					</ul>
 				</section>
@@ -445,22 +445,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-<<<<<<< HEAD
-<<<<<<< HEAD
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1169">bots/versionbot.ts:1169</a></li>
-=======
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1180">bots/versionbot.ts:1180</a></li>
->>>>>>> VersionBot: Append PR number of PR being merged to the `CHANGELOG.md` entry for it.
-=======
 									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1176">bots/versionbot.ts:1176</a></li>
-=======
-<<<<<<< HEAD
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1115">bots/versionbot.ts:1115</a></li>
-=======
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1058">bots/versionbot.ts:1058</a></li>
->>>>>>> Ensure that the head for a PR is always correctly used; move to Github App endpoints instead of Integration.
->>>>>>> VersionBot: Ensure that the head for a PR is always correctly used; move to Github App endpoints instead of Integration.
->>>>>>> VersionBot: Ensure that the head for a PR is always correctly used; move to Github App endpoints instead of Integration.
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -492,22 +477,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-<<<<<<< HEAD
-<<<<<<< HEAD
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1764">bots/versionbot.ts:1764</a></li>
-=======
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1797">bots/versionbot.ts:1797</a></li>
->>>>>>> VersionBot: Append PR number of PR being merged to the `CHANGELOG.md` entry for it.
-=======
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1771">bots/versionbot.ts:1771</a></li>
-=======
-<<<<<<< HEAD
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1710">bots/versionbot.ts:1710</a></li>
-=======
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1609">bots/versionbot.ts:1609</a></li>
->>>>>>> Ensure that the head for a PR is always correctly used; move to Github App endpoints instead of Integration.
->>>>>>> VersionBot: Ensure that the head for a PR is always correctly used; move to Github App endpoints instead of Integration.
->>>>>>> VersionBot: Ensure that the head for a PR is always correctly used; move to Github App endpoints instead of Integration.
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1795">bots/versionbot.ts:1795</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -546,7 +516,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L819">bots/versionbot.ts:819</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L820">bots/versionbot.ts:820</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -594,7 +564,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L673">bots/versionbot.ts:673</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L674">bots/versionbot.ts:674</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -638,22 +608,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-<<<<<<< HEAD
-<<<<<<< HEAD
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1496">bots/versionbot.ts:1496</a></li>
-=======
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1529">bots/versionbot.ts:1529</a></li>
->>>>>>> VersionBot: Append PR number of PR being merged to the `CHANGELOG.md` entry for it.
-=======
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1503">bots/versionbot.ts:1503</a></li>
-=======
-<<<<<<< HEAD
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1442">bots/versionbot.ts:1442</a></li>
-=======
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1382">bots/versionbot.ts:1382</a></li>
->>>>>>> Ensure that the head for a PR is always correctly used; move to Github App endpoints instead of Integration.
->>>>>>> VersionBot: Ensure that the head for a PR is always correctly used; move to Github App endpoints instead of Integration.
->>>>>>> VersionBot: Ensure that the head for a PR is always correctly used; move to Github App endpoints instead of Integration.
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1525">bots/versionbot.ts:1525</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -693,22 +648,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-<<<<<<< HEAD
-<<<<<<< HEAD
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1737">bots/versionbot.ts:1737</a></li>
-=======
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1770">bots/versionbot.ts:1770</a></li>
->>>>>>> VersionBot: Append PR number of PR being merged to the `CHANGELOG.md` entry for it.
-=======
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1744">bots/versionbot.ts:1744</a></li>
-=======
-<<<<<<< HEAD
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1683">bots/versionbot.ts:1683</a></li>
-=======
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1586">bots/versionbot.ts:1586</a></li>
->>>>>>> Ensure that the head for a PR is always correctly used; move to Github App endpoints instead of Integration.
->>>>>>> VersionBot: Ensure that the head for a PR is always correctly used; move to Github App endpoints instead of Integration.
->>>>>>> VersionBot: Ensure that the head for a PR is always correctly used; move to Github App endpoints instead of Integration.
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1768">bots/versionbot.ts:1768</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -750,19 +690,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-<<<<<<< HEAD
 									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L515">bots/versionbot.ts:515</a></li>
-=======
-<<<<<<< HEAD
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L512">bots/versionbot.ts:512</a></li>
-=======
-<<<<<<< HEAD
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L458">bots/versionbot.ts:458</a></li>
-=======
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L414">bots/versionbot.ts:414</a></li>
->>>>>>> Ensure that the head for a PR is always correctly used; move to Github App endpoints instead of Integration.
->>>>>>> VersionBot: Ensure that the head for a PR is always correctly used; move to Github App endpoints instead of Integration.
->>>>>>> VersionBot: Ensure that the head for a PR is always correctly used; move to Github App endpoints instead of Integration.
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -805,22 +733,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-<<<<<<< HEAD
-<<<<<<< HEAD
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1272">bots/versionbot.ts:1272</a></li>
-=======
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1305">bots/versionbot.ts:1305</a></li>
->>>>>>> VersionBot: Append PR number of PR being merged to the `CHANGELOG.md` entry for it.
-=======
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1279">bots/versionbot.ts:1279</a></li>
-=======
-<<<<<<< HEAD
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1218">bots/versionbot.ts:1218</a></li>
-=======
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1161">bots/versionbot.ts:1161</a></li>
->>>>>>> Ensure that the head for a PR is always correctly used; move to Github App endpoints instead of Integration.
->>>>>>> VersionBot: Ensure that the head for a PR is always correctly used; move to Github App endpoints instead of Integration.
->>>>>>> VersionBot: Ensure that the head for a PR is always correctly used; move to Github App endpoints instead of Integration.
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1301">bots/versionbot.ts:1301</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -846,14 +759,14 @@
 					<a name="dispatchtoallemitters" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagProtected">Protected</span> dispatch<wbr>ToAll<wbr>Emitters</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
-						<li class="tsd-signature tsd-kind-icon">dispatch<wbr>ToAll<wbr>Emitters<span class="tsd-signature-symbol">(</span>data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ServiceEmitRequest</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ServiceEmitResponse</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">dispatch<wbr>ToAll<wbr>Emitters<span class="tsd-signature-symbol">(</span>data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ServiceEmitRequest</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_framework_procbot_.procbot.html">ProcBot</a>.<a href="_framework_procbot_.procbot.html#dispatchtoallemitters">dispatchToAllEmitters</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L173">framework/procbot.ts:173</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L176">framework/procbot.ts:176</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -872,7 +785,7 @@
 									</div>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ServiceEmitResponse</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">&gt;</span></h4>
 							<p>An array of ServiceEmitResponses from all the ServiceEmitters.</p>
 						</li>
 					</ul>
@@ -881,7 +794,7 @@
 					<a name="dispatchtoemitter" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagProtected">Protected</span> dispatch<wbr>ToEmitter</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
-						<li class="tsd-signature tsd-kind-icon">dispatch<wbr>ToEmitter<span class="tsd-signature-symbol">(</span>name<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">dispatch<wbr>ToEmitter<span class="tsd-signature-symbol">(</span>handle<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
@@ -906,9 +819,9 @@
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>name: <span class="tsd-signature-type">string</span></h5>
+									<h5>handle: <span class="tsd-signature-type">string</span></h5>
 									<div class="tsd-comment tsd-typography">
-										<p>The name of the ServiceEmitter to dispatch to.</p>
+										<p>The handle of the ServiceEmitter to dispatch to.</p>
 									</div>
 								</li>
 								<li>
@@ -933,22 +846,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-<<<<<<< HEAD
-<<<<<<< HEAD
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1628">bots/versionbot.ts:1628</a></li>
-=======
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1661">bots/versionbot.ts:1661</a></li>
->>>>>>> VersionBot: Append PR number of PR being merged to the `CHANGELOG.md` entry for it.
-=======
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1635">bots/versionbot.ts:1635</a></li>
-=======
-<<<<<<< HEAD
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1574">bots/versionbot.ts:1574</a></li>
-=======
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1511">bots/versionbot.ts:1511</a></li>
->>>>>>> Ensure that the head for a PR is always correctly used; move to Github App endpoints instead of Integration.
->>>>>>> VersionBot: Ensure that the head for a PR is always correctly used; move to Github App endpoints instead of Integration.
->>>>>>> VersionBot: Ensure that the head for a PR is always correctly used; move to Github App endpoints instead of Integration.
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1659">bots/versionbot.ts:1659</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -974,14 +872,14 @@
 					<a name="getemitter" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagProtected">Protected</span> get<wbr>Emitter</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
-						<li class="tsd-signature tsd-kind-icon">get<wbr>Emitter<span class="tsd-signature-symbol">(</span>name<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ServiceEmitter</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">void</span></li>
+						<li class="tsd-signature tsd-kind-icon">get<wbr>Emitter<span class="tsd-signature-symbol">(</span>handle<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ServiceEmitter</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">void</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_framework_procbot_.procbot.html">ProcBot</a>.<a href="_framework_procbot_.procbot.html#getemitter">getEmitter</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L161">framework/procbot.ts:161</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L162">framework/procbot.ts:162</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -992,9 +890,9 @@
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>name: <span class="tsd-signature-type">string</span></h5>
+									<h5>handle: <span class="tsd-signature-type">string</span></h5>
 									<div class="tsd-comment tsd-typography">
-										<p>Name of the ServiceEmitter instance to find.</p>
+										<p>Handle of the ServiceEmitter instance to find (name if no handle was set).</p>
 									</div>
 								</li>
 							</ul>
@@ -1010,27 +908,27 @@
 					<a name="getlistener" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagProtected">Protected</span> get<wbr>Listener</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
-						<li class="tsd-signature tsd-kind-icon">get<wbr>Listener<span class="tsd-signature-symbol">(</span>name<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ServiceListener</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">void</span></li>
+						<li class="tsd-signature tsd-kind-icon">get<wbr>Listener<span class="tsd-signature-symbol">(</span>handle<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ServiceListener</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">void</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_framework_procbot_.procbot.html">ProcBot</a>.<a href="_framework_procbot_.procbot.html#getlistener">getListener</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L152">framework/procbot.ts:152</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L149">framework/procbot.ts:149</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
-									<p>Find a particular attached ServiceListener based upon its name.</p>
+									<p>Find a particular attached ServiceListener based upon its handle.</p>
 								</div>
 							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>name: <span class="tsd-signature-type">string</span></h5>
+									<h5>handle: <span class="tsd-signature-type">string</span></h5>
 									<div class="tsd-comment tsd-typography">
-										<p>Name of the ServiceListener instance to find.</p>
+										<p>Handle of the ServiceListener instance to find (name if no handle was set).</p>
 									</div>
 								</li>
 							</ul>
@@ -1053,7 +951,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_framework_procbot_.procbot.html">ProcBot</a>.<a href="_framework_procbot_.procbot.html#getnodebinpath">getNodeBinPath</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L51">framework/procbot.ts:51</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L61">framework/procbot.ts:61</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1076,22 +974,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-<<<<<<< HEAD
-<<<<<<< HEAD
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1594">bots/versionbot.ts:1594</a></li>
-=======
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1627">bots/versionbot.ts:1627</a></li>
->>>>>>> VersionBot: Append PR number of PR being merged to the `CHANGELOG.md` entry for it.
-=======
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1601">bots/versionbot.ts:1601</a></li>
-=======
-<<<<<<< HEAD
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1540">bots/versionbot.ts:1540</a></li>
-=======
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1477">bots/versionbot.ts:1477</a></li>
->>>>>>> Ensure that the head for a PR is always correctly used; move to Github App endpoints instead of Integration.
->>>>>>> VersionBot: Ensure that the head for a PR is always correctly used; move to Github App endpoints instead of Integration.
->>>>>>> VersionBot: Ensure that the head for a PR is always correctly used; move to Github App endpoints instead of Integration.
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1625">bots/versionbot.ts:1625</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1124,19 +1007,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-<<<<<<< HEAD
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1028">bots/versionbot.ts:1028</a></li>
-=======
-<<<<<<< HEAD
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1025">bots/versionbot.ts:1025</a></li>
-=======
-<<<<<<< HEAD
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L964">bots/versionbot.ts:964</a></li>
-=======
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L905">bots/versionbot.ts:905</a></li>
->>>>>>> Ensure that the head for a PR is always correctly used; move to Github App endpoints instead of Integration.
->>>>>>> VersionBot: Ensure that the head for a PR is always correctly used; move to Github App endpoints instead of Integration.
->>>>>>> VersionBot: Ensure that the head for a PR is always correctly used; move to Github App endpoints instead of Integration.
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1030">bots/versionbot.ts:1030</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1189,22 +1060,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-<<<<<<< HEAD
-<<<<<<< HEAD
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1393">bots/versionbot.ts:1393</a></li>
-=======
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1426">bots/versionbot.ts:1426</a></li>
->>>>>>> VersionBot: Append PR number of PR being merged to the `CHANGELOG.md` entry for it.
-=======
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1400">bots/versionbot.ts:1400</a></li>
-=======
-<<<<<<< HEAD
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1339">bots/versionbot.ts:1339</a></li>
-=======
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1282">bots/versionbot.ts:1282</a></li>
->>>>>>> Ensure that the head for a PR is always correctly used; move to Github App endpoints instead of Integration.
->>>>>>> VersionBot: Ensure that the head for a PR is always correctly used; move to Github App endpoints instead of Integration.
->>>>>>> VersionBot: Ensure that the head for a PR is always correctly used; move to Github App endpoints instead of Integration.
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1422">bots/versionbot.ts:1422</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1281,7 +1137,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_framework_procbot_.procbot.html">ProcBot</a>.<a href="_framework_procbot_.procbot.html#processconfiguration">processConfiguration</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L67">framework/procbot.ts:67</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L77">framework/procbot.ts:77</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1316,22 +1172,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-<<<<<<< HEAD
-<<<<<<< HEAD
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1925">bots/versionbot.ts:1925</a></li>
-=======
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1958">bots/versionbot.ts:1958</a></li>
->>>>>>> VersionBot: Append PR number of PR being merged to the `CHANGELOG.md` entry for it.
-=======
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1932">bots/versionbot.ts:1932</a></li>
-=======
-<<<<<<< HEAD
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1871">bots/versionbot.ts:1871</a></li>
-=======
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1770">bots/versionbot.ts:1770</a></li>
->>>>>>> Ensure that the head for a PR is always correctly used; move to Github App endpoints instead of Integration.
->>>>>>> VersionBot: Ensure that the head for a PR is always correctly used; move to Github App endpoints instead of Integration.
->>>>>>> VersionBot: Ensure that the head for a PR is always correctly used; move to Github App endpoints instead of Integration.
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1956">bots/versionbot.ts:1956</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1363,7 +1204,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_framework_procbot_.procbot.html">ProcBot</a>.<a href="_framework_procbot_.procbot.html#retrieveconfiguration">retrieveConfiguration</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L90">framework/procbot.ts:90</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L100">framework/procbot.ts:100</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1395,7 +1236,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L371">bots/versionbot.ts:371</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L372">bots/versionbot.ts:372</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1432,22 +1273,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-<<<<<<< HEAD
-<<<<<<< HEAD
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1725">bots/versionbot.ts:1725</a></li>
-=======
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1758">bots/versionbot.ts:1758</a></li>
->>>>>>> VersionBot: Append PR number of PR being merged to the `CHANGELOG.md` entry for it.
-=======
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1732">bots/versionbot.ts:1732</a></li>
-=======
-<<<<<<< HEAD
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1671">bots/versionbot.ts:1671</a></li>
-=======
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1574">bots/versionbot.ts:1574</a></li>
->>>>>>> Ensure that the head for a PR is always correctly used; move to Github App endpoints instead of Integration.
->>>>>>> VersionBot: Ensure that the head for a PR is always correctly used; move to Github App endpoints instead of Integration.
->>>>>>> VersionBot: Ensure that the head for a PR is always correctly used; move to Github App endpoints instead of Integration.
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1756">bots/versionbot.ts:1756</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">

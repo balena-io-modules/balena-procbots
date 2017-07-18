@@ -2,14 +2,12 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const Promise = require("bluebird");
 const child_process_1 = require("child_process");
+const _ = require("lodash");
 function BuildCommand(command, args, options) {
-    let builtOptions;
-    if (options) {
-        builtOptions = {
-            cwd: options.cwd,
-            retries: options.retries
-        };
-    }
+    const builtOptions = _.defaults({
+        retries: 0,
+        delay: 1000
+    }, options || {});
     return {
         command,
         args: args || [],
@@ -19,7 +17,8 @@ function BuildCommand(command, args, options) {
 exports.BuildCommand = BuildCommand;
 ;
 function ExecuteCommand(command) {
-    let tries = ((command.options || {}).retries || 0) + 1;
+    let tries = _.get(command, 'options.retries', 0) + 1;
+    let delay = _.get(command, 'options.delay', 1000);
     const callCommand = () => {
         return new Promise((resolve, reject) => {
             const child = child_process_1.spawn(command.command, command.args, command.options);
@@ -42,7 +41,7 @@ function ExecuteCommand(command) {
         }).catch((err) => {
             tries--;
             if (tries > 0) {
-                return Promise.delay(1000).then(callCommand);
+                return Promise.delay(delay).then(callCommand);
             }
             throw err;
         });

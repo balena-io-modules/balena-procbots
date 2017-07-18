@@ -26,7 +26,7 @@ import { cleanup, track } from 'temp';
 import * as GithubApiTypes from '../apis/githubapi-types';
 import { ProcBot } from '../framework/procbot';
 import { GithubError, GithubService } from '../services/github';
-import { GithubCookedData, GithubHandle, GithubRegistration } from '../services/github-types';
+import { GithubCookedData, GithubHandle, GithubLogin, GithubRegistration } from '../services/github-types';
 import { ServiceEvent } from '../services/service-types';
 import { BuildCommand, ExecuteCommand } from '../utils/environment';
 import { AlertLevel, LogLevel } from '../utils/logger';
@@ -184,7 +184,7 @@ export class KeyframeBot extends ProcBot {
 			loginType: {
 				integrationId,
 				pem: pemString,
-				type: 'integration'
+				type: GithubLogin.App
 			},
 			path: '/keyframehooks',
 			port: GithubPort,
@@ -197,7 +197,7 @@ export class KeyframeBot extends ProcBot {
 			loginType: {
 				integrationId,
 				pem: pemString,
-				type: 'integration'
+				type: GithubLogin.App
 			},
 			pem: pemString,
 			type: 'emitter'

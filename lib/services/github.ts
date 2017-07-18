@@ -28,10 +28,10 @@ import * as GithubApiTypes from '../apis/githubapi-types';
 import { Worker, WorkerEvent } from '../framework/worker';
 import { WorkerClient } from '../framework/worker-client';
 import { AlertLevel, Logger, LogLevel } from '../utils/logger';
-import { GithubApp, GithubConfigLocation, GithubConstructor, GithubEmitRequestContext, GithubHandle,
-	GithubListenerConstructor, GithubPAT, GithubRegistration } from './github-types';
+import { GithubConfigLocation, GithubConstructor, GithubEmitRequestContext, GithubHandle,
+	GithubListenerConstructor, GithubLogin, GithubRegistration } from './github-types';
 import { ServiceEmitContext, ServiceEmitRequest, ServiceEmitResponse, ServiceEmitter,
-	ServiceEvent, ServiceListener } from './service-types';
+	ServiceEvent, ServiceListener, ServiceType } from './service-types';
 
 /** Github label interface. */
 interface LabelDetails {
@@ -115,15 +115,12 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 		super();
 
 		// Determine type of service.
-		if (constObj.authentication.type === 'app') {
-			const appLogin = <GithubApp>constObj.authentication;
-
+		if (constObj.authentication.type === GithubLogin.App) {
 			// Set the App ID
-			this.appId = appLogin.appId;
-			this.pem = appLogin.pem;
+			this.appId = constObj.authentication.appId;
+			this.pem = constObj.authentication.pem;
 		} else {
-			const userLogin = <GithubPAT>constObj.authentication;
-			this.userPat = userLogin.pat;
+			this.userPat = constObj.authentication.pat;
 		}
 
 		// The `github` module is a bit behind the preview API. We may have to override
@@ -141,7 +138,7 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 		this.authenticate();
 
 		// Only the listener deals with events.
-		if (constObj.type === 'listener') {
+		if (constObj.type === ServiceType.Listener) {
 			const listenerConstructor = <GithubListenerConstructor>constObj;
 
 			// The getWorker method is an overload for generic context types.
@@ -508,7 +505,7 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 		let tokenPromise: Promise<AuthToken>;
 
 		if (this.appId) {
-		// Initialise JWTs
+			// Initialise JWTs
 			const privatePem = new Buffer(this.pem, 'base64').toString();
 			const payload = {
 				exp: Math.floor((Date.now() / 1000)) + (10 * 50),
@@ -516,7 +513,8 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 				iss: this.appId
 			};
 			const jwToken = jwt.sign(payload, privatePem, { algorithm: 'RS256' });
-			const appOpts = {
+
+			tokenPromise = request.get({
 				headers: {
 					Accept: 'application/vnd.github.machine-man-preview+json',
 					Authorization: `Bearer ${jwToken}`,
@@ -524,25 +522,20 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 				},
 				json: true,
 				url: 'https://api.github.com/app/installations'
-			};
-
-			tokenPromise = request.get(appOpts).then((apps) => {
+			}).then((apps) => {
 				// Get the URL for the token.
 				const tokenUrl = apps[0].access_tokens_url;
 
 				// Request new token.
-				const tokenOpts: any = {
+				return request.post({
 					headers: {
 						Accept: 'application/vnd.github.machine-man-preview+json',
 						Authorization: `Bearer ${jwToken}`,
 						'User-Agent': 'request'
 					},
 					json: true,
-					method: 'POST',
 					url: tokenUrl
-				};
-
-				return request.post(tokenOpts);
+				});
 			});
 		} else {
 			tokenPromise = Promise.resolve({ token: this.userPat });

@@ -356,11 +356,7 @@ class VersionBot extends procbot_1.ProcBot {
                 }
                 return this.dispatchToEmitter(this.githubEmitterName, {
                     data: {
-<<<<<<< HEAD
                         context: StatusReviewers.Context,
-=======
-                        context: 'Reviewers',
->>>>>>> Ensure that the head for a PR is always correctly used; move to Github App endpoints instead of Integration.
                         description: status,
                         owner,
                         repo,
@@ -578,12 +574,8 @@ class VersionBot extends procbot_1.ProcBot {
                     authToken: cookedData.githubAuthToken,
                     branchName,
                     fullPath,
-<<<<<<< HEAD
-                    repoFullName,
+                    repoFullName: headRepoFullName,
                     number: pr.number
-=======
-                    repoFullName: headRepoFullName
->>>>>>> VersionBot: Ensure that the head for a PR is always correctly used; move to Github App endpoints instead of Integration.
                 });
             }).then((versionData) => {
                 if (!versionData.version || !versionData.files) {
@@ -692,21 +684,20 @@ class VersionBot extends procbot_1.ProcBot {
             authentication: {
                 appId: integration,
                 pem: pemString,
-                type: 'app'
+                type: 0
             },
             path: '/webhooks',
             port: 4567,
-            type: 'listener',
+            type: 0,
             webhookSecret: webhook
         });
         const ghEmitter = this.addServiceEmitter('github', {
             authentication: {
                 appId: integration,
                 pem: pemString,
-                type: 'app'
+                type: 0
             },
-            pem: pemString,
-            type: 'emitter'
+            type: 1
         });
         if (!ghListener) {
             throw new Error("Couldn't create a Github listener");
@@ -715,11 +706,11 @@ class VersionBot extends procbot_1.ProcBot {
             throw new Error("Couldn't create a Github emitter");
         }
         this.githubListenerName = ghListener.serviceName;
+        this.githubEmitterName = ghEmitter.serviceName;
         this.githubEmitter = ghEmitter;
-        this.githubEmitterName = this.githubEmitter.serviceName;
         this.githubApi = this.githubEmitter.apiHandle.github;
         if (!this.githubApi) {
-            throw new Error('No Github API instance found');
+            throw new Error('No Github App API instance found');
         }
         _.forEach([
             {
@@ -769,7 +760,7 @@ class VersionBot extends procbot_1.ProcBot {
     applyVersionist(versionData) {
         return Promise.mapSeries([
             environment_1.BuildCommand('git', ['clone', `https://${versionData.authToken}:${versionData.authToken}@github.com/` +
-                    `${versionData.repoFullName}`, `${versionData.fullPath}`], { cwd: `${versionData.fullPath}`, retries: 3 }),
+                    `${versionData.repoFullName}`, `${versionData.fullPath}`], { cwd: `${versionData.fullPath}`, retries: 3, delay: 5000 }),
             environment_1.BuildCommand('git', ['checkout', `${versionData.branchName}`], { cwd: `${versionData.fullPath}` })
         ], environment_1.ExecuteCommand).then(() => {
             return fsFileExists(`${versionData.fullPath}/versionist.conf.js`)
@@ -1010,18 +1001,11 @@ class VersionBot extends procbot_1.ProcBot {
             });
         });
     }
-<<<<<<< HEAD
     checkStatuses(prInfo, filter) {
-        const owner = prInfo.head.repo.owner.login;
-        const repo = prInfo.head.repo.name;
-        const branch = prInfo.head.ref;
-=======
-    checkStatuses(prInfo) {
         const base = prInfo.base;
         const head = prInfo.head;
         const owner = base.repo.owner.login;
         const repo = base.repo.name;
->>>>>>> Ensure that the head for a PR is always correctly used; move to Github App endpoints instead of Integration.
         let protectedContexts = [];
         const statusLUT = {
             failure: StatusChecks.Failed,
@@ -1039,11 +1023,7 @@ class VersionBot extends procbot_1.ProcBot {
             protectedContexts = statusContexts.contexts;
             return this.dispatchToEmitter(this.githubEmitterName, {
                 data: {
-<<<<<<< HEAD
-                    ref: branch,
-=======
                     ref: head.sha,
->>>>>>> Ensure that the head for a PR is always correctly used; move to Github App endpoints instead of Integration.
                     owner,
                     repo
                 },
@@ -1054,16 +1034,12 @@ class VersionBot extends procbot_1.ProcBot {
             _.each(protectedContexts, (proContext) => {
                 _.each(statuses.statuses, (status) => {
                     if (_.startsWith(status.context, proContext)) {
-<<<<<<< HEAD
                         let includeContext = true;
                         if (filter) {
                             const foundContext = _.find(filter.contexts, (context) => context === status.context);
                             includeContext = filter.includeContexts ? foundContext !== undefined : !foundContext;
                         }
                         if (includeContext) {
-=======
-                        if (status.context !== 'Reviewers') {
->>>>>>> Ensure that the head for a PR is always correctly used; move to Github App endpoints instead of Integration.
                             statusResults.push({
                                 name: status.context,
                                 state: statusLUT[status.state]
@@ -1230,9 +1206,9 @@ class VersionBot extends procbot_1.ProcBot {
 exports.VersionBot = VersionBot;
 function createBot() {
     if (!(process.env.VERSIONBOT_NAME && process.env.VERSIONBOT_EMAIL && process.env.VERSIONBOT_INTEGRATION_ID &&
-        process.env.VERSIONBOT_PEM && process.env.VERSIONBOT_WEBHOOK_SECRET)) {
-        throw new Error(`'VERSIONBOT_NAME', 'VERSIONBOT_EMAIL', 'VERSIONBOT_INTEGRATION_ID', 'VERSIONBOT_PEM' and ` +
-            `'VERSIONBOT_WEBHOOK_SECRET environment variables need setting`);
+        process.env.VERSIONBOT_PEM && process.env.VERSIONBOT_WEBHOOK_SECRET && process.env.VERSIONBOT_USER)) {
+        throw new Error(`'VERSIONBOT_NAME', 'VERSIONBOT_EMAIL', 'VERSIONBOT_INTEGRATION_ID', 'VERSIONBOT_PEM', ` +
+            `'VERSIONBOT_WEBHOOK_SECRET' environment variables need setting`);
     }
     return new VersionBot(process.env.VERSIONBOT_INTEGRATION_ID, process.env.VERSIONBOT_NAME, process.env.VERSIONBOT_EMAIL, process.env.VERSIONBOT_PEM, process.env.VERSIONBOT_WEBHOOK_SECRET);
 }

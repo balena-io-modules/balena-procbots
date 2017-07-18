@@ -25,8 +25,8 @@ import { cleanup, track } from 'temp';
 import * as GithubApiTypes from '../apis/githubapi-types';
 import { ProcBot } from '../framework/procbot';
 import { ProcBotConfiguration } from '../framework/procbot-types';
-import { GithubCookedData, GithubHandle, GithubRegistration } from '../services/github-types';
-import { ServiceEmitter, ServiceEvent } from '../services/service-types';
+import { GithubCookedData, GithubHandle, GithubLogin, GithubRegistration } from '../services/github-types';
+import { ServiceEmitter, ServiceEvent, ServiceType } from '../services/service-types';
 import { BuildCommand, ExecuteCommand } from '../utils/environment';
 import { AlertLevel, LogLevel } from '../utils/logger';
 
@@ -249,19 +249,21 @@ export class VersionBot extends ProcBot {
 	private githubListenerName: string;
 	/** Github ServiceEmitter name. */
 	private githubEmitterName: string;
-	/** Github ServiceEmitter. */
+	/** Github App ServiceEmitter. */
 	private githubEmitter: ServiceEmitter;
-	/** Instance of Github SDK API in use. */
+	/** Instance of Github SDK API in use for App. */
 	private githubApi: GithubApi;
 	/** Email address used for commiting as VersionBot. */
 	private emailAddress: string;
 
 	/**
 	 * Constructs a new VersionBot instance.
-	 * @param integration  Github App ID.
+	 * @param app          Github App ID.
 	 * @param name         Name of the VersionBot.
+	 * @param email        Email ID to use for commits.
 	 * @param pemString    PEM for Github events and App login.
 	 * @param webhook      Secret webhook for validating events.
+	 * @param pat          User PAT for final merges.
 	 */
 	constructor(integration: number, name: string, email: string, pemString: string, webhook: string) {
 		// This is the VersionBot.
@@ -274,23 +276,22 @@ export class VersionBot extends ProcBot {
 			authentication: {
 				appId: integration,
 				pem: pemString,
-				type: 'app'
+				type: GithubLogin.App
 			},
 			path: '/webhooks',
 			port: 4567,
-			type: 'listener',
+			type: ServiceType.Listener,
 			webhookSecret: webhook
 		});
 
-		// Create a new emitter with the right Integration ID.
+		// Create a new emitter with the right App ID.
 		const ghEmitter = this.addServiceEmitter('github', {
 			authentication: {
 				appId: integration,
 				pem: pemString,
-				type: 'app'
+				type: GithubLogin.App
 			},
-			pem: pemString,
-			type: 'emitter'
+			type: ServiceType.Emitter
 		});
 
 		// Throw if we didn't get either of the services.
@@ -301,13 +302,13 @@ export class VersionBot extends ProcBot {
 			throw new Error("Couldn't create a Github emitter");
 		}
 		this.githubListenerName = ghListener.serviceName;
+		this.githubEmitterName = ghEmitter.serviceName;
 		this.githubEmitter = ghEmitter;
-		this.githubEmitterName = this.githubEmitter.serviceName;
 
-		// Github API handle
+		// Github App API handle, used generally for most ops.
 		this.githubApi = (<GithubHandle>this.githubEmitter.apiHandle).github;
 		if (!this.githubApi) {
-			throw new Error('No Github API instance found');
+			throw new Error('No Github App API instance found');
 		}
 
 		// We have two different WorkerMethods here:
@@ -1139,10 +1140,6 @@ export class VersionBot extends ProcBot {
 				});
 			});
 		}).then((files: FileMapping[]) => {
-			// -----> At this point, if we're looking at a *non* Resin origin head, we need to
-			//        create a new local branch based off the head, then commit the changes to
-			//        *that* branch and then merge it. (We can't commit back to the contributor's
-			//        fork).
 			return this.createCommitBlobs({
 				branchName,
 				files,
@@ -1190,7 +1187,7 @@ export class VersionBot extends ProcBot {
 		return Promise.mapSeries([
 			BuildCommand('git', ['clone', `https://${versionData.authToken}:${versionData.authToken}@github.com/` +
 				`${versionData.repoFullName}`, `${versionData.fullPath}`],
-				{ cwd: `${versionData.fullPath}`, retries: 3 }),
+				{ cwd: `${versionData.fullPath}`, retries: 3, delay: 5000 }),
 			BuildCommand('git', ['checkout', `${versionData.branchName}`], { cwd: `${versionData.fullPath}` })
 		], ExecuteCommand).then(() => {
 			// Test the repo, we want to see if there's a local `versionist.conf.js`.
@@ -1978,9 +1975,9 @@ export class VersionBot extends ProcBot {
  */
 export function createBot(): VersionBot {
 	if (!(process.env.VERSIONBOT_NAME && process.env.VERSIONBOT_EMAIL && process.env.VERSIONBOT_INTEGRATION_ID &&
-	process.env.VERSIONBOT_PEM && process.env.VERSIONBOT_WEBHOOK_SECRET)) {
-		throw new Error(`'VERSIONBOT_NAME', 'VERSIONBOT_EMAIL', 'VERSIONBOT_INTEGRATION_ID', 'VERSIONBOT_PEM' and ` +
-			`'VERSIONBOT_WEBHOOK_SECRET environment variables need setting`);
+	process.env.VERSIONBOT_PEM && process.env.VERSIONBOT_WEBHOOK_SECRET && process.env.VERSIONBOT_USER)) {
+		throw new Error(`'VERSIONBOT_NAME', 'VERSIONBOT_EMAIL', 'VERSIONBOT_INTEGRATION_ID', 'VERSIONBOT_PEM', ` +
+			`'VERSIONBOT_WEBHOOK_SECRET' environment variables need setting`);
 	}
 
 	return new VersionBot(process.env.VERSIONBOT_INTEGRATION_ID, process.env.VERSIONBOT_NAME,

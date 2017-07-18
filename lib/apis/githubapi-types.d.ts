@@ -113,8 +113,8 @@ export interface Merge {
 }
 
 export interface PullRequest {
-	head: Repo;
-	base: Repo;
+	head: RepoBranch;
+	base: RepoBranch;
 	html_url: string;
 	mergeable: boolean;
 	mergeable_state: string;
@@ -135,15 +135,17 @@ export interface Reference {
 	};
 }
 
-export interface Repo {
+export interface RepoBranch {
 	ref: string;
-	repo: {
-		owner: {
-			login: string;
-		}
-		name: string;
-	};
+	repo: Repo;
 	sha: string;
+}
+
+export interface Repo {
+	owner: {
+		login: string;
+	};
+	name: string;
 }
 
 export interface RequiredStatusChecks {
