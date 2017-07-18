@@ -31,8 +31,10 @@ var StatusChecks;
 ;
 const MergeLabel = 'procbots/versionbot/ready-to-merge';
 const IgnoreLabel = 'procbots/versionbot/no-checks';
+const AppHandle = 'app';
+const UserHandle = 'user';
 class VersionBot extends procbot_1.ProcBot {
-    constructor(integration, name, email, pemString, webhook) {
+    constructor(integration, name, email, pemString, webhook, pat) {
         super(name);
         this.statusChange = (registration, event) => {
             const splitRepo = event.cookedEvent.data.name.split('/');
@@ -43,13 +45,13 @@ class VersionBot extends procbot_1.ProcBot {
             if (event.cookedEvent.data.context === 'Versionist') {
                 return Promise.resolve();
             }
-            return this.dispatchToEmitter(this.githubEmitterName, {
+            return this.dispatchToEmitter(AppHandle, {
                 data: {
                     owner,
                     repo,
                     state: 'open'
                 },
-                method: this.githubApi.pullRequests.getAll
+                method: this.githubAppApi.pullRequests.getAll
             }).then((foundPrs) => {
                 const prs = _.flatten(foundPrs);
                 _.each(prs, (pullRequest) => {
@@ -79,13 +81,13 @@ class VersionBot extends procbot_1.ProcBot {
                 return Promise.delay(2000).then(() => {
                     return Promise.filter(prEvents, (prEvent) => {
                         const pr = prEvent.cookedEvent.data.pull_request;
-                        return this.dispatchToEmitter(this.githubEmitterName, {
+                        return this.dispatchToEmitter(AppHandle, {
                             data: {
                                 number: pr.number,
                                 owner: pr.base.repo.owner.login,
                                 repo: pr.base.repo.name,
                             },
-                            method: this.githubApi.issues.getIssueLabels
+                            method: this.githubAppApi.issues.getIssueLabels
                         }).then((labels) => {
                             if (!_.every(labels, (label) => label.name !== IgnoreLabel)) {
                                 this.logger.log(logger_1.LogLevel.DEBUG, `Dropping '${registration.name}' as suppression labels are all present`);
@@ -122,13 +124,13 @@ class VersionBot extends procbot_1.ProcBot {
             this.logger.log(logger_1.LogLevel.INFO, `Checking ${owner}/${repo}#${prNumber} for potential Waffleboard connection ` +
                 'comments');
             generateWaffleReference(pr.body);
-            return this.dispatchToEmitter(this.githubEmitterName, {
+            return this.dispatchToEmitter(AppHandle, {
                 data: {
                     number: prNumber,
                     owner,
                     repo,
                 },
-                method: this.githubApi.pullRequests.getCommits
+                method: this.githubAppApi.pullRequests.getCommits
             }).then((commits) => {
                 for (let commit of commits) {
                     generateWaffleReference(commit.commit.message);
@@ -143,14 +145,14 @@ class VersionBot extends procbot_1.ProcBot {
                     }
                 });
                 if (body !== pr.body) {
-                    return this.dispatchToEmitter(this.githubEmitterName, {
+                    return this.dispatchToEmitter(AppHandle, {
                         data: {
                             body,
                             number: prNumber,
                             owner,
                             repo,
                         },
-                        method: this.githubApi.pullRequests.update
+                        method: this.githubAppApi.pullRequests.update
                     });
                 }
             });
@@ -167,7 +169,7 @@ class VersionBot extends procbot_1.ProcBot {
             }
             this.logger.log(logger_1.LogLevel.INFO, `Checking reviewers list for ${owner}/${repo}#${pr.number}`);
             return this.retrieveConfiguration({
-                emitter: this.githubEmitter,
+                emitter: this.githubAppEmitter,
                 location: {
                     owner,
                     repo,
@@ -176,13 +178,13 @@ class VersionBot extends procbot_1.ProcBot {
             }).then((config) => {
                 approvedMaintainers = this.stripPRAuthor((config || {}).maintainers || null, pr) || [];
                 approvedReviewers = this.stripPRAuthor((config || {}).reviewers || null, pr) || [];
-                return this.dispatchToEmitter(this.githubEmitterName, {
+                return this.dispatchToEmitter(AppHandle, {
                     data: {
                         number: pr.number,
                         owner,
                         repo
                     },
-                    method: this.githubApi.pullRequests.get
+                    method: this.githubAppApi.pullRequests.get
                 });
             }).then((pullRequest) => {
                 const assignedReviewers = _.map(pullRequest.requested_reviewers, (reviewer) => reviewer.login);
@@ -197,14 +199,14 @@ class VersionBot extends procbot_1.ProcBot {
                         reviewerMessage += `@${reviewer}, `;
                     });
                     reviewerMessage += ReviewerAddMessage;
-                    return this.dispatchToEmitter(this.githubEmitterName, {
+                    return this.dispatchToEmitter(AppHandle, {
                         data: {
                             owner,
                             repo,
                             number: pr.number,
                             body: reviewerMessage
                         },
-                        method: this.githubApi.issues.createComment
+                        method: this.githubAppApi.issues.createComment
                     });
                 }
             });
@@ -217,7 +219,7 @@ class VersionBot extends procbot_1.ProcBot {
             let botConfig;
             this.logger.log(logger_1.LogLevel.INFO, `Checking reviewer conditions for ${owner}/${repo}#${pr.number}`);
             return this.retrieveConfiguration({
-                emitter: this.githubEmitter,
+                emitter: this.githubAppEmitter,
                 location: {
                     owner,
                     repo,
@@ -225,13 +227,13 @@ class VersionBot extends procbot_1.ProcBot {
                 }
             }).then((config) => {
                 botConfig = config;
-                return this.dispatchToEmitter(this.githubEmitterName, {
+                return this.dispatchToEmitter(AppHandle, {
                     data: {
                         number: pr.number,
                         owner,
                         repo
                     },
-                    method: this.githubApi.pullRequests.getReviews
+                    method: this.githubAppApi.pullRequests.getReviews
                 });
             }).then((reviews) => {
                 const approvalsNeeded = (botConfig || {}).minimum_approvals || 1;
@@ -301,7 +303,7 @@ class VersionBot extends procbot_1.ProcBot {
                     status = `${approvedCount}/${approvalsNeeded} review approvals met${appendStatus}`;
                     approvedPR = (approvedCount >= approvalsNeeded) ? true : false;
                 }
-                return this.dispatchToEmitter(this.githubEmitterName, {
+                return this.dispatchToEmitter(AppHandle, {
                     data: {
                         context: 'Reviewers',
                         description: status,
@@ -310,7 +312,7 @@ class VersionBot extends procbot_1.ProcBot {
                         sha: pr.head.sha,
                         state: approvedPR ? 'success' : 'failure'
                     },
-                    method: this.githubApi.repos.createStatus
+                    method: this.githubAppApi.repos.createStatus
                 });
             });
         };
@@ -331,7 +333,7 @@ class VersionBot extends procbot_1.ProcBot {
             }
             this.logger.log(logger_1.LogLevel.INFO, `Checking footer tags for ${owner}/${name}#${pr.number}`);
             return this.retrieveConfiguration({
-                emitter: this.githubEmitter,
+                emitter: this.githubAppEmitter,
                 location: {
                     owner,
                     repo: name,
@@ -339,13 +341,13 @@ class VersionBot extends procbot_1.ProcBot {
                 }
             }).then((config) => {
                 botConfig = config;
-                return this.dispatchToEmitter(this.githubEmitterName, {
+                return this.dispatchToEmitter(AppHandle, {
                     data: {
                         owner,
                         number: pr.number,
                         repo: name,
                     },
-                    method: this.githubApi.pullRequests.getCommits
+                    method: this.githubAppApi.pullRequests.getCommits
                 });
             }).then((commits) => {
                 const missingTags = this.checkCommitFooterTags(commits, botConfig);
@@ -356,7 +358,7 @@ class VersionBot extends procbot_1.ProcBot {
                     }
                 }
                 if (missingTags.length === 0) {
-                    return this.dispatchToEmitter(this.githubEmitterName, {
+                    return this.dispatchToEmitter(AppHandle, {
                         data: {
                             context: 'Versionist',
                             description: 'Found all required commit footer tags',
@@ -365,7 +367,7 @@ class VersionBot extends procbot_1.ProcBot {
                             sha: head.sha,
                             state: 'success'
                         },
-                        method: this.githubApi.repos.createStatus
+                        method: this.githubAppApi.repos.createStatus
                     });
                 }
                 let tagNames = '';
@@ -375,7 +377,7 @@ class VersionBot extends procbot_1.ProcBot {
                 this.logger.log(logger_1.LogLevel.INFO, `Missing tags from accumulated commits: ${tagNames}` +
                     `for ${owner}/${name}#${pr.number}`);
                 let description = 'Missing or forbidden tags in commits, see `repository.yml`';
-                return this.dispatchToEmitter(this.githubEmitterName, {
+                return this.dispatchToEmitter(AppHandle, {
                     data: {
                         context: 'Versionist',
                         description,
@@ -384,20 +386,20 @@ class VersionBot extends procbot_1.ProcBot {
                         sha: head.sha,
                         state: 'failure'
                     },
-                    method: this.githubApi.repos.createStatus,
+                    method: this.githubAppApi.repos.createStatus,
                 });
             }).then(() => {
                 return this.checkStatuses(pr);
             }).then((checkStatus) => {
                 if (checkStatus === StatusChecks.Failed) {
                     const lastCommitTimestamp = Date.parse(lastCommit.commit.committer.date);
-                    return this.dispatchToEmitter(this.githubEmitterName, {
+                    return this.dispatchToEmitter(AppHandle, {
                         data: {
                             owner,
                             repo: name,
                             number: pr.number,
                         },
-                        method: this.githubApi.issues.getComments
+                        method: this.githubAppApi.issues.getComments
                     }).then((comments) => {
                         if (_.some(comments, (comment) => {
                             return ((comment.user.type === 'Bot') &&
@@ -411,7 +413,7 @@ class VersionBot extends procbot_1.ProcBot {
                         if (author !== committer) {
                             warningUsers += `@${committer}, `;
                         }
-                        return this.dispatchToEmitter(this.githubEmitterName, {
+                        return this.dispatchToEmitter(AppHandle, {
                             data: {
                                 body: `${warningUsers}status checks have failed for this PR. Please make appropriate ` +
                                     'changes and recommit.',
@@ -419,18 +421,18 @@ class VersionBot extends procbot_1.ProcBot {
                                 number: pr.number,
                                 repo: name,
                             },
-                            method: this.githubApi.issues.createComment,
+                            method: this.githubAppApi.issues.createComment,
                         });
                     });
                 }
             }).then(() => {
-                return this.dispatchToEmitter(this.githubEmitterName, {
+                return this.dispatchToEmitter(AppHandle, {
                     data: {
                         number: pr.number,
                         owner,
                         repo: name
                     },
-                    method: this.githubApi.issues.getIssueLabels
+                    method: this.githubAppApi.issues.getIssueLabels
                 });
             }).then((labels) => {
                 if (_.some(labels, (label) => label.name === MergeLabel)) {
@@ -473,7 +475,7 @@ class VersionBot extends procbot_1.ProcBot {
             this.logger.log(logger_1.LogLevel.INFO, `PR is ready to merge, attempting to carry out a ` +
                 `version up for ${owner}/${repo}#${pr.number}`);
             return this.retrieveConfiguration({
-                emitter: this.githubEmitter,
+                emitter: this.githubAppEmitter,
                 location: {
                     owner,
                     repo,
@@ -555,7 +557,7 @@ class VersionBot extends procbot_1.ProcBot {
                     return this.getVersionBotCommits(prInfo).then((commitMessage) => {
                         if (commitMessage) {
                             return this.retrieveConfiguration({
-                                emitter: this.githubEmitter,
+                                emitter: this.githubAppEmitter,
                                 location: {
                                     owner,
                                     repo,
@@ -594,27 +596,42 @@ class VersionBot extends procbot_1.ProcBot {
             type: 'listener',
             webhookSecret: webhook
         });
-        const ghEmitter = this.addServiceEmitter('github', {
+        const ghAppEmitter = this.addServiceEmitter('github', {
+            handle: AppHandle,
             authentication: {
                 appId: integration,
                 pem: pemString,
                 type: 'app'
             },
-            pem: pemString,
+            type: 'emitter'
+        });
+        const ghUserEmitter = this.addServiceEmitter('github', {
+            handle: UserHandle,
+            authentication: {
+                pat,
+                type: 'user'
+            },
             type: 'emitter'
         });
         if (!ghListener) {
             throw new Error("Couldn't create a Github listener");
         }
-        if (!ghEmitter) {
+        if (!ghAppEmitter) {
+            throw new Error("Couldn't create a Github emitter");
+        }
+        if (!ghUserEmitter) {
             throw new Error("Couldn't create a Github emitter");
         }
         this.githubListenerName = ghListener.serviceName;
-        this.githubEmitter = ghEmitter;
-        this.githubEmitterName = this.githubEmitter.serviceName;
-        this.githubApi = this.githubEmitter.apiHandle.github;
-        if (!this.githubApi) {
-            throw new Error('No Github API instance found');
+        this.githubAppEmitter = ghAppEmitter;
+        this.githubUserEmitter = ghAppEmitter;
+        this.githubAppApi = this.githubAppEmitter.apiHandle.github;
+        if (!this.githubAppApi) {
+            throw new Error('No Github App API instance found');
+        }
+        this.githubUserApi = this.githubAppEmitter.apiHandle.github;
+        if (!this.githubUserApi) {
+            throw new Error('No Github User API instance found');
         }
         _.forEach([
             {
@@ -659,7 +676,7 @@ class VersionBot extends procbot_1.ProcBot {
     applyVersionist(versionData) {
         return Promise.mapSeries([
             environment_1.BuildCommand('git', ['clone', `https://${versionData.authToken}:${versionData.authToken}@github.com/` +
-                    `${versionData.repoFullName}`, `${versionData.fullPath}`], { cwd: `${versionData.fullPath}`, retries: 3 }),
+                    `${versionData.repoFullName}`, `${versionData.fullPath}`], { cwd: `${versionData.fullPath}`, retries: 3, delay: 5000 }),
             environment_1.BuildCommand('git', ['checkout', `${versionData.branchName}`], { cwd: `${versionData.fullPath}` })
         ], environment_1.ExecuteCommand).then(() => {
             return fsFileExists(`${versionData.fullPath}/versionist.conf.js`)
@@ -727,13 +744,13 @@ class VersionBot extends procbot_1.ProcBot {
     }
     createCommitBlobs(repoData) {
         let newTreeSha;
-        return this.dispatchToEmitter(this.githubEmitterName, {
+        return this.dispatchToEmitter(AppHandle, {
             data: {
                 owner: repoData.owner,
                 repo: repoData.repo,
                 sha: repoData.branchName
             },
-            method: this.githubApi.gitdata.getTree
+            method: this.githubAppApi.gitdata.getTree
         }).then((treeData) => {
             return Promise.map(repoData.files, (file) => {
                 const treeEntry = _.find(treeData.tree, (entry) => {
@@ -743,14 +760,14 @@ class VersionBot extends procbot_1.ProcBot {
                     throw new Error(`Couldn't find a git tree entry for the file ${file.file}`);
                 }
                 file.treeEntry = treeEntry;
-                return this.dispatchToEmitter(this.githubEmitterName, {
+                return this.dispatchToEmitter(AppHandle, {
                     data: {
                         content: file.encoding,
                         encoding: 'base64',
                         owner: repoData.owner,
                         repo: repoData.repo
                     },
-                    method: this.githubApi.gitdata.createBlob
+                    method: this.githubAppApi.gitdata.createBlob
                 }).then((blob) => {
                     if (file.treeEntry) {
                         file.treeEntry.sha = blob.sha;
@@ -766,27 +783,27 @@ class VersionBot extends procbot_1.ProcBot {
                         type: 'blob'
                     });
                 });
-                return this.dispatchToEmitter(this.githubEmitterName, {
+                return this.dispatchToEmitter(AppHandle, {
                     data: {
                         base_tree: treeData.sha,
                         owner: repoData.owner,
                         repo: repoData.repo,
                         tree: newTree
                     },
-                    method: this.githubApi.gitdata.createTree
+                    method: this.githubAppApi.gitdata.createTree
                 });
             }).then((newTree) => {
                 newTreeSha = newTree.sha;
-                return this.dispatchToEmitter(this.githubEmitterName, {
+                return this.dispatchToEmitter(AppHandle, {
                     data: {
                         owner: repoData.owner,
                         repo: repoData.repo,
                         sha: `${repoData.branchName}`
                     },
-                    method: this.githubApi.repos.getCommit
+                    method: this.githubAppApi.repos.getCommit
                 });
             }).then((lastCommit) => {
-                return this.dispatchToEmitter(this.githubEmitterName, {
+                return this.dispatchToEmitter(AppHandle, {
                     data: {
                         committer: {
                             email: this.emailAddress,
@@ -798,10 +815,10 @@ class VersionBot extends procbot_1.ProcBot {
                         repo: repoData.repo,
                         tree: newTreeSha
                     },
-                    method: this.githubApi.gitdata.createCommit
+                    method: this.githubAppApi.gitdata.createCommit
                 });
             }).then((commit) => {
-                return this.dispatchToEmitter(this.githubEmitterName, {
+                return this.dispatchToEmitter(AppHandle, {
                     data: {
                         force: false,
                         owner: repoData.owner,
@@ -809,7 +826,7 @@ class VersionBot extends procbot_1.ProcBot {
                         repo: repoData.repo,
                         sha: commit.sha
                     },
-                    method: this.githubApi.gitdata.updateReference
+                    method: this.githubAppApi.gitdata.updateReference
                 });
             });
         });
@@ -819,16 +836,16 @@ class VersionBot extends procbot_1.ProcBot {
         const owner = pr.base.repo.owner.login;
         const repo = pr.base.repo.name;
         const prNumber = pr.number;
-        return this.dispatchToEmitter(this.githubEmitterName, {
+        return this.dispatchToEmitter(AppHandle, {
             data: {
                 commit_title: `Auto-merge for PR #${prNumber} via ${process.env.VERSIONBOT_NAME}`,
                 number: prNumber,
                 owner,
                 repo
             },
-            method: this.githubApi.pullRequests.merge
+            method: this.githubAppApi.pullRequests.merge
         }).then((mergedData) => {
-            return this.dispatchToEmitter(this.githubEmitterName, {
+            return this.dispatchToEmitter(AppHandle, {
                 data: {
                     message: data.commitVersion,
                     object: mergedData.sha,
@@ -841,48 +858,48 @@ class VersionBot extends procbot_1.ProcBot {
                     },
                     type: 'commit'
                 },
-                method: this.githubApi.gitdata.createTag
+                method: this.githubAppApi.gitdata.createTag
             });
         }).then((newTag) => {
-            return this.dispatchToEmitter(this.githubEmitterName, {
+            return this.dispatchToEmitter(AppHandle, {
                 data: {
                     owner,
                     ref: `refs/tags/${data.commitVersion}`,
                     repo,
                     sha: newTag.sha
                 },
-                method: this.githubApi.gitdata.createReference
+                method: this.githubAppApi.gitdata.createReference
             });
         }).then(() => {
-            return this.dispatchToEmitter(this.githubEmitterName, {
+            return this.dispatchToEmitter(AppHandle, {
                 data: {
                     name: MergeLabel,
                     number: prNumber,
                     owner,
                     repo
                 },
-                method: this.githubApi.issues.removeLabel
+                method: this.githubAppApi.issues.removeLabel
             });
         }).then(() => {
-            return this.dispatchToEmitter(this.githubEmitterName, {
+            return this.dispatchToEmitter(AppHandle, {
                 data: {
                     owner,
                     ref: `heads/${pr.head.ref}`,
                     repo
                 },
-                method: this.githubApi.gitdata.deleteReference
+                method: this.githubAppApi.gitdata.deleteReference
             });
         }).catch((err) => {
             if (err.message !== 'Pull Request is not mergeable') {
                 throw err;
             }
-            return this.dispatchToEmitter(this.githubEmitterName, {
+            return this.dispatchToEmitter(AppHandle, {
                 data: {
                     number: prNumber,
                     owner,
                     repo
                 },
-                method: this.githubApi.pullRequests.get
+                method: this.githubAppApi.pullRequests.get
             }).then((mergePr) => {
                 if (mergePr.state === 'open') {
                     throw err;
@@ -901,22 +918,22 @@ class VersionBot extends procbot_1.ProcBot {
             pending: StatusChecks.Pending,
             success: StatusChecks.Passed,
         };
-        return this.dispatchToEmitter(this.githubEmitterName, {
+        return this.dispatchToEmitter(AppHandle, {
             data: {
                 branch: 'master',
                 owner,
                 repo
             },
-            method: this.githubApi.repos.getProtectedBranchRequiredStatusChecks
+            method: this.githubAppApi.repos.getProtectedBranchRequiredStatusChecks
         }).then((statusContexts) => {
             protectedContexts = statusContexts.contexts;
-            return this.dispatchToEmitter(this.githubEmitterName, {
+            return this.dispatchToEmitter(AppHandle, {
                 data: {
                     ref: head.sha,
                     owner,
                     repo
                 },
-                method: this.githubApi.repos.getCombinedStatus
+                method: this.githubAppApi.repos.getCombinedStatus
             });
         }).then((statuses) => {
             const statusResults = [];
@@ -945,13 +962,13 @@ class VersionBot extends procbot_1.ProcBot {
     getVersionBotCommits(prInfo) {
         const owner = prInfo.head.repo.owner.login;
         const repo = prInfo.head.repo.name;
-        return this.dispatchToEmitter(this.githubEmitterName, {
+        return this.dispatchToEmitter(AppHandle, {
             data: {
                 owner,
                 repo,
                 sha: prInfo.head.sha
             },
-            method: this.githubApi.repos.getCommit
+            method: this.githubAppApi.repos.getCommit
         }).then((headCommit) => {
             const commit = headCommit.commit;
             const files = headCommit.files;
@@ -1075,25 +1092,25 @@ class VersionBot extends procbot_1.ProcBot {
     }
     reportError(error) {
         this.logger.alert(logger_1.AlertLevel.ERROR, error.message);
-        return this.dispatchToEmitter(this.githubEmitterName, {
+        return this.dispatchToEmitter(AppHandle, {
             data: {
                 body: error.message,
                 number: error.number,
                 owner: error.owner,
                 repo: error.repo
             },
-            method: this.githubApi.issues.createComment
+            method: this.githubAppApi.issues.createComment
         });
     }
 }
 exports.VersionBot = VersionBot;
 function createBot() {
     if (!(process.env.VERSIONBOT_NAME && process.env.VERSIONBOT_EMAIL && process.env.VERSIONBOT_INTEGRATION_ID &&
-        process.env.VERSIONBOT_PEM && process.env.VERSIONBOT_WEBHOOK_SECRET)) {
-        throw new Error(`'VERSIONBOT_NAME', 'VERSIONBOT_EMAIL', 'VERSIONBOT_INTEGRATION_ID', 'VERSIONBOT_PEM' and ` +
-            `'VERSIONBOT_WEBHOOK_SECRET environment variables need setting`);
+        process.env.VERSIONBOT_PEM && process.env.VERSIONBOT_WEBHOOK_SECRET && process.env.VERSIONBOT_USER)) {
+        throw new Error(`'VERSIONBOT_NAME', 'VERSIONBOT_EMAIL', 'VERSIONBOT_INTEGRATION_ID', 'VERSIONBOT_PEM', ` +
+            `'VERSIONBOT_WEBHOOK_SECRET' and 'VERSIONBOT_USER' environment variables need setting`);
     }
-    return new VersionBot(process.env.VERSIONBOT_INTEGRATION_ID, process.env.VERSIONBOT_NAME, process.env.VERSIONBOT_EMAIL, process.env.VERSIONBOT_PEM, process.env.VERSIONBOT_WEBHOOK_SECRET);
+    return new VersionBot(process.env.VERSIONBOT_INTEGRATION_ID, process.env.VERSIONBOT_NAME, process.env.VERSIONBOT_EMAIL, process.env.VERSIONBOT_PEM, process.env.VERSIONBOT_WEBHOOK_SECRET, process.env.VERSIONBOT_USER);
 }
 exports.createBot = createBot;
 

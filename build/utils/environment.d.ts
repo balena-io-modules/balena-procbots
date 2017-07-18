@@ -2,6 +2,7 @@ import * as Promise from 'bluebird';
 export interface CommandOptions {
     cwd?: string;
     retries?: number;
+    delay?: number;
 }
 export interface Command {
     command: string;

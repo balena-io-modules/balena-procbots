@@ -25,6 +25,8 @@ export interface CommandOptions {
 	 * one will result in no retries.
 	 */
 	retries?: number;
+	/** Delay between command attempts, in ms. */
+	delay?: number;
 }
 
 /** Used to create external command to run on the environment hosting VersionBot. */
@@ -50,7 +52,8 @@ export function BuildCommand(command: string, args?: string[], options?: Command
 	if (options) {
 		builtOptions = {
 			cwd: options.cwd,
-			retries: options.retries
+			retries: options.retries,
+			delay: options.retries
 		};
 	}
 	return {
@@ -75,6 +78,7 @@ export function BuildCommand(command: string, args?: string[], options?: Command
  */
 export function ExecuteCommand(command: Command): Promise<{}> {
 	let tries = ((command.options || {}).retries || 0) + 1;
+	let delay = (command.options || {}).delay || 1000;
 	const callCommand = (): Promise<{}> => {
 		return new Promise((resolve, reject) => {
 			const child = spawn(command.command, command.args, command.options);
@@ -100,7 +104,7 @@ export function ExecuteCommand(command: Command): Promise<{}> {
 			// Keep trying until we exhaust retries.
 			tries--;
 			if (tries > 0) {
-				return Promise.delay(1000).then(callCommand);
+				return Promise.delay(delay).then(callCommand);
 			}
 
 			throw err;

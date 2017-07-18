@@ -194,6 +194,11 @@ const MergeLabel = 'procbots/versionbot/ready-to-merge';
 /** Label to be applied for VersionBot to ignore the PR. */
 const IgnoreLabel = 'procbots/versionbot/no-checks';
 
+/** Handle for the emitter to be used as a Github App. */
+const AppHandle = 'app';
+/** Handle for the emitter to be used as a Github User. */
+const UserHandle = 'user';
+
 /**
  * The VersionBot is built on top of the ProcBot class, which does all the heavy lifting and scheduling.
  * It is designed to check for valid `versionist` commit semantics and alter (or merge) a PR
@@ -202,23 +207,27 @@ const IgnoreLabel = 'procbots/versionbot/no-checks';
 export class VersionBot extends ProcBot {
 	/** Github ServiceListener name. */
 	private githubListenerName: string;
-	/** Github ServiceEmitter name. */
-	private githubEmitterName: string;
-	/** Github ServiceEmitter. */
-	private githubEmitter: ServiceEmitter;
-	/** Instance of Github SDK API in use. */
-	private githubApi: GithubApi;
+	/** Github App ServiceEmitter. */
+	private githubAppEmitter: ServiceEmitter;
+	/** Github User ServiceEmitter. */
+	private githubUserEmitter: ServiceEmitter;
+	/** Instance of Github SDK API in use for App. */
+	private githubAppApi: GithubApi;
+	/** Instance of Github SDK API in use for User. */
+	private githubUserApi: GithubApi;
 	/** Email address used for commiting as VersionBot. */
 	private emailAddress: string;
 
 	/**
 	 * Constructs a new VersionBot instance.
-	 * @param integration  Github App ID.
+	 * @param app          Github App ID.
 	 * @param name         Name of the VersionBot.
+	 * @param email        Email ID to use for commits.
 	 * @param pemString    PEM for Github events and App login.
 	 * @param webhook      Secret webhook for validating events.
+	 * @param pat          User PAT for final merges.
 	 */
-	constructor(integration: number, name: string, email: string, pemString: string, webhook: string) {
+	constructor(integration: number, name: string, email: string, pemString: string, webhook: string, pat: string) {
 		// This is the VersionBot.
 		super(name);
 		this.emailAddress = email;
@@ -237,14 +246,24 @@ export class VersionBot extends ProcBot {
 			webhookSecret: webhook
 		});
 
-		// Create a new emitter with the right Integration ID.
-		const ghEmitter = this.addServiceEmitter('github', {
+		// Create a new emitter with the right App ID.
+		const ghAppEmitter = this.addServiceEmitter('github', {
+			handle: AppHandle,
 			authentication: {
 				appId: integration,
 				pem: pemString,
 				type: 'app'
 			},
-			pem: pemString,
+			type: 'emitter'
+		});
+
+		// Create a new emitter with the right App ID.
+		const ghUserEmitter = this.addServiceEmitter('github', {
+			handle: UserHandle,
+			authentication: {
+				pat,
+				type: 'user'
+			},
 			type: 'emitter'
 		});
 
@@ -252,17 +271,25 @@ export class VersionBot extends ProcBot {
 		if (!ghListener) {
 			throw new Error("Couldn't create a Github listener");
 		}
-		if (!ghEmitter) {
+		if (!ghAppEmitter) {
+			throw new Error("Couldn't create a Github emitter");
+		}
+		if (!ghUserEmitter) {
 			throw new Error("Couldn't create a Github emitter");
 		}
 		this.githubListenerName = ghListener.serviceName;
-		this.githubEmitter = ghEmitter;
-		this.githubEmitterName = this.githubEmitter.serviceName;
+		this.githubAppEmitter = ghAppEmitter;
+		this.githubUserEmitter = ghAppEmitter;
 
-		// Github API handle
-		this.githubApi = (<GithubHandle>this.githubEmitter.apiHandle).github;
-		if (!this.githubApi) {
-			throw new Error('No Github API instance found');
+		// Github App API handle, used generally for most ops.
+		this.githubAppApi = (<GithubHandle>this.githubAppEmitter.apiHandle).github;
+		if (!this.githubAppApi) {
+			throw new Error('No Github App API instance found');
+		}
+		// Github User API handle, used for merges.
+		this.githubUserApi = (<GithubHandle>this.githubAppEmitter.apiHandle).github;
+		if (!this.githubUserApi) {
+			throw new Error('No Github User API instance found');
 		}
 
 		// We have two different WorkerMethods here:
@@ -337,13 +364,13 @@ export class VersionBot extends ProcBot {
 		// to get every open PR on a base to determine the right PR based on the
 		// head SHA. Unfortunately.
 		// We *only* work on open states.
-		return this.dispatchToEmitter(this.githubEmitterName, {
+		return this.dispatchToEmitter(AppHandle, {
 			data: {
 				owner,
 				repo,
 				state: 'open'
 			},
-			method: this.githubApi.pullRequests.getAll
+			method: this.githubAppApi.pullRequests.getAll
 		}).then((foundPrs: GithubApiTypes.PullRequest[][]) => {
 			const prs = _.flatten(foundPrs);
 
@@ -381,13 +408,13 @@ export class VersionBot extends ProcBot {
 				return Promise.filter(prEvents, (prEvent) => {
 					const pr: GithubApiTypes.PullRequest = prEvent.cookedEvent.data.pull_request;
 
-					return this.dispatchToEmitter(this.githubEmitterName, {
+					return this.dispatchToEmitter(AppHandle, {
 						data: {
 							number: pr.number,
 							owner: pr.base.repo.owner.login,
 							repo: pr.base.repo.name,
 						},
-						method: this.githubApi.issues.getIssueLabels
+						method: this.githubAppApi.issues.getIssueLabels
 					}).then((labels: GithubApiTypes.IssueLabel[]) => {
 						if (!_.every(labels, (label) => label.name !== IgnoreLabel)) {
 							this.logger.log(LogLevel.DEBUG,
@@ -441,13 +468,13 @@ export class VersionBot extends ProcBot {
 		generateWaffleReference(pr.body);
 
 		// Now look through all the commits in the PR. Do the same thing.
-		return this.dispatchToEmitter(this.githubEmitterName, {
+		return this.dispatchToEmitter(AppHandle, {
 			data: {
 				number: prNumber,
 				owner,
 				repo,
 			},
-			method: this.githubApi.pullRequests.getCommits
+			method: this.githubAppApi.pullRequests.getCommits
 		}).then((commits: GithubApiTypes.Commit[]) => {
 			// Go through all the commits. We're looking for, at a minimum, a 'change-type:' tag.
 			for (let commit of commits) {
@@ -471,14 +498,14 @@ export class VersionBot extends ProcBot {
 
 			// Now update the PR description if we have extra changes.
 			if (body !== pr.body) {
-				return this.dispatchToEmitter(this.githubEmitterName, {
+				return this.dispatchToEmitter(AppHandle, {
 					data: {
 						body,
 						number: prNumber,
 						owner,
 						repo,
 					},
-					method: this.githubApi.pullRequests.update
+					method: this.githubAppApi.pullRequests.update
 				});
 			}
 		});
@@ -510,7 +537,7 @@ export class VersionBot extends ProcBot {
 
 		// Get the reviewers for the PR.
 		return this.retrieveConfiguration({
-			emitter: this.githubEmitter,
+			emitter: this.githubAppEmitter,
 			location: {
 				owner,
 				repo,
@@ -520,13 +547,13 @@ export class VersionBot extends ProcBot {
 			approvedMaintainers = this.stripPRAuthor((config || {}).maintainers || null, pr) || [];
 			approvedReviewers = this.stripPRAuthor((config || {}).reviewers || null, pr) || [];
 
-			return this.dispatchToEmitter(this.githubEmitterName, {
+			return this.dispatchToEmitter(AppHandle, {
 				data: {
 					number: pr.number,
 					owner,
 					repo
 				},
-				method: this.githubApi.pullRequests.get
+				method: this.githubAppApi.pullRequests.get
 			});
 		}).then((pullRequest: GithubApiTypes.PullRequest) => {
 			// Look at the reviewers, create a list of configured reviewers that were not added
@@ -548,14 +575,14 @@ export class VersionBot extends ProcBot {
 				});
 				reviewerMessage += ReviewerAddMessage;
 
-				return this.dispatchToEmitter(this.githubEmitterName, {
+				return this.dispatchToEmitter(AppHandle, {
 					data: {
 						owner,
 						repo,
 						number: pr.number,
 						body: reviewerMessage
 					},
-					method: this.githubApi.issues.createComment
+					method: this.githubAppApi.issues.createComment
 				});
 			}
 		});
@@ -581,7 +608,7 @@ export class VersionBot extends ProcBot {
 
 		// Get the reviews for the PR.
 		return this.retrieveConfiguration({
-			emitter: this.githubEmitter,
+			emitter: this.githubAppEmitter,
 			location: {
 				owner,
 				repo,
@@ -590,13 +617,13 @@ export class VersionBot extends ProcBot {
 		}).then((config: VersionBotConfiguration) => {
 			botConfig = config;
 
-			return this.dispatchToEmitter(this.githubEmitterName, {
+			return this.dispatchToEmitter(AppHandle, {
 				data: {
 					number: pr.number,
 					owner,
 					repo
 				},
-				method: this.githubApi.pullRequests.getReviews
+				method: this.githubAppApi.pullRequests.getReviews
 			});
 		}).then((reviews: GithubApiTypes.Review[]) => {
 			// Zero is a falsey value, so we'll automatically catch that here.
@@ -691,7 +718,7 @@ export class VersionBot extends ProcBot {
 
 			// Finally set the reviewer status. This is a count of how many *valid* approved reviews have
 			// been seen against the number required.
-			return this.dispatchToEmitter(this.githubEmitterName, {
+			return this.dispatchToEmitter(AppHandle, {
 				data: {
 					context: 'Reviewers',
 					description: status,
@@ -700,7 +727,7 @@ export class VersionBot extends ProcBot {
 					sha: pr.head.sha,
 					state: approvedPR ? 'success' : 'failure'
 				},
-				method: this.githubApi.repos.createStatus
+				method: this.githubAppApi.repos.createStatus
 			});
 		});
 	}
@@ -738,7 +765,7 @@ export class VersionBot extends ProcBot {
 
 		// Get the configuration, if it exists, for this repo.
 		return this.retrieveConfiguration({
-			emitter: this.githubEmitter,
+			emitter: this.githubAppEmitter,
 			location: {
 				owner,
 				repo: name,
@@ -748,13 +775,13 @@ export class VersionBot extends ProcBot {
 			botConfig = config;
 
 			// Get all the commits on the repo.
-			return this.dispatchToEmitter(this.githubEmitterName, {
+			return this.dispatchToEmitter(AppHandle, {
 				data: {
 					owner,
 					number: pr.number,
 					repo: name,
 				},
-				method: this.githubApi.pullRequests.getCommits
+				method: this.githubAppApi.pullRequests.getCommits
 			});
 		}).then((commits: GithubApiTypes.Commit[]) => {
 			// For each tag we find, we adhere to some rules:
@@ -771,7 +798,7 @@ export class VersionBot extends ProcBot {
 			}
 
 			if (missingTags.length === 0) {
-				return this.dispatchToEmitter(this.githubEmitterName, {
+				return this.dispatchToEmitter(AppHandle, {
 					data: {
 						context: 'Versionist',
 						description: 'Found all required commit footer tags',
@@ -780,7 +807,7 @@ export class VersionBot extends ProcBot {
 						sha: head.sha,
 						state: 'success'
 					},
-					method: this.githubApi.repos.createStatus
+					method: this.githubAppApi.repos.createStatus
 				});
 			}
 
@@ -794,7 +821,7 @@ export class VersionBot extends ProcBot {
 
 			// Go through the tags and compose a message.
 			let description = 'Missing or forbidden tags in commits, see `repository.yml`';
-			return this.dispatchToEmitter(this.githubEmitterName, {
+			return this.dispatchToEmitter(AppHandle, {
 				data: {
 					context: 'Versionist',
 					description,
@@ -803,7 +830,7 @@ export class VersionBot extends ProcBot {
 					sha: head.sha,
 					state: 'failure'
 				},
-				method: this.githubApi.repos.createStatus,
+				method: this.githubAppApi.repos.createStatus,
 			});
 		}).then(() => {
 			// Check statuses (including Versionist) on the PR.
@@ -818,13 +845,13 @@ export class VersionBot extends ProcBot {
 				// comment telling the author of a failure. If there has, then
 				// it's implicit that we made a comment.
 				const lastCommitTimestamp = Date.parse(lastCommit.commit.committer.date);
-				return this.dispatchToEmitter(this.githubEmitterName, {
+				return this.dispatchToEmitter(AppHandle, {
 					data: {
 						owner,
 						repo: name,
 						number: pr.number,
 					},
-					method: this.githubApi.issues.getComments
+					method: this.githubAppApi.issues.getComments
 				}).then((comments: GithubApiTypes.Comment[]) => {
 					// Check for any comments that come *after* the last commit
 					// timestamp and is a Bot.
@@ -842,7 +869,7 @@ export class VersionBot extends ProcBot {
 					if (author !== committer) {
 						warningUsers += `@${committer}, `;
 					}
-					return this.dispatchToEmitter(this.githubEmitterName, {
+					return this.dispatchToEmitter(AppHandle, {
 						data: {
 							body: `${warningUsers}status checks have failed for this PR. Please make appropriate `+
 								'changes and recommit.',
@@ -850,19 +877,19 @@ export class VersionBot extends ProcBot {
 							number: pr.number,
 							repo: name,
 						},
-						method: this.githubApi.issues.createComment,
+						method: this.githubAppApi.issues.createComment,
 					});
 				});
 			}
 		}).then(() => {
 			// Get the labels for the PR.
-			return this.dispatchToEmitter(this.githubEmitterName, {
+			return this.dispatchToEmitter(AppHandle, {
 				data: {
 					number: pr.number,
 					owner,
 					repo: name
 				},
-				method: this.githubApi.issues.getIssueLabels
+				method: this.githubAppApi.issues.getIssueLabels
 			});
 		}).then((labels: GithubApiTypes.IssueLabel[]) => {
 			// If we don't have a relevant label for merging, we don't proceed.
@@ -942,7 +969,7 @@ export class VersionBot extends ProcBot {
 
 		// Get the reviews for the PR.
 		return this.retrieveConfiguration({
-			emitter: this.githubEmitter,
+			emitter: this.githubAppEmitter,
 			location: {
 				owner,
 				repo,
@@ -1069,7 +1096,7 @@ export class VersionBot extends ProcBot {
 		return Promise.mapSeries([
 			BuildCommand('git', ['clone', `https://${versionData.authToken}:${versionData.authToken}@github.com/` +
 				`${versionData.repoFullName}`, `${versionData.fullPath}`],
-				{ cwd: `${versionData.fullPath}`, retries: 3 }),
+				{ cwd: `${versionData.fullPath}`, retries: 3, delay: 5000 }),
 			BuildCommand('git', ['checkout', `${versionData.branchName}`], { cwd: `${versionData.fullPath}` })
 		], ExecuteCommand).then(() => {
 			// Test the repo, we want to see if there's a local `versionist.conf.js`.
@@ -1167,13 +1194,13 @@ export class VersionBot extends ProcBot {
 		let newTreeSha: string;
 
 		// Get the top level hierarchy for the branch. It includes the files we need.
-		return this.dispatchToEmitter(this.githubEmitterName, {
+		return this.dispatchToEmitter(AppHandle, {
 			data: {
 				owner: repoData.owner,
 				repo: repoData.repo,
 				sha: repoData.branchName
 			},
-			method: this.githubApi.gitdata.getTree
+			method: this.githubAppApi.gitdata.getTree
 		}).then((treeData: GithubApiTypes.Tree) => {
 			// We need to save the tree data, we'll be modifying it for updates in a moment.
 
@@ -1190,14 +1217,14 @@ export class VersionBot extends ProcBot {
 				}
 
 				file.treeEntry = treeEntry;
-				return this.dispatchToEmitter(this.githubEmitterName, {
+				return this.dispatchToEmitter(AppHandle, {
 					data: {
 						content: file.encoding,
 						encoding: 'base64',
 						owner: repoData.owner,
 						repo: repoData.repo
 					},
-					method: this.githubApi.gitdata.createBlob
+					method: this.githubAppApi.gitdata.createBlob
 				}).then((blob: GithubApiTypes.Blob) => {
 					if (file.treeEntry) {
 						file.treeEntry.sha = blob.sha;
@@ -1218,30 +1245,30 @@ export class VersionBot extends ProcBot {
 				});
 
 				// Now write this new tree and get back an SHA for it.
-				return this.dispatchToEmitter(this.githubEmitterName, {
+				return this.dispatchToEmitter(AppHandle, {
 					data: {
 						base_tree: treeData.sha,
 						owner: repoData.owner,
 						repo: repoData.repo,
 						tree: newTree
 					},
-					method: this.githubApi.gitdata.createTree
+					method: this.githubAppApi.gitdata.createTree
 				});
 			}).then((newTree: GithubApiTypes.Tree) => {
 				newTreeSha = newTree.sha;
 
 				// Get the last commit for the branch.
-				return this.dispatchToEmitter(this.githubEmitterName, {
+				return this.dispatchToEmitter(AppHandle, {
 					data: {
 						owner: repoData.owner,
 						repo: repoData.repo,
 						sha: `${repoData.branchName}`
 					},
-					method: this.githubApi.repos.getCommit
+					method: this.githubAppApi.repos.getCommit
 				});
 			}).then((lastCommit: GithubApiTypes.Commit) => {
 				// We have new tree object, we now want to create a new commit referencing it.
-				return this.dispatchToEmitter(this.githubEmitterName, {
+				return this.dispatchToEmitter(AppHandle, {
 					data: {
 						committer: {
 							email: this.emailAddress,
@@ -1253,12 +1280,12 @@ export class VersionBot extends ProcBot {
 						repo: repoData.repo,
 						tree: newTreeSha
 					},
-					method: this.githubApi.gitdata.createCommit
+					method: this.githubAppApi.gitdata.createCommit
 				});
 			}).then((commit: GithubApiTypes.Commit) => {
 				// Finally, we now update the reference to the branch that's changed.
 				// This should kick off the change for status.
-				return this.dispatchToEmitter(this.githubEmitterName, {
+				return this.dispatchToEmitter(AppHandle, {
 					data: {
 						force: false, // Not that I'm paranoid...
 						owner: repoData.owner,
@@ -1266,7 +1293,7 @@ export class VersionBot extends ProcBot {
 						repo: repoData.repo,
 						sha: commit.sha
 					},
-					method: this.githubApi.gitdata.updateReference
+					method: this.githubAppApi.gitdata.updateReference
 				});
 			});
 		});
@@ -1285,18 +1312,18 @@ export class VersionBot extends ProcBot {
 		const repo = pr.base.repo.name;
 		const prNumber = pr.number;
 
-		return this.dispatchToEmitter(this.githubEmitterName, {
+		return this.dispatchToEmitter(AppHandle, {
 			data: {
 				commit_title: `Auto-merge for PR #${prNumber} via ${process.env.VERSIONBOT_NAME}`,
 				number: prNumber,
 				owner,
 				repo
 			},
-			method: this.githubApi.pullRequests.merge
+			method: this.githubAppApi.pullRequests.merge
 		}).then((mergedData: GithubApiTypes.Merge) => {
 			// We get an SHA back when the merge occurs, and we use this for a tag.
 			// Note date gets filed in automatically by API.
-			return this.dispatchToEmitter(this.githubEmitterName, {
+			return this.dispatchToEmitter(AppHandle, {
 				data: {
 					message: data.commitVersion,
 					object: mergedData.sha,
@@ -1309,41 +1336,41 @@ export class VersionBot extends ProcBot {
 					},
 					type: 'commit'
 				},
-				method: this.githubApi.gitdata.createTag
+				method: this.githubAppApi.gitdata.createTag
 			});
 		}).then((newTag: GithubApiTypes.Tag) => {
 			// We now have a SHA back that contains the tag object.
 			// Create a new reference based on it.
-			return this.dispatchToEmitter(this.githubEmitterName, {
+			return this.dispatchToEmitter(AppHandle, {
 				data: {
 					owner,
 					ref: `refs/tags/${data.commitVersion}`,
 					repo,
 					sha: newTag.sha
 				},
-				method: this.githubApi.gitdata.createReference
+				method: this.githubAppApi.gitdata.createReference
 			});
 		}).then(() => {
 			// Delete the merge label. This will ensure future updates to the PR are
 			// ignored by us.
-			return this.dispatchToEmitter(this.githubEmitterName, {
+			return this.dispatchToEmitter(AppHandle, {
 				data: {
 					name: MergeLabel,
 					number: prNumber,
 					owner,
 					repo
 				},
-				method: this.githubApi.issues.removeLabel
+				method: this.githubAppApi.issues.removeLabel
 			});
 		}).then(() => {
 			// Finally delete this branch.
-			return this.dispatchToEmitter(this.githubEmitterName, {
+			return this.dispatchToEmitter(AppHandle, {
 				data: {
 					owner,
 					ref: `heads/${pr.head.ref}`,
 					repo
 				},
-				method: this.githubApi.gitdata.deleteReference
+				method: this.githubAppApi.gitdata.deleteReference
 			});
 		}).catch((err: Error) => {
 			// Sometimes a state can occur where a label attach occurs at the same time as a final status
@@ -1358,13 +1385,13 @@ export class VersionBot extends ProcBot {
 			// mergeable show up as some sort of status in the UI. However, just in case,
 			// here's a check to ensure the PR is still open. If it is, raise a
 			// flag regardless of why.
-			return this.dispatchToEmitter(this.githubEmitterName, {
+			return this.dispatchToEmitter(AppHandle, {
 				data: {
 					number: prNumber,
 					owner,
 					repo
 				},
-				method: this.githubApi.pullRequests.get
+				method: this.githubAppApi.pullRequests.get
 			}).then((mergePr: GithubApiTypes.PullRequest) => {
 				if (mergePr.state === 'open') {
 					throw err;
@@ -1394,24 +1421,24 @@ export class VersionBot extends ProcBot {
 		};
 
 		// Now get all of the statuses required for the master branch.
-		return this.dispatchToEmitter(this.githubEmitterName, {
+		return this.dispatchToEmitter(AppHandle, {
 			data: {
 				branch: 'master',
 				owner,
 				repo
 			},
-			method: this.githubApi.repos.getProtectedBranchRequiredStatusChecks
+			method: this.githubAppApi.repos.getProtectedBranchRequiredStatusChecks
 		}).then((statusContexts: GithubApiTypes.RequiredStatusChecks) => {
 			protectedContexts = statusContexts.contexts;
 
 			// Get the statuses combined for this PR branch.
-			return this.dispatchToEmitter(this.githubEmitterName, {
+			return this.dispatchToEmitter(AppHandle, {
 				data: {
 					ref: head.sha,
 					owner,
 					repo
 				},
-				method: this.githubApi.repos.getCombinedStatus
+				method: this.githubAppApi.repos.getCombinedStatus
 			});
 		}).then((statuses: GithubApiTypes.CombinedStatus) => {
 			// Contexts need to be checked specifically.
@@ -1479,13 +1506,13 @@ export class VersionBot extends ProcBot {
 		const repo = prInfo.head.repo.name;
 
 		// Get the list of commits for the PR, then get the very last commit SHA.
-		return this.dispatchToEmitter(this.githubEmitterName, {
+		return this.dispatchToEmitter(AppHandle, {
 			data: {
 				owner,
 				repo,
 				sha: prInfo.head.sha
 			},
-			method: this.githubApi.repos.getCommit
+			method: this.githubAppApi.repos.getCommit
 		}).then((headCommit: GithubApiTypes.Commit) => {
 			const commit = headCommit.commit;
 			const files = headCommit.files;
@@ -1524,7 +1551,7 @@ export class VersionBot extends ProcBot {
 						// Ensure that the labeler was authorised. We do this here, else we could
 						// end up spamming the PR with errors.
 						return this.retrieveConfiguration({
-							emitter: this.githubEmitter,
+							emitter: this.githubAppEmitter,
 							location: {
 								owner,
 								repo,
@@ -1772,14 +1799,14 @@ export class VersionBot extends ProcBot {
 		this.logger.alert(AlertLevel.ERROR, error.message);
 
 		// Post a comment to the relevant PR, also detailing the issue.
-		return this.dispatchToEmitter(this.githubEmitterName, {
+		return this.dispatchToEmitter(AppHandle, {
 			data: {
 				body: error.message,
 				number: error.number,
 				owner: error.owner,
 				repo: error.repo
 			},
-			method: this.githubApi.issues.createComment
+			method: this.githubAppApi.issues.createComment
 		});
 	}
 }
@@ -1789,11 +1816,12 @@ export class VersionBot extends ProcBot {
  */
 export function createBot(): VersionBot {
 	if (!(process.env.VERSIONBOT_NAME && process.env.VERSIONBOT_EMAIL && process.env.VERSIONBOT_INTEGRATION_ID &&
-	process.env.VERSIONBOT_PEM && process.env.VERSIONBOT_WEBHOOK_SECRET)) {
-		throw new Error(`'VERSIONBOT_NAME', 'VERSIONBOT_EMAIL', 'VERSIONBOT_INTEGRATION_ID', 'VERSIONBOT_PEM' and ` +
-			`'VERSIONBOT_WEBHOOK_SECRET environment variables need setting`);
+	process.env.VERSIONBOT_PEM && process.env.VERSIONBOT_WEBHOOK_SECRET && process.env.VERSIONBOT_USER)) {
+		throw new Error(`'VERSIONBOT_NAME', 'VERSIONBOT_EMAIL', 'VERSIONBOT_INTEGRATION_ID', 'VERSIONBOT_PEM', ` +
+			`'VERSIONBOT_WEBHOOK_SECRET' and 'VERSIONBOT_USER' environment variables need setting`);
 	}
 
 	return new VersionBot(process.env.VERSIONBOT_INTEGRATION_ID, process.env.VERSIONBOT_NAME,
-	process.env.VERSIONBOT_EMAIL, process.env.VERSIONBOT_PEM, process.env.VERSIONBOT_WEBHOOK_SECRET);
+	process.env.VERSIONBOT_EMAIL, process.env.VERSIONBOT_PEM, process.env.VERSIONBOT_WEBHOOK_SECRET,
+	process.env.VERSIONBOT_USER);
 }

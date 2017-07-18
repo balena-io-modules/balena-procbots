@@ -284,27 +284,6 @@ class GithubService extends worker_client_1.WorkerClient {
         });
     }
     authenticate() {
-<<<<<<< HEAD
-        const privatePem = new Buffer(this.pem, 'base64').toString();
-        const payload = {
-            exp: Math.floor((Date.now() / 1000)) + (10 * 50),
-            iat: Math.floor((Date.now() / 1000)),
-            iss: this.integrationId
-        };
-        const jwToken = jwt.sign(payload, privatePem, { algorithm: 'RS256' });
-        const installationsOpts = {
-            headers: {
-                Accept: 'application/vnd.github.machine-man-preview+json',
-                Authorization: `Bearer ${jwToken}`,
-                'User-Agent': 'request'
-            },
-            json: true,
-            url: 'https://api.github.com/integration/installations'
-        };
-        return request.get(installationsOpts).then((installations) => {
-            const tokenUrl = installations[0].access_tokens_url;
-            const tokenOpts = {
-=======
         let tokenPromise;
         if (this.appId) {
             const privatePem = new Buffer(this.pem, 'base64').toString();
@@ -315,7 +294,6 @@ class GithubService extends worker_client_1.WorkerClient {
             };
             const jwToken = jwt.sign(payload, privatePem, { algorithm: 'RS256' });
             const appOpts = {
->>>>>>> Initial WIP.
                 headers: {
                     Accept: 'application/vnd.github.machine-man-preview+json',
                     Authorization: `Bearer ${jwToken}`,

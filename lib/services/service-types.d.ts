@@ -102,11 +102,17 @@ export interface ServiceAPIHandle {
 	[index: string]: object;
 }
 
+/** Default Service base. */
+export interface ServiceBase {
+	/** Unique handle that identifies the instance of the Service. */
+	handle?: string;
+}
+
 /**
  * A ServiceListener has a name and a method allowing a client to register interest in
  * an event along with service specific details.
  */
-export interface ServiceListener {
+export interface ServiceListener extends ServiceBase {
 	/** Getter for the SDK instance handle, if any. */
 	apiHandle: ServiceAPIHandle | void;
 	/** Name of the ServiceListener. */
@@ -122,7 +128,7 @@ export interface ServiceListener {
  * A ServiceEmitter has a name and a `sendData()` method allowing client to send data
  * that is to be sent to the relevant service.
  */
-export interface ServiceEmitter {
+export interface ServiceEmitter extends ServiceBase {
 	/** Getter for the SDK instance handle, if any. */
 	apiHandle: ServiceAPIHandle | void;
 	/** Name of the ServiceEmitter. */

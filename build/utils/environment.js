@@ -7,7 +7,8 @@ function BuildCommand(command, args, options) {
     if (options) {
         builtOptions = {
             cwd: options.cwd,
-            retries: options.retries
+            retries: options.retries,
+            delay: options.retries
         };
     }
     return {
@@ -20,6 +21,7 @@ exports.BuildCommand = BuildCommand;
 ;
 function ExecuteCommand(command) {
     let tries = ((command.options || {}).retries || 0) + 1;
+    let delay = (command.options || {}).delay || 1000;
     const callCommand = () => {
         return new Promise((resolve, reject) => {
             const child = child_process_1.spawn(command.command, command.args, command.options);
@@ -42,7 +44,7 @@ function ExecuteCommand(command) {
         }).catch((err) => {
             tries--;
             if (tries > 0) {
-                return Promise.delay(1000).then(callCommand);
+                return Promise.delay(delay).then(callCommand);
             }
             throw err;
         });

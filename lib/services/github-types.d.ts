@@ -18,8 +18,8 @@ import * as Promise from 'bluebird';
 import * as GithubApi from 'github';
 import TypedError = require('typed-error');
 import { ConfigurationLocation, ProcBotConfiguration } from '../framework/procbot-types';
-import { ServiceAPIHandle, ServiceEmitContext, ServiceEvent, ServiceListenerMethod, ServiceRegistration,
-	ServiceType } from './service-types';
+import { ServiceAPIHandle, ServiceBase, ServiceEmitContext, ServiceEvent,
+	ServiceListenerMethod, ServiceRegistration, ServiceType } from './service-types';
 
 /** The Github service can be used as either an Integration or a User. */
 type GithubLoginType = 'app' | 'pat';
@@ -43,7 +43,7 @@ export interface GithubPAT {
 }
 
 /** Base constructor object required to create a GithubListener or GithubEmitter. */
-export interface GithubConstructor {
+export interface GithubConstructor extends ServiceBase {
 	/** Client name (eg. VersionBot). */
 	client: string;
 	/** Whether to run the service as an App or a User. */

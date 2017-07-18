@@ -104,10 +104,11 @@
 							<ul class="tsd-index-list">
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-protected"><a href="_bots_versionbot_.versionbot.html#_botname" class="tsd-kind-icon">_botname</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="_bots_versionbot_.versionbot.html#emailaddress" class="tsd-kind-icon">email<wbr>Address</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="_bots_versionbot_.versionbot.html#githubapi" class="tsd-kind-icon">github<wbr>Api</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="_bots_versionbot_.versionbot.html#githubemitter" class="tsd-kind-icon">github<wbr>Emitter</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="_bots_versionbot_.versionbot.html#githubemittername" class="tsd-kind-icon">github<wbr>Emitter<wbr>Name</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="_bots_versionbot_.versionbot.html#githubappapi" class="tsd-kind-icon">github<wbr>App<wbr>Api</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="_bots_versionbot_.versionbot.html#githubappemitter" class="tsd-kind-icon">github<wbr>App<wbr>Emitter</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="_bots_versionbot_.versionbot.html#githublistenername" class="tsd-kind-icon">github<wbr>Listener<wbr>Name</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="_bots_versionbot_.versionbot.html#githubuserapi" class="tsd-kind-icon">github<wbr>User<wbr>Api</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="_bots_versionbot_.versionbot.html#githubuseremitter" class="tsd-kind-icon">github<wbr>User<wbr>Emitter</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-protected"><a href="_bots_versionbot_.versionbot.html#logger" class="tsd-kind-icon">logger</a></li>
 							</ul>
 						</section>
@@ -150,14 +151,14 @@
 					<a name="constructor" class="tsd-anchor"></a>
 					<h3>constructor</h3>
 					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class tsd-is-overwrite">
-						<li class="tsd-signature tsd-kind-icon">new <wbr>Version<wbr>Bot<span class="tsd-signature-symbol">(</span>integration<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, name<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, email<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, pemString<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, webhook<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_bots_versionbot_.versionbot.html" class="tsd-signature-type">VersionBot</a></li>
+						<li class="tsd-signature tsd-kind-icon">new <wbr>Version<wbr>Bot<span class="tsd-signature-symbol">(</span>integration<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span>, name<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, email<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, pemString<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, webhook<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, pat<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_bots_versionbot_.versionbot.html" class="tsd-signature-type">VersionBot</a></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<p>Overrides <a href="_framework_procbot_.procbot.html">ProcBot</a>.<a href="_framework_procbot_.procbot.html#constructor">constructor</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L212">bots/versionbot.ts:212</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L219">bots/versionbot.ts:219</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -169,11 +170,6 @@
 							<ul class="tsd-parameters">
 								<li>
 									<h5>integration: <span class="tsd-signature-type">number</span></h5>
-									<div class="tsd-comment tsd-typography">
-										<div class="lead">
-											<p>Github App ID.</p>
-										</div>
-									</div>
 								</li>
 								<li>
 									<h5>name: <span class="tsd-signature-type">string</span></h5>
@@ -185,6 +181,11 @@
 								</li>
 								<li>
 									<h5>email: <span class="tsd-signature-type">string</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<div class="lead">
+											<p>Email ID to use for commits.</p>
+										</div>
+									</div>
 								</li>
 								<li>
 									<h5>pemString: <span class="tsd-signature-type">string</span></h5>
@@ -199,6 +200,14 @@
 									<div class="tsd-comment tsd-typography">
 										<div class="lead">
 											<p>Secret webhook for validating events.</p>
+										</div>
+									</div>
+								</li>
+								<li>
+									<h5>pat: <span class="tsd-signature-type">string</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<div class="lead">
+											<p>User PAT for final merges.</p>
 										</div>
 									</div>
 								</li>
@@ -217,7 +226,7 @@
 					<aside class="tsd-sources">
 						<p>Inherited from <a href="_framework_procbot_.procbot.html">ProcBot</a>.<a href="_framework_procbot_.procbot.html#_botname">_botname</a></p>
 						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L37">framework/procbot.ts:37</a></li>
+							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L47">framework/procbot.ts:47</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -227,7 +236,7 @@
 					<div class="tsd-signature tsd-kind-icon">email<wbr>Address<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L212">bots/versionbot.ts:212</a></li>
+							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L219">bots/versionbot.ts:219</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -237,47 +246,32 @@
 					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private">
-					<a name="githubapi" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagPrivate">Private</span> github<wbr>Api</h3>
-					<div class="tsd-signature tsd-kind-icon">github<wbr>Api<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">GithubApi</span></div>
+					<a name="githubappapi" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagPrivate">Private</span> github<wbr>App<wbr>Api</h3>
+					<div class="tsd-signature tsd-kind-icon">github<wbr>App<wbr>Api<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">GithubApi</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L210">bots/versionbot.ts:210</a></li>
+							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L215">bots/versionbot.ts:215</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
 						<div class="lead">
-							<p>Instance of Github SDK API in use.</p>
+							<p>Instance of Github SDK API in use for App.</p>
 						</div>
 					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private">
-					<a name="githubemitter" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagPrivate">Private</span> github<wbr>Emitter</h3>
-					<div class="tsd-signature tsd-kind-icon">github<wbr>Emitter<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">ServiceEmitter</span></div>
+					<a name="githubappemitter" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagPrivate">Private</span> github<wbr>App<wbr>Emitter</h3>
+					<div class="tsd-signature tsd-kind-icon">github<wbr>App<wbr>Emitter<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">ServiceEmitter</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L208">bots/versionbot.ts:208</a></li>
+							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L211">bots/versionbot.ts:211</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
 						<div class="lead">
-							<p>Github ServiceEmitter.</p>
-						</div>
-					</div>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private">
-					<a name="githubemittername" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagPrivate">Private</span> github<wbr>Emitter<wbr>Name</h3>
-					<div class="tsd-signature tsd-kind-icon">github<wbr>Emitter<wbr>Name<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L206">bots/versionbot.ts:206</a></li>
-						</ul>
-					</aside>
-					<div class="tsd-comment tsd-typography">
-						<div class="lead">
-							<p>Github ServiceEmitter name.</p>
+							<p>Github App ServiceEmitter.</p>
 						</div>
 					</div>
 				</section>
@@ -287,12 +281,42 @@
 					<div class="tsd-signature tsd-kind-icon">github<wbr>Listener<wbr>Name<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L204">bots/versionbot.ts:204</a></li>
+							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L209">bots/versionbot.ts:209</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
 						<div class="lead">
 							<p>Github ServiceListener name.</p>
+						</div>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private">
+					<a name="githubuserapi" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagPrivate">Private</span> github<wbr>User<wbr>Api</h3>
+					<div class="tsd-signature tsd-kind-icon">github<wbr>User<wbr>Api<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">GithubApi</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L217">bots/versionbot.ts:217</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Instance of Github SDK API in use for User.</p>
+						</div>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private">
+					<a name="githubuseremitter" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagPrivate">Private</span> github<wbr>User<wbr>Emitter</h3>
+					<div class="tsd-signature tsd-kind-icon">github<wbr>User<wbr>Emitter<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">ServiceEmitter</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L213">bots/versionbot.ts:213</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Github User ServiceEmitter.</p>
 						</div>
 					</div>
 				</section>
@@ -303,7 +327,7 @@
 					<aside class="tsd-sources">
 						<p>Inherited from <a href="_framework_procbot_.procbot.html">ProcBot</a>.<a href="_framework_procbot_.procbot.html#logger">logger</a></p>
 						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L38">framework/procbot.ts:38</a></li>
+							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L48">framework/procbot.ts:48</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -320,7 +344,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L496">bots/versionbot.ts:496</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L523">bots/versionbot.ts:523</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -365,13 +389,13 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_framework_procbot_.procbot.html">ProcBot</a>.<a href="_framework_procbot_.procbot.html#addserviceemitter">addServiceEmitter</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L135">framework/procbot.ts:135</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L139">framework/procbot.ts:139</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
 									<p>Add a new type of ServiceEmitter to the client.
-									Should the ServiceEmitter already exist on the client, this will do nothing.</p>
+									Should the ServiceEmitter already exist on the client with the handle/name, this will do nothing.</p>
 								</div>
 							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -405,13 +429,13 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_framework_procbot_.procbot.html">ProcBot</a>.<a href="_framework_procbot_.procbot.html#addservicelistener">addServiceListener</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L116">framework/procbot.ts:116</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L127">framework/procbot.ts:127</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
 									<p>Add a new type of ServiceListener to the client.
-									Should the ServiceListener already exist on the client, this will do nothing.</p>
+									Should the ServiceListener already exist on the client with the handle/name, this will do nothing.</p>
 								</div>
 							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -444,7 +468,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1058">bots/versionbot.ts:1058</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1085">bots/versionbot.ts:1085</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -476,7 +500,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1609">bots/versionbot.ts:1609</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1636">bots/versionbot.ts:1636</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -515,7 +539,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L719">bots/versionbot.ts:719</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L746">bots/versionbot.ts:746</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -563,7 +587,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L573">bots/versionbot.ts:573</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L600">bots/versionbot.ts:600</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -607,7 +631,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1382">bots/versionbot.ts:1382</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1409">bots/versionbot.ts:1409</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -639,7 +663,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1586">bots/versionbot.ts:1586</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1613">bots/versionbot.ts:1613</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -681,7 +705,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L414">bots/versionbot.ts:414</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L441">bots/versionbot.ts:441</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -724,7 +748,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1161">bots/versionbot.ts:1161</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1188">bots/versionbot.ts:1188</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -757,7 +781,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_framework_procbot_.procbot.html">ProcBot</a>.<a href="_framework_procbot_.procbot.html#dispatchtoallemitters">dispatchToAllEmitters</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L173">framework/procbot.ts:173</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L177">framework/procbot.ts:177</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -785,14 +809,14 @@
 					<a name="dispatchtoemitter" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagProtected">Protected</span> dispatch<wbr>ToEmitter</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
-						<li class="tsd-signature tsd-kind-icon">dispatch<wbr>ToEmitter<span class="tsd-signature-symbol">(</span>name<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">dispatch<wbr>ToEmitter<span class="tsd-signature-symbol">(</span>handle<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_framework_procbot_.procbot.html">ProcBot</a>.<a href="_framework_procbot_.procbot.html#dispatchtoemitter">dispatchToEmitter</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L195">framework/procbot.ts:195</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L205">framework/procbot.ts:205</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -810,9 +834,9 @@
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>name: <span class="tsd-signature-type">string</span></h5>
+									<h5>handle: <span class="tsd-signature-type">string</span></h5>
 									<div class="tsd-comment tsd-typography">
-										<p>The name of the ServiceEmitter to dispatch to.</p>
+										<p>The handle of the ServiceEmitter to dispatch to.</p>
 									</div>
 								</li>
 								<li>
@@ -837,7 +861,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1511">bots/versionbot.ts:1511</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1538">bots/versionbot.ts:1538</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -863,14 +887,14 @@
 					<a name="getemitter" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagProtected">Protected</span> get<wbr>Emitter</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
-						<li class="tsd-signature tsd-kind-icon">get<wbr>Emitter<span class="tsd-signature-symbol">(</span>name<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ServiceEmitter</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">void</span></li>
+						<li class="tsd-signature tsd-kind-icon">get<wbr>Emitter<span class="tsd-signature-symbol">(</span>handle<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ServiceEmitter</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">void</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_framework_procbot_.procbot.html">ProcBot</a>.<a href="_framework_procbot_.procbot.html#getemitter">getEmitter</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L161">framework/procbot.ts:161</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L162">framework/procbot.ts:162</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -881,9 +905,9 @@
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>name: <span class="tsd-signature-type">string</span></h5>
+									<h5>handle: <span class="tsd-signature-type">string</span></h5>
 									<div class="tsd-comment tsd-typography">
-										<p>Name of the ServiceEmitter instance to find.</p>
+										<p>Handle of the ServiceEmitter instance to find (name if no handle was set).</p>
 									</div>
 								</li>
 							</ul>
@@ -899,27 +923,27 @@
 					<a name="getlistener" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagProtected">Protected</span> get<wbr>Listener</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
-						<li class="tsd-signature tsd-kind-icon">get<wbr>Listener<span class="tsd-signature-symbol">(</span>name<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ServiceListener</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">void</span></li>
+						<li class="tsd-signature tsd-kind-icon">get<wbr>Listener<span class="tsd-signature-symbol">(</span>handle<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ServiceListener</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">void</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_framework_procbot_.procbot.html">ProcBot</a>.<a href="_framework_procbot_.procbot.html#getlistener">getListener</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L152">framework/procbot.ts:152</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L149">framework/procbot.ts:149</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
-									<p>Find a particular attached ServiceListener based upon its name.</p>
+									<p>Find a particular attached ServiceListener based upon its handle.</p>
 								</div>
 							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>name: <span class="tsd-signature-type">string</span></h5>
+									<h5>handle: <span class="tsd-signature-type">string</span></h5>
 									<div class="tsd-comment tsd-typography">
-										<p>Name of the ServiceListener instance to find.</p>
+										<p>Handle of the ServiceListener instance to find (name if no handle was set).</p>
 									</div>
 								</li>
 							</ul>
@@ -942,7 +966,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_framework_procbot_.procbot.html">ProcBot</a>.<a href="_framework_procbot_.procbot.html#getnodebinpath">getNodeBinPath</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L51">framework/procbot.ts:51</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L61">framework/procbot.ts:61</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -965,7 +989,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1477">bots/versionbot.ts:1477</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1504">bots/versionbot.ts:1504</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -998,7 +1022,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L905">bots/versionbot.ts:905</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L932">bots/versionbot.ts:932</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1051,7 +1075,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1282">bots/versionbot.ts:1282</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1309">bots/versionbot.ts:1309</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1085,7 +1109,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_framework_procbot_.procbot.html">ProcBot</a>.<a href="_framework_procbot_.procbot.html#processconfiguration">processConfiguration</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L67">framework/procbot.ts:67</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L77">framework/procbot.ts:77</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1120,7 +1144,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1770">bots/versionbot.ts:1770</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1797">bots/versionbot.ts:1797</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1152,7 +1176,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_framework_procbot_.procbot.html">ProcBot</a>.<a href="_framework_procbot_.procbot.html#retrieveconfiguration">retrieveConfiguration</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L90">framework/procbot.ts:90</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot.ts#L100">framework/procbot.ts:100</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1184,7 +1208,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L321">bots/versionbot.ts:321</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L348">bots/versionbot.ts:348</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1221,7 +1245,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1574">bots/versionbot.ts:1574</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L1601">bots/versionbot.ts:1601</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -1330,16 +1354,19 @@
 								<a href="_bots_versionbot_.versionbot.html#emailaddress" class="tsd-kind-icon">email<wbr>Address</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-private">
-								<a href="_bots_versionbot_.versionbot.html#githubapi" class="tsd-kind-icon">github<wbr>Api</a>
+								<a href="_bots_versionbot_.versionbot.html#githubappapi" class="tsd-kind-icon">github<wbr>App<wbr>Api</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-private">
-								<a href="_bots_versionbot_.versionbot.html#githubemitter" class="tsd-kind-icon">github<wbr>Emitter</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-private">
-								<a href="_bots_versionbot_.versionbot.html#githubemittername" class="tsd-kind-icon">github<wbr>Emitter<wbr>Name</a>
+								<a href="_bots_versionbot_.versionbot.html#githubappemitter" class="tsd-kind-icon">github<wbr>App<wbr>Emitter</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-private">
 								<a href="_bots_versionbot_.versionbot.html#githublistenername" class="tsd-kind-icon">github<wbr>Listener<wbr>Name</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-private">
+								<a href="_bots_versionbot_.versionbot.html#githubuserapi" class="tsd-kind-icon">github<wbr>User<wbr>Api</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-private">
+								<a href="_bots_versionbot_.versionbot.html#githubuseremitter" class="tsd-kind-icon">github<wbr>User<wbr>Emitter</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
 								<a href="_bots_versionbot_.versionbot.html#logger" class="tsd-kind-icon">logger</a>
@@ -1466,6 +1493,9 @@
 						<a href="../modules/_bots_versionbot_.html#genericpullrequestevent" class="tsd-kind-icon">Generic<wbr>Pull<wbr>Request<wbr>Event</a>
 					</li>
 					<li class=" tsd-kind-variable tsd-parent-kind-external-module tsd-is-not-exported">
+						<a href="../modules/_bots_versionbot_.html#apphandle" class="tsd-kind-icon">App<wbr>Handle</a>
+					</li>
+					<li class=" tsd-kind-variable tsd-parent-kind-external-module tsd-is-not-exported">
 						<a href="../modules/_bots_versionbot_.html#ignorelabel" class="tsd-kind-icon">Ignore<wbr>Label</a>
 					</li>
 					<li class=" tsd-kind-variable tsd-parent-kind-external-module tsd-is-not-exported">
@@ -1476,6 +1506,9 @@
 					</li>
 					<li class=" tsd-kind-variable tsd-parent-kind-external-module tsd-is-not-exported">
 						<a href="../modules/_bots_versionbot_.html#revieweraddmessage" class="tsd-kind-icon">Reviewer<wbr>Add<wbr>Message</a>
+					</li>
+					<li class=" tsd-kind-variable tsd-parent-kind-external-module tsd-is-not-exported">
+						<a href="../modules/_bots_versionbot_.html#userhandle" class="tsd-kind-icon">User<wbr>Handle</a>
 					</li>
 					<li class=" tsd-kind-variable tsd-parent-kind-external-module tsd-is-not-exported">
 						<a href="../modules/_bots_versionbot_.html#fsfileexists" class="tsd-kind-icon">fs<wbr>File<wbr>Exists</a>
