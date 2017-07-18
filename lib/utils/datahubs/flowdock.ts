@@ -27,8 +27,22 @@ export class FlowdockDataHub implements DataHub {
 		this.organization = data.organization;
 	}
 
-	public fetchValue(_user: string, _value: string): Promise<string> {
-		throw new Error();
+	/**
+	 * Search for the specified value associated with a user.
+	 * @param user  Username to search associated with.
+	 * @param key   Name of the value to retrieve.
+	 * @returns     Promise that resolves to the value.
+	 */
+	public fetchValue(user: string, value: string): Promise<string> {
+		// Retrieve a particular regex from the 1-1 message history of the user
+		const findKey = new RegExp(`My ${key} is (\\S+)`, 'i');
+		return this.fetchPrivateMessages(user, findKey).then((valueArray) => {
+			const value = valueArray[valueArray.length - 1].match(findKey);
+			if (value) {
+				return value[1];
+			}
+			throw new Error(`Could not find value $key for $user`);
+		});
 	}
 }
 
