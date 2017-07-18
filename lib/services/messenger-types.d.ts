@@ -92,7 +92,3 @@ export interface FlowDefinition {
 	service: string;
 	flow: string;
 }
-
-export interface DataHub {
-	fetchValue(user: string, value: string): Promise<string>;
-}

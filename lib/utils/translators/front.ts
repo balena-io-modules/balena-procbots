@@ -20,9 +20,9 @@ import * as _ from 'lodash';
 import * as request from 'request-promise';
 import { FrontConnectionDetails, FrontEmitContext, FrontEvent } from '../../services/front-types';
 import { MessageAction, MessageContext, TransmitContext } from '../../services/messenger-types';
-import { Translator } from './translator';
+import * as Translator from './translator';
 
-export class FrontTranslator extends Translator {
+export class FrontTranslator implements Translator.Translator {
 	/** Underlying SDK object to query for data */
 	private session: Front;
 	// #200: requests that rely on this to be migrated to Front SDK
@@ -32,7 +32,6 @@ export class FrontTranslator extends Translator {
 	};
 
 	constructor(data: FrontConnectionDetails) {
-		super();
 		this.session = new Front(data.token);
 		this.token = data.token;
 		this.channelPerInbox = data.channelPerInbox || {};
@@ -42,7 +41,7 @@ export class FrontTranslator extends Translator {
 	 * Translate the provided data, enqueued by the service, into a message context
 	 * @param event  Data in the form raw to the service
 	 */
-	public eventIntoMessage(event: FrontEvent): Promise<MessageContext> {
+	public eventIntoCreateMessage(event: FrontEvent): Promise<MessageContext> {
 		// Calculate common request details once
 		const getGeneric = {
 			headers: {
@@ -212,6 +211,6 @@ export class FrontTranslator extends Translator {
 	}
 }
 
-export function createTranslator(data: FrontConnectionDetails): Translator {
+export function createTranslator(data: FrontConnectionDetails): Translator.Translator {
 	return new FrontTranslator(data);
 }

@@ -18,15 +18,14 @@ import * as Promise from 'bluebird';
 import { Session } from 'flowdock';
 import { FlowdockConnectionDetails, FlowdockEmitContext, FlowdockEvent } from '../../services/flowdock-types';
 import { MessageAction, MessageContext, TransmitContext } from '../../services/messenger-types';
-import { Translator } from './translator';
+import * as Translator from './translator';
 
 // TODO: Implement
-export class FlowdockTranslator extends Translator {
+export class FlowdockTranslator implements Translator.Translator {
 	private session: Session;
 	private organization: string;
 
 	constructor(data: FlowdockConnectionDetails) {
-		super();
 		this.session = new Session(data.token);
 		this.organization = data.organization;
 	}
@@ -35,7 +34,7 @@ export class FlowdockTranslator extends Translator {
 	 * Translate the provided event, enqueued by the service, into a message context
 	 * @param event  Data in the form raw to the service
 	 */
-	public eventIntoMessage(event: FlowdockEvent): Promise<MessageContext> {
+	public eventIntoCreateMessage(event: FlowdockEvent): Promise<MessageContext> {
 		// Separate out some parts of the message
 		const metadata = Translator.extractMetadata(event.rawEvent.content);
 		const titleAndText = metadata.content.match(/^(.*)\n--\n((?:\r|\n|.)*)$/);
@@ -129,6 +128,6 @@ export class FlowdockTranslator extends Translator {
 	}
 }
 
-export function createTranslator(data: FlowdockConnectionDetails): Translator {
+export function createTranslator(data: FlowdockConnectionDetails): Translator.Translator {
 	return new FlowdockTranslator(data);
 }

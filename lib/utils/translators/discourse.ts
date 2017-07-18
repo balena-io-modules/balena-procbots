@@ -19,13 +19,12 @@ import * as _ from 'lodash';
 import * as request from 'request-promise';
 import { DiscourseConnectionDetails, DiscourseEmitContext, DiscourseEvent } from '../../services/discourse-types';
 import { MessageAction, MessageContext, TransmitContext } from '../../services/messenger-types';
-import { Translator } from './translator';
+import * as Translator from './translator';
 
-export class DiscourseTranslator extends Translator {
+export class DiscourseTranslator implements Translator.Translator {
 	private connectionDetails: DiscourseConnectionDetails;
 
 	constructor(data: DiscourseConnectionDetails) {
-		super();
 		this.connectionDetails = data;
 	}
 
@@ -33,7 +32,7 @@ export class DiscourseTranslator extends Translator {
 	 * Translate the provided event, enqueued by the service, into a message context
 	 * @param event  Data in the form raw to the service
 	 */
-	public eventIntoMessage(event: DiscourseEvent): Promise<MessageContext> {
+	public eventIntoCreateMessage(event: DiscourseEvent): Promise<MessageContext> {
 		// Encode once the common parts of a request
 		const getGeneric = {
 			json: true,
@@ -127,6 +126,6 @@ export class DiscourseTranslator extends Translator {
 	}
 }
 
-export function createTranslator(data: DiscourseConnectionDetails): Translator {
+export function createTranslator(data: DiscourseConnectionDetails): Translator.Translator {
 	return new DiscourseTranslator(data);
 }
