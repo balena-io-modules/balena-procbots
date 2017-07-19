@@ -18,7 +18,7 @@ export declare class VersionBot extends ProcBot {
     private applyVersionist(versionData);
     private createCommitBlobs(repoData);
     private mergeToMaster(data);
-    private checkStatuses(prInfo);
+    private checkStatuses(prInfo, filter?);
     private getVersionBotCommits(prInfo);
     private finaliseMerge;
     private stripPRAuthor(list, pullRequest);

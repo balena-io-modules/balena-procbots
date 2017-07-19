@@ -31,6 +31,19 @@ var StatusChecks;
 ;
 const MergeLabel = 'procbots/versionbot/ready-to-merge';
 const IgnoreLabel = 'procbots/versionbot/no-checks';
+const StatusVersionist = {
+    Context: 'Versionist',
+    Success: 'Found all required commit footer tags',
+    Failure: 'Missing or forbidden tags in commits, see `repository.yml`'
+};
+const StatusReviewers = {
+    Context: 'Reviewers'
+};
+const StatusAutoMerge = {
+    Context: 'AutoMerges',
+    Success: 'PR merging is in progress',
+    Failure: 'Manual merging of PR forbidden'
+};
 class VersionBot extends procbot_1.ProcBot {
     constructor(integration, name, email, pemString, webhook) {
         super(name);
@@ -41,8 +54,13 @@ class VersionBot extends procbot_1.ProcBot {
             const commitSha = event.cookedEvent.data.sha;
             const branches = event.cookedEvent.data.branches;
             let prEvents = [];
-            if (event.cookedEvent.data.context === 'Versionist') {
-                return Promise.resolve();
+            switch (event.cookedEvent.data.context) {
+                case StatusVersionist.Context:
+                case StatusReviewers.Context:
+                case StatusAutoMerge.Context:
+                    return Promise.resolve();
+                default:
+                    break;
             }
             return Promise.map(branches, (branch) => {
                 return this.dispatchToEmitter(this.githubEmitterName, {
@@ -307,7 +325,7 @@ class VersionBot extends procbot_1.ProcBot {
                 }
                 return this.dispatchToEmitter(this.githubEmitterName, {
                     data: {
-                        context: 'VersionBot',
+                        context: StatusReviewers.Context,
                         description: status,
                         owner: pr.head.repo.owner.login,
                         repo: pr.head.repo.name,
@@ -325,13 +343,24 @@ class VersionBot extends procbot_1.ProcBot {
             const owner = head.repo.owner.login;
             const name = head.repo.name;
             const author = prEvent.sender.login;
+            const prAction = event.cookedEvent.data.action;
             let committer = author;
             let lastCommit;
             let botConfig;
-            if ((event.cookedEvent.data.action !== 'opened') && (event.cookedEvent.data.action !== 'synchronize') &&
-                (event.cookedEvent.data.action !== 'labeled')) {
+            if (!_.find(['opened', 'synchronize', 'labeled'], (action) => action === prAction)) {
                 return Promise.resolve();
             }
+            this.dispatchToEmitter(this.githubEmitterName, {
+                data: {
+                    context: StatusAutoMerge.Context,
+                    description: StatusAutoMerge.Failure,
+                    owner,
+                    repo: name,
+                    sha: head.sha,
+                    state: 'failure'
+                },
+                method: this.githubApi.repos.createStatus,
+            });
             this.logger.log(logger_1.LogLevel.INFO, `Checking footer tags for ${owner}/${name}#${pr.number}`);
             return this.retrieveConfiguration({
                 emitter: this.githubEmitter,
@@ -361,8 +390,8 @@ class VersionBot extends procbot_1.ProcBot {
                 if (missingTags.length === 0) {
                     return this.dispatchToEmitter(this.githubEmitterName, {
                         data: {
-                            context: 'Versionist',
-                            description: 'Found all required commit footer tags',
+                            context: StatusVersionist.Context,
+                            description: StatusVersionist.Success,
                             owner,
                             repo: name,
                             sha: head.sha,
@@ -377,11 +406,10 @@ class VersionBot extends procbot_1.ProcBot {
                 });
                 this.logger.log(logger_1.LogLevel.INFO, `Missing tags from accumulated commits: ${tagNames}` +
                     `for ${owner}/${name}#${pr.number}`);
-                let description = 'Missing or forbidden tags in commits, see `repository.yml`';
                 return this.dispatchToEmitter(this.githubEmitterName, {
                     data: {
-                        context: 'Versionist',
-                        description,
+                        context: StatusVersionist.Context,
+                        description: StatusVersionist.Failure,
                         owner,
                         repo: name,
                         sha: head.sha,
@@ -390,7 +418,10 @@ class VersionBot extends procbot_1.ProcBot {
                     method: this.githubApi.repos.createStatus,
                 });
             }).then(() => {
-                return this.checkStatuses(pr);
+                return this.checkStatuses(pr, {
+                    includeContexts: false,
+                    contexts: [StatusReviewers.Context, StatusAutoMerge.Context]
+                });
             }).then((checkStatus) => {
                 if (checkStatus === StatusChecks.Failed) {
                     const lastCommitTimestamp = Date.parse(lastCommit.commit.committer.date);
@@ -487,7 +518,10 @@ class VersionBot extends procbot_1.ProcBot {
                     throw new Error('The branch cannot currently be merged into master. It has a state of: ' +
                         `\`${pr.mergeable_state}\``);
                 }
-                return this.checkStatuses(pr);
+                return this.checkStatuses(pr, {
+                    includeContexts: false,
+                    contexts: [StatusAutoMerge.Context]
+                });
             }).then((checkStatus) => {
                 if ((checkStatus === StatusChecks.Failed) || (checkStatus === StatusChecks.Pending)) {
                     throw new Error('checksPendingOrFailed');
@@ -550,9 +584,13 @@ class VersionBot extends procbot_1.ProcBot {
             }).finally(tempCleanup);
         };
         this.finaliseMerge = (data, prInfo) => {
-            const owner = prInfo.head.repo.owner.login;
-            const repo = prInfo.head.repo.name;
-            return this.checkStatuses(prInfo).then((checkStatus) => {
+            const head = prInfo.head;
+            const owner = head.repo.owner.login;
+            const repo = head.repo.name;
+            return this.checkStatuses(prInfo, {
+                includeContexts: false,
+                contexts: [StatusAutoMerge.Context]
+            }).then((checkStatus) => {
                 if (checkStatus === StatusChecks.Passed) {
                     return this.getVersionBotCommits(prInfo).then((commitMessage) => {
                         if (commitMessage) {
@@ -567,6 +605,18 @@ class VersionBot extends procbot_1.ProcBot {
                                 if (data.action === 'labeled') {
                                     this.checkValidMaintainer(config, data);
                                 }
+                                return this.dispatchToEmitter(this.githubEmitterName, {
+                                    data: {
+                                        context: StatusAutoMerge.Context,
+                                        description: StatusAutoMerge.Success,
+                                        owner,
+                                        repo,
+                                        sha: head.sha,
+                                        state: 'success'
+                                    },
+                                    method: this.githubApi.repos.createStatus,
+                                });
+                            }).then(() => {
                                 return this.mergeToMaster({
                                     commitVersion: commitMessage,
                                     pullRequest: prInfo
@@ -575,6 +625,17 @@ class VersionBot extends procbot_1.ProcBot {
                                 this.logger.log(logger_1.LogLevel.INFO, `MergePR: Merged ${owner}/${repo}#${prInfo.number}`);
                             }).catch((err) => {
                                 if (!_.startsWith(err.message, 'Required status check')) {
+                                    this.dispatchToEmitter(this.githubEmitterName, {
+                                        data: {
+                                            context: StatusAutoMerge.Context,
+                                            description: StatusAutoMerge.Failure,
+                                            owner,
+                                            repo,
+                                            sha: head.sha,
+                                            state: 'failure'
+                                        },
+                                        method: this.githubApi.repos.createStatus,
+                                    });
                                     throw err;
                                 }
                             });
@@ -892,7 +953,7 @@ class VersionBot extends procbot_1.ProcBot {
             });
         });
     }
-    checkStatuses(prInfo) {
+    checkStatuses(prInfo, filter) {
         const owner = prInfo.head.repo.owner.login;
         const repo = prInfo.head.repo.name;
         const branch = prInfo.head.ref;
@@ -913,8 +974,8 @@ class VersionBot extends procbot_1.ProcBot {
             protectedContexts = statusContexts.contexts;
             return this.dispatchToEmitter(this.githubEmitterName, {
                 data: {
-                    owner,
                     ref: branch,
+                    owner,
                     repo
                 },
                 method: this.githubApi.repos.getCombinedStatus
@@ -924,10 +985,17 @@ class VersionBot extends procbot_1.ProcBot {
             _.each(protectedContexts, (proContext) => {
                 _.each(statuses.statuses, (status) => {
                     if (_.startsWith(status.context, proContext)) {
-                        statusResults.push({
-                            name: status.context,
-                            state: statusLUT[status.state]
-                        });
+                        let includeContext = true;
+                        if (filter) {
+                            const foundContext = _.find(filter.contexts, (context) => context === status.context);
+                            includeContext = filter.includeContexts ? foundContext !== undefined : !foundContext;
+                        }
+                        if (includeContext) {
+                            statusResults.push({
+                                name: status.context,
+                                state: statusLUT[status.state]
+                            });
+                        }
                     }
                 });
             });

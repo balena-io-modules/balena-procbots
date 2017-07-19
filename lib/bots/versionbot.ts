@@ -186,6 +186,19 @@ enum StatusChecks {
 	Failed
 };
 
+/**
+ * Allows the filtering of results from the `checkStatuses` method.
+ * Depending on the `includeContexts` flag, results returned from the method:
+ *   * Only include results from contexts listed in the `contexts` property (`includeContexts` is `true`)
+ *   * Only include results from contexts not listed in the `contexts` property (`includeContexts` is `false`)
+ */
+interface StatusFilter {
+	/** Whether this filter includes tags that should be included or excluded. */
+	includeContexts: boolean;
+	/** The list of status contexts to include or exclude. */
+	contexts: string[];
+}
+
 /** Pull request type event. */
 type GenericPullRequestEvent = GithubApiTypes.PullRequestEvent | GithubApiTypes.PullRequestReviewEvent;
 
@@ -193,6 +206,30 @@ type GenericPullRequestEvent = GithubApiTypes.PullRequestEvent | GithubApiTypes.
 const MergeLabel = 'procbots/versionbot/ready-to-merge';
 /** Label to be applied for VersionBot to ignore the PR. */
 const IgnoreLabel = 'procbots/versionbot/no-checks';
+
+/** Status context for versionist. */
+const StatusVersionist = {
+	/** Context name. */
+	Context: 'Versionist',
+	/** Status context message for versionist success. */
+	Success: 'Found all required commit footer tags',
+	Failure: 'Missing or forbidden tags in commits, see `repository.yml`'
+};
+
+/** Status context for reviewers. */
+const StatusReviewers = {
+	Context: 'Reviewers'
+};
+
+/** Status context for automatic (non-manual) merging. */
+const StatusAutoMerge = {
+	/** Context name. */
+	Context: 'AutoMerges',
+	/** Status context message for automatic merging success. */
+	Success: 'PR merging is in progress',
+	/** Status context message for automatic merging failure. */
+	Failure: 'Manual merging of PR forbidden'
+};
 
 /**
  * The VersionBot is built on top of the ProcBot class, which does all the heavy lifting and scheduling.
@@ -329,8 +366,14 @@ export class VersionBot extends ProcBot {
 		let prEvents: ServiceEvent[] = [];
 
 		// If we made the status change, we stop now!
-		if (event.cookedEvent.data.context === 'Versionist') {
-			return Promise.resolve();
+		switch (event.cookedEvent.data.context) {
+			case StatusVersionist.Context:
+			case StatusReviewers.Context:
+			case StatusAutoMerge.Context:
+				return Promise.resolve();
+
+			default:
+				break;
 		}
 
 		// Get all PRs for each named branch.
@@ -693,7 +736,7 @@ export class VersionBot extends ProcBot {
 			// been seen against the number required.
 			return this.dispatchToEmitter(this.githubEmitterName, {
 				data: {
-					context: 'VersionBot',
+					context: StatusReviewers.Context,
 					description: status,
 					owner: pr.head.repo.owner.login,
 					repo: pr.head.repo.name,
@@ -723,15 +766,28 @@ export class VersionBot extends ProcBot {
 		const owner = head.repo.owner.login;
 		const name = head.repo.name;
 		const author = prEvent.sender.login;
+		const prAction = event.cookedEvent.data.action;
 		let committer = author;
 		let lastCommit: GithubApiTypes.Commit;
 		let botConfig: VersionBotConfiguration;
 
 		// Only for opened or synced actions.
-		if ((event.cookedEvent.data.action !== 'opened') && (event.cookedEvent.data.action !== 'synchronize') &&
-			(event.cookedEvent.data.action !== 'labeled')) {
+		if (!_.find(['opened', 'synchronize', 'labeled'], (action) => action === prAction)) {
 			return Promise.resolve();
 		}
+
+		// Always set the automerge status to failure.
+		this.dispatchToEmitter(this.githubEmitterName, {
+			data: {
+				context: StatusAutoMerge.Context,
+				description: StatusAutoMerge.Failure,
+				owner,
+				repo: name,
+				sha: head.sha,
+				state: 'failure'
+			},
+			method: this.githubApi.repos.createStatus,
+		});
 
 		this.logger.log(LogLevel.INFO, `Checking footer tags for ${owner}/${name}#${pr.number}`);
 
@@ -772,8 +828,8 @@ export class VersionBot extends ProcBot {
 			if (missingTags.length === 0) {
 				return this.dispatchToEmitter(this.githubEmitterName, {
 					data: {
-						context: 'Versionist',
-						description: 'Found all required commit footer tags',
+						context: StatusVersionist.Context,
+						description: StatusVersionist.Success,
 						owner,
 						repo: name,
 						sha: head.sha,
@@ -792,11 +848,10 @@ export class VersionBot extends ProcBot {
 				`for ${owner}/${name}#${pr.number}`);
 
 			// Go through the tags and compose a message.
-			let description = 'Missing or forbidden tags in commits, see `repository.yml`';
 			return this.dispatchToEmitter(this.githubEmitterName, {
 				data: {
-					context: 'Versionist',
-					description,
+					context: StatusVersionist.Context,
+					description: StatusVersionist.Failure,
 					owner,
 					repo: name,
 					sha: head.sha,
@@ -806,7 +861,12 @@ export class VersionBot extends ProcBot {
 			});
 		}).then(() => {
 			// Check statuses (including Versionist) on the PR.
-			return this.checkStatuses(pr);
+			// Discount the reviewers context (as it's obvious as part of the PR), and the
+			// automerge context, as we control that ourselves.
+			return this.checkStatuses(pr, {
+				includeContexts: false,
+				contexts: [ StatusReviewers.Context, StatusAutoMerge.Context ]
+			});
 		}).then((checkStatus) => {
 			// If any of them fail (*not* pending), then *if* we haven't already
 			// commented (ie. we previously commented and there's been no commit
@@ -965,9 +1025,12 @@ export class VersionBot extends ProcBot {
 					`\`${pr.mergeable_state}\``);
 			}
 
-			// Ensure that all the statuses required have passed.
+			// Ensure that all the statuses required have passed (we ignore the automerge status).
 			// If not, an error will be thrown and not proceed any further.
-			return this.checkStatuses(pr);
+			return this.checkStatuses(pr, {
+				includeContexts: false,
+				contexts: [ StatusAutoMerge.Context ]
+			});
 		}).then((checkStatus) => {
 			// Finally we have an array of booleans. If any of them are false,
 			// statuses aren't valid.
@@ -1369,11 +1432,14 @@ export class VersionBot extends ProcBot {
 
 	/**
 	 * Retrieve all protected branch status requirements, and determine the state for each.
+	 * Status checks can be filtered to include or exclude the results of given contexts, if required.
 	 *
 	 * @param prInfo  The PR on which to check the current statuses.
+	 * @param filter  An optional StatusFilter interface, allowing status contexts to be included/excluded
+	 * 	from results.
 	 * @returns       Promise containing a StatusChecks object determining the state of each status.
 	 */
-	private checkStatuses(prInfo: GithubApiTypes.PullRequest): Promise<StatusChecks> {
+	private checkStatuses(prInfo: GithubApiTypes.PullRequest, filter?: StatusFilter): Promise<StatusChecks> {
 		// We need to check the branch protection for this repo.
 		// Get all the statuses that need to have been satisfied.
 		const owner = prInfo.head.repo.owner.login;
@@ -1386,6 +1452,7 @@ export class VersionBot extends ProcBot {
 			success: StatusChecks.Passed,
 		};
 
+		// Now get all of the statuses required for the master branch.
 		return this.dispatchToEmitter(this.githubEmitterName, {
 			data: {
 				branch: 'master',
@@ -1396,11 +1463,11 @@ export class VersionBot extends ProcBot {
 		}).then((statusContexts: GithubApiTypes.RequiredStatusChecks) => {
 			protectedContexts = statusContexts.contexts;
 
-			// Now get all of the statuses for the master branch.
+			// Get the statuses combined for this PR branch.
 			return this.dispatchToEmitter(this.githubEmitterName, {
 				data: {
-					owner,
 					ref: branch,
+					owner,
 					repo
 				},
 				method: this.githubApi.repos.getCombinedStatus
@@ -1431,11 +1498,18 @@ export class VersionBot extends ProcBot {
 				// of the status.
 				_.each(statuses.statuses, (status) => {
 					if (_.startsWith(status.context, proContext)) {
-						// Did the check pass?
-						statusResults.push({
-							name: status.context,
-							state: statusLUT[status.state]
-						});
+						let includeContext = true;
+						// If there's a filter, determine if the result should be included or excluded.
+						if (filter) {
+							const foundContext = _.find(filter.contexts, (context) => context === status.context);
+							includeContext = filter.includeContexts ? foundContext !== undefined : !foundContext;
+						}
+						if (includeContext) {
+							statusResults.push({
+								name: status.context,
+								state: statusLUT[status.state]
+							});
+						}
 					}
 				});
 			});
@@ -1502,10 +1576,15 @@ export class VersionBot extends ProcBot {
 		// We will go ahead and perform a merge if we see VersionBot has:
 		// 1. All of the status checks have passed on the repo
 		// 2. VersionBot has committed something with 'CHANGELOG.md' in it
-		const owner = prInfo.head.repo.owner.login;
-		const repo = prInfo.head.repo.name;
+		const head = prInfo.head;
+		const owner = head.repo.owner.login;
+		const repo = head.repo.name;
 
-		return this.checkStatuses(prInfo).then((checkStatus) => {
+		// We need to exclude the automerge status, as versionbot itself is doing the merge.
+		return this.checkStatuses(prInfo, {
+			includeContexts: false,
+			contexts: [ StatusAutoMerge.Context ]
+		}).then((checkStatus) => {
 			if (checkStatus === StatusChecks.Passed) {
 				// Get the list of commits for the PR, then get the very last commit SHA.
 				return this.getVersionBotCommits(prInfo).then((commitMessage: string | null) => {
@@ -1527,6 +1606,20 @@ export class VersionBot extends ProcBot {
 								this.checkValidMaintainer(config, data);
 							}
 
+							// Now we set the automerge context so that we can actually proceed with
+							// the merge.
+							return 	this.dispatchToEmitter(this.githubEmitterName, {
+									data: {
+										context: StatusAutoMerge.Context,
+										description: StatusAutoMerge.Success,
+										owner,
+										repo,
+										sha: head.sha,
+										state: 'success'
+									},
+									method: this.githubApi.repos.createStatus,
+								});
+						}).then(() => {
 							// We go ahead and merge.
 							return this.mergeToMaster({
 								commitVersion: commitMessage,
@@ -1544,6 +1637,21 @@ export class VersionBot extends ProcBot {
 							// We really don't want to a load of extra calls here, so we instead believe Github and
 							// check for the standard return message and silently ignore it if present.
 							if (!_.startsWith(err.message, 'Required status check')) {
+								// We need to set the automerge status back to failure again, so that nobody
+								// tries to merge this by mistake.
+								this.dispatchToEmitter(this.githubEmitterName, {
+									data: {
+										context: StatusAutoMerge.Context,
+										description: StatusAutoMerge.Failure,
+										owner,
+										repo,
+										sha: head.sha,
+										state: 'failure'
+									},
+									method: this.githubApi.repos.createStatus,
+								});
+
+								// Finally throw the error.
 								throw err;
 							}
 						});

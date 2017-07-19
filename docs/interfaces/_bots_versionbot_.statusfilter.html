@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>VersionBotConfiguration | Resin ProcBots</title>
+	<title>StatusFilter | Resin ProcBots</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -57,10 +57,10 @@
 					<a href="../modules/_bots_versionbot_.html">&quot;bots/versionbot&quot;</a>
 				</li>
 				<li>
-					<a href="_bots_versionbot_.versionbotconfiguration.html">VersionBotConfiguration</a>
+					<a href="_bots_versionbot_.statusfilter.html">StatusFilter</a>
 				</li>
 			</ul>
-			<h1>Interface VersionBotConfiguration</h1>
+			<h1>Interface StatusFilter</h1>
 		</div>
 	</div>
 </header>
@@ -70,7 +70,12 @@
 			<section class="tsd-panel tsd-comment">
 				<div class="tsd-comment tsd-typography">
 					<div class="lead">
-						<p>The VersionBot specific ProcBot Configuration structure.</p>
+						<p>Allows the filtering of results from the <code>checkStatuses</code> method.
+						Depending on the <code>includeContexts</code> flag, results returned from the method:</p>
+						<ul>
+							<li>Only include results from contexts listed in the <code>contexts</code> property (<code>includeContexts</code> is <code>true</code>)</li>
+							<li>Only include results from contexts not listed in the <code>contexts</code> property (<code>includeContexts</code> is <code>false</code>)</li>
+						</ul>
 					</div>
 				</div>
 			</section>
@@ -78,12 +83,7 @@
 				<h3>Hierarchy</h3>
 				<ul class="tsd-hierarchy">
 					<li>
-						<span class="tsd-signature-type">ProcBotConfiguration</span>
-						<ul class="tsd-hierarchy">
-							<li>
-								<span class="target">VersionBotConfiguration</span>
-							</li>
-						</ul>
+						<span class="target">StatusFilter</span>
 					</li>
 				</ul>
 			</section>
@@ -94,11 +94,8 @@
 						<section class="tsd-index-section tsd-is-not-exported">
 							<h3>Properties</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="_bots_versionbot_.versionbotconfiguration.html#maintainers" class="tsd-kind-icon">maintainers</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="_bots_versionbot_.versionbotconfiguration.html#minimum_approvals" class="tsd-kind-icon">minimum_<wbr>approvals</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-inherited tsd-is-not-exported"><a href="_bots_versionbot_.versionbotconfiguration.html#procbot" class="tsd-kind-icon">procbot</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="_bots_versionbot_.versionbotconfiguration.html#required_tags" class="tsd-kind-icon">required-<wbr>tags</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="_bots_versionbot_.versionbotconfiguration.html#reviewers" class="tsd-kind-icon">reviewers</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="_bots_versionbot_.statusfilter.html#contexts" class="tsd-kind-icon">contexts</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported"><a href="_bots_versionbot_.statusfilter.html#includecontexts" class="tsd-kind-icon">include<wbr>Contexts</a></li>
 							</ul>
 						</section>
 					</div>
@@ -107,87 +104,32 @@
 			<section class="tsd-panel-group tsd-member-group tsd-is-not-exported">
 				<h2>Properties</h2>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-					<a name="maintainers" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> maintainers</h3>
-					<div class="tsd-signature tsd-kind-icon">maintainers<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></div>
+					<a name="contexts" class="tsd-anchor"></a>
+					<h3>contexts</h3>
+					<div class="tsd-signature tsd-kind-icon">contexts<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L166">bots/versionbot.ts:166</a></li>
+							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L199">bots/versionbot.ts:199</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
 						<div class="lead">
-							<p>A list of approved maintainers (who also count as approved reviewers).</p>
+							<p>The list of status contexts to include or exclude.</p>
 						</div>
 					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-					<a name="minimum_approvals" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> minimum_<wbr>approvals</h3>
-					<div class="tsd-signature tsd-kind-icon">minimum_<wbr>approvals<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span></div>
+					<a name="includecontexts" class="tsd-anchor"></a>
+					<h3>include<wbr>Contexts</h3>
+					<div class="tsd-signature tsd-kind-icon">include<wbr>Contexts<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L162">bots/versionbot.ts:162</a></li>
+							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L197">bots/versionbot.ts:197</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
 						<div class="lead">
-							<p>Minimum number of review approvals required to satisfy a review.</p>
-						</div>
-					</div>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-inherited tsd-is-not-exported">
-					<a name="procbot" class="tsd-anchor"></a>
-					<h3>procbot</h3>
-					<div class="tsd-signature tsd-kind-icon">procbot<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">object</span></div>
-					<aside class="tsd-sources">
-						<p>Inherited from ProcBotConfiguration.procbot</p>
-						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/procbot-types.d.ts#L21">framework/procbot-types.d.ts:21</a></li>
-						</ul>
-					</aside>
-					<div class="tsd-type-declaration">
-						<h4>Type declaration</h4>
-						<ul class="tsd-parameters">
-							<li class="tsd-parameter">
-								<h5><span class="tsd-flag ts-flagOptional">Optional</span> minimum_<wbr>version<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">number</span></h5>
-								<div class="tsd-comment tsd-typography">
-									<div class="lead">
-										<p>The minimum version of the ProcBots framework that should be used for execution in
-										the context of the configuration file.</p>
-									</div>
-								</div>
-							</li>
-						</ul>
-					</div>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-					<a name="required_tags" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> required-<wbr>tags</h3>
-					<div class="tsd-signature tsd-kind-icon">required-<wbr>tags<span class="tsd-signature-symbol">:</span> <a href="_bots_versionbot_.footertags.html" class="tsd-signature-type">FooterTags</a></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L168">bots/versionbot.ts:168</a></li>
-						</ul>
-					</aside>
-					<div class="tsd-comment tsd-typography">
-						<div class="lead">
-							<p>Required commit footer tags.</p>
-						</div>
-					</div>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-					<a name="reviewers" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> reviewers</h3>
-					<div class="tsd-signature tsd-kind-icon">reviewers<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/versionbot.ts#L164">bots/versionbot.ts:164</a></li>
-						</ul>
-					</aside>
-					<div class="tsd-comment tsd-typography">
-						<div class="lead">
-							<p>A list of approved reviewers who count towards the minimum number of approvals.</p>
+							<p>Whether this filter includes tags that should be included or excluded.</p>
 						</div>
 					</div>
 				</section>
@@ -284,36 +226,27 @@
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
 						<a href="_bots_versionbot_.reviewermap.html" class="tsd-kind-icon">Reviewer<wbr>Map</a>
 					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="_bots_versionbot_.statusfilter.html" class="tsd-kind-icon">Status<wbr>Filter</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="_bots_versionbot_.statusresult.html" class="tsd-kind-icon">Status<wbr>Result</a>
-					</li>
 				</ul>
 				<ul class="current">
 					<li class="current tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="_bots_versionbot_.versionbotconfiguration.html" class="tsd-kind-icon">Version<wbr>Bot<wbr>Configuration</a>
+						<a href="_bots_versionbot_.statusfilter.html" class="tsd-kind-icon">Status<wbr>Filter</a>
 						<ul>
 							<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-								<a href="_bots_versionbot_.versionbotconfiguration.html#maintainers" class="tsd-kind-icon">maintainers</a>
+								<a href="_bots_versionbot_.statusfilter.html#contexts" class="tsd-kind-icon">contexts</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-								<a href="_bots_versionbot_.versionbotconfiguration.html#minimum_approvals" class="tsd-kind-icon">minimum_<wbr>approvals</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-inherited tsd-is-not-exported">
-								<a href="_bots_versionbot_.versionbotconfiguration.html#procbot" class="tsd-kind-icon">procbot</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-								<a href="_bots_versionbot_.versionbotconfiguration.html#required_tags" class="tsd-kind-icon">required-<wbr>tags</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-interface tsd-is-not-exported">
-								<a href="_bots_versionbot_.versionbotconfiguration.html#reviewers" class="tsd-kind-icon">reviewers</a>
+								<a href="_bots_versionbot_.statusfilter.html#includecontexts" class="tsd-kind-icon">include<wbr>Contexts</a>
 							</li>
 						</ul>
 					</li>
 				</ul>
 				<ul class="after-current">
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
+						<a href="_bots_versionbot_.statusresult.html" class="tsd-kind-icon">Status<wbr>Result</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
+						<a href="_bots_versionbot_.versionbotconfiguration.html" class="tsd-kind-icon">Version<wbr>Bot<wbr>Configuration</a>
+					</li>
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
 						<a href="_bots_versionbot_.versionboterror.html" class="tsd-kind-icon">Version<wbr>Bot<wbr>Error</a>
 					</li>
