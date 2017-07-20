@@ -159,7 +159,7 @@ interface MissingTag {
 /** The VersionBot specific ProcBot Configuration structure. */
 interface VersionBotConfiguration extends ProcBotConfiguration {
 	/** Minimum number of review approvals required to satisfy a review. */
-	minimum_approvals?: number;
+	'minimum-approvals'?: number;
 	/** A list of approved reviewers who count towards the minimum number of approvals. */
 	reviewers?: string[];
 	/** A list of approved maintainers (who also count as approved reviewers). */
@@ -643,7 +643,7 @@ export class VersionBot extends ProcBot {
 			});
 		}).then((reviews: GithubApiTypes.Review[]) => {
 			// Zero is a falsey value, so we'll automatically catch that here.
-			const approvalsNeeded = (botConfig || {}).minimum_approvals || 1;
+			const approvalsNeeded = (botConfig || {})['minimum-approvals'] || 1;
 			let approvedCount = 0;
 			let reviewers: ReviewerMap = {};
 			let status = '';
@@ -658,7 +658,7 @@ export class VersionBot extends ProcBot {
 				return this.reportError({
 					brief: 'Invalid number of approvals required',
 					message: 'The number of approvals required to merge a PR is less than one. At least ' +
-						`one approval is required. Please ask a maintainer to correct the \`minimum_approvals\` ` +
+						`one approval is required. Please ask a maintainer to correct the \`minimum-approvals\` ` +
 						`value in the config file (current value: ${approvalsNeeded})`,
 					number: pr.number,
 					owner,

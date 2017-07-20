@@ -256,7 +256,7 @@ class VersionBot extends procbot_1.ProcBot {
                     method: this.githubApi.pullRequests.getReviews
                 });
             }).then((reviews) => {
-                const approvalsNeeded = (botConfig || {}).minimum_approvals || 1;
+                const approvalsNeeded = (botConfig || {})['minimum-approvals'] || 1;
                 let approvedCount = 0;
                 let reviewers = {};
                 let status = '';
@@ -267,7 +267,7 @@ class VersionBot extends procbot_1.ProcBot {
                     return this.reportError({
                         brief: 'Invalid number of approvals required',
                         message: 'The number of approvals required to merge a PR is less than one. At least ' +
-                            `one approval is required. Please ask a maintainer to correct the \`minimum_approvals\` ` +
+                            `one approval is required. Please ask a maintainer to correct the \`minimum-approvals\` ` +
                             `value in the config file (current value: ${approvalsNeeded})`,
                         number: pr.number,
                         owner,

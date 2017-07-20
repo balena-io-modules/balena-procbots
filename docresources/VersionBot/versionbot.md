@@ -124,23 +124,23 @@ A list of valid maintainers and approved reviewers may be defined to allow Versi
 The definition for these users in the configuration file is as follows:
 
 ````
-minimum_approvals: <number>
+minimum-approvals: <number>
 reviewers:
     - <list of Github user names>
 maintainers:
     - <list of Github user names>
 ````
 
-* `minimum_approvals`[optional] - Denotes the minimum number of approvals required for a PR
+* `minimum-approvals`[optional] - Denotes the minimum number of approvals required for a PR
 * `reviewers`[optional] - A list of Github user names whose reviews count towards an approval total
 * `maintainers`[optional] - A list of Github user names whose reviews count towards an approval total, of which at *least* one must be a maintainer in this list
 
 The functionality is as follows:
-* If a `reviewers` list exists, then reviews counting towards `minimum_approvals`
+* If a `reviewers` list exists, then reviews counting towards `minimum-approvals`
     can only be met by reviewers in that list (and `maintainers`)
 * If a `maintainers` list exists, then at least one review must be from a maintainer:
     * If a maintainer created the PR *and* there are no other maintainers, then reviews
-    from `reviewers` (if it exists) are required to make up the `minimum_approvals`
+    from `reviewers` (if it exists) are required to make up the `minimum-approvals`
     * If a maintainer created the PR and there *are* other maintainers, then one of the
     remaining `maintainers` must approve the PR
 * If no `reviewers` list exists, anyone can approve; if a `maintainers` list exists
@@ -151,7 +151,7 @@ The functionality is as follows:
 Example:
 
 ```
-minimum_approvals: 1
+minimum-approvals: 1
 reviewers:
     - githubuser
 maintainers
@@ -174,7 +174,7 @@ The following shows how to format required tag definitions in the `repository.ym
 configuration:
 
 ```
-required_tags:
+required-tags:
     <tagname>:
         occurrence: 'all' | 'once' | 'never'
         values: <regexp body>
