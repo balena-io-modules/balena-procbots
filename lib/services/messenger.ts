@@ -17,6 +17,7 @@
 import * as Promise from 'bluebird';
 import * as path from 'path';
 
+import { MessengerConnectionDetails } from './messenger-types';
 import { ServiceEmitContext, ServiceEmitter, ServiceListener } from './service-types';
 import { ServiceUtilities } from './service-utilities';
 import { UtilityServiceEvent } from './service-utilities-types';
@@ -24,9 +25,15 @@ import { UtilityServiceEvent } from './service-utilities-types';
 export class MessengerService extends ServiceUtilities implements ServiceListener, ServiceEmitter {
 	private static _serviceName = path.basename(__filename.split('.')[0]);
 
-	protected connect(_data: any): void {
+	/**
+	 * Connect to the service, used as part of construction.
+	 * @param data  Object containing the required details for the service.
+	 */
+	protected connect(data: MessengerConnectionDetails): void {
 		throw new Error();
 	}
+
+	private buildListener(name: string, constructor: object):
 
 	protected emitData(_data: ServiceEmitContext): Promise<any> {
 		throw new Error();

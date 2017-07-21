@@ -92,3 +92,7 @@ export interface FlowDefinition {
 	service: string;
 	flow: string;
 }
+
+export interface MessengerConnectionDetails {
+	[key: string]: object;
+}
