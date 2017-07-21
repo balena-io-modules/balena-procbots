@@ -1038,9 +1038,10 @@ class VersionBot extends procbot_1.ProcBot {
     checkValidMaintainer(config, event) {
         const maintainers = (config || {}).maintainers;
         if (maintainers) {
+            maintainers.push(event.pull_request.user.login);
             if (!_.includes(maintainers, event.sender.login)) {
                 let errorMessage = `The \`${MergeLabel}\` label was not added by an authorised ` +
-                    'maintainer. Authorised maintainers are:\n';
+                    `maintainer or by the PR author. The ${maintainers.length} authorised mergers are:\n`;
                 _.each(maintainers, (maintainer) => errorMessage = errorMessage.concat(`* @${maintainer}\n`));
                 throw new Error(errorMessage);
             }

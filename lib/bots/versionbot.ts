@@ -1682,13 +1682,17 @@ export class VersionBot extends ProcBot {
 	 */
 	private checkValidMaintainer(config: VersionBotConfiguration, event: GithubApiTypes.PullRequestEvent): void {
 		// If we have a list of valid maintainers, then we need to ensure that if the `ready-to-merge` label
-		// was added, that it was by one of these maintainers.
+		// was added, that it was by one of these maintainers *or* the author of the PR.
 		const maintainers = (config || {}).maintainers;
 		if (maintainers) {
+			// A user is a 'special' maintainer, if all reviews have been approved.
+			// Essentially this provides a mechanism for ensuring responsibility.
+			maintainers.push(event.pull_request.user.login);
+
 			// Get the user who added the label.
 			if (!_.includes(maintainers, event.sender.login)) {
 				let errorMessage = `The \`${MergeLabel}\` label was not added by an authorised ` +
-					'maintainer. Authorised maintainers are:\n';
+					`maintainer or by the PR author. The ${maintainers.length} authorised mergers are:\n`;
 				_.each(maintainers, (maintainer) => errorMessage = errorMessage.concat(`* @${maintainer}\n`));
 				throw new Error(errorMessage);
 			}
