@@ -55,6 +55,122 @@ A little Bot, using the ProcBot framework, that links communication services
     * Uses front's `comment`
     * Without syntax, private is assumed
 
+## What usernames are valid?
+
+(If you follow all of the rules in bold, then you follow all the rules)
+
+### GitHub
+
+Taken, in part, from https://github.com/join
+
+* **Must begin with: an alphanumeric.**
+* **Must only contain: alphanumeric or hyphens.**
+* Must end with: an alphanumeric (or hyphen, if legacy).
+* **Consecutive special characters: forbidden.**
+* Maximum: 39 characters.
+* Minimum: 1 character.
+* Collision avoidance: ignores case.
+
+### Front
+
+* Must begin with: lower case alphanumeric or underscore.
+* **Must only contain: lower case alphanumeric or underscores.**
+* Must end with: lower case alphanumeric or underscore.
+* **Consecutive special characters: forbidden.**
+* Maximum: In excess of 39 characters.
+* Minimum: 1 character.
+* Collision avoidance: ignores case.
+* API username: ignores case.
+
+### Flowdock
+
+* Must begin with: alphanumeric, hyphen, dot and underscore.
+* Must only contain: alphanumeric, hyphens, dots and underscores.
+* Must end with: alphanumeric, hyphen, dot and underscore.
+* Consecutive special characters: allowed.
+* Maximum: In excess of 39 characters.
+* Minimum: 1 character.
+* Collision avoidance: ignores case.
+* API username: ignores case.
+
+### Discourse
+
+* Must begin with: alphanumeric or underscore.
+* Must only contain: alphanumeric, hyphens, dots and underscores.
+* **Must end with: alphanumeric.**
+* **Consecutive special characters: forbidden.**
+* **Maximum: 20 characters.**
+* **Minimum: 3 characters.**
+* Collision avoidance: ignores case.
+* API username: ignores case.
+
+### Intersections
+
+#### Strict
+
+`/^[a-z0-9]{3,20}$/`
+
+* Must only contain lower case alphanumerics.
+* Maximum is 20 characters.
+* Minimum is 3 characters.
+
+Breaks for ForenameSurname, forename-surname, FornameSn, Nickname-, Forename-Surname, Nickname
+
+#### Substitute `-` with `_` for Front
+
+`^[a-z0-9][a-z0-9\-]{1,18}[a-z0-9]$`
+
+* Must begin with a lower case alphanumeric.
+* Must only contain lower case alphanumeric or hyphens.
+* Must end with a lower case alphanumeric.
+* Maximum is 20 characters.
+* Minimum is 3 characters.
+
+Front allows underscores, but not hyphens.  GitHub allows hyphens, but not underscores.  All other services allow both
+hyphens and underscores.
+
+Breaks for ForenameSurname, ForenameSn, Nickname-, Forename-Surname, Nickname
+
+#### Cast to lowercase
+
+`^[a-zA-Z0-9][a-zA-Z0-9\-]{1,18}[a-zA-Z0-9]$`
+
+* Must begin with an alphanumeric.
+* Must only contain alphanumeric or hyphens.
+* Must end with an alphanumeric.
+* Maximum is 20 characters.
+* Minimum is 3 characters.
+
+All services use case insensitive collision avoidance, so the username `TeSt` is equivalent to `test`. Those services
+that do use username as part of their API call are case insensitive for the username.
+
+Breaks for Nickname-
+
+#### Proposal
+
+* Substitute `-` with `_` when communicating with Front.
+* Cast to lower case.
+* Store an array of any accounts that still don't fit the pattern.
+
+#### Current github username conventions
+
+fsurname
+forenames
+forenamesurname123
+ForenameSurname
+fms
+forename-surname
+nickname
+ForenameSn
+surnamefn
+forenamesurname
+Nickname-
+forenamesn
+sorenamefurname
+Forename-Surname
+Nickname
+nickname123
+
 ## How does SyncBot work?
 
 ### Each event
