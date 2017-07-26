@@ -25,15 +25,9 @@ import { UtilityServiceEvent } from './service-utilities-types';
 export class MessengerService extends ServiceUtilities implements ServiceListener, ServiceEmitter {
 	private static _serviceName = path.basename(__filename.split('.')[0]);
 
-	/**
-	 * Connect to the service, used as part of construction.
-	 * @param data  Object containing the required details for the service.
-	 */
-	protected connect(data: MessengerConnectionDetails): void {
+	protected connect(_data: MessengerConnectionDetails): void {
 		throw new Error();
 	}
-
-	private buildListener(name: string, constructor: object):
 
 	protected emitData(_data: ServiceEmitContext): Promise<any> {
 		throw new Error();
@@ -49,15 +43,15 @@ export class MessengerService extends ServiceUtilities implements ServiceListene
 
 	/**
 	 * The name of this service, as required by the framework.
-	 * @returns  'front' string.
+	 * @returns  'messenger' string.
 	 */
 	get serviceName(): string {
 		return MessengerService._serviceName;
 	}
 
 	/**
-	 * Retrieve the SDK API handle for Front.
-	 * @return  The Front SDK API handle.
+	 * Retrieve the SDK API handle, if any.
+	 * @return  void
 	 */
 	get apiHandle(): void {
 		return;
