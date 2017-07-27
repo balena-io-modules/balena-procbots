@@ -18,7 +18,7 @@ import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import * as request from 'request-promise';
 import { DiscourseConnectionDetails, DiscourseEmitContext, DiscourseEvent } from '../../services/discourse-types';
-import { MessageAction, MessageContext, TransmitContext } from '../../services/messenger-types';
+import { MessageAction, MessageContext, MessageEvent, TransmitContext } from '../../services/messenger-types';
 import * as Translator from './translator';
 
 export class DiscourseTranslator implements Translator.Translator {
@@ -32,7 +32,7 @@ export class DiscourseTranslator implements Translator.Translator {
 	 * Translate the provided event, enqueued by the service, into a message context.
 	 * @param event  Data in the form raw to the service.
 	 */
-	public eventIntoMessage(event: DiscourseEvent): Promise<MessageContext> {
+	public eventIntoMessage(event: DiscourseEvent): Promise<MessageEvent> {
 		// Encode once the common parts of a request
 		const getGeneric = {
 			json: true,
@@ -57,7 +57,7 @@ export class DiscourseTranslator implements Translator.Translator {
 			// Gather metadata and resolve
 			const metadata = Translator.extractMetadata(details.post.raw);
 			const first = details.post.post_number === 1;
-			return {
+			const rawEvent: MessageContext = {
 				action: MessageAction.Create,
 				first,
 				genesis: metadata.genesis || event.source,
@@ -74,6 +74,15 @@ export class DiscourseTranslator implements Translator.Translator {
 				},
 				text: metadata.content,
 				title: details.topic.title,
+			};
+			return {
+				cookedEvent: {
+					// TODO: This to use _serviceName and translate event.cookedEvent.type
+					context: `discourse.${event.cookedEvent.context}`,
+					event: 'message',
+				},
+				rawEvent,
+				source: event.source,
 			};
 		});
 	}
@@ -152,6 +161,13 @@ export class DiscourseTranslator implements Translator.Translator {
 			message: ['post'],
 		};
 		return equivalents[name];
+	}
+
+	/**
+	 * Returns an array of all the service events that may be translated.
+	 */
+	public getAllTriggers(): string[] {
+		return ['post'];
 	}
 }
 

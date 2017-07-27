@@ -112,6 +112,6 @@ export class FlowdockDataHub implements DataHub {
 
 }
 
-export function createTranslator(data: FlowdockConnectionDetails): DataHub {
+export function createDataHub(data: FlowdockConnectionDetails): DataHub {
 	return new FlowdockDataHub(data);
 }

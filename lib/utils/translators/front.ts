@@ -19,7 +19,7 @@ import { Conversation, Front } from 'front-sdk';
 import * as _ from 'lodash';
 import * as request from 'request-promise';
 import { FrontConnectionDetails, FrontEmitContext, FrontEvent } from '../../services/front-types';
-import { MessageAction, MessageContext, TransmitContext } from '../../services/messenger-types';
+import { MessageAction, MessageContext, MessageEvent, TransmitContext } from '../../services/messenger-types';
 import * as Translator from './translator';
 
 export class FrontTranslator implements Translator.Translator {
@@ -41,7 +41,7 @@ export class FrontTranslator implements Translator.Translator {
 	 * Translate the provided data, enqueued by the service, into a message context.
 	 * @param event  Data in the form raw to the service.
 	 */
-	public eventIntoMessage(event: FrontEvent): Promise<MessageContext> {
+	public eventIntoMessage(event: FrontEvent): Promise<MessageEvent> {
 		// Calculate common request details once
 		const getGeneric = {
 			headers: {
@@ -84,7 +84,7 @@ export class FrontTranslator implements Translator.Translator {
 				}
 			}
 			// Return the generic form of this event
-			return {
+			const rawEvent = {
 				action: MessageAction.Create,
 				first,
 				genesis: metadata.genesis || event.source,
@@ -99,6 +99,15 @@ export class FrontTranslator implements Translator.Translator {
 				},
 				text: metadata.content,
 				title: details.event.conversation.subject,
+			};
+			return {
+				cookedEvent: {
+					// TODO: This to use _serviceName and translate event.cookedEvent.type
+					context: `front.${event.cookedEvent.context}`,
+					event: 'message',
+				},
+				rawEvent,
+				source: event.source,
 			};
 		});
 	}
@@ -198,6 +207,13 @@ export class FrontTranslator implements Translator.Translator {
 			message: ['event'],
 		};
 		return equivalents[name];
+	}
+
+	/**
+	 * Returns an array of all the service events that may be translated.
+	 */
+	public getAllTriggers(): string[] {
+		return ['event'];
 	}
 
 	/**

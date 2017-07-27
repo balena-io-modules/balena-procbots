@@ -17,7 +17,7 @@ limitations under the License.
 import * as Promise from 'bluebird';
 import { Session } from 'flowdock';
 import { FlowdockConnectionDetails, FlowdockEmitContext, FlowdockEvent } from '../../services/flowdock-types';
-import { MessageAction, MessageContext, TransmitContext } from '../../services/messenger-types';
+import { MessageAction, MessageContext, MessageEvent, TransmitContext } from '../../services/messenger-types';
 import * as Translator from './translator';
 
 export class FlowdockTranslator implements Translator.Translator {
@@ -33,7 +33,7 @@ export class FlowdockTranslator implements Translator.Translator {
 	 * Translate the provided event, enqueued by the service, into a message context.
 	 * @param event  Data in the form raw to the service.
 	 */
-	public eventIntoMessage(event: FlowdockEvent): Promise<MessageContext> {
+	public eventIntoMessage(event: FlowdockEvent): Promise<MessageEvent> {
 		// Separate out some parts of the message
 		const metadata = Translator.extractMetadata(event.rawEvent.content);
 		const titleAndText = metadata.content.match(/^(.*)\n--\n((?:\r|\n|.)*)$/);
@@ -41,7 +41,7 @@ export class FlowdockTranslator implements Translator.Translator {
 		const thread = event.rawEvent.thread_id;
 		const userId = event.rawEvent.user;
 		const org = this.organization;
-		const returnValue = {
+		const rawEvent = {
 			action: MessageAction.Create,
 			first: event.rawEvent.id === event.rawEvent.thread.initial_message,
 			genesis: metadata.genesis || event.source,
@@ -59,13 +59,29 @@ export class FlowdockTranslator implements Translator.Translator {
 		};
 		// If the data provided a username
 		if (event.rawEvent.external_user_name) {
-			returnValue.sourceIds.user = event.rawEvent.external_user_name;
-			return Promise.resolve(returnValue);
+			rawEvent.sourceIds.user = event.rawEvent.external_user_name;
+			return Promise.resolve({
+				cookedEvent: {
+					// TODO: This to use _serviceName and translate event.cookedEvent.type
+					context: `front.${event.cookedEvent.context}`,
+					event: 'message',
+				},
+				rawEvent,
+				source: event.source,
+			});
 		}
 		return this.fetchFromSession(`/organizations/${org}/users/${userId}`)
 		.then((user) => {
-			returnValue.sourceIds.user = user.nick;
-			return(returnValue);
+			rawEvent.sourceIds.user = user.nick;
+			return({
+				cookedEvent: {
+					// TODO: This to use _serviceName and translate event.cookedEvent.type
+					context: `front.${event.cookedEvent.context}`,
+					event: 'message',
+				},
+				rawEvent,
+				source: event.source,
+			});
 		});
 	}
 
@@ -129,6 +145,13 @@ export class FlowdockTranslator implements Translator.Translator {
 			message: ['message'],
 		};
 		return equivalents[name];
+	}
+
+	/**
+	 * Returns an array of all the service events that may be translated.
+	 */
+	public getAllTriggers(): string[] {
+		return ['message'];
 	}
 
 	/**

@@ -17,19 +17,27 @@
 import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import {
-	InterimContext, MessageContext, MessageIds,
+	InterimContext, MessageContext, MessageEvent, MessageIds,
 	Metadata, TransmitContext,
 } from '../../services/messenger-types';
 import {
-	ServiceEmitContext, ServiceEvent,
+	ServiceEmitContext, ServiceEmitter, ServiceEvent,
 } from '../../services/service-types';
 
 export interface Translator {
+	// TODO: This does not belong here but is going here for now.
+	// This is to reconcile:
+	// * Some services require credentials provided by the user in the hub service
+	// * Some services require centrally provided credentials
+	// * An emitter operates with exactly one set of credentials
+	// This maybe shouldn't use dataHub and could just use the getter function
+	makeEmitter(specificFetcher: (key: string) => Promise<string>, genericDetails: object): Promise<ServiceEmitter>;
+
 	/**
 	 * Translate the provided event, enqueued by the service, into a message context.
 	 * @param event  Data in the form raw to the service.
 	 */
-	eventIntoMessage(event: ServiceEvent): Promise<MessageContext>;
+	eventIntoMessage(event: ServiceEvent): Promise<MessageEvent>;
 
 	/**
 	 * Translate the provided message context into an emit context that will create the message.
@@ -45,7 +53,7 @@ export interface Translator {
 	 * Translate the provided message context into an emit context that will retrieve the thread history.
 	 * @param message    Standard form of the message.
 	 * @param shortlist  *DO NOT RELY ON THIS BEING USED.*
-	 *                   Optional, if the endpoint supports it then it may use this to shortlist the responses.
+	 *                   Optional, if the API supports it then it may use this to shortlist the responses server-side.
 	 */
 	messageIntoEmitReadThread(message: MessageContext, shortlist?: RegExp): Promise<ServiceEmitContext>;
 
@@ -54,6 +62,11 @@ export interface Translator {
 	 * @param name  Generic name for an event.
 	 */
 	eventNameIntoTriggers(name: string): string[];
+
+	/**
+	 * Returns an array of all the service events that may be translated.
+	 */
+	getAllTriggers(): string[];
 }
 
 /**

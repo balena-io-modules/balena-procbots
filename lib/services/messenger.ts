@@ -15,30 +15,72 @@
  */
 
 import * as Promise from 'bluebird';
+import * as _ from 'lodash';
 import * as path from 'path';
 
-import { MessengerConnectionDetails } from './messenger-types';
-import { ServiceEmitContext, ServiceEmitter, ServiceListener } from './service-types';
+import { createDataHub, DataHub } from '../utils/datahubs/datahub';
+import { createTranslator, Translator } from '../utils/translators/translator';
+import { MessengerConnectionDetails, TransmitContext } from './messenger-types';
+import {
+	ServiceEmitContext, ServiceEmitResponse,
+	ServiceEmitter, ServiceEvent,
+	ServiceListener, ServiceRegistration,
+} from './service-types';
 import { ServiceUtilities } from './service-utilities';
-import { UtilityServiceEvent } from './service-utilities-types';
 
 export class MessengerService extends ServiceUtilities implements ServiceListener, ServiceEmitter {
 	private static _serviceName = path.basename(__filename.split('.')[0]);
+	private translators: { [service: string]: Translator } = {};
+	private hub: DataHub;
+	private connectionDetails: MessengerConnectionDetails;
 
-	protected connect(_data: MessengerConnectionDetails): void {
-		throw new Error();
+	/**
+	 * Connect to the service, used as part of construction.
+	 * @param data  Object containing the required details for the service.
+	 */
+	protected connect(data: MessengerConnectionDetails): void {
+		this.connectionDetails = data;
+		_.map(data, (subConnectionDetails, serviceName) => {
+			this.translators[serviceName] = createTranslator(serviceName, subConnectionDetails);
+		});
+		// TODO: It is not the place of messenger to understand data hub?
+		this.hub = createDataHub(process.env.SYNCBOT_HUB_SERVICE, data[process.env.SYNCBOT_HUB_SERVICE]);
 	}
 
-	protected emitData(_data: ServiceEmitContext): Promise<any> {
-		throw new Error();
+	protected emitData(data: TransmitContext): Promise<ServiceEmitResponse> {
+		const valueFetcher = _.partial(this.hub.fetchValue, data.toIds.user);
+		const genericValues = this.connectionDetails[data.to];
+		const translator = this.translators[data.to];
+		return Promise.props({
+			data: translator.messageIntoEmitCreateMessage(data),
+			emitter: translator.makeEmitter(valueFetcher, genericValues),
+		})
+		.then((details: {emitter: ServiceEmitter, data: ServiceEmitContext}) => {
+			// TODO: Source???
+			return details.emitter.sendData({ contexts: {[data.to]: details.data}, source: 'messenger'});
+		});
 	}
 
 	protected startListening(): void {
-		throw new Error();
+		_.map(this.connectionDetails, (subConnectionDetails, subServiceName) => {
+			const subListener = require(`./${subServiceName}`).createListener(subConnectionDetails);
+			subListener.registerEvent({
+				// TODO: This is potentially noisy.  It is translating every event it can, including ones it might ...
+				// ... not care about.  Which isn't so bad, except some translations require API calls.
+				events: this.translators[subServiceName].getAllTriggers(),
+				listenerMethod: (_registration: ServiceRegistration, event: ServiceEvent) => {
+					this.translators[subServiceName].eventIntoMessage(event).then(this.queueData);
+				},
+				name: `${subServiceName}=>${this.serviceName}`,
+			});
+		});
 	}
 
-	protected verify(_data: UtilityServiceEvent): boolean {
-		throw new Error();
+	/**
+	 * Verify the event before enqueueing.  Trusts that the sub-listener will have performed it's own verification.
+	 */
+	protected verify(): boolean {
+		return true;
 	}
 
 	/**

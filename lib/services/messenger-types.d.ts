@@ -20,6 +20,7 @@ import {
 	ServiceEmitContext,
 	ServiceEmitResponse,
 } from './service-types';
+import { UtilityServiceEvent } from './service-utilities-types';
 
 export enum MessageAction {
 	Create,
@@ -94,5 +95,9 @@ export interface FlowDefinition {
 }
 
 export interface MessengerConnectionDetails {
-	[key: string]: object;
+	[serviceName: string]: object;
+}
+
+export interface MessageEvent extends UtilityServiceEvent {
+	rawEvent: MessageContext;
 }

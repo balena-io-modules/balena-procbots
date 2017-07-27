@@ -11,7 +11,7 @@ declare module 'flowdock' {
 		public on(event: string, callback: (error: Error) => void): void;
 		public removeListener(event: string, callback: (error: Error) => void): void;
 		public _request(
-			method: string, path: string, data: {},
+			method: string, path: string, data: {} | undefined,
 			callback: (error: Error, body: any, result: any) => void,
 		): void;
 	}

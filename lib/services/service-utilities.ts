@@ -155,7 +155,7 @@ export abstract class ServiceUtilities extends WorkerClient<string> implements S
 	 * endpoint  Definition of the endpoint to emit to.
 	 * payload   Data to be delivered.
 	 */
-	protected abstract emitData(data: ServiceEmitContext): Promise<any>;
+	protected abstract emitData(data: ServiceEmitContext): Promise<ServiceEmitResponse>;
 
 	/** Awaken this class as a listener. */
 	protected abstract startListening(): void;
