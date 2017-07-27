@@ -228,7 +228,7 @@ const StatusAutoMerge = {
 	/** Status context message for automatic merging success. */
 	Success: 'PR merging is in progress',
 	/** Status context message for automatic merging failure. */
-	Failure: 'Manual merging of PR forbidden'
+	Pending: 'VersionBot should be used to merge PR'
 };
 
 /**
@@ -780,11 +780,11 @@ export class VersionBot extends ProcBot {
 		this.dispatchToEmitter(this.githubEmitterName, {
 			data: {
 				context: StatusAutoMerge.Context,
-				description: StatusAutoMerge.Failure,
+				description: StatusAutoMerge.Pending,
 				owner,
 				repo: name,
 				sha: head.sha,
-				state: 'failure'
+				state: 'pending'
 			},
 			method: this.githubApi.repos.createStatus,
 		});
@@ -1642,11 +1642,11 @@ export class VersionBot extends ProcBot {
 								this.dispatchToEmitter(this.githubEmitterName, {
 									data: {
 										context: StatusAutoMerge.Context,
-										description: StatusAutoMerge.Failure,
+										description: StatusAutoMerge.Pending,
 										owner,
 										repo,
 										sha: head.sha,
-										state: 'failure'
+										state: 'pending'
 									},
 									method: this.githubApi.repos.createStatus,
 								});
