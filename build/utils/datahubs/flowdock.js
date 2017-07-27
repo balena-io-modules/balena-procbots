@@ -56,9 +56,9 @@ class FlowdockDataHub {
     }
 }
 exports.FlowdockDataHub = FlowdockDataHub;
-function createTranslator(data) {
+function createDataHub(data) {
     return new FlowdockDataHub(data);
 }
-exports.createTranslator = createTranslator;
+exports.createDataHub = createDataHub;
 
 //# sourceMappingURL=flowdock.js.map

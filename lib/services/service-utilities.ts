@@ -102,13 +102,13 @@ export abstract class ServiceUtilities extends WorkerClient<string> implements S
 			if (context) {
 				return new Promise<ServiceEmitResponse>((resolve) => {
 					this.emitData(context)
-					.then((response) => {
+					.then((response: any) => {
 						resolve({
 							response,
 							source: this.serviceName,
 						});
 					})
-					.catch((err) => {
+					.catch((err: TypedError) => {
 						resolve({
 							err,
 							source: this.serviceName,
@@ -155,7 +155,7 @@ export abstract class ServiceUtilities extends WorkerClient<string> implements S
 	 * endpoint  Definition of the endpoint to emit to.
 	 * payload   Data to be delivered.
 	 */
-	protected abstract emitData(data: ServiceEmitContext): Promise<ServiceEmitResponse>;
+	protected abstract emitData(data: ServiceEmitContext): any;
 
 	/** Awaken this class as a listener. */
 	protected abstract startListening(): void;

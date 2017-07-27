@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>MessengerIds | Resin ProcBots</title>
+	<title>DataHub | Resin ProcBots</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -54,33 +54,38 @@
 					<a href="../globals.html">Globals</a>
 				</li>
 				<li>
-					<a href="../modules/_services_messenger_types_.html">&quot;services/messenger-types&quot;</a>
+					<a href="../modules/_utils_datahubs_datahub_.html">&quot;utils/datahubs/datahub&quot;</a>
 				</li>
 				<li>
-					<a href="_services_messenger_types_.messengerids.html">MessengerIds</a>
+					<a href="_utils_datahubs_datahub_.datahub.html">DataHub</a>
 				</li>
 			</ul>
-			<h1>Interface MessengerIds</h1>
+			<h1>Interface DataHub</h1>
 		</div>
 	</div>
 </header>
 <div class="container container-main">
 	<div class="row">
 		<div class="col-8 col-content">
+			<section class="tsd-panel tsd-comment">
+				<div class="tsd-comment tsd-typography">
+					<div class="lead">
+						<p>A definition for a service that allows the retrieval of user-set values.</p>
+					</div>
+				</div>
+			</section>
 			<section class="tsd-panel tsd-hierarchy">
 				<h3>Hierarchy</h3>
 				<ul class="tsd-hierarchy">
 					<li>
-						<span class="target">MessengerIds</span>
-						<ul class="tsd-hierarchy">
-							<li>
-								<a href="_services_messenger_types_.receiptids.html" class="tsd-signature-type">ReceiptIds</a>
-							</li>
-							<li>
-								<a href="_services_messenger_types_.transmitids.html" class="tsd-signature-type">TransmitIds</a>
-							</li>
-						</ul>
+						<span class="target">DataHub</span>
 					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel">
+				<h3>Implemented by</h3>
+				<ul class="tsd-hierarchy">
+					<li><a href="../classes/_utils_datahubs_flowdock_.flowdockdatahub.html" class="tsd-signature-type">FlowdockDataHub</a></li>
 				</ul>
 			</section>
 			<section class="tsd-panel-group tsd-index-group">
@@ -88,80 +93,52 @@
 				<section class="tsd-panel tsd-index-panel">
 					<div class="tsd-index-content">
 						<section class="tsd-index-section ">
-							<h3>Properties</h3>
+							<h3>Methods</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_services_messenger_types_.messengerids.html#flow" class="tsd-kind-icon">flow</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_services_messenger_types_.messengerids.html#message" class="tsd-kind-icon">message</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_services_messenger_types_.messengerids.html#thread" class="tsd-kind-icon">thread</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_services_messenger_types_.messengerids.html#token" class="tsd-kind-icon">token</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_services_messenger_types_.messengerids.html#url" class="tsd-kind-icon">url</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-interface"><a href="_services_messenger_types_.messengerids.html#user" class="tsd-kind-icon">user</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-interface"><a href="_utils_datahubs_datahub_.datahub.html#fetchvalue" class="tsd-kind-icon">fetch<wbr>Value</a></li>
 							</ul>
 						</section>
 					</div>
 				</section>
 			</section>
 			<section class="tsd-panel-group tsd-member-group ">
-				<h2>Properties</h2>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="flow" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> flow</h3>
-					<div class="tsd-signature tsd-kind-icon">flow<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/messenger-types.ts#L51">services/messenger-types.ts:51</a></li>
-						</ul>
-					</aside>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="message" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> message</h3>
-					<div class="tsd-signature tsd-kind-icon">message<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/messenger-types.ts#L48">services/messenger-types.ts:48</a></li>
-						</ul>
-					</aside>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="thread" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> thread</h3>
-					<div class="tsd-signature tsd-kind-icon">thread<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/messenger-types.ts#L49">services/messenger-types.ts:49</a></li>
-						</ul>
-					</aside>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="token" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> token</h3>
-					<div class="tsd-signature tsd-kind-icon">token<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/messenger-types.ts#L50">services/messenger-types.ts:50</a></li>
-						</ul>
-					</aside>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="url" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> url</h3>
-					<div class="tsd-signature tsd-kind-icon">url<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/messenger-types.ts#L52">services/messenger-types.ts:52</a></li>
-						</ul>
-					</aside>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-					<a name="user" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagOptional">Optional</span> user</h3>
-					<div class="tsd-signature tsd-kind-icon">user<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">undefined</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">string</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/messenger-types.ts#L47">services/messenger-types.ts:47</a></li>
-						</ul>
-					</aside>
+				<h2>Methods</h2>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-interface">
+					<a name="fetchvalue" class="tsd-anchor"></a>
+					<h3>fetch<wbr>Value</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-interface">
+						<li class="tsd-signature tsd-kind-icon">fetch<wbr>Value<span class="tsd-signature-symbol">(</span>user<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, value<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/utils/datahubs/datahub.ts#L26">utils/datahubs/datahub.ts:26</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Retrieve a value that a user has set.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>user: <span class="tsd-signature-type">string</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The user who&#39;s data set we wish to search.</p>
+									</div>
+								</li>
+								<li>
+									<h5>value: <span class="tsd-signature-type">string</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>This should be &#39;key&#39;.  It is the data we wish to search for.</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						</li>
+					</ul>
 				</section>
 			</section>
 		</div>
@@ -207,8 +184,14 @@
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_services_messenger_.html">"services/messenger"</a>
 					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_services_service_utilities_.html">"services/service-<wbr>utilities"</a>
+					</li>
 					<li class="current tsd-kind-external-module">
-						<a href="../modules/_services_messenger_types_.html">"services/messenger-<wbr>types"</a>
+						<a href="../modules/_utils_datahubs_datahub_.html">"utils/datahubs/datahub"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_utils_datahubs_flowdock_.html">"utils/datahubs/flowdock"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_utils_environment_.html">"utils/environment"</a>
@@ -216,78 +199,36 @@
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_utils_logger_.html">"utils/logger"</a>
 					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_utils_translators_discourse_.html">"utils/translators/discourse"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_utils_translators_flowdock_.html">"utils/translators/flowdock"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_utils_translators_front_.html">"utils/translators/front"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_utils_translators_translator_.html">"utils/translators/translator"</a>
+					</li>
 				</ul>
 			</nav>
 			<nav class="tsd-navigation secondary menu-sticky">
 				<ul class="before-current">
-					<li class=" tsd-kind-enum tsd-parent-kind-external-module">
-						<a href="../enums/_services_messenger_types_.messengeraction.html" class="tsd-kind-icon">Messenger<wbr>Action</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_services_messenger_types_.datahub.html" class="tsd-kind-icon">Data<wbr>Hub</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_services_messenger_types_.flowdefinition.html" class="tsd-kind-icon">Flow<wbr>Definition</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_services_messenger_types_.interimcontext.html" class="tsd-kind-icon">Interim<wbr>Context</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_services_messenger_types_.messengercontext.html" class="tsd-kind-icon">Messenger<wbr>Context</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_services_messenger_types_.messengeremitcontext.html" class="tsd-kind-icon">Messenger<wbr>Emit<wbr>Context</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_services_messenger_types_.messengeremitresponse.html" class="tsd-kind-icon">Messenger<wbr>Emit<wbr>Response</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_services_messenger_types_.messengerevent.html" class="tsd-kind-icon">Messenger<wbr>Event</a>
-					</li>
 				</ul>
 				<ul class="current">
 					<li class="current tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_services_messenger_types_.messengerids.html" class="tsd-kind-icon">Messenger<wbr>Ids</a>
+						<a href="_utils_datahubs_datahub_.datahub.html" class="tsd-kind-icon">Data<wbr>Hub</a>
 						<ul>
-							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="_services_messenger_types_.messengerids.html#flow" class="tsd-kind-icon">flow</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="_services_messenger_types_.messengerids.html#message" class="tsd-kind-icon">message</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="_services_messenger_types_.messengerids.html#thread" class="tsd-kind-icon">thread</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="_services_messenger_types_.messengerids.html#token" class="tsd-kind-icon">token</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="_services_messenger_types_.messengerids.html#url" class="tsd-kind-icon">url</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-interface">
-								<a href="_services_messenger_types_.messengerids.html#user" class="tsd-kind-icon">user</a>
+							<li class=" tsd-kind-method tsd-parent-kind-interface">
+								<a href="_utils_datahubs_datahub_.datahub.html#fetchvalue" class="tsd-kind-icon">fetch<wbr>Value</a>
 							</li>
 						</ul>
 					</li>
 				</ul>
 				<ul class="after-current">
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_services_messenger_types_.messengerworkerevent.html" class="tsd-kind-icon">Messenger<wbr>Worker<wbr>Event</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_services_messenger_types_.metadata.html" class="tsd-kind-icon">Metadata</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_services_messenger_types_.receiptcontext.html" class="tsd-kind-icon">Receipt<wbr>Context</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_services_messenger_types_.receiptids.html" class="tsd-kind-icon">Receipt<wbr>Ids</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_services_messenger_types_.transmitcontext.html" class="tsd-kind-icon">Transmit<wbr>Context</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="_services_messenger_types_.transmitids.html" class="tsd-kind-icon">Transmit<wbr>Ids</a>
+					<li class=" tsd-kind-function tsd-parent-kind-external-module">
+						<a href="../modules/_utils_datahubs_datahub_.html#createdatahub" class="tsd-kind-icon">create<wbr>Data<wbr>Hub</a>
 					</li>
 				</ul>
 			</nav>

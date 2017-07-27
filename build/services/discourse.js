@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const Promise = require("bluebird");
+const _ = require("lodash");
 const path = require("path");
 const request = require("request-promise");
 const service_utilities_1 = require("./service-utilities");
@@ -14,13 +15,15 @@ class DiscourseService extends service_utilities_1.ServiceUtilities {
     }
     emitData(context) {
         return new Promise((resolve) => {
+            const qs = {
+                api_key: this.connectionDetails.token,
+                api_username: this.connectionDetails.username,
+            };
+            _.merge(qs, context.qs);
             const requestOptions = {
                 body: context.payload,
                 json: true,
-                qs: {
-                    api_key: this.connectionDetails.token,
-                    api_username: this.connectionDetails.username,
-                },
+                qs,
                 url: `https://${this.connectionDetails.instance}/${context.path}`,
                 method: context.method,
             };

@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>Worker | Resin ProcBots</title>
+	<title>Translator | Resin ProcBots</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -54,45 +54,33 @@
 					<a href="../globals.html">Globals</a>
 				</li>
 				<li>
-					<a href="../modules/_framework_worker_.html">&quot;framework/worker&quot;</a>
+					<a href="../modules/_utils_translators_translator_.html">&quot;utils/translators/translator&quot;</a>
 				</li>
 				<li>
-					<a href="_framework_worker_.worker.html">Worker</a>
+					<a href="_utils_translators_translator_.translator.html">Translator</a>
 				</li>
 			</ul>
-			<h1>Class Worker&lt;T&gt;</h1>
+			<h1>Interface Translator</h1>
 		</div>
 	</div>
 </header>
 <div class="container container-main">
 	<div class="row">
 		<div class="col-8 col-content">
-			<section class="tsd-panel tsd-comment">
-				<div class="tsd-comment tsd-typography">
-					<div class="lead">
-						<p>The Worker class is responsible for the execution of scheduling tasks based on events.
-							Each Worker instance is bound to a context. This context could be, for example, a
-							unique Github repository, or a directory in a file system, a specific customer service
-							in a set, etc. It is also generic, and can therefore be of any type.
-							When WorkerEvents are added to an empty queue, they are processed for being worked on
-						in the next tick of event loop.</p>
-					</div>
-				</div>
-			</section>
-			<section class="tsd-panel tsd-type-parameters">
-				<h3>Type parameters</h3>
-				<ul class="tsd-type-parameters">
-					<li>
-						<h4>T</h4>
-					</li>
-				</ul>
-			</section>
 			<section class="tsd-panel tsd-hierarchy">
 				<h3>Hierarchy</h3>
 				<ul class="tsd-hierarchy">
 					<li>
-						<span class="target">Worker</span>
+						<span class="target">Translator</span>
 					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel">
+				<h3>Implemented by</h3>
+				<ul class="tsd-hierarchy">
+					<li><a href="../classes/_utils_translators_discourse_.discoursetranslator.html" class="tsd-signature-type">DiscourseTranslator</a></li>
+					<li><a href="../classes/_utils_translators_flowdock_.flowdocktranslator.html" class="tsd-signature-type">FlowdockTranslator</a></li>
+					<li><a href="../classes/_utils_translators_front_.fronttranslator.html" class="tsd-signature-type">FrontTranslator</a></li>
 				</ul>
 			</section>
 			<section class="tsd-panel-group tsd-index-group">
@@ -100,203 +88,170 @@
 				<section class="tsd-panel tsd-index-panel">
 					<div class="tsd-index-content">
 						<section class="tsd-index-section ">
-							<h3>Constructors</h3>
-							<ul class="tsd-index-list">
-								<li class="tsd-kind-constructor tsd-parent-kind-class"><a href="_framework_worker_.worker.html#constructor" class="tsd-kind-icon">constructor</a></li>
-							</ul>
-						</section>
-						<section class="tsd-index-section tsd-is-private tsd-is-private-protected">
-							<h3>Properties</h3>
-							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="_framework_worker_.worker.html#_context" class="tsd-kind-icon">_context</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="_framework_worker_.worker.html#ondone" class="tsd-kind-icon">on<wbr>Done</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="_framework_worker_.worker.html#queue" class="tsd-kind-icon">queue</a></li>
-							</ul>
-						</section>
-						<section class="tsd-index-section ">
-							<h3>Accessors</h3>
-							<ul class="tsd-index-list">
-								<li class="tsd-kind-get-signature tsd-parent-kind-class"><a href="_framework_worker_.worker.html#context" class="tsd-kind-icon">context</a></li>
-							</ul>
-						</section>
-						<section class="tsd-index-section ">
 							<h3>Methods</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_framework_worker_.worker.html#addevent" class="tsd-kind-icon">add<wbr>Event</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><a href="_framework_worker_.worker.html#runworker" class="tsd-kind-icon">run<wbr>Worker</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-interface"><a href="_utils_translators_translator_.translator.html#eventintomessage" class="tsd-kind-icon">event<wbr>Into<wbr>Message</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-interface"><a href="_utils_translators_translator_.translator.html#eventnameintotriggers" class="tsd-kind-icon">event<wbr>Name<wbr>Into<wbr>Triggers</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-interface"><a href="_utils_translators_translator_.translator.html#getalltriggers" class="tsd-kind-icon">get<wbr>All<wbr>Triggers</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-interface"><a href="_utils_translators_translator_.translator.html#messageintoemitcreatemessage" class="tsd-kind-icon">message<wbr>Into<wbr>Emit<wbr>Create<wbr>Message</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-interface"><a href="_utils_translators_translator_.translator.html#messageintoemitreadthread" class="tsd-kind-icon">message<wbr>Into<wbr>Emit<wbr>Read<wbr>Thread</a></li>
 							</ul>
 						</section>
 					</div>
-				</section>
-			</section>
-			<section class="tsd-panel-group tsd-member-group ">
-				<h2>Constructors</h2>
-				<section class="tsd-panel tsd-member tsd-kind-constructor tsd-parent-kind-class">
-					<a name="constructor" class="tsd-anchor"></a>
-					<h3>constructor</h3>
-					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">new <wbr>Worker<span class="tsd-signature-symbol">(</span>context<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">T</span>, onDone<span class="tsd-signature-symbol">: </span><a href="../modules/_framework_worker_.html#workerremove" class="tsd-signature-type">WorkerRemove</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_framework_worker_.worker.html" class="tsd-signature-type">Worker</a></li>
-					</ul>
-					<ul class="tsd-descriptions">
-						<li class="tsd-description">
-							<aside class="tsd-sources">
-								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/worker.ts#L57">framework/worker.ts:57</a></li>
-								</ul>
-							</aside>
-							<div class="tsd-comment tsd-typography">
-								<div class="lead">
-									<p>Creates the Worker class, specifying a context and the parent Map.</p>
-								</div>
-							</div>
-							<h4 class="tsd-parameters-title">Parameters</h4>
-							<ul class="tsd-parameters">
-								<li>
-									<h5>context: <span class="tsd-signature-type">T</span></h5>
-									<div class="tsd-comment tsd-typography">
-										<div class="lead">
-											<p>The context to use for hashing.</p>
-										</div>
-									</div>
-								</li>
-								<li>
-									<h5>onDone: <a href="../modules/_framework_worker_.html#workerremove" class="tsd-signature-type">WorkerRemove</a></h5>
-									<div class="tsd-comment tsd-typography">
-										<div class="lead">
-											<p>The method to use to remove a Worker post-event processing.</p>
-										</div>
-									</div>
-								</li>
-							</ul>
-							<h4 class="tsd-returns-title">Returns <a href="_framework_worker_.worker.html" class="tsd-signature-type">Worker</a></h4>
-						</li>
-					</ul>
-				</section>
-			</section>
-			<section class="tsd-panel-group tsd-member-group tsd-is-private tsd-is-private-protected">
-				<h2>Properties</h2>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private">
-					<a name="_context" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagPrivate">Private</span> _context</h3>
-					<div class="tsd-signature tsd-kind-icon">_context<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">T</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/worker.ts#L53">framework/worker.ts:53</a></li>
-						</ul>
-					</aside>
-					<div class="tsd-comment tsd-typography">
-						<div class="lead">
-							<p>Holds the context for the Worker.</p>
-						</div>
-					</div>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private">
-					<a name="ondone" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagPrivate">Private</span> on<wbr>Done</h3>
-					<div class="tsd-signature tsd-kind-icon">on<wbr>Done<span class="tsd-signature-symbol">:</span> <a href="../modules/_framework_worker_.html#workerremove" class="tsd-signature-type">WorkerRemove</a></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/worker.ts#L57">framework/worker.ts:57</a></li>
-						</ul>
-					</aside>
-					<div class="tsd-comment tsd-typography">
-						<div class="lead">
-							<p>Method to call when a Worker is to be removed.</p>
-						</div>
-					</div>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private">
-					<a name="queue" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagPrivate">Private</span> queue</h3>
-					<div class="tsd-signature tsd-kind-icon">queue<span class="tsd-signature-symbol">:</span> <a href="../interfaces/_framework_worker_.workerevent.html" class="tsd-signature-type">WorkerEvent</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> =&nbsp;[]</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/worker.ts#L55">framework/worker.ts:55</a></li>
-						</ul>
-					</aside>
-					<div class="tsd-comment tsd-typography">
-						<div class="lead">
-							<p>Holds the queue of events to work on.</p>
-						</div>
-					</div>
-				</section>
-			</section>
-			<section class="tsd-panel-group tsd-member-group ">
-				<h2>Accessors</h2>
-				<section class="tsd-panel tsd-member tsd-kind-get-signature tsd-parent-kind-class">
-					<a name="context" class="tsd-anchor"></a>
-					<h3>context</h3>
-					<ul class="tsd-signatures tsd-kind-get-signature tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">get</span> context<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">T</span></li>
-					</ul>
-					<ul class="tsd-descriptions">
-						<li class="tsd-description">
-							<aside class="tsd-sources">
-								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/worker.ts#L73">framework/worker.ts:73</a></li>
-								</ul>
-							</aside>
-							<div class="tsd-comment tsd-typography">
-								<div class="lead">
-									<p>Retrieve the context for the Worker.</p>
-								</div>
-							</div>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">T</span></h4>
-							<p>The context for the Worker.</p>
-						</li>
-					</ul>
 				</section>
 			</section>
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Methods</h2>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
-					<a name="addevent" class="tsd-anchor"></a>
-					<h3>add<wbr>Event</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-						<li class="tsd-signature tsd-kind-icon">add<wbr>Event<span class="tsd-signature-symbol">(</span>event<span class="tsd-signature-symbol">: </span><a href="../interfaces/_framework_worker_.workerevent.html" class="tsd-signature-type">WorkerEvent</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-interface">
+					<a name="eventintomessage" class="tsd-anchor"></a>
+					<h3>event<wbr>Into<wbr>Message</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-interface">
+						<li class="tsd-signature tsd-kind-icon">event<wbr>Into<wbr>Message<span class="tsd-signature-symbol">(</span>event<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ServiceEvent</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">MessageEvent</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/worker.ts#L81">framework/worker.ts:81</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/utils/translators/translator.ts#L40">utils/translators/translator.ts:40</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
-									<p>Add a new event to the Worker&#39;s event queue.</p>
+									<p>Translate the provided event, enqueued by the service, into a message context.</p>
 								</div>
 							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>event: <a href="../interfaces/_framework_worker_.workerevent.html" class="tsd-signature-type">WorkerEvent</a></h5>
+									<h5>event: <span class="tsd-signature-type">ServiceEvent</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Data in the form raw to the service.</p>
+									</div>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">MessageEvent</span><span class="tsd-signature-symbol">&gt;</span></h4>
 						</li>
 					</ul>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private">
-					<a name="runworker" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagPrivate">Private</span> run<wbr>Worker</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
-						<li class="tsd-signature tsd-kind-icon">run<wbr>Worker<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-interface">
+					<a name="eventnameintotriggers" class="tsd-anchor"></a>
+					<h3>event<wbr>Name<wbr>Into<wbr>Triggers</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-interface">
+						<li class="tsd-signature tsd-kind-icon">event<wbr>Name<wbr>Into<wbr>Triggers<span class="tsd-signature-symbol">(</span>name<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/worker.ts#L93">framework/worker.ts:93</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/utils/translators/translator.ts#L64">utils/translators/translator.ts:64</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
-									<p>Runs the next worker in the queue, before deleting its entry. Should more entries
-									exist it then runs those.</p>
+									<p>Translate the provided generic name for an event into the service events to listen to.</p>
 								</div>
 							</div>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>name: <span class="tsd-signature-type">string</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Generic name for an event.</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-interface">
+					<a name="getalltriggers" class="tsd-anchor"></a>
+					<h3>get<wbr>All<wbr>Triggers</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-interface">
+						<li class="tsd-signature tsd-kind-icon">get<wbr>All<wbr>Triggers<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/utils/translators/translator.ts#L69">utils/translators/translator.ts:69</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Returns an array of all the service events that may be translated.</p>
+								</div>
+							</div>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-interface">
+					<a name="messageintoemitcreatemessage" class="tsd-anchor"></a>
+					<h3>message<wbr>Into<wbr>Emit<wbr>Create<wbr>Message</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-interface">
+						<li class="tsd-signature tsd-kind-icon">message<wbr>Into<wbr>Emit<wbr>Create<wbr>Message<span class="tsd-signature-symbol">(</span>message<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">TransmitContext</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ServiceEmitContext</span><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/utils/translators/translator.ts#L46">utils/translators/translator.ts:46</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Translate the provided message context into an emit context that will create the message.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>message: <span class="tsd-signature-type">TransmitContext</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Standard form of the message.</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ServiceEmitContext</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-interface">
+					<a name="messageintoemitreadthread" class="tsd-anchor"></a>
+					<h3>message<wbr>Into<wbr>Emit<wbr>Read<wbr>Thread</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-interface">
+						<li class="tsd-signature tsd-kind-icon">message<wbr>Into<wbr>Emit<wbr>Read<wbr>Thread<span class="tsd-signature-symbol">(</span>message<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">MessageContext</span>, shortlist<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">RegExp</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ServiceEmitContext</span><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/utils/translators/translator.ts#L58">utils/translators/translator.ts:58</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Translate the provided message context into an emit context that will retrieve the thread history.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>message: <span class="tsd-signature-type">MessageContext</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Standard form of the message.</p>
+									</div>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> shortlist: <span class="tsd-signature-type">RegExp</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p><em>DO NOT RELY ON THIS BEING USED.</em>
+										Optional, if the API supports it then it may use this to shortlist the responses server-side.</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ServiceEmitContext</span><span class="tsd-signature-symbol">&gt;</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -323,7 +278,7 @@
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_framework_procbot_.html">"framework/procbot"</a>
 					</li>
-					<li class="current tsd-kind-external-module">
+					<li class=" tsd-kind-external-module">
 						<a href="../modules/_framework_worker_.html">"framework/worker"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
@@ -368,7 +323,7 @@
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_utils_translators_front_.html">"utils/translators/front"</a>
 					</li>
-					<li class=" tsd-kind-external-module">
+					<li class="current tsd-kind-external-module">
 						<a href="../modules/_utils_translators_translator_.html">"utils/translators/translator"</a>
 					</li>
 				</ul>
@@ -377,45 +332,42 @@
 				<ul class="before-current">
 				</ul>
 				<ul class="current">
-					<li class="current tsd-kind-class tsd-parent-kind-external-module tsd-has-type-parameter">
-						<a href="_framework_worker_.worker.html" class="tsd-kind-icon">Worker</a>
+					<li class="current tsd-kind-interface tsd-parent-kind-external-module">
+						<a href="_utils_translators_translator_.translator.html" class="tsd-kind-icon">Translator</a>
 						<ul>
-							<li class=" tsd-kind-constructor tsd-parent-kind-class">
-								<a href="_framework_worker_.worker.html#constructor" class="tsd-kind-icon">constructor</a>
+							<li class=" tsd-kind-method tsd-parent-kind-interface">
+								<a href="_utils_translators_translator_.translator.html#eventintomessage" class="tsd-kind-icon">event<wbr>Into<wbr>Message</a>
 							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-private">
-								<a href="_framework_worker_.worker.html#_context" class="tsd-kind-icon">_context</a>
+							<li class=" tsd-kind-method tsd-parent-kind-interface">
+								<a href="_utils_translators_translator_.translator.html#eventnameintotriggers" class="tsd-kind-icon">event<wbr>Name<wbr>Into<wbr>Triggers</a>
 							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-private">
-								<a href="_framework_worker_.worker.html#ondone" class="tsd-kind-icon">on<wbr>Done</a>
+							<li class=" tsd-kind-method tsd-parent-kind-interface">
+								<a href="_utils_translators_translator_.translator.html#getalltriggers" class="tsd-kind-icon">get<wbr>All<wbr>Triggers</a>
 							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-private">
-								<a href="_framework_worker_.worker.html#queue" class="tsd-kind-icon">queue</a>
+							<li class=" tsd-kind-method tsd-parent-kind-interface">
+								<a href="_utils_translators_translator_.translator.html#messageintoemitcreatemessage" class="tsd-kind-icon">message<wbr>Into<wbr>Emit<wbr>Create<wbr>Message</a>
 							</li>
-							<li class=" tsd-kind-get-signature tsd-parent-kind-class">
-								<a href="_framework_worker_.worker.html#context" class="tsd-kind-icon">context</a>
-							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class">
-								<a href="_framework_worker_.worker.html#addevent" class="tsd-kind-icon">add<wbr>Event</a>
-							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-private">
-								<a href="_framework_worker_.worker.html#runworker" class="tsd-kind-icon">run<wbr>Worker</a>
+							<li class=" tsd-kind-method tsd-parent-kind-interface">
+								<a href="_utils_translators_translator_.translator.html#messageintoemitreadthread" class="tsd-kind-icon">message<wbr>Into<wbr>Emit<wbr>Read<wbr>Thread</a>
 							</li>
 						</ul>
 					</li>
 				</ul>
 				<ul class="after-current">
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
-						<a href="../interfaces/_framework_worker_.workerevent.html" class="tsd-kind-icon">Worker<wbr>Event</a>
+					<li class=" tsd-kind-function tsd-parent-kind-external-module">
+						<a href="../modules/_utils_translators_translator_.html#createtranslator" class="tsd-kind-icon">create<wbr>Translator</a>
 					</li>
-					<li class=" tsd-kind-type-alias tsd-parent-kind-external-module">
-						<a href="../modules/_framework_worker_.html#workermap" class="tsd-kind-icon">Worker<wbr>Map</a>
+					<li class=" tsd-kind-function tsd-parent-kind-external-module">
+						<a href="../modules/_utils_translators_translator_.html#extractmetadata" class="tsd-kind-icon">extract<wbr>Metadata</a>
 					</li>
-					<li class=" tsd-kind-type-alias tsd-parent-kind-external-module">
-						<a href="../modules/_framework_worker_.html#workermethod" class="tsd-kind-icon">Worker<wbr>Method</a>
+					<li class=" tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported">
+						<a href="../modules/_utils_translators_translator_.html#getindicatorarrays" class="tsd-kind-icon">get<wbr>Indicator<wbr>Arrays</a>
 					</li>
-					<li class=" tsd-kind-type-alias tsd-parent-kind-external-module">
-						<a href="../modules/_framework_worker_.html#workerremove" class="tsd-kind-icon">Worker<wbr>Remove</a>
+					<li class=" tsd-kind-function tsd-parent-kind-external-module">
+						<a href="../modules/_utils_translators_translator_.html#initinterimcontext" class="tsd-kind-icon">init<wbr>Interim<wbr>Context</a>
+					</li>
+					<li class=" tsd-kind-function tsd-parent-kind-external-module">
+						<a href="../modules/_utils_translators_translator_.html#stringifymetadata" class="tsd-kind-icon">stringify<wbr>Metadata</a>
 					</li>
 				</ul>
 			</nav>

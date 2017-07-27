@@ -31,7 +31,7 @@ export interface Translator {
 	// * Some services require centrally provided credentials
 	// * An emitter operates with exactly one set of credentials
 	// This maybe shouldn't use dataHub and could just use the getter function
-	makeEmitter(specificFetcher: (key: string) => Promise<string>, genericDetails: object): Promise<ServiceEmitter>;
+	// makeEmitter(specificFetcher: (key: string) => Promise<string>, genericDetails: object): Promise<ServiceEmitter>;
 
 	/**
 	 * Translate the provided event, enqueued by the service, into a message context.

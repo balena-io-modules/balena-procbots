@@ -15,7 +15,7 @@
  */
 
 import { ConversationComments, Front, RequestData, ResponseData, Status } from 'front-sdk';
-import { ServiceAPIHandle, ServiceEmitContext } from './service-types';
+import { ServiceAPIHandle, ServiceEmitContext, ServiceEmitResponse } from './service-types';
 import { UtilityServiceEvent } from './service-utilities-types';
 
 export type FrontResponse = ResponseData|Status|void|ConversationComments;

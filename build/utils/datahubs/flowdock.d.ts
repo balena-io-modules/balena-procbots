@@ -10,4 +10,4 @@ export declare class FlowdockDataHub implements DataHub {
     private fetchUserId;
     private fetchFromSession;
 }
-export declare function createTranslator(data: FlowdockConnectionDetails): DataHub;
+export declare function createDataHub(data: FlowdockConnectionDetails): DataHub;

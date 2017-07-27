@@ -27,7 +27,7 @@ class FlowdockTranslator {
         const thread = event.rawEvent.thread_id;
         const userId = event.rawEvent.user;
         const org = this.organization;
-        const returnValue = {
+        const rawEvent = {
             action: messenger_types_1.MessageAction.Create,
             first: event.rawEvent.id === event.rawEvent.thread.initial_message,
             genesis: metadata.genesis || event.source,
@@ -44,13 +44,27 @@ class FlowdockTranslator {
             title: titleAndText ? titleAndText[1] : undefined,
         };
         if (event.rawEvent.external_user_name) {
-            returnValue.sourceIds.user = event.rawEvent.external_user_name;
-            return Promise.resolve(returnValue);
+            rawEvent.sourceIds.user = event.rawEvent.external_user_name;
+            return Promise.resolve({
+                cookedEvent: {
+                    context: `front.${event.cookedEvent.context}`,
+                    event: 'message',
+                },
+                rawEvent,
+                source: event.source,
+            });
         }
         return this.fetchFromSession(`/organizations/${org}/users/${userId}`)
             .then((user) => {
-            returnValue.sourceIds.user = user.nick;
-            return (returnValue);
+            rawEvent.sourceIds.user = user.nick;
+            return ({
+                cookedEvent: {
+                    context: `front.${event.cookedEvent.context}`,
+                    event: 'message',
+                },
+                rawEvent,
+                source: event.source,
+            });
         });
     }
     messageIntoEmitCreateMessage(message) {
@@ -67,14 +81,31 @@ class FlowdockTranslator {
             });
         });
     }
-    messageIntoEmitReadHistory(_message) {
-        throw new Error();
+    messageIntoEmitReadThread(message, shortlist) {
+        const org = this.organization;
+        const firstWords = shortlist && shortlist.source.match(/^([\w\s]+)/i);
+        if (firstWords) {
+            return Promise.resolve({
+                method: 'GET',
+                path: `/flows/${org}/${message.sourceIds.flow}/threads/${message.sourceIds.thread}/messages`,
+                payload: {
+                    search: firstWords[1],
+                },
+            });
+        }
+        return Promise.resolve({
+            method: 'GET',
+            path: `/flows/${org}/${message.sourceIds.flow}/threads/${message.sourceIds.thread}/messages`,
+        });
     }
     eventNameIntoTriggers(name) {
         const equivalents = {
             message: ['message'],
         };
         return equivalents[name];
+    }
+    getAllTriggers() {
+        return ['message'];
     }
 }
 exports.FlowdockTranslator = FlowdockTranslator;

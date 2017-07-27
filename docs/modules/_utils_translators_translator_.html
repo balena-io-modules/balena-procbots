@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>&quot;services/github&quot; | Resin ProcBots</title>
+	<title>&quot;utils/translators/translator&quot; | Resin ProcBots</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -54,10 +54,10 @@
 					<a href="../globals.html">Globals</a>
 				</li>
 				<li>
-					<a href="_services_github_.html">&quot;services/github&quot;</a>
+					<a href="_utils_translators_translator_.html">&quot;utils/translators/translator&quot;</a>
 				</li>
 			</ul>
-			<h1>External module &quot;services/github&quot;</h1>
+			<h1>External module &quot;utils/translators/translator&quot;</h1>
 		</div>
 	</div>
 </header>
@@ -69,23 +69,19 @@
 				<section class="tsd-panel tsd-index-panel">
 					<div class="tsd-index-content">
 						<section class="tsd-index-section ">
-							<h3>Classes</h3>
-							<ul class="tsd-index-list">
-								<li class="tsd-kind-class tsd-parent-kind-external-module"><a href="../classes/_services_github_.githuberror.html" class="tsd-kind-icon">Github<wbr>Error</a></li>
-								<li class="tsd-kind-class tsd-parent-kind-external-module"><a href="../classes/_services_github_.githubservice.html" class="tsd-kind-icon">Github<wbr>Service</a></li>
-							</ul>
-						</section>
-						<section class="tsd-index-section tsd-is-not-exported">
 							<h3>Interfaces</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported"><a href="../interfaces/_services_github_.labeldetails.html" class="tsd-kind-icon">Label<wbr>Details</a></li>
+								<li class="tsd-kind-interface tsd-parent-kind-external-module"><a href="../interfaces/_utils_translators_translator_.translator.html" class="tsd-kind-icon">Translator</a></li>
 							</ul>
 						</section>
 						<section class="tsd-index-section ">
 							<h3>Functions</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_services_github_.html#createserviceemitter" class="tsd-kind-icon">create<wbr>Service<wbr>Emitter</a></li>
-								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_services_github_.html#createservicelistener" class="tsd-kind-icon">create<wbr>Service<wbr>Listener</a></li>
+								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_utils_translators_translator_.html#createtranslator" class="tsd-kind-icon">create<wbr>Translator</a></li>
+								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_utils_translators_translator_.html#extractmetadata" class="tsd-kind-icon">extract<wbr>Metadata</a></li>
+								<li class="tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported"><a href="_utils_translators_translator_.html#getindicatorarrays" class="tsd-kind-icon">get<wbr>Indicator<wbr>Arrays</a></li>
+								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_utils_translators_translator_.html#initinterimcontext" class="tsd-kind-icon">init<wbr>Interim<wbr>Context</a></li>
+								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_utils_translators_translator_.html#stringifymetadata" class="tsd-kind-icon">stringify<wbr>Metadata</a></li>
 							</ul>
 						</section>
 					</div>
@@ -94,66 +90,185 @@
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Functions</h2>
 				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-external-module">
-					<a name="createserviceemitter" class="tsd-anchor"></a>
-					<h3>create<wbr>Service<wbr>Emitter</h3>
+					<a name="createtranslator" class="tsd-anchor"></a>
+					<h3>create<wbr>Translator</h3>
 					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-external-module">
-						<li class="tsd-signature tsd-kind-icon">create<wbr>Service<wbr>Emitter<span class="tsd-signature-symbol">(</span>constObj<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">GithubConstructor</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ServiceEmitter</span></li>
+						<li class="tsd-signature tsd-kind-icon">create<wbr>Translator<span class="tsd-signature-symbol">(</span>name<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../interfaces/_utils_translators_translator_.translator.html" class="tsd-signature-type">Translator</a></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/github.ts#L546">services/github.ts:546</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/utils/translators/translator.ts#L172">utils/translators/translator.ts:172</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
-									<p>Create a new Github ServiceEmitter.</p>
+									<p>Retrieves and loads a Translator by name.</p>
 								</div>
 							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>constObj: <span class="tsd-signature-type">GithubConstructor</span></h5>
+									<h5>name: <span class="tsd-signature-type">string</span></h5>
 									<div class="tsd-comment tsd-typography">
-										<p>Constructor for the ServiceEmitter.</p>
+										<p>The name of the Translator to load.</p>
+									</div>
+								</li>
+								<li>
+									<h5>data: <span class="tsd-signature-type">any</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The constructor object for the createTranslator method.</p>
 									</div>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">ServiceEmitter</span></h4>
-							<p>A new instance of the ServiceEmitter.</p>
+							<h4 class="tsd-returns-title">Returns <a href="../interfaces/_utils_translators_translator_.translator.html" class="tsd-signature-type">Translator</a></h4>
+							<p>The newly instantiated Translator.</p>
 						</li>
 					</ul>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-external-module">
-					<a name="createservicelistener" class="tsd-anchor"></a>
-					<h3>create<wbr>Service<wbr>Listener</h3>
+					<a name="extractmetadata" class="tsd-anchor"></a>
+					<h3>extract<wbr>Metadata</h3>
 					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-external-module">
-						<li class="tsd-signature tsd-kind-icon">create<wbr>Service<wbr>Listener<span class="tsd-signature-symbol">(</span>constObj<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">GithubListenerConstructor</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ServiceListener</span></li>
+						<li class="tsd-signature tsd-kind-icon">extract<wbr>Metadata<span class="tsd-signature-symbol">(</span>message<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Metadata</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/github.ts#L537">services/github.ts:537</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/utils/translators/translator.ts#L120">utils/translators/translator.ts:120</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
-									<p>Create a new Github ServiceListener.</p>
+									<p>Given a basic string this will extract a more rich context for the event, if embedded.</p>
 								</div>
 							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>constObj: <span class="tsd-signature-type">GithubListenerConstructor</span></h5>
+									<h5>message: <span class="tsd-signature-type">string</span></h5>
 									<div class="tsd-comment tsd-typography">
-										<p>Constructor for the ServiceListener.</p>
+										<p>Basic string that may contain metadata.</p>
 									</div>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">ServiceListener</span></h4>
-							<p>A new instance of the ServiceListener.</p>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Metadata</span></h4>
+							<p>Object of content, genesis and hidden.</p>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported">
+					<a name="getindicatorarrays" class="tsd-anchor"></a>
+					<h3>get<wbr>Indicator<wbr>Arrays</h3>
+					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported">
+						<li class="tsd-signature tsd-kind-icon">get<wbr>Indicator<wbr>Arrays<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">object</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/utils/translators/translator.ts#L150">utils/translators/translator.ts:150</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Retrieve from the environment array of strings to use as indicators of visibility.</p>
+								</div>
+							</div>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">object</span></h4>
+							<p>Object of arrays of indicators, shown and hidden.</p>
+							<ul class="tsd-parameters">
+								<li class="tsd-parameter">
+									<h5>hidden<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></h5>
+								</li>
+								<li class="tsd-parameter">
+									<h5>shown<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></h5>
+								</li>
+							</ul>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-external-module">
+					<a name="initinterimcontext" class="tsd-anchor"></a>
+					<h3>init<wbr>Interim<wbr>Context</h3>
+					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-external-module">
+						<li class="tsd-signature tsd-kind-icon">init<wbr>Interim<wbr>Context<span class="tsd-signature-symbol">(</span>event<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">MessageContext</span>, to<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, toIds<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">MessageIds</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">InterimContext</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/utils/translators/translator.ts#L79">utils/translators/translator.ts:79</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Make a handle context, using a receipt context and some extra information.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>event: <span class="tsd-signature-type">MessageContext</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Event to be converted.</p>
+									</div>
+								</li>
+								<li>
+									<h5>to: <span class="tsd-signature-type">string</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Destination for the handle context.</p>
+									</div>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagDefault value">Default value</span> toIds: <span class="tsd-signature-type">MessageIds</span><span class="tsd-signature-symbol"> =&nbsp;{}</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Pre-populate the toIds, if desired.</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">InterimContext</span></h4>
+							<p>Newly created context for handling a message.</p>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-external-module">
+					<a name="stringifymetadata" class="tsd-anchor"></a>
+					<h3>stringify<wbr>Metadata</h3>
+					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-external-module">
+						<li class="tsd-signature tsd-kind-icon">stringify<wbr>Metadata<span class="tsd-signature-symbol">(</span>data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">MessageContext</span>, format<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">"markdown"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"plaintext"</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/utils/translators/translator.ts#L102">utils/translators/translator.ts:102</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Encode the metadata of an event into a string to embed in the message.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>data: <span class="tsd-signature-type">MessageContext</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Event to gather details from.</p>
+									</div>
+								</li>
+								<li>
+									<h5><span class="tsd-flag ts-flagDefault value">Default value</span> format: <span class="tsd-signature-type">"markdown"</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">"plaintext"</span><span class="tsd-signature-symbol"> =&nbsp;&quot;markdown&quot;</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Optional, markdown or plaintext, defaults to markdown.</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4>
+							<p>Text with data embedded.</p>
 						</li>
 					</ul>
 				</section>
@@ -195,7 +310,7 @@
 					<li class=" tsd-kind-external-module">
 						<a href="_services_front_.html">"services/front"</a>
 					</li>
-					<li class="current tsd-kind-external-module">
+					<li class=" tsd-kind-external-module">
 						<a href="_services_github_.html">"services/github"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
@@ -225,27 +340,30 @@
 					<li class=" tsd-kind-external-module">
 						<a href="_utils_translators_front_.html">"utils/translators/front"</a>
 					</li>
-					<li class=" tsd-kind-external-module">
+					<li class="current tsd-kind-external-module">
 						<a href="_utils_translators_translator_.html">"utils/translators/translator"</a>
 					</li>
 				</ul>
 			</nav>
 			<nav class="tsd-navigation secondary menu-sticky">
 				<ul class="before-current">
-					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="../classes/_services_github_.githuberror.html" class="tsd-kind-icon">Github<wbr>Error</a>
-					</li>
-					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="../classes/_services_github_.githubservice.html" class="tsd-kind-icon">Github<wbr>Service</a>
-					</li>
-					<li class=" tsd-kind-interface tsd-parent-kind-external-module tsd-is-not-exported">
-						<a href="../interfaces/_services_github_.labeldetails.html" class="tsd-kind-icon">Label<wbr>Details</a>
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
+						<a href="../interfaces/_utils_translators_translator_.translator.html" class="tsd-kind-icon">Translator</a>
 					</li>
 					<li class=" tsd-kind-function tsd-parent-kind-external-module">
-						<a href="_services_github_.html#createserviceemitter" class="tsd-kind-icon">create<wbr>Service<wbr>Emitter</a>
+						<a href="_utils_translators_translator_.html#createtranslator" class="tsd-kind-icon">create<wbr>Translator</a>
 					</li>
 					<li class=" tsd-kind-function tsd-parent-kind-external-module">
-						<a href="_services_github_.html#createservicelistener" class="tsd-kind-icon">create<wbr>Service<wbr>Listener</a>
+						<a href="_utils_translators_translator_.html#extractmetadata" class="tsd-kind-icon">extract<wbr>Metadata</a>
+					</li>
+					<li class=" tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported">
+						<a href="_utils_translators_translator_.html#getindicatorarrays" class="tsd-kind-icon">get<wbr>Indicator<wbr>Arrays</a>
+					</li>
+					<li class=" tsd-kind-function tsd-parent-kind-external-module">
+						<a href="_utils_translators_translator_.html#initinterimcontext" class="tsd-kind-icon">init<wbr>Interim<wbr>Context</a>
+					</li>
+					<li class=" tsd-kind-function tsd-parent-kind-external-module">
+						<a href="_utils_translators_translator_.html#stringifymetadata" class="tsd-kind-icon">stringify<wbr>Metadata</a>
 					</li>
 				</ul>
 			</nav>

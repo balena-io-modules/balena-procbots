@@ -30,7 +30,7 @@ class DiscourseTranslator {
             .then((details) => {
             const metadata = Translator.extractMetadata(details.post.raw);
             const first = details.post.post_number === 1;
-            return {
+            const rawEvent = {
                 action: messenger_types_1.MessageAction.Create,
                 first,
                 genesis: metadata.genesis || event.source,
@@ -45,6 +45,14 @@ class DiscourseTranslator {
                 },
                 text: metadata.content,
                 title: details.topic.title,
+            };
+            return {
+                cookedEvent: {
+                    context: `discourse.${event.cookedEvent.context}`,
+                    event: 'message',
+                },
+                rawEvent,
+                source: event.source,
             };
         });
     }
@@ -78,37 +86,34 @@ class DiscourseTranslator {
             },
         });
     }
-    messageIntoEmitReadHistory(message, shortlist) {
-        const firstWords = shortlist.source.match(/^([\w\s]+)/i);
+    messageIntoEmitReadThread(message, shortlist) {
+        const firstWords = shortlist && shortlist.source.match(/^([\w\s]+)/i);
         if (firstWords) {
-            return {
+            return Promise.resolve({
                 json: true,
                 method: 'GET',
                 qs: {
-                    'api_key': this.connectionDetails.token,
-                    'api_username': this.connectionDetails.username,
                     'term': firstWords[1],
                     'search_context[type]': 'topic',
                     'search_context[id]': message.sourceIds.thread,
                 },
-                uri: `https://${this.connectionDetails.instance}/search/query`,
-            };
+                path: '/search/query',
+            });
         }
-        return {
+        return Promise.resolve({
             json: true,
             method: 'GET',
-            qs: {
-                api_key: this.connectionDetails.token,
-                api_username: this.connectionDetails.username,
-            },
-            uri: `https://${this.connectionDetails.instance}/t/${message.sourceIds.thread}`,
-        };
+            path: `/t/${message.sourceIds.thread}`,
+        });
     }
     eventNameIntoTriggers(name) {
         const equivalents = {
             message: ['post'],
         };
         return equivalents[name];
+    }
+    getAllTriggers() {
+        return ['post'];
     }
 }
 exports.DiscourseTranslator = DiscourseTranslator;

@@ -68,7 +68,7 @@ class FrontTranslator {
                     }
                 }
             }
-            return {
+            const rawEvent = {
                 action: messenger_types_1.MessageAction.Create,
                 first,
                 genesis: metadata.genesis || event.source,
@@ -83,6 +83,14 @@ class FrontTranslator {
                 },
                 text: metadata.content,
                 title: details.event.conversation.subject,
+            };
+            return {
+                cookedEvent: {
+                    context: `front.${event.cookedEvent.context}`,
+                    event: 'message',
+                },
+                rawEvent,
+                source: event.source,
             };
         });
     }
@@ -147,14 +155,23 @@ class FrontTranslator {
             };
         });
     }
-    messageIntoEmitReadHistory(_message) {
-        throw new Error();
+    messageIntoEmitReadThread(message, _shortlist) {
+        return Promise.resolve({
+            action: 'listComments',
+            objectType: 'conversation',
+            payload: {
+                conversation_id: message.sourceIds.thread,
+            },
+        });
     }
     eventNameIntoTriggers(name) {
         const equivalents = {
             message: ['event'],
         };
         return equivalents[name];
+    }
+    getAllTriggers() {
+        return ['event'];
     }
 }
 exports.FrontTranslator = FrontTranslator;
