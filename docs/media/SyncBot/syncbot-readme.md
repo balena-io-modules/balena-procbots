@@ -57,9 +57,37 @@ A little Bot, using the ProcBot framework, that links communication services
 
 ## What usernames are valid?
 
+### Proposal
+
+* The user should use their github username, with the following considerations:
+    * The user should substitute `-` with `_` for Front.
+    * The bot will cast to lower case when searching PMs.
+    * The bot will be configured with an array of any accounts that still don't fit the pattern.
+
+### Current github username conventions
+
+fsurname
+forenames
+forenamesurname123
+ForenameSurname
+fms
+forename-surname
+nickname
+ForenameSn
+surnamefn
+forenamesurname
+Nickname-
+forenamesn
+sorenamefurname
+Forename-Surname
+Nickname
+nickname123
+
+### Services
+
 (If you follow all of the rules in bold, then you follow all the rules)
 
-### GitHub
+#### GitHub
 
 Taken, in part, from https://github.com/join
 
@@ -71,7 +99,7 @@ Taken, in part, from https://github.com/join
 * Minimum: 1 character.
 * Collision avoidance: ignores case.
 
-### Front
+#### Front
 
 * Must begin with: lower case alphanumeric or underscore.
 * **Must only contain: lower case alphanumeric or underscores.**
@@ -82,18 +110,18 @@ Taken, in part, from https://github.com/join
 * Collision avoidance: ignores case.
 * API username: ignores case.
 
-### Flowdock
+#### Flowdock
 
-* Must begin with: alphanumeric, hyphen, dot and underscore.
+* Must begin with: alphanumeric, hyphen, dot or underscore.
 * Must only contain: alphanumeric, hyphens, dots and underscores.
-* Must end with: alphanumeric, hyphen, dot and underscore.
+* Must end with: alphanumeric, hyphen, dot or underscore.
 * Consecutive special characters: allowed.
 * Maximum: In excess of 39 characters.
 * Minimum: 1 character.
 * Collision avoidance: ignores case.
 * API username: ignores case.
 
-### Discourse
+#### Discourse
 
 * Must begin with: alphanumeric or underscore.
 * Must only contain: alphanumeric, hyphens, dots and underscores.
@@ -131,7 +159,23 @@ hyphens and underscores.
 
 Breaks for ForenameSurname, ForenameSn, Nickname-, Forename-Surname, Nickname
 
-#### Cast to lowercase
+#### Cast to lowercase for Private Message lookup
+
+`^[a-zA-Z0-9]{3,20}$`
+
+* Must only contain alphanumeric.
+* Maximum is 20 characters.
+* Minimum is 3 characters.
+
+All services use case insensitive collision avoidance, so the username `TeSt` is equivalent to `test`. Those services
+that do use username as part of their API call are case insensitive for the username.
+
+This rule does not require that the actual username be entirely lower case, and only affects how the bot interacts with
+the API.
+
+Breaks for forename-surname, Nickname-, Forename-Surname
+
+#### Substitute and cast
 
 `^[a-zA-Z0-9][a-zA-Z0-9\-]{1,18}[a-zA-Z0-9]$`
 
@@ -141,35 +185,7 @@ Breaks for ForenameSurname, ForenameSn, Nickname-, Forename-Surname, Nickname
 * Maximum is 20 characters.
 * Minimum is 3 characters.
 
-All services use case insensitive collision avoidance, so the username `TeSt` is equivalent to `test`. Those services
-that do use username as part of their API call are case insensitive for the username.
-
 Breaks for Nickname-
-
-#### Proposal
-
-* Substitute `-` with `_` when communicating with Front.
-* Cast to lower case.
-* Store an array of any accounts that still don't fit the pattern.
-
-#### Current github username conventions
-
-fsurname
-forenames
-forenamesurname123
-ForenameSurname
-fms
-forename-surname
-nickname
-ForenameSn
-surnamefn
-forenamesurname
-Nickname-
-forenamesn
-sorenamefurname
-Forename-Surname
-Nickname
-nickname123
 
 ## How does SyncBot work?
 

@@ -42,7 +42,7 @@ const StatusReviewers = {
 const StatusAutoMerge = {
     Context: 'AutoMerges',
     Success: 'PR merging is in progress',
-    Failure: 'Manual merging of PR forbidden'
+    Pending: 'VersionBot should be used to merge PR'
 };
 class VersionBot extends procbot_1.ProcBot {
     constructor(integration, name, email, pemString, webhook) {
@@ -353,11 +353,11 @@ class VersionBot extends procbot_1.ProcBot {
             this.dispatchToEmitter(this.githubEmitterName, {
                 data: {
                     context: StatusAutoMerge.Context,
-                    description: StatusAutoMerge.Failure,
+                    description: StatusAutoMerge.Pending,
                     owner,
                     repo: name,
                     sha: head.sha,
-                    state: 'failure'
+                    state: 'pending'
                 },
                 method: this.githubApi.repos.createStatus,
             });
@@ -628,11 +628,11 @@ class VersionBot extends procbot_1.ProcBot {
                                     this.dispatchToEmitter(this.githubEmitterName, {
                                         data: {
                                             context: StatusAutoMerge.Context,
-                                            description: StatusAutoMerge.Failure,
+                                            description: StatusAutoMerge.Pending,
                                             owner,
                                             repo,
                                             sha: head.sha,
-                                            state: 'failure'
+                                            state: 'pending'
                                         },
                                         method: this.githubApi.repos.createStatus,
                                     });
