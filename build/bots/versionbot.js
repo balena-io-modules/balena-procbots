@@ -34,7 +34,8 @@ const IgnoreLabel = 'procbots/versionbot/no-checks';
 const StatusVersionist = {
     Context: 'Versionist',
     Success: 'Found all required commit footer tags',
-    Failure: 'Missing or forbidden tags in commits, see `repository.yml`'
+    Failure: 'Missing or forbidden tags in commits, see `repository.yml`',
+    NoVersioning: 'Versioning for this PR is disabled'
 };
 const StatusReviewers = {
     Context: 'Reviewers'
@@ -42,7 +43,8 @@ const StatusReviewers = {
 const StatusAutoMerge = {
     Context: 'AutoMerges',
     Success: 'PR merging is in progress',
-    Pending: 'VersionBot should be used to merge PR'
+    Pending: 'VersionBot should be used to merge PR',
+    ManualMerge: 'Manual merging is in effect for this PR'
 };
 class VersionBot extends procbot_1.ProcBot {
     constructor(integration, name, email, pemString, webhook) {
@@ -120,6 +122,38 @@ class VersionBot extends procbot_1.ProcBot {
             }).map((prEvent) => {
                 return this.checkFooterTags(registration, prEvent);
             });
+        };
+        this.passWithNoChecks = (_registration, event) => {
+            const pr = event.cookedEvent.data.pull_request;
+            const head = event.cookedEvent.data.pull_request.head;
+            const owner = head.repo.owner.login;
+            const repo = head.repo.name;
+            const prNumber = pr.number;
+            this.logger.log(logger_1.LogLevel.INFO, `Skipping AutoMerge and Versionist checks for ${owner}/${repo}#${prNumber}`);
+            return Promise.all([
+                this.dispatchToEmitter(this.githubEmitterName, {
+                    data: {
+                        context: StatusAutoMerge.Context,
+                        description: StatusAutoMerge.ManualMerge,
+                        owner,
+                        repo,
+                        sha: head.sha,
+                        state: 'success'
+                    },
+                    method: this.githubApi.repos.createStatus,
+                }),
+                this.dispatchToEmitter(this.githubEmitterName, {
+                    data: {
+                        context: StatusVersionist.Context,
+                        description: StatusVersionist.NoVersioning,
+                        owner,
+                        repo,
+                        sha: head.sha,
+                        state: 'success'
+                    },
+                    method: this.githubApi.repos.createStatus,
+                })
+            ]).return();
         };
         this.checkWaffleFlow = (_registration, event) => {
             const pr = event.cookedEvent.data.pull_request;
@@ -344,10 +378,14 @@ class VersionBot extends procbot_1.ProcBot {
             const name = head.repo.name;
             const author = prEvent.sender.login;
             const prAction = event.cookedEvent.data.action;
+            const prLabel = event.cookedEvent.data.label;
             let committer = author;
             let lastCommit;
             let botConfig;
-            if (!_.find(['opened', 'synchronize', 'labeled'], (action) => action === prAction)) {
+            if (!_.find(['opened', 'synchronize', 'labeled', 'unlabeled'], (action) => action === prAction)) {
+                return Promise.resolve();
+            }
+            if ((prAction === 'unlabeled') && (prLabel.name !== IgnoreLabel)) {
                 return Promise.resolve();
             }
             this.dispatchToEmitter(this.githubEmitterName, {
@@ -690,7 +728,6 @@ class VersionBot extends procbot_1.ProcBot {
                 name: 'CheckReviewerStatus',
                 events: ['pull_request', 'pull_request_review'],
                 listenerMethod: this.checkReviewers,
-                suppressionLabels: [IgnoreLabel],
             },
             {
                 name: 'CheckForWaffleFlow',
@@ -701,7 +738,6 @@ class VersionBot extends procbot_1.ProcBot {
                 name: 'AddMissingReviewers',
                 events: ['pull_request'],
                 listenerMethod: this.addReviewers,
-                suppressionLabels: [IgnoreLabel],
             },
             {
                 name: 'CheckForReadyMergeState',
@@ -709,6 +745,13 @@ class VersionBot extends procbot_1.ProcBot {
                 listenerMethod: this.mergePR,
                 suppressionLabels: [IgnoreLabel],
                 triggerLabels: [MergeLabel],
+            },
+            {
+                name: 'NoChecksPassthrough',
+                events: ['pull_request', 'pull_request_review'],
+                listenerMethod: this.passWithNoChecks,
+                triggerLabels: [IgnoreLabel],
+                suppressionLabels: [MergeLabel],
             },
             {
                 name: 'StatusChangeState',

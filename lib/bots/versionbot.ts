@@ -213,7 +213,10 @@ const StatusVersionist = {
 	Context: 'Versionist',
 	/** Status context message for versionist success. */
 	Success: 'Found all required commit footer tags',
-	Failure: 'Missing or forbidden tags in commits, see `repository.yml`'
+	/** Status context message for versionist failure. */
+	Failure: 'Missing or forbidden tags in commits, see `repository.yml`',
+	/** Status context message for the `procbots/versionbot/no-checks` label. */
+	NoVersioning: 'Versioning for this PR is disabled'
 };
 
 /** Status context for reviewers. */
@@ -228,7 +231,9 @@ const StatusAutoMerge = {
 	/** Status context message for automatic merging success. */
 	Success: 'PR merging is in progress',
 	/** Status context message for automatic merging failure. */
-	Pending: 'VersionBot should be used to merge PR'
+	Pending: 'VersionBot should be used to merge PR',
+	/** Status context message for the `procbots/versionbot/no-checks` label. */
+	ManualMerge: 'Manual merging is in effect for this PR'
 };
 
 /**
@@ -316,7 +321,6 @@ export class VersionBot extends ProcBot {
 				name: 'CheckReviewerStatus',
 				events: [ 'pull_request', 'pull_request_review' ],
 				listenerMethod: this.checkReviewers,
-				suppressionLabels: [ IgnoreLabel ],
 			},
 			{
 				name: 'CheckForWaffleFlow',
@@ -327,7 +331,6 @@ export class VersionBot extends ProcBot {
 				name: 'AddMissingReviewers',
 				events: [ 'pull_request' ],
 				listenerMethod: this.addReviewers,
-				suppressionLabels: [ IgnoreLabel ],
 			},
 			{
 				name: 'CheckForReadyMergeState',
@@ -335,6 +338,13 @@ export class VersionBot extends ProcBot {
 				listenerMethod: this.mergePR,
 				suppressionLabels: [ IgnoreLabel ],
 				triggerLabels: [ MergeLabel ],
+			},
+			{
+				name: 'NoChecksPassthrough',
+				events: [ 'pull_request', 'pull_request_review' ],
+				listenerMethod: this.passWithNoChecks,
+				triggerLabels: [ IgnoreLabel ],
+				suppressionLabels: [ MergeLabel ],
 			},
 			// Should a status change occur (Jenkins, VersionBot, etc. all succeed)
 			// then check versioning and potentially go to a merge to master.
@@ -445,6 +455,50 @@ export class VersionBot extends ProcBot {
 		}).map((prEvent: ServiceEvent) => {
 			return this.checkFooterTags(registration, prEvent);
 		});
+	}
+
+	/**
+	 * Always passes Versionist and AutoMerge status if a no-checks label has been applied.
+	 * This allows manual merging to correctly go ahead.
+	 *
+	 * @param _registration  GithubRegistration object used to register the method
+	 * @param event          ServiceEvent containing the event information ('pull_request' event)
+	 * @returns              A void Promise once execution has finished.
+	 */
+	protected passWithNoChecks = (_registration: GithubRegistration, event: ServiceEvent): Promise<void> => {
+		const pr = event.cookedEvent.data.pull_request;
+		const head = event.cookedEvent.data.pull_request.head;
+		const owner = head.repo.owner.login;
+		const repo = head.repo.name;
+		const prNumber = pr.number;
+
+		this.logger.log(LogLevel.INFO, `Skipping AutoMerge and Versionist checks for ${owner}/${repo}#${prNumber}`);
+
+		// Always set the automerge and versionist status to passing.
+		return Promise.all([
+			this.dispatchToEmitter(this.githubEmitterName, {
+				data: {
+					context: StatusAutoMerge.Context,
+					description: StatusAutoMerge.ManualMerge,
+					owner,
+					repo,
+					sha: head.sha,
+					state: 'success'
+				},
+				method: this.githubApi.repos.createStatus,
+			}),
+			this.dispatchToEmitter(this.githubEmitterName, {
+				data: {
+					context: StatusVersionist.Context,
+					description: StatusVersionist.NoVersioning,
+					owner,
+					repo,
+					sha: head.sha,
+					state: 'success'
+				},
+				method: this.githubApi.repos.createStatus,
+			})
+		]).return();
 	}
 
 	/**
@@ -767,12 +821,19 @@ export class VersionBot extends ProcBot {
 		const name = head.repo.name;
 		const author = prEvent.sender.login;
 		const prAction = event.cookedEvent.data.action;
+		const prLabel: GithubApiTypes.Label = event.cookedEvent.data.label;
 		let committer = author;
 		let lastCommit: GithubApiTypes.Commit;
 		let botConfig: VersionBotConfiguration;
 
-		// Only for opened or synced actions.
-		if (!_.find(['opened', 'synchronize', 'labeled'], (action) => action === prAction)) {
+		// Only for opened, synced or labeling actions.
+		if (!_.find(['opened', 'synchronize', 'labeled', 'unlabeled'], (action) => action === prAction)) {
+			return Promise.resolve();
+		}
+
+		// If there's an unlabeling event, but it wasn't the IgnoreLabel being removed, then we
+		// just return.
+		if ((prAction === 'unlabeled') && (prLabel.name !== IgnoreLabel)) {
 			return Promise.resolve();
 		}
 

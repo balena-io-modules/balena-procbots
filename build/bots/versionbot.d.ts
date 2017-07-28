@@ -10,6 +10,7 @@ export declare class VersionBot extends ProcBot {
     private emailAddress;
     constructor(integration: number, name: string, email: string, pemString: string, webhook: string);
     protected statusChange: (registration: GithubRegistration, event: ServiceEvent) => Promise<void | void[]>;
+    protected passWithNoChecks: (_registration: GithubRegistration, event: ServiceEvent) => Promise<void>;
     protected checkWaffleFlow: (_registration: GithubRegistration, event: ServiceEvent) => Promise<void>;
     protected addReviewers: (_registration: GithubRegistration, event: ServiceEvent) => Promise<void>;
     protected checkReviewers: (_registration: GithubRegistration, event: ServiceEvent) => Promise<void>;

@@ -21,6 +21,7 @@ export interface PullRequestEvent {
 	type: 'pull_request';
 	action: string;
 	pull_request: PullRequest;
+	label?: Label;
 	sender: User;
 }
 
@@ -101,6 +102,12 @@ export interface IssueLabel {
 	name: string;
 }
 
+export interface Label {
+	id: string;
+	name: string;
+	default: boolean;
+}
+
 export interface Merge {
 	sha: string;
 }
@@ -131,8 +138,14 @@ export interface PullRequest {
 	requested_reviewers: User[];
 }
 
-export interface Blob {
-	sha: string;
+export interface Reference {
+	ref: string;
+	url: string;
+	object: {
+		type: string;
+		sha: string;
+		url: string;
+	};
 }
 
 export interface RequiredStatusChecks {
@@ -180,14 +193,4 @@ export interface User {
 	url: string;
 	type: string;
 	site_admin: string;
-}
-
-export interface Reference {
-	ref: string;
-	url: string;
-	object: {
-		type: string;
-		sha: string;
-		url: string;
-	};
 }
