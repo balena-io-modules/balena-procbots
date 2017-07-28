@@ -117,7 +117,7 @@ export class ProcBot {
 		const service = this.getService(name);
 		let listener;
 
-		if (service && !_.find(this.listeners, [ 'serviceName', name ])) {
+		if (service && !_.find(this.listeners, { serviceName: name })) {
 			listener = service.createServiceListener(data);
 			this.listeners.push(listener);
 		}
@@ -136,7 +136,7 @@ export class ProcBot {
 		const service = this.getService(name);
 		let emitter;
 
-		if (service && !_.find(this.emitters, [ 'serviceName', name ])) {
+		if (service && !_.find(this.emitters, { serviceName: name })) {
 			emitter = service.createServiceEmitter(data);
 			this.emitters.push(emitter);
 		}

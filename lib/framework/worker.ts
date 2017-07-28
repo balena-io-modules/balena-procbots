@@ -27,7 +27,7 @@ export type WorkerMethod = (data: ServiceEvent) => Promise<void>;
  * Remove a worker from a context.
  * @param context	The context in which the Worker should be removed.
  */
-export type WorkerRemove = <T>(context: T) => void;
+export type WorkerRemove<T> = (context: T) => void;
 
 /** An event that has fired and needs to be processed. */
 export interface WorkerEvent {
@@ -54,14 +54,14 @@ export class Worker<T> {
 	/** Holds the queue of events to work on. */
 	private queue: WorkerEvent[] = [];
 	/** Method to call when a Worker is to be removed. */
-	private onDone: WorkerRemove;
+	private onDone: WorkerRemove<T>;
 
 	/**
 	 * Creates the Worker class, specifying a context and the parent Map.
 	 * @param context  The context to use for hashing.
 	 * @param onDone   The method to use to remove a Worker post-event processing.
 	 */
-	constructor(context: T, onDone: WorkerRemove) {
+	constructor(context: T, onDone: WorkerRemove<T>) {
 		this._context = context;
 		this.onDone = onDone;
 	}
