@@ -10,7 +10,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## v3.6.5 - 2017-07-27
 
-* Move `AutoMerge` status from failure by default to pending, making it more cosmetically friendly. [Heds Simons]
+* VersionBot: Move `AutoMerge` status from failure by default to pending, making it more cosmetically friendly. [Heds Simons]
 
 ## v3.6.4 - 2017-07-25
 
