@@ -11,8 +11,8 @@ const exec = Promise.promisify(ChildProcess.exec);
 class ProcBot {
     constructor(name = 'ProcBot') {
         this.logger = new logger_1.Logger();
-        this.emitters = [];
-        this.listeners = [];
+        this.listeners = new Map();
+        this.emitters = new Map();
         this._botname = name;
     }
     getNodeBinPath() {
@@ -29,7 +29,7 @@ class ProcBot {
         if (!config) {
             return;
         }
-        const minimumVersion = ((config || {}).procbot || {}).minimum_version;
+        const minimumVersion = _.get(config, 'procbot.minimum_version');
         if (minimumVersion && process.env.npm_package_version) {
             if (process.env.npm_package_version < minimumVersion) {
                 throw new Error('Current ProcBot implementation does not meet minimum required version to run ');
@@ -57,47 +57,35 @@ class ProcBot {
         });
     }
     addServiceListener(name, data) {
-        const service = this.getService(name);
-        let listener;
-        if (service && !_.find(this.listeners, { serviceName: name })) {
-            listener = service.createServiceListener(data);
-            this.listeners.push(listener);
-        }
-        return listener;
+        return this.addService(0, name, data);
     }
     addServiceEmitter(name, data) {
-        const service = this.getService(name);
-        let emitter;
-        if (service && !_.find(this.emitters, { serviceName: name })) {
-            emitter = service.createServiceEmitter(data);
-            this.emitters.push(emitter);
-        }
-        return emitter;
+        return this.addService(1, name, data);
     }
-    getListener(name) {
-        return _.find(this.listeners, (listener) => listener.serviceName === name);
+    getListener(handle) {
+        const listener = this.listeners.get(handle);
+        return listener ? listener.instance : undefined;
     }
-    getEmitter(name) {
-        return _.find(this.emitters, (emitter) => emitter.serviceName === name);
+    getEmitter(handle) {
+        const emitter = this.emitters.get(handle);
+        return emitter ? emitter.instance : undefined;
     }
     dispatchToAllEmitters(data) {
-        let results = [];
-        return Promise.map(this.emitters, (emitter) => {
-            return emitter.sendData(data)
-                .then((result) => { results.push(result); })
-                .catch((error) => { results.push(error); });
-        }).return(results);
+        return Promise.map(Array.from(this.emitters.values()), (entry) => {
+            return entry.instance.sendData(data).catch((error) => error);
+        });
     }
-    dispatchToEmitter(name, data) {
-        const emitInstance = _.find(this.emitters, (emitter) => emitter.serviceName === name);
-        if (!emitInstance) {
-            throw new Error(`${name} emitter is not attached`);
+    dispatchToEmitter(handle, data) {
+        let emitter = this.emitters.get(handle);
+        let emitInstance = emitter ? emitter.instance : undefined;
+        if (!emitter || !emitInstance) {
+            throw new Error(`${name} emitter instance handle is not attached`);
         }
         const request = {
             contexts: {},
             source: this._botname
         };
-        request.contexts[name] = data;
+        request.contexts[emitter.name] = data;
         return emitInstance.sendData(request).then((result) => {
             if (result.err) {
                 throw result.err;
@@ -111,6 +99,26 @@ class ProcBot {
             throw new Error(`Couldn't find Service: ${name}`);
         }
         return service;
+    }
+    addService(type, name, data) {
+        let handle = _.get(data, 'handle', name);
+        const service = this.getService(name);
+        const serviceMap = (type === 0) ? this.listeners.get(handle) : this.emitters.get(handle);
+        let instance;
+        if (service && !serviceMap) {
+            if (type === 0) {
+                instance = service.createServiceListener(data);
+                this.listeners.set(handle, { name, instance });
+            }
+            else {
+                instance = service.createServiceEmitter(data);
+                this.emitters.set(handle, { name, instance });
+            }
+        }
+        else if (serviceMap) {
+            instance = serviceMap.instance;
+        }
+        return instance;
     }
 }
 exports.ProcBot = ProcBot;

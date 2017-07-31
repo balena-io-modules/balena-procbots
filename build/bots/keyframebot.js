@@ -372,7 +372,7 @@ class KeyframeBot extends procbot_1.ProcBot {
             loginType: {
                 integrationId,
                 pem: pemString,
-                type: 'integration'
+                type: 0
             },
             path: '/keyframehooks',
             port: GithubPort,
@@ -383,7 +383,7 @@ class KeyframeBot extends procbot_1.ProcBot {
             loginType: {
                 integrationId,
                 pem: pemString,
-                type: 'integration'
+                type: 0
             },
             pem: pemString,
             type: 'emitter'

@@ -19,12 +19,23 @@ import * as ChildProcess from 'child_process';
 import * as FS from 'fs';
 import * as yaml from 'js-yaml';
 import * as _ from 'lodash';
-import { ServiceEmitRequest, ServiceEmitResponse, ServiceEmitter, ServiceFactory,
-	ServiceListener } from '../services/service-types';
+import { ServiceConstructor, ServiceEmitRequest, ServiceEmitter, ServiceFactory,
+	ServiceListener, ServiceType } from '../services/service-types';
 import { Logger } from '../utils/logger';
 import { ConfigurationLocation, ProcBotConfiguration } from './procbot-types';
 const fsReadFile = Promise.promisify(FS.readFile);
 const exec: (command: string, options?: any) => Promise<{}> = Promise.promisify(ChildProcess.exec);
+
+/**
+ * The ServiceMap keeps information about all Services used by the Client.
+ * It allows bots to give each Service an optional handle they can use
+ */
+interface ServiceMap<T> {
+	/** The Service name. */
+	name: string;
+	/** The Service instance. */
+	instance: T;
+}
 
 /**
  * The ProcBot class is a parent class that can be used for some top-level tasks:
@@ -36,14 +47,13 @@ const exec: (command: string, options?: any) => Promise<{}> = Promise.promisify(
 export class ProcBot {
 	protected _botname: string;
 	protected logger = new Logger();
-	private emitters: ServiceEmitter[] = [];
-	private listeners: ServiceListener[] = [];
+	private listeners = new Map<string, ServiceMap<ServiceListener>>();
+	private emitters = new Map<string, ServiceMap<ServiceEmitter>>();
 	private nodeBinPath: string;
 
 	constructor(name = 'ProcBot') {
 		this._botname = name;
 	}
-
 	/**
 	 * Retrieve the binary path for the Node dependencies.
 	 * @return  A string containing the absolute path.
@@ -72,7 +82,7 @@ export class ProcBot {
 		}
 
 		// Swap out known tags that become booleans.
-		const minimumVersion = ((config || {}).procbot || {}).minimum_version;
+		const minimumVersion = _.get(config, 'procbot.minimum_version');
 		if (minimumVersion && process.env.npm_package_version) {
 			if (process.env.npm_package_version < minimumVersion) {
 				throw new Error('Current ProcBot implementation does not meet minimum required version to run ');
@@ -108,61 +118,54 @@ export class ProcBot {
 
 	/**
 	 * Add a new type of ServiceListener to the client.
-	 * Should the ServiceListener already exist on the client, this will do nothing.
+	 * Should the ServiceListener already exist on the client with the handle/name, this will do nothing.
+	 *
 	 * @param name   The name of the ServiceListener to add.
-	 * @param data?  Any relevant data required to construct the ServiceListener.
-	 * @return       The constructed ServiceListener or void should it already exist or fail.
+	 * @param data?  A ServiceConstructor extended constructor, should data be passed to a Service constructor.
+	 * @return       The constructed or pre-existing ServiceListener or void on failure.
 	 */
 	protected addServiceListener(name: string, data?: any): ServiceListener | void {
-		const service = this.getService(name);
-		let listener;
-
-		if (service && !_.find(this.listeners, { serviceName: name })) {
-			listener = service.createServiceListener(data);
-			this.listeners.push(listener);
-		}
-
-		return listener;
+		return this.addService(ServiceType.Listener, name, data) as ServiceListener;
 	}
 
 	/**
 	 * Add a new type of ServiceEmitter to the client.
-	 * Should the ServiceEmitter already exist on the client, this will do nothing.
+	 * Should the ServiceEmitter already exist on the client with the handle/name, this will do nothing.
+	 *
 	 * @param name   The name of the ServiceEmitter to add.
-	 * @param data?  Any relevant data required to construct the ServiceEmitter.
-	 * @return       The constructed ServiceEmitter or void should it already exist or fail.
+	 * @param data?  A ServiceConstructor extended constructor, should data be passed to a Service constructor.
+	 * @return       The constructed or pre-existing ServiceEmitter or void on failure.
 	 */
 	protected addServiceEmitter(name: string, data?: any): ServiceEmitter | void {
-		const service = this.getService(name);
-		let emitter;
-
-		if (service && !_.find(this.emitters, { serviceName: name })) {
-			emitter = service.createServiceEmitter(data);
-			this.emitters.push(emitter);
-		}
-
-		return emitter;
+		return this.addService(ServiceType.Emitter, name, data) as ServiceEmitter;
 	}
 
 	/**
-	 * Find a particular attached ServiceListener based upon its name.
-	 * @param name  Name of the ServiceListener instance to find.
-	 * @return      Instance of the ServiceListener found, or void if not found.
+	 * Find a particular attached ServiceListener based upon its handle.
+	 *
+	 * @param handle  Handle of the ServiceListener instance to find (name if no handle was set).
+	 * @return        Instance of the ServiceListener found, or void if not found.
 	 */
-	protected getListener(name: string): ServiceListener | void {
-		return _.find(this.listeners, (listener) => listener.serviceName === name);
+	protected getListener(handle: string): ServiceListener | void {
+		// Attempt to find the required ServiceListener. The handle's either the given
+		// handle on construction or the name of a service if none were given.
+		const listener = this.listeners.get(handle);
+		return listener ? <ServiceListener>listener.instance : undefined;
 	}
 
 	/**
 	 * Find a particular attached ServiceEmitter based upon its name.
-	 * @param name  Name of the ServiceEmitter instance to find.
-	 * @return      Instance of the ServiceEmitter found, or void if not found.
+	 *
+	 * @param handle  Handle of the ServiceEmitter instance to find (name if no handle was set).
+	 * @return        Instance of the ServiceEmitter found, or void if not found.
 	 */
-	protected getEmitter(name: string): ServiceEmitter | void {
-		return _.find(this.emitters, (emitter) => emitter.serviceName === name);
+	protected getEmitter(handle: string): ServiceEmitter | void {
+		// Attempt to find the required ServiceEmitter. The handle's either the given
+		// handle on construction or the name of a service if none were given.
+		const emitter = this.emitters.get(handle);
+		return emitter ? <ServiceEmitter>emitter.instance : undefined;
 	}
 
-	// Returns a promise containing the results of all final send statuses.
 	/**
 	 * Dispatch to the specified emitter.
 	 * This method exists as a shortcut to avoid having to retrieve a specific
@@ -170,34 +173,32 @@ export class ProcBot {
 	 * @param data  The ServiceEmitRequest to use. This will be dispatched to all ServiceEmitters.
 	 * @return      An array of ServiceEmitResponses from all the ServiceEmitters.
 	 */
-	protected dispatchToAllEmitters(data: ServiceEmitRequest): Promise<ServiceEmitResponse[]> {
-		let results: ServiceEmitResponse[] = [];
-
+	protected dispatchToAllEmitters(data: ServiceEmitRequest): Promise<any[]> {
 		// If there's not a context for a particular emmiter, it will result in a response
 		// with an error contained with in specifying as such. It is up to clients to determine
 		// whether this is an issue or not
-		return Promise.map(this.emitters, (emitter) => {
-			return emitter.sendData(data)
-			.then((result) => { results.push(result); })
-			.catch((error) => { results.push(error); });
-		}).return(results);
+		return Promise.map(Array.from(this.emitters.values()), (entry) => {
+			return entry.instance.sendData(data).catch((error) => error);
+		});
 	}
 
 	/**
 	 * Dispatch to a specific ServiceEmitter.
 	 * This method exists as a shortcut to avoid having to retrieve a specific
 	 * emitter before sending to it.
-	 * @param name  The name of the ServiceEmitter to dispatch to.
-	 * @param data  Emitter appropriate data to send.
-	 * @return      Data returned from the service represented by the ServiceEmitter.
-	 * @throws      Any error returned from the service represented by the ServiceEmitter.
+	 *
+	 * @param handle  The handle of the ServiceEmitter to dispatch to.
+	 * @param data    Emitter appropriate data to send.
+	 * @return        Data returned from the service represented by the ServiceEmitter.
+	 * @throws        Any error returned from the service represented by the ServiceEmitter.
 	 */
-	protected dispatchToEmitter(name: string, data: any): Promise<any> {
+	protected dispatchToEmitter(handle: string, data: any): Promise<any> {
 		// If emitter not found, this is an error
-		const emitInstance = _.find(this.emitters, (emitter) => emitter.serviceName === name);
+		let emitter = this.emitters.get(handle);
+		let emitInstance = emitter ? <ServiceEmitter>emitter.instance : undefined;
 
-		if (!emitInstance) {
-			throw new Error(`${name} emitter is not attached`);
+		if (!emitter || !emitInstance) {
+			throw new Error(`${name} emitter instance handle is not attached`);
 		}
 
 		// Create a new ServiceEmitRequest based on the data passed, the name of the service
@@ -206,7 +207,7 @@ export class ProcBot {
 			contexts: {},
 			source: this._botname
 		};
-		request.contexts[name] = data;
+		request.contexts[emitter.name] = data;
 
 		return emitInstance.sendData(request).then((result) => {
 			// If an error occured, throw it.
@@ -233,5 +234,41 @@ export class ProcBot {
 		}
 
 		return service;
+	}
+
+	/**
+	 * Create a new ServiceListener or ServiceEmitter.
+	 * Uses the passed name or handle as the indentifier for future creation/lookups.
+	 * Should an instance with the handle (or name) already exist then this will be passed back.
+	 *
+	 * @param type  Type of Service to create.
+	 * @param name  Name of the service to create.
+	 * @param data  ServiceBase extended constructor, giving an optional handle and constructor data.
+	 * @return      A ServiceListener, ServiceEmitter or void value.
+	 */
+	private addService(type: ServiceType, name: string, data?: ServiceConstructor):
+	ServiceListener | ServiceEmitter | void {
+		// If there's no handle in the constructor data, the handle is the name.
+		let handle = _.get(data, 'handle', name);
+
+		// Attempt to retrieve the named service.
+		const service = this.getService(name);
+		const serviceMap = (type === ServiceType.Listener) ? this.listeners.get(handle) : this.emitters.get(handle);
+		let instance: ServiceListener | ServiceEmitter | undefined;
+
+		// If the service exists but the handle's not already registered, create a new instance.
+		if (service && !serviceMap) {
+			if (type === ServiceType.Listener) {
+				instance = service.createServiceListener(data) as ServiceListener;
+				this.listeners.set(handle, { name, instance });
+			} else {
+				instance = service.createServiceEmitter(data);
+				this.emitters.set(handle, { name, instance });
+			}
+		} else if (serviceMap) {
+			instance = serviceMap.instance;
+		}
+
+		return instance;
 	}
 }

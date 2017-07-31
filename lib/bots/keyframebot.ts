@@ -26,7 +26,7 @@ import { cleanup, track } from 'temp';
 import * as GithubApiTypes from '../apis/githubapi-types';
 import { ProcBot } from '../framework/procbot';
 import { GithubError, GithubService } from '../services/github';
-import { GithubCookedData, GithubHandle, GithubRegistration } from '../services/github-types';
+import { GithubCookedData, GithubHandle, GithubLogin, GithubRegistration } from '../services/github-types';
 import { ServiceEvent } from '../services/service-types';
 import { BuildCommand, ExecuteCommand } from '../utils/environment';
 import { AlertLevel, LogLevel } from '../utils/logger';
@@ -40,7 +40,13 @@ const tempCleanup = Promise.promisify(cleanup);
  * A custom HTTP error to pass back in event of deployment failure.
  */
 class HTTPError extends TypedError {
-	/** Message error from the Github API. */
+	/** Name of the error. */
+	public name: string;
+	/** Stack trace. */
+	public stack: string;
+	/** Message error from HTTP. */
+	public message: string;
+	/** HTTP error code. */
 	public httpCode: number;
 	/** Type of the error, to distinguish it from GithubError. */
 	public type = 'HttpError';
@@ -178,7 +184,7 @@ export class KeyframeBot extends ProcBot {
 			loginType: {
 				integrationId,
 				pem: pemString,
-				type: 'integration'
+				type: GithubLogin.App
 			},
 			path: '/keyframehooks',
 			port: GithubPort,
@@ -191,7 +197,7 @@ export class KeyframeBot extends ProcBot {
 			loginType: {
 				integrationId,
 				pem: pemString,
-				type: 'integration'
+				type: GithubLogin.App
 			},
 			pem: pemString,
 			type: 'emitter'

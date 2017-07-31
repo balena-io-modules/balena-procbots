@@ -21,7 +21,10 @@ import { ConfigurationLocation, ProcBotConfiguration } from '../framework/procbo
 import { WorkerMethod } from '../framework/worker';
 
 /** A Service is either a Listener or an Emitter. */
-export type ServiceType = 'listener' | 'emitter';
+export const enum ServiceType {
+	Listener = 0,
+	Emitter = 1
+}
 
 /** The source is the name of the event service (in the case of an Listener) or the
 	client (in the case of an Emitter). */
@@ -102,11 +105,23 @@ export interface ServiceAPIHandle {
 	[index: string]: object;
 }
 
+/** Default Service base. */
+export interface ServiceBase {
+	/** Unique handle that identifies the instance of the Service. */
+	handle?: string;
+}
+
+/** Constructor extended by every Service. */
+export interface ServiceConstructor extends ServiceBase {
+	/** Any Service specific construction data. */
+	[key: string]: any;
+}
+
 /**
  * A ServiceListener has a name and a method allowing a client to register interest in
  * an event along with service specific details.
  */
-export interface ServiceListener {
+export interface ServiceListener extends ServiceBase {
 	/** Getter for the SDK instance handle, if any. */
 	apiHandle: ServiceAPIHandle | void;
 	/** Name of the ServiceListener. */
@@ -122,7 +137,7 @@ export interface ServiceListener {
  * A ServiceEmitter has a name and a `sendData()` method allowing client to send data
  * that is to be sent to the relevant service.
  */
-export interface ServiceEmitter {
+export interface ServiceEmitter extends ServiceBase {
 	/** Getter for the SDK instance handle, if any. */
 	apiHandle: ServiceAPIHandle | void;
 	/** Name of the ServiceEmitter. */

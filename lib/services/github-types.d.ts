@@ -18,38 +18,41 @@ import * as Promise from 'bluebird';
 import * as GithubApi from 'github';
 import TypedError = require('typed-error');
 import { ConfigurationLocation, ProcBotConfiguration } from '../framework/procbot-types';
-import { ServiceAPIHandle, ServiceEmitContext, ServiceEvent, ServiceListenerMethod, ServiceRegistration,
-	ServiceType } from './service-types';
+import { ServiceAPIHandle, ServiceConstructor, ServiceEmitContext, ServiceEvent,
+	ServiceListenerMethod, ServiceRegistration, ServiceType } from './service-types';
 
-/** The Github service can be used as either an Integration or a User. */
-type GithubLoginType = 'integration' | 'user';
+/** The Github Service can be used as either an App or a User Personal Access Token. */
+export const enum GithubLogin {
+	/** Application instance. */
+	App = 0,
+	/** User instance. */
+	PAT = 1
+}
 
 /** Allows a service to login to Github as an Integration, using the ID. */
-export interface GithubIntegration {
-	/** Integration ID of the Github Integration to run as. */
-	integrationId: number;
+export interface GithubApp {
+	/** App ID of the Github Integration to run as. */
+	appId: number;
 	/** The Github PEM as an encoded Base64 value. */
 	pem: string;
-	/** Type of service ('listener' or 'emitter'). */
-	type: GithubLoginType;
+	/** Type of service, an App. */
+	type: GithubLogin.App;
 }
 
 /** Allows a service to login to Github as a user, using username and Personal Access Token. */
-export interface GithubUser {
+export interface GithubPAT {
 	/** The PAT for the user to login as. */
 	pat: string;
-	/** The username of the user to login as. */
-	user: string;
-	/** Type of service ('listener' or 'emitter'). */
-	type: GithubLoginType;
+	/** Type of service, a PAT. */
+	type: GithubLogin.PAT;
 }
 
 /** Base constructor object required to create a GithubListener or GithubEmitter. */
-export interface GithubConstructor {
+export interface GithubConstructor extends ServiceConstructor {
 	/** Client name (eg. VersionBot). */
 	client: string;
-	/** Whether to run the service as an Integration or a User. */
-	loginType: GithubIntegration | GithubUser;
+	/** Whether to run the service as an App or a User. */
+	authentication: GithubApp | GithubPAT;
 	/** Type of service ('listener' or 'emitter'). */
 	type: ServiceType;
 }

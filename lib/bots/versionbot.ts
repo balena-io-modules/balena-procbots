@@ -25,8 +25,8 @@ import { cleanup, track } from 'temp';
 import * as GithubApiTypes from '../apis/githubapi-types';
 import { ProcBot } from '../framework/procbot';
 import { ProcBotConfiguration } from '../framework/procbot-types';
-import { GithubCookedData, GithubHandle, GithubRegistration } from '../services/github-types';
-import { ServiceEmitter, ServiceEvent } from '../services/service-types';
+import { GithubCookedData, GithubHandle, GithubLogin, GithubRegistration } from '../services/github-types';
+import { ServiceEmitter, ServiceEvent, ServiceType } from '../services/service-types';
 import { BuildCommand, ExecuteCommand } from '../utils/environment';
 import { AlertLevel, LogLevel } from '../utils/logger';
 
@@ -249,19 +249,21 @@ export class VersionBot extends ProcBot {
 	private githubListenerName: string;
 	/** Github ServiceEmitter name. */
 	private githubEmitterName: string;
-	/** Github ServiceEmitter. */
+	/** Github App ServiceEmitter. */
 	private githubEmitter: ServiceEmitter;
-	/** Instance of Github SDK API in use. */
+	/** Instance of Github SDK API in use for App. */
 	private githubApi: GithubApi;
 	/** Email address used for commiting as VersionBot. */
 	private emailAddress: string;
 
 	/**
 	 * Constructs a new VersionBot instance.
-	 * @param integration  Github App ID.
+	 * @param app          Github App ID.
 	 * @param name         Name of the VersionBot.
+	 * @param email        Email ID to use for commits.
 	 * @param pemString    PEM for Github events and App login.
 	 * @param webhook      Secret webhook for validating events.
+	 * @param pat          User PAT for final merges.
 	 */
 	constructor(integration: number, name: string, email: string, pemString: string, webhook: string) {
 		// This is the VersionBot.
@@ -271,26 +273,25 @@ export class VersionBot extends ProcBot {
 		// Create a new listener for Github with the right Integration ID.
 		const ghListener = this.addServiceListener('github', {
 			client: name,
-			loginType: {
-				integrationId: integration,
+			authentication: {
+				appId: integration,
 				pem: pemString,
-				type: 'integration'
+				type: GithubLogin.App
 			},
 			path: '/webhooks',
 			port: 4567,
-			type: 'listener',
+			type: ServiceType.Listener,
 			webhookSecret: webhook
 		});
 
-		// Create a new emitter with the right Integration ID.
+		// Create a new emitter with the right App ID.
 		const ghEmitter = this.addServiceEmitter('github', {
-			loginType: {
-				integrationId: integration,
+			authentication: {
+				appId: integration,
 				pem: pemString,
-				type: 'integration'
+				type: GithubLogin.App
 			},
-			pem: pemString,
-			type: 'emitter'
+			type: ServiceType.Emitter
 		});
 
 		// Throw if we didn't get either of the services.
@@ -301,13 +302,13 @@ export class VersionBot extends ProcBot {
 			throw new Error("Couldn't create a Github emitter");
 		}
 		this.githubListenerName = ghListener.serviceName;
+		this.githubEmitterName = ghEmitter.serviceName;
 		this.githubEmitter = ghEmitter;
-		this.githubEmitterName = this.githubEmitter.serviceName;
 
-		// Github API handle
+		// Github App API handle, used generally for most ops.
 		this.githubApi = (<GithubHandle>this.githubEmitter.apiHandle).github;
 		if (!this.githubApi) {
-			throw new Error('No Github API instance found');
+			throw new Error('No Github App API instance found');
 		}
 
 		// We have two different WorkerMethods here:
@@ -375,7 +376,6 @@ export class VersionBot extends ProcBot {
 		const owner = splitRepo[0];
 		const repo = splitRepo[1];
 		const commitSha = event.cookedEvent.data.sha;
-		const branches = event.cookedEvent.data.branches;
 		let prEvents: ServiceEvent[] = [];
 
 		// If we made the status change, we stop now!
@@ -389,18 +389,18 @@ export class VersionBot extends ProcBot {
 				break;
 		}
 
-		// Get all PRs for each named branch.
+		// Unfortunately, branches are only passed for the *base* branch, and not
+		// the head (should it be a fork, for example). This means we actually have
+		// to get every open PR on a base to determine the right PR based on the
+		// head SHA. Unfortunately.
 		// We *only* work on open states.
-		return Promise.map(branches, (branch: GithubApiTypes.StatusEventBranch) => {
-			return this.dispatchToEmitter(this.githubEmitterName, {
-				data: {
-					head: `${owner}:${branch.name}`,
-					owner,
-					repo,
-					state: 'open'
-				},
-				method: this.githubApi.pullRequests.getAll
-			});
+		return this.dispatchToEmitter(this.githubEmitterName, {
+			data: {
+				owner,
+				repo,
+				state: 'open'
+			},
+			method: this.githubApi.pullRequests.getAll
 		}).then((foundPrs: GithubApiTypes.PullRequest[][]) => {
 			const prs = _.flatten(foundPrs);
 
@@ -441,8 +441,8 @@ export class VersionBot extends ProcBot {
 					return this.dispatchToEmitter(this.githubEmitterName, {
 						data: {
 							number: pr.number,
-							owner: pr.head.repo.owner.login,
-							repo: pr.head.repo.name,
+							owner: pr.base.repo.owner.login,
+							repo: pr.base.repo.name,
 						},
 						method: this.githubApi.issues.getIssueLabels
 					}).then((labels: GithubApiTypes.IssueLabel[]) => {
@@ -514,9 +514,10 @@ export class VersionBot extends ProcBot {
 	 */
 	protected checkWaffleFlow = (_registration: GithubRegistration, event: ServiceEvent): Promise<void> => {
 		const pr = event.cookedEvent.data.pull_request;
-		const head = event.cookedEvent.data.pull_request.head;
-		const owner = head.repo.owner.login;
-		const repo = head.repo.name;
+		const base = event.cookedEvent.data.pull_request.base;
+		const owner = base.repo.owner.login;
+		const repo = base.repo.name;
+
 		const prNumber = pr.number;
 		const issues: string[] = [];
 		const waffleString = '---- Autogenerated Waffleboard Connection: Connects to #';
@@ -595,9 +596,9 @@ export class VersionBot extends ProcBot {
 	 */
 	protected addReviewers = (_registration: GithubRegistration, event: ServiceEvent): Promise<void> => {
 		const pr = event.cookedEvent.data.pull_request;
-		const head = event.cookedEvent.data.pull_request.head;
-		const owner = head.repo.owner.login;
-		const repo = head.repo.name;
+		const base = event.cookedEvent.data.pull_request.base;
+		const owner = base.repo.owner.login;
+		const repo = base.repo.name;
 		let approvedMaintainers: string[];
 		let approvedReviewers: string[];
 
@@ -672,9 +673,9 @@ export class VersionBot extends ProcBot {
 	 */
 	protected checkReviewers = (_registration: GithubRegistration, event: ServiceEvent): Promise<void> => {
 		const pr = event.cookedEvent.data.pull_request;
-		const head = event.cookedEvent.data.pull_request.head;
-		const owner = head.repo.owner.login;
-		const repo = head.repo.name;
+		const base = event.cookedEvent.data.pull_request.base;
+		const owner = base.repo.owner.login;
+		const repo = base.repo.name;
 		let botConfig: VersionBotConfiguration;
 
 		this.logger.log(LogLevel.INFO, `Checking reviewer conditions for ${owner}/${repo}#${pr.number}`);
@@ -795,8 +796,8 @@ export class VersionBot extends ProcBot {
 				data: {
 					context: StatusReviewers.Context,
 					description: status,
-					owner: pr.head.repo.owner.login,
-					repo: pr.head.repo.name,
+					owner,
+					repo,
 					sha: pr.head.sha,
 					state: approvedPR ? 'success' : 'failure'
 				},
@@ -820,8 +821,9 @@ export class VersionBot extends ProcBot {
 		const prEvent: GithubApiTypes.PullRequestEvent = event.cookedEvent.data;
 		const pr = prEvent.pull_request;
 		const head = pr.head;
-		const owner = head.repo.owner.login;
-		const name = head.repo.name;
+		const base = pr.base;
+		const owner = base.repo.owner.login;
+		const name = base.repo.name;
 		const author = prEvent.sender.login;
 		const prAction = event.cookedEvent.data.action;
 		const prLabel: GithubApiTypes.Label = event.cookedEvent.data.label;
@@ -1039,9 +1041,10 @@ export class VersionBot extends ProcBot {
 		const data: GenericPullRequestEvent = cookedData.data;
 		const pr = data.pull_request;
 		const head = data.pull_request.head;
-		const owner = head.repo.owner.login;
-		const repo = head.repo.name;
-		const repoFullName = `${owner}/${repo}`;
+		const base = data.pull_request.base;
+		const owner = base.repo.owner.login;
+		const repo = base.repo.name;
+		const headRepoFullName = `${head.repo.owner.login}/${head.repo.name}`;
 		let newVersion: string;
 		let fullPath: string;
 		let branchName = pr.head.ref;
@@ -1116,7 +1119,7 @@ export class VersionBot extends ProcBot {
 				authToken: cookedData.githubAuthToken,
 				branchName,
 				fullPath,
-				repoFullName,
+				repoFullName: headRepoFullName,
 				number: pr.number
 			});
 		}).then((versionData: VersionistData) => {
@@ -1145,14 +1148,14 @@ export class VersionBot extends ProcBot {
 				version: newVersion
 			});
 		}).then(() => {
-			this.logger.log(LogLevel.INFO, `Upped version of ${repoFullName}#${pr.number} to ` +
+			this.logger.log(LogLevel.INFO, `Upped version of ${headRepoFullName}#${pr.number} to ` +
 				`${newVersion}; tagged and pushed.`);
 		}).catch((err: Error) => {
 			// Call the VersionBot error specific method if this wasn't the short circuit for
 			// committed code.
 			if ((err.message !== 'alreadyCommitted') && (err.message !== 'checksPendingOrFailed')) {
 				this.reportError({
-					brief: `${process.env.VERSIONBOT_NAME} failed to merge ${repoFullName}#${pr.number}`,
+					brief: `${process.env.VERSIONBOT_NAME} failed to merge ${headRepoFullName}#${pr.number}`,
 					message: `${process.env.VERSIONBOT_NAME} failed to commit a new version to prepare a merge for ` +
 						`the above pull request here: ${pr.html_url}. The reason for this is:\r\n${err.message}\r\n` +
 						'Please carry out relevant changes or alert an appropriate admin.',
@@ -1184,7 +1187,7 @@ export class VersionBot extends ProcBot {
 		return Promise.mapSeries([
 			BuildCommand('git', ['clone', `https://${versionData.authToken}:${versionData.authToken}@github.com/` +
 				`${versionData.repoFullName}`, `${versionData.fullPath}`],
-				{ cwd: `${versionData.fullPath}`, retries: 3 }),
+				{ cwd: `${versionData.fullPath}`, retries: 3, delay: 5000 }),
 			BuildCommand('git', ['checkout', `${versionData.branchName}`], { cwd: `${versionData.fullPath}` })
 		], ExecuteCommand).then(() => {
 			// Test the repo, we want to see if there's a local `versionist.conf.js`.
@@ -1385,8 +1388,8 @@ export class VersionBot extends ProcBot {
 							name: this._botname
 						},
 						message: `${repoData.version}`,
-						owner: repoData.owner,
 						parents: [ lastCommit.sha ],
+						owner: repoData.owner,
 						repo: repoData.repo,
 						tree: newTreeSha
 					},
@@ -1418,8 +1421,8 @@ export class VersionBot extends ProcBot {
 	 */
 	private mergeToMaster(data: MergeData): Promise<void> {
 		const pr = data.pullRequest;
-		const owner = pr.head.repo.owner.login;
-		const repo = pr.head.repo.name;
+		const owner = pr.base.repo.owner.login;
+		const repo = pr.base.repo.name;
 		const prNumber = pr.number;
 
 		return this.dispatchToEmitter(this.githubEmitterName, {
@@ -1522,9 +1525,10 @@ export class VersionBot extends ProcBot {
 	private checkStatuses(prInfo: GithubApiTypes.PullRequest, filter?: StatusFilter): Promise<StatusChecks> {
 		// We need to check the branch protection for this repo.
 		// Get all the statuses that need to have been satisfied.
-		const owner = prInfo.head.repo.owner.login;
-		const repo = prInfo.head.repo.name;
-		const branch = prInfo.head.ref;
+		const base = prInfo.base;
+		const head = prInfo.head;
+		const owner = base.repo.owner.login;
+		const repo = base.repo.name;
 		let protectedContexts: string[] = [];
 		const statusLUT: { [key: string]: StatusChecks; } = {
 			failure: StatusChecks.Failed,
@@ -1546,7 +1550,7 @@ export class VersionBot extends ProcBot {
 			// Get the statuses combined for this PR branch.
 			return this.dispatchToEmitter(this.githubEmitterName, {
 				data: {
-					ref: branch,
+					ref: head.sha,
 					owner,
 					repo
 				},
@@ -1576,6 +1580,7 @@ export class VersionBot extends ProcBot {
 			_.each(protectedContexts, (proContext) => {
 				// We go through every status and see if the context prefixes the context
 				// of the status.
+				// We filter the VersionBot reviews.
 				_.each(statuses.statuses, (status) => {
 					if (_.startsWith(status.context, proContext)) {
 						let includeContext = true;
@@ -1970,9 +1975,9 @@ export class VersionBot extends ProcBot {
  */
 export function createBot(): VersionBot {
 	if (!(process.env.VERSIONBOT_NAME && process.env.VERSIONBOT_EMAIL && process.env.VERSIONBOT_INTEGRATION_ID &&
-	process.env.VERSIONBOT_PEM && process.env.VERSIONBOT_WEBHOOK_SECRET)) {
-		throw new Error(`'VERSIONBOT_NAME', 'VERSIONBOT_EMAIL', 'VERSIONBOT_INTEGRATION_ID', 'VERSIONBOT_PEM' and ` +
-			`'VERSIONBOT_WEBHOOK_SECRET environment variables need setting`);
+	process.env.VERSIONBOT_PEM && process.env.VERSIONBOT_WEBHOOK_SECRET && process.env.VERSIONBOT_USER)) {
+		throw new Error(`'VERSIONBOT_NAME', 'VERSIONBOT_EMAIL', 'VERSIONBOT_INTEGRATION_ID', 'VERSIONBOT_PEM', ` +
+			`'VERSIONBOT_WEBHOOK_SECRET' environment variables need setting`);
 	}
 
 	return new VersionBot(process.env.VERSIONBOT_INTEGRATION_ID, process.env.VERSIONBOT_NAME,

@@ -113,21 +113,8 @@ export interface Merge {
 }
 
 export interface PullRequest {
-	head: {
-		ref: string;
-		repo: {
-			owner: {
-				login: string;
-			}
-			name: string;
-		};
-		sha: string;
-	};
-	base: {
-		label: string;
-		ref: string;
-		sha: string;
-	};
+	head: RepoBranch;
+	base: RepoBranch;
 	html_url: string;
 	mergeable: boolean;
 	mergeable_state: string;
@@ -146,6 +133,19 @@ export interface Reference {
 		sha: string;
 		url: string;
 	};
+}
+
+export interface RepoBranch {
+	ref: string;
+	repo: Repo;
+	sha: string;
+}
+
+export interface Repo {
+	owner: {
+		login: string;
+	};
+	name: string;
 }
 
 export interface RequiredStatusChecks {
