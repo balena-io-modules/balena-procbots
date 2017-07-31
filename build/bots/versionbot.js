@@ -9,6 +9,7 @@ const procbot_1 = require("../framework/procbot");
 const environment_1 = require("../utils/environment");
 const logger_1 = require("../utils/logger");
 const fsReadFile = Promise.promisify(FS.readFile);
+const fsWriteFile = Promise.promisify(FS.writeFile);
 const fsFileExists = Promise.promisify(FS.stat);
 const tempMkdir = Promise.promisify(temp_1.track().mkdir);
 const tempCleanup = Promise.promisify(temp_1.cleanup);
@@ -575,7 +576,8 @@ class VersionBot extends procbot_1.ProcBot {
                     authToken: cookedData.githubAuthToken,
                     branchName,
                     fullPath,
-                    repoFullName
+                    repoFullName,
+                    number: pr.number
                 });
             }).then((versionData) => {
                 if (!versionData.version || !versionData.files) {
@@ -824,6 +826,16 @@ class VersionBot extends procbot_1.ProcBot {
                 }
                 versionData.version = match[1];
                 versionData.files = moddedFiles;
+                const versions = contents.split('## ');
+                for (let index = 0; index < versions.length; index += 1) {
+                    if (versions[index].startsWith(versionData.version)) {
+                        versions[index] = versions[index].replace(/(\*[\s]+.*[\s]+)(\[.*])/gm, (_match, pattern1, pattern2) => {
+                            return `${pattern1}#${versionData.number} ${pattern2}`;
+                        });
+                    }
+                }
+                contents = versions.join('## ');
+                return fsWriteFile(`${versionData.fullPath}${_.last(moddedFiles)}`, contents);
             }).return(versionData);
         });
     }

@@ -33,6 +33,7 @@ import { AlertLevel, LogLevel } from '../utils/logger';
 // Exec technically has a binding because of it's Node typings, but promisify doesn't include
 // the optional object (we need for CWD). So we need to special case it.
 const fsReadFile: (filename: string, options?: any) => Promise<Buffer | string> = Promise.promisify(FS.readFile);
+const fsWriteFile: (path: string, contents: string) => Promise<{}> = Promise.promisify(FS.writeFile);
 const fsFileExists = Promise.promisify(FS.stat);
 const tempMkdir = Promise.promisify(track().mkdir);
 const tempCleanup = Promise.promisify(cleanup);
@@ -100,6 +101,8 @@ interface VersionistData {
 	fullPath: string;
 	/** Full name of the repository (owner/reponame). */
 	repoFullName: string;
+	/** The number of the PR for the repository. */
+	number: number;
 	/** Files that have been modified by running versionist. */
 	files?: string[];
 	/** The new version of the component. */
@@ -1113,7 +1116,8 @@ export class VersionBot extends ProcBot {
 				authToken: cookedData.githubAuthToken,
 				branchName,
 				fullPath,
-				repoFullName
+				repoFullName,
+				number: pr.number
 			});
 		}).then((versionData: VersionistData) => {
 			if (!versionData.version || !versionData.files) {
@@ -1259,6 +1263,28 @@ export class VersionBot extends ProcBot {
 
 				versionData.version = match[1];
 				versionData.files = moddedFiles;
+
+				// Now we have to add the PR number and URL to every log entry we've just added for
+				// the new version. This ensures that NotifyBot can apply release notes later on, if
+				// required.
+				const versions = contents.split('## ');
+
+				// Now find the right version entry.
+				for (let index = 0; index < versions.length; index += 1) {
+					if (versions[index].startsWith(versionData.version)) {
+						// Append the current PR number and URL for the PR after each
+						// entry.
+						versions[index] = versions[index].replace(/(\*[\s]+.*[\s]+)(\[.*])/gm,
+							(_match, pattern1, pattern2) => {
+								return `${pattern1}#${versionData.number} ${pattern2}`;
+							});
+					}
+				}
+				contents = versions.join('## ');
+
+				// Write modified contents back.
+				return fsWriteFile(`${versionData.fullPath}${_.last(moddedFiles)}`, contents);
+
 			}).return(versionData);
 		});
 	}
@@ -1490,7 +1516,7 @@ export class VersionBot extends ProcBot {
 	 *
 	 * @param prInfo  The PR on which to check the current statuses.
 	 * @param filter  An optional StatusFilter interface, allowing status contexts to be included/excluded
-	 * 	from results.
+	 *                from results.
 	 * @returns       Promise containing a StatusChecks object determining the state of each status.
 	 */
 	private checkStatuses(prInfo: GithubApiTypes.PullRequest, filter?: StatusFilter): Promise<StatusChecks> {
