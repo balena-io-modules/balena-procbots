@@ -465,8 +465,18 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 
 				return labelPromise.then((data: ServiceEmitResponse) => {
 					// If there are some labels, then we process them.
-					const labels = data.response;
-					if (labels) {
+					let labels = data.response || [];
+
+					// We look at the event itself. If it were a labeling event, then we add the label added to
+					// the list of labels gleaned. This *should* fix Issue #222, as it'll fix race-conditions in
+					// the GH API.
+					if (event.cookedEvent.data.action === 'labeled') {
+						// Ensure that if it *was* in the list, it's filtered.
+						labels = _.union(labels, [ event.cookedEvent.data.label.name ]);
+					}
+
+					// Deal with any labels.
+					if (labels.length > 0) {
 						const foundLabels = _.map(labels, 'name');
 
 						// First, are all the suppression labels present?
