@@ -1044,16 +1044,9 @@ export class VersionBot extends ProcBot {
 		let branchName = pr.head.ref;
 		let botConfig: VersionBotConfiguration;
 
-		// Check the action on the event to see what we're dealing with.
-		switch (cookedData.data.action) {
-			// Submission is a PR review
-			case 'submitted':
-			case 'labeled':
-				break;
-
-			default:
-				// We have no idea what sparked this, but we're not doing anything!
-				return Promise.resolve();
+		// Only carry out merging when the label has been applied.
+		if (cookedData.data.action !== 'labeled') {
+			return Promise.resolve();
 		}
 
 		this.logger.log(LogLevel.INFO, `PR is ready to merge, attempting to carry out a ` +
@@ -1107,7 +1100,7 @@ export class VersionBot extends ProcBot {
 			}
 
 			// If this was a labeling action and it's a pull_request event.
-			if ((cookedData.data.action === 'labeled') && (cookedData.type === 'pull_request')) {
+			if (cookedData.type === 'pull_request') {
 				this.checkValidMaintainer(botConfig, cookedData.data);
 			}
 

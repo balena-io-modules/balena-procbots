@@ -534,12 +534,8 @@ class VersionBot extends procbot_1.ProcBot {
             let fullPath;
             let branchName = pr.head.ref;
             let botConfig;
-            switch (cookedData.data.action) {
-                case 'submitted':
-                case 'labeled':
-                    break;
-                default:
-                    return Promise.resolve();
+            if (cookedData.data.action !== 'labeled') {
+                return Promise.resolve();
             }
             this.logger.log(logger_1.LogLevel.INFO, `PR is ready to merge, attempting to carry out a ` +
                 `version up for ${owner}/${repo}#${pr.number}`);
@@ -569,7 +565,7 @@ class VersionBot extends procbot_1.ProcBot {
                 if (commitMessage) {
                     throw new Error(`alreadyCommitted`);
                 }
-                if ((cookedData.data.action === 'labeled') && (cookedData.type === 'pull_request')) {
+                if (cookedData.type === 'pull_request') {
                     this.checkValidMaintainer(botConfig, cookedData.data);
                 }
                 return tempMkdir(`${repo}-${pr.number}_`);
