@@ -21,7 +21,7 @@ import {
 	Metadata, TransmitContext,
 } from '../../services/messenger-types';
 import {
-	ServiceEmitContext, ServiceEmitter, ServiceEvent,
+	ServiceEmitContext, ServiceEvent,
 } from '../../services/service-types';
 
 export interface Translator {
@@ -170,5 +170,5 @@ function getIndicatorArrays(): { 'shown': string[], 'hidden': string[] } {
  * @return      The newly instantiated Translator.
  */
 export function createTranslator(name: string, data: any): Translator {
-	return require(name).createTranslator(data);
+	return require(`./${name}`).createTranslator(data);
 }

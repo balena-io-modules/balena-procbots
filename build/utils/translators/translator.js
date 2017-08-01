@@ -64,7 +64,7 @@ function getIndicatorArrays() {
     return { hidden, shown };
 }
 function createTranslator(name, data) {
-    return require(name).createTranslator(data);
+    return require(`./${name}`).createTranslator(data);
 }
 exports.createTranslator = createTranslator;
 
