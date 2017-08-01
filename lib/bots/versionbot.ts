@@ -209,6 +209,8 @@ type GenericPullRequestEvent = GithubApiTypes.PullRequestEvent | GithubApiTypes.
 const MergeLabel = 'procbots/versionbot/ready-to-merge';
 /** Label to be applied for VersionBot to ignore the PR. */
 const IgnoreLabel = 'procbots/versionbot/no-checks';
+/** Label denoting the PR is a work in progress and warnings should be suppressed. */
+const WIPLabel = 'flow/in-progress';
 
 /** Status context for versionist. */
 const StatusVersionist = {
@@ -245,6 +247,17 @@ const StatusAutoMerge = {
  * accordingly.
  */
 export class VersionBot extends ProcBot {
+	/**
+	 * Determines whether an array of Labels includes the specified label name.
+	 *
+	 * @param labels     Array of Github Labels.
+	 * @param labelName  The name of the label to search for.
+	 * @returns            `true` if the label was found, `false` otherwise.
+	 */
+	private static hasLabel(labels: GithubApiTypes.Label[], labelName: string) {
+		return _.some(labels, { name: labelName });
+	}
+
 	/** Github ServiceListener name. */
 	private githubListenerName: string;
 	/** Github ServiceEmitter name. */
@@ -451,6 +464,9 @@ export class VersionBot extends ProcBot {
 								`Dropping '${registration.name}' as suppression labels are all present`);
 							return false;
 						}
+
+						// Add the labels to the event.
+						prEvent.cookedEvent.labels = labels;
 						return true;
 					});
 				});
@@ -599,11 +615,12 @@ export class VersionBot extends ProcBot {
 		const base = event.cookedEvent.data.pull_request.base;
 		const owner = base.repo.owner.login;
 		const repo = base.repo.name;
+		const labels: GithubApiTypes.Label[] = event.cookedEvent.labels;
 		let approvedMaintainers: string[];
 		let approvedReviewers: string[];
 
 		// Only when opening a new PR.
-		if (event.cookedEvent.data.action !== 'opened') {
+		if ((event.cookedEvent.data.action !== 'opened') || VersionBot.hasLabel(labels, WIPLabel)) {
 			return Promise.resolve();
 		}
 
@@ -825,6 +842,7 @@ export class VersionBot extends ProcBot {
 		const owner = base.repo.owner.login;
 		const name = base.repo.name;
 		const author = prEvent.sender.login;
+		const labels: GithubApiTypes.Label[] = event.cookedEvent.labels;
 		const prAction = event.cookedEvent.data.action;
 		const prLabel: GithubApiTypes.Label = event.cookedEvent.data.label;
 		let committer = author;
@@ -937,7 +955,7 @@ export class VersionBot extends ProcBot {
 			// If any of them fail (*not* pending), then *if* we haven't already
 			// commented (ie. we previously commented and there's been no commit
 			// since), we ping the author of the PR and whinge at them.
-			if (checkStatus === StatusChecks.Failed) {
+			if ((checkStatus === StatusChecks.Failed) && !VersionBot.hasLabel(labels, WIPLabel)) {
 				// Get the last commit. If there have been no comments *since* the
 				// date of that commit, then we know that we can safely post a
 				// comment telling the author of a failure. If there has, then
@@ -980,18 +998,9 @@ export class VersionBot extends ProcBot {
 				});
 			}
 		}).then(() => {
-			// Get the labels for the PR.
-			return this.dispatchToEmitter(this.githubEmitterName, {
-				data: {
-					number: pr.number,
-					owner,
-					repo: name
-				},
-				method: this.githubApi.issues.getIssueLabels
-			});
-		}).then((labels: GithubApiTypes.IssueLabel[]) => {
-			// If we don't have a relevant label for merging, we don't proceed.
-			if (_.some(labels, (label) => label.name === MergeLabel)) {
+			// If we don't have a relevant label for merging (or we do but the PR is marked as a WIP),
+			// we don't proceed.
+			if (VersionBot.hasLabel(labels, MergeLabel) && !VersionBot.hasLabel(labels, WIPLabel)) {
 				if (pr.state === 'open') {
 					return this.finaliseMerge(event.cookedEvent.data, pr);
 				}
@@ -1044,14 +1053,15 @@ export class VersionBot extends ProcBot {
 		const base = data.pull_request.base;
 		const owner = base.repo.owner.login;
 		const repo = base.repo.name;
+		const labels: GithubApiTypes.Label[] = event.cookedEvent.labels;
 		const headRepoFullName = `${head.repo.owner.login}/${head.repo.name}`;
 		let newVersion: string;
 		let fullPath: string;
 		let branchName = pr.head.ref;
 		let botConfig: VersionBotConfiguration;
 
-		// Only carry out merging when the label has been applied.
-		if (cookedData.data.action !== 'labeled') {
+		// Only carry out merging when the label has been applied and it's not a WIP.
+		if ((cookedData.data.action !== 'labeled') || VersionBot.hasLabel(labels, WIPLabel)) {
 			return Promise.resolve();
 		}
 

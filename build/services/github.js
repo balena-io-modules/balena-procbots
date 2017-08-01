@@ -60,7 +60,7 @@ class GithubService extends worker_client_1.WorkerClient {
                 if (_.includes(registration.events, event.cookedEvent.type)) {
                     let labelEvent = labelHead();
                     let labelPromise = Promise.resolve({ source: this._serviceName });
-                    if ((registration.triggerLabels || registration.suppressionLabels) && labelEvent) {
+                    if (labelEvent) {
                         const request = {
                             contexts: {},
                             source: this._serviceName
@@ -75,7 +75,7 @@ class GithubService extends worker_client_1.WorkerClient {
                         };
                         labelPromise = this.sendData(request);
                     }
-                    labelPromise.then((data) => {
+                    return labelPromise.then((data) => {
                         const labels = data.response;
                         if (labels) {
                             const foundLabels = _.map(labels, 'name');
@@ -92,6 +92,7 @@ class GithubService extends worker_client_1.WorkerClient {
                                 return;
                             }
                         }
+                        event.cookedEvent.labels = labels;
                         return registration.listenerMethod(registration, event);
                     }).catch((err) => {
                         this.logger.alert(logger_1.AlertLevel.ERROR, `Error thrown in main event/label filter loop:${err}`);

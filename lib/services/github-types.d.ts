@@ -17,6 +17,7 @@ limitations under the License.
 import * as Promise from 'bluebird';
 import * as GithubApi from 'github';
 import TypedError = require('typed-error');
+import * as GithubApiTypes from '../apis/githubapi-types';
 import { ConfigurationLocation, ProcBotConfiguration } from '../framework/procbot-types';
 import { ServiceAPIHandle, ServiceConstructor, ServiceEmitContext, ServiceEvent,
 	ServiceListenerMethod, ServiceRegistration, ServiceType } from './service-types';
@@ -95,6 +96,8 @@ export interface GithubCookedData {
 	githubAuthToken: string;
 	/** The type of data. */
 	type: string;
+	/** If relevant, labels applying to the Issue or PR associated with the event. */
+	labels?: GithubApiTypes.Label[];
 }
 
 /**

@@ -5,6 +5,7 @@ VersionBot is a CI tool designed to help engineers with PRs, linting commits, en
 * Look for new PRs and check that there is at least one commit in the PR which features a suitable `Change-Type:` tag
 * Look for required status checks (such as other CI systems) that fail, and then alert the author of the PR
 * Prevent manual merging of a PR using a 'AutoMerge' status check
+* Suppress any warnings (or merging) for a PR should it find the `flow/in-progress` label. This allows Work-In-Progress to occur with minimal interruptions by VersionBot.
 * Look for PR review approvals ***and*** a label applied to the PR to mark it ready for merge (`procbots/versionbot/ready-to-merge`)
 * On seeing appropriate label and review, will automatically:
     1. Clone the PR branch for the repo

@@ -32,6 +32,7 @@ var StatusChecks;
 ;
 const MergeLabel = 'procbots/versionbot/ready-to-merge';
 const IgnoreLabel = 'procbots/versionbot/no-checks';
+const WIPLabel = 'flow/in-progress';
 const StatusVersionist = {
     Context: 'Versionist',
     Success: 'Found all required commit footer tags',
@@ -112,6 +113,7 @@ class VersionBot extends procbot_1.ProcBot {
                                 this.logger.log(logger_1.LogLevel.DEBUG, `Dropping '${registration.name}' as suppression labels are all present`);
                                 return false;
                             }
+                            prEvent.cookedEvent.labels = labels;
                             return true;
                         });
                     });
@@ -213,9 +215,10 @@ class VersionBot extends procbot_1.ProcBot {
             const base = event.cookedEvent.data.pull_request.base;
             const owner = base.repo.owner.login;
             const repo = base.repo.name;
+            const labels = event.cookedEvent.labels;
             let approvedMaintainers;
             let approvedReviewers;
-            if (event.cookedEvent.data.action !== 'opened') {
+            if ((event.cookedEvent.data.action !== 'opened') || VersionBot.hasLabel(labels, WIPLabel)) {
                 return Promise.resolve();
             }
             this.logger.log(logger_1.LogLevel.INFO, `Checking reviewers list for ${owner}/${repo}#${pr.number}`);
@@ -375,6 +378,7 @@ class VersionBot extends procbot_1.ProcBot {
             const owner = base.repo.owner.login;
             const name = base.repo.name;
             const author = prEvent.sender.login;
+            const labels = event.cookedEvent.labels;
             const prAction = event.cookedEvent.data.action;
             const prLabel = event.cookedEvent.data.label;
             let committer = author;
@@ -459,7 +463,7 @@ class VersionBot extends procbot_1.ProcBot {
                     contexts: [StatusReviewers.Context, StatusAutoMerge.Context]
                 });
             }).then((checkStatus) => {
-                if (checkStatus === StatusChecks.Failed) {
+                if ((checkStatus === StatusChecks.Failed) && !VersionBot.hasLabel(labels, WIPLabel)) {
                     const lastCommitTimestamp = Date.parse(lastCommit.commit.committer.date);
                     return this.dispatchToEmitter(this.githubEmitterName, {
                         data: {
@@ -494,16 +498,7 @@ class VersionBot extends procbot_1.ProcBot {
                     });
                 }
             }).then(() => {
-                return this.dispatchToEmitter(this.githubEmitterName, {
-                    data: {
-                        number: pr.number,
-                        owner,
-                        repo: name
-                    },
-                    method: this.githubApi.issues.getIssueLabels
-                });
-            }).then((labels) => {
-                if (_.some(labels, (label) => label.name === MergeLabel)) {
+                if (VersionBot.hasLabel(labels, MergeLabel) && !VersionBot.hasLabel(labels, WIPLabel)) {
                     if (pr.state === 'open') {
                         return this.finaliseMerge(event.cookedEvent.data, pr);
                     }
@@ -528,12 +523,13 @@ class VersionBot extends procbot_1.ProcBot {
             const base = data.pull_request.base;
             const owner = base.repo.owner.login;
             const repo = base.repo.name;
+            const labels = event.cookedEvent.labels;
             const headRepoFullName = `${head.repo.owner.login}/${head.repo.name}`;
             let newVersion;
             let fullPath;
             let branchName = pr.head.ref;
             let botConfig;
-            if (cookedData.data.action !== 'labeled') {
+            if ((cookedData.data.action !== 'labeled') || VersionBot.hasLabel(labels, WIPLabel)) {
                 return Promise.resolve();
             }
             this.logger.log(logger_1.LogLevel.INFO, `PR is ready to merge, attempting to carry out a ` +
@@ -756,6 +752,9 @@ class VersionBot extends procbot_1.ProcBot {
         ], (reg) => {
             ghListener.registerEvent(reg);
         });
+    }
+    static hasLabel(labels, labelName) {
+        return _.some(labels, { name: labelName });
     }
     applyVersionist(versionData) {
         return Promise.mapSeries([
