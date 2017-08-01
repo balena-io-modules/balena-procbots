@@ -445,7 +445,7 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 				let labelPromise = Promise.resolve({source: this._serviceName});
 
 				// Are there any labels (trigger or suppression) set on the action?
-				if ((registration.triggerLabels || registration.suppressionLabels) && labelEvent) {
+				if (labelEvent) {
 					// OK, so we've got a label event, so we now have to get all the labels
 					// for the appropriate issue.
 					const request: ServiceEmitRequest = {
@@ -462,7 +462,8 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 					};
 					labelPromise = this.sendData(request);
 				}
-				labelPromise.then((data: ServiceEmitResponse) => {
+
+				return labelPromise.then((data: ServiceEmitResponse) => {
 					// If there are some labels, then we process them.
 					const labels = data.response;
 					if (labels) {
@@ -485,6 +486,9 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 							return;
 						}
 					}
+
+					// Add the labels to the event.
+					event.cookedEvent.labels = labels;
 
 					return registration.listenerMethod(registration, event);
 				}).catch((err: Error) => {

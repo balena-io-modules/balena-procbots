@@ -3,6 +3,7 @@ import { ProcBot } from '../framework/procbot';
 import { GithubRegistration } from '../services/github-types';
 import { ServiceEvent } from '../services/service-types';
 export declare class VersionBot extends ProcBot {
+    private static hasLabel(labels, labelName);
     private githubListenerName;
     private githubEmitterName;
     private githubEmitter;
