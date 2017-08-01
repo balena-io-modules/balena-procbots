@@ -33,5 +33,5 @@ export interface DataHub {
  * @return      The newly instantiated DataHub.
  */
 export function createDataHub(name: string, data: any): DataHub {
-	return require(name).createDataHub(data);
+	return require(`./${name}`).createDataHub(data);
 }

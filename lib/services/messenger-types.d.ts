@@ -20,9 +20,9 @@ import {
 } from './service-types';
 import { UtilityServiceEvent } from './service-utilities-types';
 
-export enum MessageAction {
-	Create,
-}
+// export enum MessageAction {
+// 	Create,
+// }
 
 // Generic forms of message objects
 export interface MessageIds {
@@ -40,7 +40,7 @@ export interface ReceiptIds extends MessageIds {
 	flow: string;
 }
 export interface MessageContext {
-	action: MessageAction;
+	// action: MessageAction;
 	first: boolean;
 	genesis: string;
 	hidden: boolean;

@@ -19,7 +19,7 @@ import { Conversation, Front } from 'front-sdk';
 import * as _ from 'lodash';
 import * as request from 'request-promise';
 import { FrontConnectionDetails, FrontEmitContext, FrontEvent } from '../../services/front-types';
-import { MessageAction, MessageContext, MessageEvent, TransmitContext } from '../../services/messenger-types';
+import {  MessageContext, MessageEvent, TransmitContext } from '../../services/messenger-types';
 import * as Translator from './translator';
 
 export class FrontTranslator implements Translator.Translator {
@@ -85,7 +85,7 @@ export class FrontTranslator implements Translator.Translator {
 			}
 			// Return the generic form of this event
 			const rawEvent = {
-				action: MessageAction.Create,
+				// action: MessageAction.Create,
 				first,
 				genesis: metadata.genesis || event.source,
 				hidden: first ? metadata.hidden : details.event.type === 'comment',

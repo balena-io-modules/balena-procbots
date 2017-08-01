@@ -18,7 +18,7 @@ import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import * as path from 'path';
 
-import { createDataHub, DataHub } from '../utils/datahubs/datahub';
+import * as DataHub from '../utils/datahubs/datahub';
 import * as Translator from '../utils/translators/translator';
 import { MessengerConnectionDetails, TransmitContext } from './messenger-types';
 import {
@@ -30,8 +30,8 @@ import { ServiceUtilities } from './service-utilities';
 
 export class MessengerService extends ServiceUtilities implements ServiceListener, ServiceEmitter {
 	private static _serviceName = path.basename(__filename.split('.')[0]);
-	private translators: { [service: string]: Translator.Translator } = {};
-	private hub: DataHub;
+	private translators: { [service: string]: Translator.Translator };
+	private hub: DataHub.DataHub;
 	private connectionDetails: MessengerConnectionDetails;
 
 	/**
@@ -40,11 +40,12 @@ export class MessengerService extends ServiceUtilities implements ServiceListene
 	 */
 	protected connect(data: MessengerConnectionDetails): void {
 		this.connectionDetails = data;
+		this.translators = {};
 		_.map(data, (subConnectionDetails, serviceName) => {
 			this.translators[serviceName] = Translator.createTranslator(serviceName, subConnectionDetails);
 		});
 		// TODO: It is not the place of messenger to understand data hub?
-		this.hub = createDataHub(process.env.SYNCBOT_HUB_SERVICE, data[process.env.SYNCBOT_HUB_SERVICE]);
+		this.hub = DataHub.createDataHub(process.env.SYNCBOT_HUB_SERVICE, data[process.env.SYNCBOT_HUB_SERVICE]);
 	}
 
 	protected emitData(_data: TransmitContext): Promise<ServiceEmitResponse> {
@@ -67,7 +68,7 @@ export class MessengerService extends ServiceUtilities implements ServiceListene
 
 	protected startListening(): void {
 		_.map(this.connectionDetails, (subConnectionDetails, subServiceName) => {
-			const subListener = require(`./${subServiceName}`).createListener(subConnectionDetails);
+			const subListener = require(`./${subServiceName}`).createServiceListener(subConnectionDetails);
 			subListener.registerEvent({
 				// TODO: This is potentially noisy.  It is translating every event it can, including ones it might ...
 				// ... not care about.  Which isn't so bad, except some translations require API calls.

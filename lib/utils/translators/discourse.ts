@@ -18,7 +18,7 @@ import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import * as request from 'request-promise';
 import { DiscourseConnectionDetails, DiscourseEmitContext, DiscourseEvent } from '../../services/discourse-types';
-import { MessageAction, MessageContext, MessageEvent, TransmitContext } from '../../services/messenger-types';
+import { MessageContext, MessageEvent, TransmitContext } from '../../services/messenger-types';
 import * as Translator from './translator';
 
 export class DiscourseTranslator implements Translator.Translator {
@@ -58,7 +58,7 @@ export class DiscourseTranslator implements Translator.Translator {
 			const metadata = Translator.extractMetadata(details.post.raw);
 			const first = details.post.post_number === 1;
 			const rawEvent: MessageContext = {
-				action: MessageAction.Create,
+				// action: MessageAction.Create,
 				first,
 				genesis: metadata.genesis || event.source,
 				// post_type 4 seems to correspond to whisper

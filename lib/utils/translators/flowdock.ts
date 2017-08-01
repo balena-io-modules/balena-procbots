@@ -17,7 +17,7 @@ limitations under the License.
 import * as Promise from 'bluebird';
 import { Session } from 'flowdock';
 import { FlowdockConnectionDetails, FlowdockEmitContext, FlowdockEvent } from '../../services/flowdock-types';
-import { MessageAction, MessageContext, MessageEvent, TransmitContext } from '../../services/messenger-types';
+import { MessageContext, MessageEvent, TransmitContext } from '../../services/messenger-types';
 import * as Translator from './translator';
 
 export class FlowdockTranslator implements Translator.Translator {
@@ -42,7 +42,7 @@ export class FlowdockTranslator implements Translator.Translator {
 		const userId = event.rawEvent.user;
 		const org = this.organization;
 		const rawEvent = {
-			action: MessageAction.Create,
+			// action: MessageAction.Create,
 			first: event.rawEvent.id === event.rawEvent.thread.initial_message,
 			genesis: metadata.genesis || event.source,
 			hidden: metadata.hidden,

@@ -3,7 +3,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const Promise = require("bluebird");
 const _ = require("lodash");
 const request = require("request-promise");
-const messenger_types_1 = require("../../services/messenger-types");
 const Translator = require("./translator");
 class DiscourseTranslator {
     constructor(data) {
@@ -31,7 +30,6 @@ class DiscourseTranslator {
             const metadata = Translator.extractMetadata(details.post.raw);
             const first = details.post.post_number === 1;
             const rawEvent = {
-                action: messenger_types_1.MessageAction.Create,
                 first,
                 genesis: metadata.genesis || event.source,
                 hidden: first ? !details.topic.visible : details.post.post_type === 4,

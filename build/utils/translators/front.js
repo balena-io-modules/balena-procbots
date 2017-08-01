@@ -4,7 +4,6 @@ const Promise = require("bluebird");
 const front_sdk_1 = require("front-sdk");
 const _ = require("lodash");
 const request = require("request-promise");
-const messenger_types_1 = require("../../services/messenger-types");
 const Translator = require("./translator");
 class FrontTranslator {
     constructor(data) {
@@ -69,7 +68,6 @@ class FrontTranslator {
                 }
             }
             const rawEvent = {
-                action: messenger_types_1.MessageAction.Create,
                 first,
                 genesis: metadata.genesis || event.source,
                 hidden: first ? metadata.hidden : details.event.type === 'comment',

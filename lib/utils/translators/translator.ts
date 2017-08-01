@@ -79,7 +79,7 @@ export interface Translator {
 export function initInterimContext(event: MessageContext, to: string, toIds: MessageIds = {}): InterimContext {
 	return {
 		// Details from the ReceiptContext
-		action: event.action,
+		// action: event.action,
 		first: event.first,
 		genesis: event.genesis,
 		hidden: event.hidden,

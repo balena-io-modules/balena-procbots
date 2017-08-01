@@ -2,27 +2,24 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const _ = require("lodash");
 const path = require("path");
-const datahub_1 = require("../utils/datahubs/datahub");
+const DataHub = require("../utils/datahubs/datahub");
 const Translator = require("../utils/translators/translator");
 const service_utilities_1 = require("./service-utilities");
 class MessengerService extends service_utilities_1.ServiceUtilities {
-    constructor() {
-        super(...arguments);
-        this.translators = {};
-    }
     connect(data) {
         this.connectionDetails = data;
+        this.translators = {};
         _.map(data, (subConnectionDetails, serviceName) => {
             this.translators[serviceName] = Translator.createTranslator(serviceName, subConnectionDetails);
         });
-        this.hub = datahub_1.createDataHub(process.env.SYNCBOT_HUB_SERVICE, data[process.env.SYNCBOT_HUB_SERVICE]);
+        this.hub = DataHub.createDataHub(process.env.SYNCBOT_HUB_SERVICE, data[process.env.SYNCBOT_HUB_SERVICE]);
     }
     emitData(_data) {
         throw new Error('Not yet implemented');
     }
     startListening() {
         _.map(this.connectionDetails, (subConnectionDetails, subServiceName) => {
-            const subListener = require(`./${subServiceName}`).createListener(subConnectionDetails);
+            const subListener = require(`./${subServiceName}`).createServiceListener(subConnectionDetails);
             subListener.registerEvent({
                 events: this.translators[subServiceName].getAllTriggers(),
                 listenerMethod: (_registration, event) => {

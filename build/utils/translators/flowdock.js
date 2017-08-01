@@ -2,7 +2,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const Promise = require("bluebird");
 const flowdock_1 = require("flowdock");
-const messenger_types_1 = require("../../services/messenger-types");
 const Translator = require("./translator");
 class FlowdockTranslator {
     constructor(data) {
@@ -28,7 +27,6 @@ class FlowdockTranslator {
         const userId = event.rawEvent.user;
         const org = this.organization;
         const rawEvent = {
-            action: messenger_types_1.MessageAction.Create,
             first: event.rawEvent.id === event.rawEvent.thread.initial_message,
             genesis: metadata.genesis || event.source,
             hidden: metadata.hidden,

@@ -3,7 +3,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const _ = require("lodash");
 function initInterimContext(event, to, toIds = {}) {
     return {
-        action: event.action,
         first: event.first,
         genesis: event.genesis,
         hidden: event.hidden,
