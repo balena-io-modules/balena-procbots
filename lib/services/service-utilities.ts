@@ -51,11 +51,11 @@ import {
  * - enqueue your events with `context` and `event` in cookedData, as per `UtilityServiceEvent`.
  */
 export abstract class ServiceUtilities extends WorkerClient<string> implements ServiceListener, ServiceEmitter {
+	/** A singleton express instance for all web-hook based services to share. */
+	private static _expressApp: express.Express;
+
 	/** A place to put output for debug and reference. */
 	private _logger = new Logger();
-
-	/** A singleton express instance for all web-hook based services to share. */
-	private _expressApp: express.Express;
 
 	/** Store a list of actions to perform when particular actions happen */
 	private eventListeners: { [event: string]: ServiceRegistration[] } = {};
@@ -189,19 +189,19 @@ export abstract class ServiceUtilities extends WorkerClient<string> implements S
 	 * @returns  Express server app.
 	 */
 	protected get expressApp(): express.Express {
-		if (!this._expressApp) {
+		if (!ServiceUtilities._expressApp) {
 			// Either MESSAGE_SERVICE_PORT from environment or PORT from Heroku environment
 			const port = process.env.MESSAGE_SERVICE_PORT || process.env.PORT;
 			if (!port) {
 				throw new Error('No inbound port specified for express server.');
 			}
 			// Create and log an express instance
-			this._expressApp = express();
-			this._expressApp.use(bodyParser.json());
-			this._expressApp.listen(port);
-			this.logger.log(LogLevel.INFO, `---> Started ProcBot shared web server on port '${port}'.`);
+			ServiceUtilities._expressApp = express();
+			ServiceUtilities._expressApp.use(bodyParser.json());
+			ServiceUtilities._expressApp.listen(port);
+			this.logger.log(LogLevel.INFO, `---> Started ServiceUtility shared web server on port '${port}'.`);
 		}
-		return this._expressApp;
+		return ServiceUtilities._expressApp;
 	}
 
 	/**

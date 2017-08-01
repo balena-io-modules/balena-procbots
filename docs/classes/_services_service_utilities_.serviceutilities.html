@@ -141,11 +141,11 @@
 						<section class="tsd-index-section tsd-is-private-protected">
 							<h3>Properties</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="_services_service_utilities_.serviceutilities.html#_expressapp" class="tsd-kind-icon">_express<wbr>App</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="_services_service_utilities_.serviceutilities.html#_logger" class="tsd-kind-icon">_logger</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="_services_service_utilities_.serviceutilities.html#eventlisteners" class="tsd-kind-icon">event<wbr>Listeners</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="_services_service_utilities_.serviceutilities.html#listening" class="tsd-kind-icon">listening</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-protected"><a href="_services_service_utilities_.serviceutilities.html#workers" class="tsd-kind-icon">workers</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private tsd-is-static"><a href="_services_service_utilities_.serviceutilities.html#_expressapp" class="tsd-kind-icon">_express<wbr>App</a></li>
 							</ul>
 						</section>
 						<section class="tsd-index-section ">
@@ -224,27 +224,12 @@
 			<section class="tsd-panel-group tsd-member-group tsd-is-private-protected">
 				<h2>Properties</h2>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private">
-					<a name="_expressapp" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagPrivate">Private</span> _express<wbr>App</h3>
-					<div class="tsd-signature tsd-kind-icon">_express<wbr>App<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">express.Express</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/service-utilities.ts#L58">services/service-utilities.ts:58</a></li>
-						</ul>
-					</aside>
-					<div class="tsd-comment tsd-typography">
-						<div class="lead">
-							<p>A singleton express instance for all web-hook based services to share.</p>
-						</div>
-					</div>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private">
 					<a name="_logger" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagPrivate">Private</span> _logger</h3>
 					<div class="tsd-signature tsd-kind-icon">_logger<span class="tsd-signature-symbol">:</span> <a href="_utils_logger_.logger.html" class="tsd-signature-type">Logger</a><span class="tsd-signature-symbol"> =&nbsp;new Logger()</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/service-utilities.ts#L55">services/service-utilities.ts:55</a></li>
+							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/service-utilities.ts#L58">services/service-utilities.ts:58</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-comment tsd-typography">
@@ -301,6 +286,21 @@
 							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/framework/worker-client.ts#L25">framework/worker-client.ts:25</a></li>
 						</ul>
 					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private tsd-is-static">
+					<a name="_expressapp" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagStatic">Static</span> <span class="tsd-flag ts-flagPrivate">Private</span> _express<wbr>App</h3>
+					<div class="tsd-signature tsd-kind-icon">_express<wbr>App<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">express.Express</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/service-utilities.ts#L55">services/service-utilities.ts:55</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>A singleton express instance for all web-hook based services to share.</p>
+						</div>
+					</div>
 				</section>
 			</section>
 			<section class="tsd-panel-group tsd-member-group ">
@@ -854,9 +854,6 @@
 								<a href="_services_service_utilities_.serviceutilities.html#constructor" class="tsd-kind-icon">constructor</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-private">
-								<a href="_services_service_utilities_.serviceutilities.html#_expressapp" class="tsd-kind-icon">_express<wbr>App</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-private">
 								<a href="_services_service_utilities_.serviceutilities.html#_logger" class="tsd-kind-icon">_logger</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-private">
@@ -867,6 +864,9 @@
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
 								<a href="_services_service_utilities_.serviceutilities.html#workers" class="tsd-kind-icon">workers</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-private tsd-is-static">
+								<a href="_services_service_utilities_.serviceutilities.html#_expressapp" class="tsd-kind-icon">_express<wbr>App</a>
 							</li>
 							<li class=" tsd-kind-get-signature tsd-parent-kind-class">
 								<a href="_services_service_utilities_.serviceutilities.html#apihandle" class="tsd-kind-icon">api<wbr>Handle</a>

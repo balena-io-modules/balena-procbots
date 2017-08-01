@@ -96,17 +96,17 @@ class ServiceUtilities extends worker_client_1.WorkerClient {
         }
     }
     get expressApp() {
-        if (!this._expressApp) {
+        if (!ServiceUtilities._expressApp) {
             const port = process.env.MESSAGE_SERVICE_PORT || process.env.PORT;
             if (!port) {
                 throw new Error('No inbound port specified for express server.');
             }
-            this._expressApp = express();
-            this._expressApp.use(bodyParser.json());
-            this._expressApp.listen(port);
-            this.logger.log(logger_1.LogLevel.INFO, `---> Started ProcBot shared web server on port '${port}'.`);
+            ServiceUtilities._expressApp = express();
+            ServiceUtilities._expressApp.use(bodyParser.json());
+            ServiceUtilities._expressApp.listen(port);
+            this.logger.log(logger_1.LogLevel.INFO, `---> Started ServiceUtility shared web server on port '${port}'.`);
         }
-        return this._expressApp;
+        return ServiceUtilities._expressApp;
     }
     get logger() {
         return this._logger;

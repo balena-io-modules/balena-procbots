@@ -67,17 +67,14 @@ export class DiscourseService extends ServiceUtilities implements ServiceListene
 		this.expressApp.post(`/${DiscourseService._serviceName}/`, (formData, response) => {
 			if (!this.postsSynced.has(formData.body.post.id)) {
 				this.postsSynced.add(formData.body.post.id);
-				this.queueEvent({
-					data: {
-						cookedEvent: {
-							context: formData.body.post.topic_id,
-							// #201: I'm sure there's something in the headers that could improve this
-							type: 'post'
-						},
-						rawEvent: formData.body.post,
-						source: DiscourseService._serviceName,
+				this.queueData({
+					cookedEvent: {
+						context: formData.body.post.topic_id,
+						// #201: I'm sure there's something in the headers that could improve this
+						event: 'post'
 					},
-					workerMethod: this.handleEvent,
+					rawEvent: formData.body.post,
+					source: DiscourseService._serviceName,
 				});
 				response.sendStatus(200);
 			}

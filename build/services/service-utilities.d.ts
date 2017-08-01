@@ -6,8 +6,8 @@ import { Logger } from '../utils/logger';
 import { ServiceAPIHandle, ServiceEmitContext, ServiceEmitRequest, ServiceEmitResponse, ServiceEmitter, ServiceListener, ServiceRegistration } from './service-types';
 import { UtilityServiceEvent, UtilityWorkerEvent } from './service-utilities-types';
 export declare abstract class ServiceUtilities extends WorkerClient<string> implements ServiceListener, ServiceEmitter {
+    private static _expressApp;
     private _logger;
-    private _expressApp;
     private eventListeners;
     private listening;
     constructor(data: object, listen: boolean);
