@@ -75,9 +75,18 @@ class GithubService extends worker_client_1.WorkerClient {
                         };
                         labelPromise = this.sendData(request);
                     }
+<<<<<<< HEAD
                     return labelPromise.then((data) => {
                         const labels = data.response;
                         if (labels) {
+=======
+                    labelPromise.then((data) => {
+                        let labels = data.response || [];
+                        if (event.cookedEvent.data.action === 'labeled') {
+                            labels = _.union(labels, [event.cookedEvent.data.label.name]);
+                        }
+                        if (labels.length > 0) {
+>>>>>>> VersionBot: Append passed label name from event to Github Service events, as well as gathering all from API.
                             const foundLabels = _.map(labels, 'name');
                             if (registration.suppressionLabels &&
                                 (_.intersection(registration.suppressionLabels, foundLabels).length ===
