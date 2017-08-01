@@ -133,7 +133,7 @@ export abstract class ServiceUtilities extends WorkerClient<string> implements S
 	 * Queue an event ready for running in a child, here to type guard.
 	 * @param data  The WorkerEvent to add to the queue for processing.
 	 */
-	protected queueData(data: UtilityServiceEvent) {
+	protected queueData = (data: UtilityServiceEvent) => {
 		if (this.verify(data)) {
 			super.queueEvent({
 				data,

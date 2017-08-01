@@ -35,7 +35,7 @@ export class FlowdockTranslator implements Translator.Translator {
 	 */
 	public eventIntoMessage(event: FlowdockEvent): Promise<MessageEvent> {
 		// Separate out some parts of the message
-		const metadata = Translator.extractMetadata(event.rawEvent.content);
+		const metadata = Translator.extractMetadata(event.rawEvent.content, 'emoji');
 		const titleAndText = metadata.content.match(/^(.*)\n--\n((?:\r|\n|.)*)$/);
 		const flow = event.cookedEvent.flow;
 		const thread = event.rawEvent.thread_id;

@@ -34,17 +34,14 @@ class FlowdockService extends service_utilities_1.ServiceUtilities {
             }
             const stream = this.session.stream(Object.keys(flowIdToFlowName));
             stream.on('message', (message) => {
-                this.queueEvent({
-                    data: {
-                        cookedEvent: {
-                            context: message.thread_id,
-                            flow: flowIdToFlowName[message.flow],
-                            type: message.event,
-                        },
-                        rawEvent: message,
-                        source: FlowdockService._serviceName,
+                this.queueData({
+                    cookedEvent: {
+                        context: message.thread_id,
+                        flow: flowIdToFlowName[message.flow],
+                        event: message.event,
                     },
-                    workerMethod: this.handleEvent,
+                    rawEvent: message,
+                    source: FlowdockService._serviceName,
                 });
             });
         });

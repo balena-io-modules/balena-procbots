@@ -13,7 +13,7 @@ export declare abstract class ServiceUtilities extends WorkerClient<string> impl
     constructor(data: object, listen: boolean);
     registerEvent(registration: ServiceRegistration): void;
     sendData(data: ServiceEmitRequest): Promise<ServiceEmitResponse>;
-    protected queueData(data: UtilityServiceEvent): void;
+    protected queueData: (data: UtilityServiceEvent) => void;
     protected abstract connect(data: any): void;
     protected abstract emitData(data: ServiceEmitContext): any;
     protected abstract startListening(): void;

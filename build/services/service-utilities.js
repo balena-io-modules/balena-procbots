@@ -13,6 +13,17 @@ class ServiceUtilities extends worker_client_1.WorkerClient {
         this._logger = new logger_1.Logger();
         this.eventListeners = {};
         this.listening = false;
+        this.queueData = (data) => {
+            if (this.verify(data)) {
+                super.queueEvent({
+                    data,
+                    workerMethod: this.handleEvent
+                });
+            }
+            else {
+                this.logger.log(logger_1.LogLevel.WARN, `Event failed verification.`);
+            }
+        };
         this.getWorker = (event) => {
             const context = event.data.cookedEvent.context;
             const retrieved = this.workers.get(context);
@@ -82,17 +93,6 @@ class ServiceUtilities extends worker_client_1.WorkerClient {
                 err,
                 source: this.serviceName,
             });
-        }
-    }
-    queueData(data) {
-        if (this.verify(data)) {
-            super.queueEvent({
-                data,
-                workerMethod: this.handleEvent
-            });
-        }
-        else {
-            this.logger.log(logger_1.LogLevel.WARN, `Event failed verification.`);
         }
     }
     get expressApp() {

@@ -55,7 +55,7 @@ export class DiscourseTranslator implements Translator.Translator {
 		})
 		.then((details: {post: any, topic: any}) => {
 			// Gather metadata and resolve
-			const metadata = Translator.extractMetadata(details.post.raw);
+			const metadata = Translator.extractMetadata(details.post.raw, 'img');
 			const first = details.post.post_number === 1;
 			const rawEvent: MessageContext = {
 				// action: MessageAction.Create,

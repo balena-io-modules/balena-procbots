@@ -1,6 +1,11 @@
 import * as Promise from 'bluebird';
 import { InterimContext, MessageContext, MessageEvent, MessageIds, Metadata, TransmitContext } from '../../services/messenger-types';
 import { ServiceEmitContext, ServiceEvent } from '../../services/service-types';
+export interface PublicityIndicator {
+    emoji: string;
+    word: string;
+    char: string;
+}
 export interface Translator {
     eventIntoMessage(event: ServiceEvent): Promise<MessageEvent>;
     messageIntoEmitCreateMessage(message: TransmitContext): Promise<ServiceEmitContext>;
@@ -10,5 +15,5 @@ export interface Translator {
 }
 export declare function initInterimContext(event: MessageContext, to: string, toIds?: MessageIds): InterimContext;
 export declare function stringifyMetadata(data: MessageContext, format?: 'markdown' | 'plaintext'): string;
-export declare function extractMetadata(message: string): Metadata;
+export declare function extractMetadata(message: string, format: string): Metadata;
 export declare function createTranslator(name: string, data: any): Translator;

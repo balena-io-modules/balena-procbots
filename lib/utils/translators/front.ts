@@ -71,7 +71,7 @@ export class FrontTranslator implements Translator.Translator {
 			// Pre-calculate a couple of values, to save line width
 			const message = details.event.target.data;
 			const first = details.comments._results.length + details.messages._results.length === 1;
-			const metadata = Translator.extractMetadata(message.text || message.body);
+			const metadata = Translator.extractMetadata(message.text || message.body, 'emoji');
 			// Attempt to find the author of a message from the various places front might store it
 			let author = 'Unknown';
 			if (message.author) {

@@ -71,6 +71,7 @@
 						<section class="tsd-index-section ">
 							<h3>Interfaces</h3>
 							<ul class="tsd-index-list">
+								<li class="tsd-kind-interface tsd-parent-kind-external-module"><a href="../interfaces/_utils_translators_translator_.publicityindicator.html" class="tsd-kind-icon">Publicity<wbr>Indicator</a></li>
 								<li class="tsd-kind-interface tsd-parent-kind-external-module"><a href="../interfaces/_utils_translators_translator_.translator.html" class="tsd-kind-icon">Translator</a></li>
 							</ul>
 						</section>
@@ -81,6 +82,7 @@
 								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_utils_translators_translator_.html#extractmetadata" class="tsd-kind-icon">extract<wbr>Metadata</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported"><a href="_utils_translators_translator_.html#getindicatorarrays" class="tsd-kind-icon">get<wbr>Indicator<wbr>Arrays</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_utils_translators_translator_.html#initinterimcontext" class="tsd-kind-icon">init<wbr>Interim<wbr>Context</a></li>
+								<li class="tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported"><a href="_utils_translators_translator_.html#metadatabyregex" class="tsd-kind-icon">metadata<wbr>ByRegex</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_utils_translators_translator_.html#stringifymetadata" class="tsd-kind-icon">stringify<wbr>Metadata</a></li>
 							</ul>
 						</section>
@@ -99,7 +101,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/utils/translators/translator.ts#L172">utils/translators/translator.ts:172</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/utils/translators/translator.ts#L204">utils/translators/translator.ts:204</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -131,13 +133,13 @@
 					<a name="extractmetadata" class="tsd-anchor"></a>
 					<h3>extract<wbr>Metadata</h3>
 					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-external-module">
-						<li class="tsd-signature tsd-kind-icon">extract<wbr>Metadata<span class="tsd-signature-symbol">(</span>message<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Metadata</span></li>
+						<li class="tsd-signature tsd-kind-icon">extract<wbr>Metadata<span class="tsd-signature-symbol">(</span>message<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, format<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Metadata</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/utils/translators/translator.ts#L120">utils/translators/translator.ts:120</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/utils/translators/translator.ts#L127">utils/translators/translator.ts:127</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -151,6 +153,12 @@
 									<h5>message: <span class="tsd-signature-type">string</span></h5>
 									<div class="tsd-comment tsd-typography">
 										<p>Basic string that may contain metadata.</p>
+									</div>
+								</li>
+								<li>
+									<h5>format: <span class="tsd-signature-type">string</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Format of the metadata encoding.</p>
 									</div>
 								</li>
 							</ul>
@@ -169,7 +177,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/utils/translators/translator.ts#L150">utils/translators/translator.ts:150</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/utils/translators/translator.ts#L182">utils/translators/translator.ts:182</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -181,10 +189,10 @@
 							<p>Object of arrays of indicators, shown and hidden.</p>
 							<ul class="tsd-parameters">
 								<li class="tsd-parameter">
-									<h5>hidden<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></h5>
+									<h5>hidden<span class="tsd-signature-symbol">: </span><a href="../interfaces/_utils_translators_translator_.publicityindicator.html" class="tsd-signature-type">PublicityIndicator</a></h5>
 								</li>
 								<li class="tsd-parameter">
-									<h5>shown<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></h5>
+									<h5>shown<span class="tsd-signature-symbol">: </span><a href="../interfaces/_utils_translators_translator_.publicityindicator.html" class="tsd-signature-type">PublicityIndicator</a></h5>
 								</li>
 							</ul>
 						</li>
@@ -200,7 +208,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/utils/translators/translator.ts#L79">utils/translators/translator.ts:79</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/utils/translators/translator.ts#L85">utils/translators/translator.ts:85</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -234,6 +242,45 @@
 						</li>
 					</ul>
 				</section>
+				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported">
+					<a name="metadatabyregex" class="tsd-anchor"></a>
+					<h3>metadata<wbr>ByRegex</h3>
+					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported">
+						<li class="tsd-signature tsd-kind-icon">metadata<wbr>ByRegex<span class="tsd-signature-symbol">(</span>message<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, regex<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">RegExp</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Metadata</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/utils/translators/translator.ts#L161">utils/translators/translator.ts:161</a></li>
+								</ul>
+							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Generic handler for stock metadata regex, must match the syntax of:
+									first match is the indicator of visibility, second match is message source, remove the whole match for content.</p>
+								</div>
+							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>message: <span class="tsd-signature-type">string</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>String to evaluate into metadata.</p>
+									</div>
+								</li>
+								<li>
+									<h5>regex: <span class="tsd-signature-type">RegExp</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>Criteria for extraction.</p>
+									</div>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Metadata</span></h4>
+							<p>Object of the metadata, decoded.</p>
+						</li>
+					</ul>
+				</section>
 				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-external-module">
 					<a name="stringifymetadata" class="tsd-anchor"></a>
 					<h3>stringify<wbr>Metadata</h3>
@@ -244,7 +291,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/utils/translators/translator.ts#L102">utils/translators/translator.ts:102</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/utils/translators/translator.ts#L108">utils/translators/translator.ts:108</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -348,6 +395,9 @@
 			<nav class="tsd-navigation secondary menu-sticky">
 				<ul class="before-current">
 					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
+						<a href="../interfaces/_utils_translators_translator_.publicityindicator.html" class="tsd-kind-icon">Publicity<wbr>Indicator</a>
+					</li>
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
 						<a href="../interfaces/_utils_translators_translator_.translator.html" class="tsd-kind-icon">Translator</a>
 					</li>
 					<li class=" tsd-kind-function tsd-parent-kind-external-module">
@@ -361,6 +411,9 @@
 					</li>
 					<li class=" tsd-kind-function tsd-parent-kind-external-module">
 						<a href="_utils_translators_translator_.html#initinterimcontext" class="tsd-kind-icon">init<wbr>Interim<wbr>Context</a>
+					</li>
+					<li class=" tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported">
+						<a href="_utils_translators_translator_.html#metadatabyregex" class="tsd-kind-icon">metadata<wbr>ByRegex</a>
 					</li>
 					<li class=" tsd-kind-function tsd-parent-kind-external-module">
 						<a href="_utils_translators_translator_.html#stringifymetadata" class="tsd-kind-icon">stringify<wbr>Metadata</a>

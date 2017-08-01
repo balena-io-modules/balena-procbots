@@ -24,6 +24,12 @@ import {
 	ServiceEmitContext, ServiceEvent,
 } from '../../services/service-types';
 
+export interface PublicityIndicator {
+	emoji: string;
+	word: string;
+	char: string;
+}
+
 export interface Translator {
 	// TODO: This does not belong here but is going here for now.
 	// This is to reconcile:
@@ -104,9 +110,9 @@ export function stringifyMetadata(data: MessageContext, format: 'markdown'|'plai
 	// Build the content with the indicator and genesis at the front
 	switch (format) {
 		case 'markdown':
-			return `[${data.hidden ? indicators.hidden[0] : indicators.shown[0]}](${data.source})`;
+			return `[${data.hidden ? indicators.hidden.word : indicators.shown.word}](${data.source})`;
 		case 'plaintext':
-			return `${data.hidden ? indicators.hidden[0] : indicators.shown[0]}:${data.source}`;
+			return `${data.hidden ? indicators.hidden.word : indicators.shown.word}:${data.source}`;
 		default:
 			throw new Error(`${format} format not recognised`);
 	}
@@ -115,27 +121,53 @@ export function stringifyMetadata(data: MessageContext, format: 'markdown'|'plai
 /**
  * Given a basic string this will extract a more rich context for the event, if embedded.
  * @param message  Basic string that may contain metadata.
+ * @param format   Format of the metadata encoding.
  * @returns        Object of content, genesis and hidden.
  */
-export function extractMetadata(message: string): Metadata {
+export function extractMetadata(message: string, format: string): Metadata {
 	const indicators = getIndicatorArrays();
-	const visible = indicators.shown.join('|\\');
-	const hidden = indicators.hidden.join('|\\');
-	// Anchored with new line; followed by whitespace.
-	// Captured, the show/hide; brackets to enclose.
-	// Then comes genesis; parens may surround.
-	// The case we ignore; a Regex we form!
-	const findMetadata = new RegExp(`(?:^|\\r|\\n)(?:\\s*)\\[?(${hidden}|${visible})\\]?:?\\(?(\\w*)\\)?`, 'i');
-	const metadata = message.match(findMetadata);
+	const wordCapture = `(${indicators.hidden.word}|${indicators.shown.word})`;
+	const beginsLine = `(?:^|\\r|\\n)(?:\\s*)`;
+	switch (format.toLowerCase()) {
+		case 'human':
+			const parensRegex = new RegExp(`${beginsLine}\\(${wordCapture} from (\\w*)\\)`, 'i');
+			return metadataByRegex(message, parensRegex);
+		case 'emoji':
+			const emojiCapture = `(${indicators.hidden.emoji}|${indicators.shown.emoji})`;
+			const emojiRegex = new RegExp(`${beginsLine}\\[${emojiCapture}\\]\\((\\w*)\\)`, 'i');
+			return metadataByRegex(message, emojiRegex);
+		case 'img':
+			const baseUrl = _.escapeRegExp(process.env.MESSAGE_CONVERTER_IMG_BASE_URL);
+			const querystring = `\\?hidden=${wordCapture}&source=(\\w*)`;
+			const imgRegex = new RegExp(`${beginsLine}<img src="${baseUrl}${querystring}" height="18" \/>`, 'i');
+			return metadataByRegex(message, imgRegex);
+		case 'char':
+			const charCapture = `(${indicators.hidden.char}|${indicators.shown.char})`;
+			const charRegex = new RegExp(`${beginsLine}${charCapture}`, 'i');
+			return metadataByRegex(message, charRegex);
+		default:
+			throw new Error(`${format} format not recognised`);
+	}
+
+}
+
+/**
+ * Generic handler for stock metadata regex, must match the syntax of:
+ * first match is the indicator of visibility, second match is message source, remove the whole match for content.
+ * @param message String to evaluate into metadata.
+ * @param regex   Criteria for extraction.
+ * @returns       Object of the metadata, decoded.
+ */
+function metadataByRegex(message: string, regex: RegExp): Metadata {
+	const indicators = getIndicatorArrays();
+	const metadata = message.match(regex);
 	if (metadata) {
-		// The content without the metadata, the word after the emoji, and whether the emoji is in the visible set
 		return {
-			content: message.replace(findMetadata, '').trim(),
+			content: message.replace(regex, '').trim(),
 			genesis: metadata[2] || null,
-			hidden: !_.includes(indicators.shown, metadata[1]),
+			hidden: !_.includes(_.values(indicators.shown), metadata[1]),
 		};
 	}
-	// Return some default values if there wasn't any metadata
 	return {
 		content: message,
 		genesis: null,
@@ -147,13 +179,13 @@ export function extractMetadata(message: string): Metadata {
  * Retrieve from the environment array of strings to use as indicators of visibility.
  * @returns  Object of arrays of indicators, shown and hidden.
  */
-function getIndicatorArrays(): { 'shown': string[], 'hidden': string[] } {
+function getIndicatorArrays(): { 'shown': PublicityIndicator, 'hidden': PublicityIndicator } {
 	let shown;
 	let hidden;
 	try {
 		// Retrieve publicity indicators from the environment
-		shown = JSON.parse(process.env.MESSAGE_TRANSLATOR_PUBLIC_INDICATORS);
-		hidden = JSON.parse(process.env.MESSAGE_TRANSLATOR_PRIVATE_INDICATORS);
+		shown = JSON.parse(process.env.MESSAGE_TRANSLATOR_PUBLICITY_INDICATORS_OBJECT);
+		hidden = JSON.parse(process.env.MESSAGE_TRANSLATOR_PRIVACY_INDICATORS_OBJECT);
 	} catch (error) {
 		throw new Error('Message convertor environment variables not set correctly');
 	}

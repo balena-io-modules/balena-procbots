@@ -20,7 +20,7 @@ class FlowdockTranslator {
         this.organization = data.organization;
     }
     eventIntoMessage(event) {
-        const metadata = Translator.extractMetadata(event.rawEvent.content);
+        const metadata = Translator.extractMetadata(event.rawEvent.content, 'emoji');
         const titleAndText = metadata.content.match(/^(.*)\n--\n((?:\r|\n|.)*)$/);
         const flow = event.cookedEvent.flow;
         const thread = event.rawEvent.thread_id;

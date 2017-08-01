@@ -19,25 +19,48 @@ function stringifyMetadata(data, format = 'markdown') {
     const indicators = getIndicatorArrays();
     switch (format) {
         case 'markdown':
-            return `[${data.hidden ? indicators.hidden[0] : indicators.shown[0]}](${data.source})`;
+            return `[${data.hidden ? indicators.hidden.word : indicators.shown.word}](${data.source})`;
         case 'plaintext':
-            return `${data.hidden ? indicators.hidden[0] : indicators.shown[0]}:${data.source}`;
+            return `${data.hidden ? indicators.hidden.word : indicators.shown.word}:${data.source}`;
         default:
             throw new Error(`${format} format not recognised`);
     }
 }
 exports.stringifyMetadata = stringifyMetadata;
-function extractMetadata(message) {
+function extractMetadata(message, format) {
     const indicators = getIndicatorArrays();
-    const visible = indicators.shown.join('|\\');
-    const hidden = indicators.hidden.join('|\\');
-    const findMetadata = new RegExp(`(?:^|\\r|\\n)(?:\\s*)\\[?(${hidden}|${visible})\\]?:?\\(?(\\w*)\\)?`, 'i');
-    const metadata = message.match(findMetadata);
+    const wordCapture = `(${indicators.hidden.word}|${indicators.shown.word})`;
+    const beginsLine = `(?:^|\\r|\\n)(?:\\s*)`;
+    switch (format.toLowerCase()) {
+        case 'human':
+            const parensRegex = new RegExp(`${beginsLine}\\(${wordCapture} from (\\w*)\\)`, 'i');
+            return metadataByRegex(message, parensRegex);
+        case 'emoji':
+            const emojiCapture = `(${indicators.hidden.emoji}|${indicators.shown.emoji})`;
+            const emojiRegex = new RegExp(`${beginsLine}\\[${emojiCapture}\\]\\((\\w*)\\)`, 'i');
+            return metadataByRegex(message, emojiRegex);
+        case 'img':
+            const baseUrl = _.escapeRegExp(process.env.MESSAGE_CONVERTER_IMG_BASE_URL);
+            const querystring = `\\?hidden=${wordCapture}&source=(\\w*)`;
+            const imgRegex = new RegExp(`${beginsLine}<img src="${baseUrl}${querystring}" height="18" \/>`, 'i');
+            return metadataByRegex(message, imgRegex);
+        case 'char':
+            const charCapture = `(${indicators.hidden.char}|${indicators.shown.char})`;
+            const charRegex = new RegExp(`${beginsLine}${charCapture}`, 'i');
+            return metadataByRegex(message, charRegex);
+        default:
+            throw new Error(`${format} format not recognised`);
+    }
+}
+exports.extractMetadata = extractMetadata;
+function metadataByRegex(message, regex) {
+    const indicators = getIndicatorArrays();
+    const metadata = message.match(regex);
     if (metadata) {
         return {
-            content: message.replace(findMetadata, '').trim(),
+            content: message.replace(regex, '').trim(),
             genesis: metadata[2] || null,
-            hidden: !_.includes(indicators.shown, metadata[1]),
+            hidden: !_.includes(_.values(indicators.shown), metadata[1]),
         };
     }
     return {
@@ -46,13 +69,12 @@ function extractMetadata(message) {
         hidden: true,
     };
 }
-exports.extractMetadata = extractMetadata;
 function getIndicatorArrays() {
     let shown;
     let hidden;
     try {
-        shown = JSON.parse(process.env.MESSAGE_TRANSLATOR_PUBLIC_INDICATORS);
-        hidden = JSON.parse(process.env.MESSAGE_TRANSLATOR_PRIVATE_INDICATORS);
+        shown = JSON.parse(process.env.MESSAGE_TRANSLATOR_PUBLICITY_INDICATORS_OBJECT);
+        hidden = JSON.parse(process.env.MESSAGE_TRANSLATOR_PRIVACY_INDICATORS_OBJECT);
     }
     catch (error) {
         throw new Error('Message convertor environment variables not set correctly');

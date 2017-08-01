@@ -27,7 +27,7 @@ class DiscourseTranslator {
             topic: request(getTopic),
         })
             .then((details) => {
-            const metadata = Translator.extractMetadata(details.post.raw);
+            const metadata = Translator.extractMetadata(details.post.raw, 'img');
             const first = details.post.post_number === 1;
             const rawEvent = {
                 first,

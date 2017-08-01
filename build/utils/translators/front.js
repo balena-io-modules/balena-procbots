@@ -55,7 +55,7 @@ class FrontTranslator {
             .then((details) => {
             const message = details.event.target.data;
             const first = details.comments._results.length + details.messages._results.length === 1;
-            const metadata = Translator.extractMetadata(message.text || message.body);
+            const metadata = Translator.extractMetadata(message.text || message.body, 'emoji');
             let author = 'Unknown';
             if (message.author) {
                 author = message.author.username;
