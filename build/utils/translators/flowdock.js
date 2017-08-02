@@ -27,25 +27,26 @@ class FlowdockTranslator {
         const userId = event.rawEvent.user;
         const org = this.organization;
         const rawEvent = {
-            first: event.rawEvent.id === event.rawEvent.thread.initial_message,
-            genesis: metadata.genesis || event.source,
-            hidden: metadata.hidden,
-            source: event.source,
-            sourceIds: {
+            details: {
+                genesis: metadata.genesis || event.source,
+                hidden: metadata.hidden,
+                text: titleAndText ? titleAndText[2] : metadata.content,
+                title: titleAndText ? titleAndText[1] : undefined,
+            },
+            source: {
+                service: event.source,
                 message: event.rawEvent.id,
                 flow,
                 thread,
                 url: `https://www.flowdock.com/app/${org}/${flow}/threads/${thread}`,
                 user: 'duff',
             },
-            text: titleAndText ? titleAndText[2] : metadata.content,
-            title: titleAndText ? titleAndText[1] : undefined,
         };
         if (event.rawEvent.external_user_name) {
-            rawEvent.sourceIds.user = event.rawEvent.external_user_name;
+            rawEvent.source.user = event.rawEvent.external_user_name;
             return Promise.resolve({
                 cookedEvent: {
-                    context: `front.${event.cookedEvent.context}`,
+                    context: `${event.source}.${event.cookedEvent.context}`,
                     event: 'message',
                 },
                 rawEvent,
@@ -54,10 +55,10 @@ class FlowdockTranslator {
         }
         return this.fetchFromSession(`/organizations/${org}/users/${userId}`)
             .then((user) => {
-            rawEvent.sourceIds.user = user.nick;
+            rawEvent.source.user = user.nick;
             return ({
                 cookedEvent: {
-                    context: `front.${event.cookedEvent.context}`,
+                    context: `${event.source}.${event.cookedEvent.context}`,
                     event: 'message',
                 },
                 rawEvent,
@@ -66,15 +67,15 @@ class FlowdockTranslator {
         });
     }
     messageIntoEmitCreateMessage(message) {
-        const titleText = message.first && message.title ? message.title + '\n--\n' : '';
+        const titleText = message.details.title ? message.details.title + '\n--\n' : '';
         return new Promise((resolve) => {
             resolve({
                 method: 'POST',
                 path: '/flows/${org}/${flow}/messages/',
                 payload: {
-                    content: titleText + message.text + '\n' + Translator.stringifyMetadata(message),
+                    content: titleText + message.details.text + '\n' + Translator.stringifyMetadata(message),
                     event: 'message',
-                    thread_id: message.toIds.thread,
+                    thread_id: message.target.thread,
                 },
             });
         });
@@ -85,7 +86,7 @@ class FlowdockTranslator {
         if (firstWords) {
             return Promise.resolve({
                 method: 'GET',
-                path: `/flows/${org}/${message.sourceIds.flow}/threads/${message.sourceIds.thread}/messages`,
+                path: `/flows/${org}/${message.source.flow}/threads/${message.source.thread}/messages`,
                 payload: {
                     search: firstWords[1],
                 },
@@ -93,7 +94,7 @@ class FlowdockTranslator {
         }
         return Promise.resolve({
             method: 'GET',
-            path: `/flows/${org}/${message.sourceIds.flow}/threads/${message.sourceIds.thread}/messages`,
+            path: `/flows/${org}/${message.source.flow}/threads/${message.source.thread}/messages`,
         });
     }
     eventNameIntoTriggers(name) {

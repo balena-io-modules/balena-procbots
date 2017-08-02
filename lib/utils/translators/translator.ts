@@ -78,24 +78,15 @@ export interface Translator {
 /**
  * Make a handle context, using a receipt context and some extra information.
  * @param event  Event to be converted.
- * @param to     Destination for the handle context.
- * @param toIds  Pre-populate the toIds, if desired.
+ * @param target Destination for the handle context.
  * @returns      Newly created context for handling a message.
  */
-export function initInterimContext(event: MessageContext, to: string, toIds: MessageIds = {}): InterimContext {
+export function initInterimContext(event: MessageContext, target: MessageIds | string): InterimContext {
 	return {
 		// Details from the ReceiptContext
-		// action: event.action,
-		first: event.first,
-		genesis: event.genesis,
-		hidden: event.hidden,
+		details: event.details,
 		source: event.source,
-		sourceIds: event.sourceIds,
-		text: event.text,
-		title: event.title,
-		// Details from the arguments
-		to,
-		toIds,
+		target: _.isString(target) ? { service: target } : target,
 	};
 }
 
@@ -110,9 +101,9 @@ export function stringifyMetadata(data: MessageContext, format: 'markdown'|'plai
 	// Build the content with the indicator and genesis at the front
 	switch (format) {
 		case 'markdown':
-			return `[${data.hidden ? indicators.hidden.word : indicators.shown.word}](${data.source})`;
+			return `[${data.details.hidden ? indicators.hidden.word : indicators.shown.word}](${data.source})`;
 		case 'plaintext':
-			return `${data.hidden ? indicators.hidden.word : indicators.shown.word}:${data.source}`;
+			return `${data.details.hidden ? indicators.hidden.word : indicators.shown.word}:${data.source}`;
 		default:
 			throw new Error(`${format} format not recognised`);
 	}

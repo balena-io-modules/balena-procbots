@@ -30,23 +30,24 @@ class DiscourseTranslator {
             const metadata = Translator.extractMetadata(details.post.raw, 'img');
             const first = details.post.post_number === 1;
             const rawEvent = {
-                first,
-                genesis: metadata.genesis || event.source,
-                hidden: first ? !details.topic.visible : details.post.post_type === 4,
-                source: event.source,
-                sourceIds: {
+                details: {
+                    genesis: metadata.genesis || event.source,
+                    hidden: first ? !details.topic.visible : details.post.post_type === 4,
+                    text: metadata.content,
+                    title: details.topic.title,
+                },
+                source: {
+                    service: event.source,
                     flow: details.topic.category_id.toString(),
                     message: details.post.id.toString(),
                     thread: details.post.topic_id.toString(),
                     url: getTopic.uri,
                     user: details.post.username,
                 },
-                text: metadata.content,
-                title: details.topic.title,
             };
             return {
                 cookedEvent: {
-                    context: `discourse.${event.cookedEvent.context}`,
+                    context: `${event.source}.${event.cookedEvent.context}`,
                     event: 'message',
                 },
                 rawEvent,
@@ -55,9 +56,9 @@ class DiscourseTranslator {
         });
     }
     messageIntoEmitCreateMessage(message) {
-        const topicId = message.toIds.thread;
+        const topicId = message.target.thread;
         if (!topicId) {
-            const title = message.title;
+            const title = message.details.title;
             if (!title) {
                 throw new Error('Cannot create Discourse Thread without a title');
             }
@@ -66,10 +67,10 @@ class DiscourseTranslator {
                 method: 'POST',
                 path: '/posts',
                 payload: {
-                    category: message.toIds.flow,
-                    raw: `${message.text}\n\n---\n${Translator.stringifyMetadata(message)}`,
+                    category: message.target.flow,
+                    raw: `${message.details.text}\n\n---\n${Translator.stringifyMetadata(message)}`,
                     title,
-                    unlist_topic: message.hidden ? 'true' : 'false',
+                    unlist_topic: message.details.hidden ? 'true' : 'false',
                 },
             });
         }
@@ -78,9 +79,9 @@ class DiscourseTranslator {
             method: 'POST',
             path: '/posts',
             payload: {
-                raw: `${message.text}\n\n---\n${Translator.stringifyMetadata(message)}`,
+                raw: `${message.details.text}\n\n---\n${Translator.stringifyMetadata(message)}`,
                 topic_id: topicId,
-                whisper: message.hidden ? 'true' : 'false',
+                whisper: message.details.hidden ? 'true' : 'false',
             },
         });
     }
@@ -93,7 +94,7 @@ class DiscourseTranslator {
                 qs: {
                     'term': firstWords[1],
                     'search_context[type]': 'topic',
-                    'search_context[id]': message.sourceIds.thread,
+                    'search_context[id]': message.source.thread,
                 },
                 path: '/search/query',
             });
@@ -101,7 +102,7 @@ class DiscourseTranslator {
         return Promise.resolve({
             json: true,
             method: 'GET',
-            path: `/t/${message.sourceIds.thread}`,
+            path: `/t/${message.source.thread}`,
         });
     }
     eventNameIntoTriggers(name) {

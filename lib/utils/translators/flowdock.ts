@@ -41,29 +41,31 @@ export class FlowdockTranslator implements Translator.Translator {
 		const thread = event.rawEvent.thread_id;
 		const userId = event.rawEvent.user;
 		const org = this.organization;
-		const rawEvent = {
+		const rawEvent: MessageContext = {
 			// action: MessageAction.Create,
-			first: event.rawEvent.id === event.rawEvent.thread.initial_message,
-			genesis: metadata.genesis || event.source,
-			hidden: metadata.hidden,
-			source: event.source,
-			sourceIds: {
+			// first: event.rawEvent.id === event.rawEvent.thread.initial_message,
+			details: {
+				genesis: metadata.genesis || event.source,
+				hidden: metadata.hidden,
+				text: titleAndText ? titleAndText[2] : metadata.content,
+				title: titleAndText ? titleAndText[1] : undefined,
+			},
+			source: {
+				service: event.source,
 				message: event.rawEvent.id,
 				flow,
 				thread,
 				url: `https://www.flowdock.com/app/${org}/${flow}/threads/${thread}`,
 				user: 'duff', // gets replaced
 			},
-			text: titleAndText ? titleAndText[2] : metadata.content,
-			title: titleAndText ? titleAndText[1] : undefined,
 		};
 		// If the data provided a username
 		if (event.rawEvent.external_user_name) {
-			rawEvent.sourceIds.user = event.rawEvent.external_user_name;
+			rawEvent.source.user = event.rawEvent.external_user_name;
 			return Promise.resolve({
 				cookedEvent: {
-					// TODO: This to use _serviceName and translate event.cookedEvent.type
-					context: `front.${event.cookedEvent.context}`,
+					// TODO: This to translate event.cookedEvent.type
+					context: `${event.source}.${event.cookedEvent.context}`,
 					event: 'message',
 				},
 				rawEvent,
@@ -72,11 +74,11 @@ export class FlowdockTranslator implements Translator.Translator {
 		}
 		return this.fetchFromSession(`/organizations/${org}/users/${userId}`)
 		.then((user) => {
-			rawEvent.sourceIds.user = user.nick;
+			rawEvent.source.user = user.nick;
 			return({
 				cookedEvent: {
-					// TODO: This to use _serviceName and translate event.cookedEvent.type
-					context: `front.${event.cookedEvent.context}`,
+					// TODO: This to translate event.cookedEvent.type
+					context: `${event.source}.${event.cookedEvent.context}`,
 					event: 'message',
 				},
 				rawEvent,
@@ -91,7 +93,8 @@ export class FlowdockTranslator implements Translator.Translator {
 	 */
 	public messageIntoEmitCreateMessage(message: TransmitContext): Promise<FlowdockEmitContext> {
 		// Build a string for the title, if appropriate.
-		const titleText = message.first && message.title ? message.title + '\n--\n' : '';
+		// TODO: Replace the reliance on the first boolean
+		const titleText = /* message.details.first && */ message.details.title ? message.details.title + '\n--\n' : '';
 		return new Promise<FlowdockEmitContext>((resolve) => {
 			// TODO: Remember that this used to have a pass-through and probably recycle that idea in messenger.ts
 			resolve({
@@ -99,13 +102,13 @@ export class FlowdockTranslator implements Translator.Translator {
 				path: '/flows/${org}/${flow}/messages/',
 				payload: {
 					// The concatenated string, of various data nuggets, to emit
-					content: titleText + message.text + '\n' + Translator.stringifyMetadata(message),
+					content: titleText + message.details.text + '\n' + Translator.stringifyMetadata(message),
 					event: 'message',
 					// TODO: Something with this?!?!
 					// external_user_name:
 					// If this is using the generic token, then they must be an external user, so indicate this
 					// 	message.toIds.token === this.data.token ? message.toIds.user.substring(0, 16) : undefined,
-					thread_id: message.toIds.thread,
+					thread_id: message.target.thread,
 				},
 			});
 		});
@@ -124,7 +127,7 @@ export class FlowdockTranslator implements Translator.Translator {
 		if (firstWords) {
 			return Promise.resolve({
 				method: 'GET',
-				path: `/flows/${org}/${message.sourceIds.flow}/threads/${message.sourceIds.thread}/messages`,
+				path: `/flows/${org}/${message.source.flow}/threads/${message.source.thread}/messages`,
 				payload: {
 					search: firstWords[1],
 				},
@@ -132,7 +135,7 @@ export class FlowdockTranslator implements Translator.Translator {
 		}
 		return Promise.resolve({
 			method: 'GET',
-			path: `/flows/${org}/${message.sourceIds.flow}/threads/${message.sourceIds.thread}/messages`,
+			path: `/flows/${org}/${message.source.flow}/threads/${message.source.thread}/messages`,
 		});
 	}
 

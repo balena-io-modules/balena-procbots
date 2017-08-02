@@ -84,26 +84,28 @@ export class FrontTranslator implements Translator.Translator {
 				}
 			}
 			// Return the generic form of this event
-			const rawEvent = {
-				// action: MessageAction.Create,
-				first,
-				genesis: metadata.genesis || event.source,
-				hidden: first ? metadata.hidden : details.event.type === 'comment',
-				source: event.source,
-				sourceIds: {
+			const rawEvent: MessageContext = {
+				details: {
+					// action: MessageAction.Create,
+					// first,
+					genesis: metadata.genesis || event.source,
+					hidden: first ? metadata.hidden : details.event.type === 'comment',
+					text: metadata.content,
+					title: details.event.conversation.subject,
+				},
+				source: {
+					service: event.source,
 					flow: details.inboxes._results[0].id,
 					message: message.id,
 					thread: details.event.conversation.id,
 					url: `https://app.frontapp.com/open/${details.event.conversation.id}`,
 					user: author,
 				},
-				text: metadata.content,
-				title: details.event.conversation.subject,
 			};
 			return {
 				cookedEvent: {
-					// TODO: This to use _serviceName and translate event.cookedEvent.type
-					context: `front.${event.cookedEvent.context}`,
+					// TODO: This to translate event.cookedEvent.type
+					context: `${event.source}.${event.cookedEvent.context}`,
 					event: 'message',
 				},
 				rawEvent,
@@ -118,49 +120,49 @@ export class FrontTranslator implements Translator.Translator {
 	 */
 	public messageIntoEmitCreateMessage(message: TransmitContext): Promise<FrontEmitContext> {
 		// Attempt to find the thread ID to know if this is a new conversation or not
-		const conversationId = message.toIds.thread;
+		const conversationId = message.target.thread;
 		if (!conversationId) {
 			// Find the title and user ID for the event
-			const subject = message.title;
+			const subject = message.details.title;
 			if (!subject) {
 				throw new Error('Cannot create Front Conversation without a title');
 			}
-			return this.fetchUserId(message.toIds.user).then((userId) => {
+			return this.fetchUserId(message.target.user).then((userId) => {
 				// The specific form that may be emitted
 				return {
 					action: 'send',
 					objectType: 'message',
 					payload: {
 						author_id: userId,
-						body: `${message.text}<hr/><br/>${Translator.stringifyMetadata(message, 'plaintext')}`,
+						body: `${message.details.text}<hr/><br/>${Translator.stringifyMetadata(message, 'plaintext')}`,
 						// Find the relevant channel for the inbox
-						channel_id: this.channelPerInbox[message.toIds.flow],
+						channel_id: this.channelPerInbox[message.target.flow],
 						metadata: {
-							thread_ref: message.sourceIds.thread,
+							thread_ref: message.source.thread,
 						},
 						options: {
 							archive: false,
 						},
 						sender: {
-							handle: message.toIds.user,
+							handle: message.target.user,
 						},
 						subject,
-						to: [message.sourceIds.user],
+						to: [message.source.user],
 					}
 				};
 			});
 		}
 		return Promise.props({
 			conversation: this.session.conversation.get({conversation_id: conversationId}),
-			userId: this.fetchUserId(message.toIds.user)
+			userId: this.fetchUserId(message.target.user)
 		}).then((details: { conversation: Conversation, userId: string }) => {
-			if (message.hidden) {
+			if (message.details.hidden) {
 				return {
 					action: 'create',
 					objectType: 'comment',
 					payload: {
 						author_id: details.userId,
-						body: `${message.text}\n\n---\n${Translator.stringifyMetadata(message, 'plaintext')}`,
+						body: `${message.details.text}\n\n---\n${Translator.stringifyMetadata(message, 'plaintext')}`,
 						conversation_id: conversationId,
 					}
 				};
@@ -170,13 +172,13 @@ export class FrontTranslator implements Translator.Translator {
 				objectType: 'message',
 				payload: {
 					author_id: details.userId,
-					body: `${message.text}<hr/><br/>${Translator.stringifyMetadata(message, 'plaintext')}`,
+					body: `${message.details.text}<hr/><br/>${Translator.stringifyMetadata(message, 'plaintext')}`,
 					conversation_id: conversationId,
 					options: {
 						archive: false,
 					},
 					subject: details.conversation.subject,
-					type: message.hidden ? 'comment' : 'message',
+					type: message.details.hidden ? 'comment' : 'message',
 				}
 			};
 		});
@@ -193,7 +195,7 @@ export class FrontTranslator implements Translator.Translator {
 			action: 'listComments',
 			objectType: 'conversation',
 			payload: {
-				conversation_id: message.sourceIds.thread,
+				conversation_id: message.source.thread,
 			},
 		});
 	}

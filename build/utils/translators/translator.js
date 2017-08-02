@@ -1,17 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const _ = require("lodash");
-function initInterimContext(event, to, toIds = {}) {
+function initInterimContext(event, target) {
     return {
-        first: event.first,
-        genesis: event.genesis,
-        hidden: event.hidden,
+        details: event.details,
         source: event.source,
-        sourceIds: event.sourceIds,
-        text: event.text,
-        title: event.title,
-        to,
-        toIds,
+        target: _.isString(target) ? { service: target } : target,
     };
 }
 exports.initInterimContext = initInterimContext;
@@ -19,9 +13,9 @@ function stringifyMetadata(data, format = 'markdown') {
     const indicators = getIndicatorArrays();
     switch (format) {
         case 'markdown':
-            return `[${data.hidden ? indicators.hidden.word : indicators.shown.word}](${data.source})`;
+            return `[${data.details.hidden ? indicators.hidden.word : indicators.shown.word}](${data.source})`;
         case 'plaintext':
-            return `${data.hidden ? indicators.hidden.word : indicators.shown.word}:${data.source}`;
+            return `${data.details.hidden ? indicators.hidden.word : indicators.shown.word}:${data.source}`;
         default:
             throw new Error(`${format} format not recognised`);
     }

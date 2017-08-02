@@ -26,6 +26,7 @@ import { UtilityServiceEvent } from './service-utilities-types';
 
 // Generic forms of message objects
 export interface MessageIds {
+	service: string;
 	user?: string;
 	message?: string;
 	thread?: string;
@@ -34,37 +35,37 @@ export interface MessageIds {
 	url?: string;
 }
 export interface ReceiptIds extends MessageIds {
+	service: string;
 	user: string;
 	message: string;
 	thread: string;
 	flow: string;
 }
-export interface MessageContext {
-	// action: MessageAction;
-	first: boolean;
-	genesis: string;
-	hidden: boolean;
-	source: string;
-	sourceIds: ReceiptIds;
-	text: string;
-	title?: string;
-}
-
-// Message objects suitable for the handling of messages
-export interface InterimContext extends MessageContext {
-	to: string;
-	toIds: MessageIds;
-}
-
 // Message objects suitable for the transmission of messages
 export interface TransmitIds extends MessageIds {
+	service: string;
 	user: string;
 	token: string;
 	flow: string;
 }
+
+export interface MessageDetails {
+	genesis: string;
+	hidden: boolean;
+	text: string;
+	title?: string;
+}
+
+export interface MessageContext {
+	details: MessageDetails;
+	source: ReceiptIds;
+}
+// Message objects suitable for the handling of messages
+export interface InterimContext extends MessageContext {
+	target: MessageIds;
+}
 export interface TransmitContext extends MessageContext {
-	to: string;
-	toIds: TransmitIds;
+	target: TransmitIds;
 }
 
 export interface MessageEmitContext extends ServiceEmitContext {
