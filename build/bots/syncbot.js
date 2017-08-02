@@ -4,7 +4,7 @@ const procbot_1 = require("../framework/procbot");
 class SyncBot extends procbot_1.ProcBot {
     constructor(name = 'SyncBot') {
         super(name);
-        const messageListener = this.addServiceListener('messenger', JSON.parse(process.env.SYNCBOT_LISTENER_CREDENTIALS));
+        const messageListener = this.addServiceListener('messenger', JSON.parse(process.env.SYNCBOT_LISTENER_CONSTRUCTORS));
         if (!messageListener) {
             throw new Error('Could not create Message Listener.');
         }

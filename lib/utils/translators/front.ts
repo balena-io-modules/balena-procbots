@@ -204,7 +204,7 @@ export class FrontTranslator implements Translator.Translator {
 	 */
 	public eventNameIntoTriggers(name: string): string[] {
 		const equivalents: {[key: string]: string[]} = {
-			message: ['event'],
+			message: ['out_reply'],
 		};
 		return equivalents[name];
 	}
@@ -213,7 +213,7 @@ export class FrontTranslator implements Translator.Translator {
 	 * Returns an array of all the service events that may be translated.
 	 */
 	public getAllTriggers(): string[] {
-		return ['event'];
+		return ['out_reply'];
 	}
 
 	/**

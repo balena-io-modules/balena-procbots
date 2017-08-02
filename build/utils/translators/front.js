@@ -164,12 +164,12 @@ class FrontTranslator {
     }
     eventNameIntoTriggers(name) {
         const equivalents = {
-            message: ['event'],
+            message: ['out_reply'],
         };
         return equivalents[name];
     }
     getAllTriggers() {
-        return ['event'];
+        return ['out_reply'];
     }
 }
 exports.FrontTranslator = FrontTranslator;
