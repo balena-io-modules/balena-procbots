@@ -80,7 +80,7 @@ class GithubService extends worker_client_1.WorkerClient {
                         if (event.cookedEvent.data.action === 'labeled') {
                             labels = _.union(labels, [event.cookedEvent.data.label.name]);
                         }
-                        if (labels.length > 0) {
+                        if (labels) {
                             const foundLabels = _.map(labels, 'name');
                             if (registration.suppressionLabels &&
                                 (_.intersection(registration.suppressionLabels, foundLabels).length ===

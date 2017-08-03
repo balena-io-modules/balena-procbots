@@ -387,7 +387,7 @@ class VersionBot extends procbot_1.ProcBot {
             if (!_.find(['opened', 'synchronize', 'labeled', 'unlabeled'], (action) => action === prAction)) {
                 return Promise.resolve();
             }
-            if ((prAction === 'unlabeled') && (prLabel.name !== IgnoreLabel)) {
+            if ((prAction === 'unlabeled') && ((prLabel.name !== IgnoreLabel) && (prLabel.name !== WIPLabel))) {
                 return Promise.resolve();
             }
             this.dispatchToEmitter(this.githubEmitterName, {
