@@ -856,7 +856,7 @@ export class VersionBot extends ProcBot {
 
 		// If there's an unlabeling event, but it wasn't the IgnoreLabel being removed, then we
 		// just return.
-		if ((prAction === 'unlabeled') && (prLabel.name !== IgnoreLabel)) {
+		if ((prAction === 'unlabeled') && ((prLabel.name !== IgnoreLabel) && (prLabel.name !== WIPLabel))) {
 			return Promise.resolve();
 		}
 

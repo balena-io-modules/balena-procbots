@@ -476,7 +476,7 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 					}
 
 					// Deal with any labels.
-					if (labels.length > 0) {
+					if (labels) {
 						const foundLabels = _.map(labels, 'name');
 
 						// First, are all the suppression labels present?
