@@ -89,7 +89,7 @@ class FrontTranslator {
                     event: 'message',
                 },
                 rawEvent,
-                source: event.source,
+                source: 'messenger',
             };
         });
     }

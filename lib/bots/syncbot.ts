@@ -14,26 +14,76 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import * as Promise from 'bluebird';
 import { ProcBot } from '../framework/procbot';
+import {
+	FlowDefinition, MessageEvent, MessageListenerMethod, TransmitContext,
+} from '../services/messenger-types';
 
 // TODO: Implement this whole thing
 export class SyncBot extends ProcBot {
 	constructor(name = 'SyncBot') {
 		super(name);
+
+		// Build the message listener object, with the sub-listeners
 		const messageListener = this.addServiceListener(
 			'messenger',
 			JSON.parse(process.env.SYNCBOT_LISTENER_CONSTRUCTORS)
 		);
-
 		if (!messageListener) {
 			throw new Error('Could not create Message Listener.');
 		}
 
-		messageListener.registerEvent({
-			events: ['message'],
-			listenerMethod: console.log.bind(console),
-			name: 'consoleLog',
-		});
+		// Register each edge in the mappings array bidirectionally
+		const mappings: FlowDefinition[][] = JSON.parse(process.env.SYNCBOT_MAPPINGS);
+		for(const mapping of mappings) {
+			let priorFlow = null;
+			for(const focusFlow of mapping) {
+				if(priorFlow) {
+					messageListener.registerEvent({
+						events: ['message'],
+						listenerMethod: this.createRouter(priorFlow, focusFlow),
+						name: `${priorFlow.service}.${priorFlow.flow}=>${focusFlow.service}.${focusFlow.flow}`,
+					});
+					messageListener.registerEvent({
+						events: ['message'],
+						listenerMethod: this.createRouter(focusFlow, priorFlow),
+						name: `${focusFlow.service}.${focusFlow.flow}=>${priorFlow.service}.${priorFlow.flow}`,
+					});
+				}
+				priorFlow = focusFlow;
+			}
+		}
+	}
+
+	private createRouter(from: FlowDefinition, to: FlowDefinition): MessageListenerMethod {
+		return (_registration, event: MessageEvent) => {
+			if (from.service === event.rawEvent.source.service && from.flow === event.rawEvent.source.flow) {
+				const transmitMessage: TransmitContext = {
+					details: event.rawEvent.details,
+					source: event.rawEvent.source,
+					target: {
+						flow: to.flow,
+						service: to.service,
+						user: this.getEquivalentUsername(from.service, to.service, event.rawEvent.source.user)
+					}
+				};
+				console.log(transmitMessage);
+			}
+			// The event received doesn't match the profile being routed, so no-op is the correct action.
+			return Promise.resolve();
+		};
+	}
+
+	private getEquivalentUsername(from: string, to: string, username: string): string {
+		const lookupString = process.env.SYNCBOT_ACCOUNTS_WITH_DIFFERING_USERNAMES || '[]';
+		const lookups: Array<{ [service: string]: string }> = JSON.parse(lookupString);
+		for (const lookup of lookups) {
+			if (lookup[from] === username && lookup[to]) {
+				return lookup[to];
+			}
+		}
+		return username;
 	}
 }
 
@@ -70,18 +120,6 @@ export function createBot(): SyncBot {
 //  */
 // constructor(name = 'SyncBot') {
 // 	super(name);
-// 	// Register each edge in the mappings array bidirectionally
-// 	const mappings: FlowDefinition[][] = JSON.parse(process.env.SYNCBOT_MAPPINGS);
-// 	for(const mapping of mappings) {
-// 		let priorFlow = null;
-// 		for(const focusFlow of mapping) {
-// 			if(priorFlow) {
-// 				this.register(priorFlow, focusFlow);
-// 				this.register(focusFlow, priorFlow);
-// 			}
-// 			priorFlow = focusFlow;
-// 		}
-// 	}
 // }
 //
 // /**

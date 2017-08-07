@@ -51,7 +51,7 @@ class DiscourseTranslator {
                     event: 'message',
                 },
                 rawEvent,
-                source: event.source,
+                source: 'messenger',
             };
         });
     }

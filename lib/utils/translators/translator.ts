@@ -81,6 +81,7 @@ export interface Translator {
  * @param target Destination for the handle context.
  * @returns      Newly created context for handling a message.
  */
+// TODO: Transfer this across to syncbot.ts
 export function initInterimContext(event: MessageContext, target: MessageIds | string): InterimContext {
 	return {
 		// Details from the ReceiptContext

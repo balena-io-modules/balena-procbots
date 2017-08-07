@@ -14,9 +14,10 @@
  limitations under the License.
  */
 
+import * as Promise from 'bluebird';
 import {
 	ServiceEmitContext,
-	ServiceEmitResponse,
+	ServiceEmitResponse, ServiceRegistration,
 } from './service-types';
 import { UtilityServiceEvent } from './service-utilities-types';
 
@@ -30,7 +31,6 @@ export interface MessageIds {
 	user?: string;
 	message?: string;
 	thread?: string;
-	token?: string;
 	flow?: string;
 	url?: string;
 }
@@ -45,7 +45,6 @@ export interface ReceiptIds extends MessageIds {
 export interface TransmitIds extends MessageIds {
 	service: string;
 	user: string;
-	token: string;
 	flow: string;
 }
 
@@ -67,6 +66,8 @@ export interface InterimContext extends MessageContext {
 export interface TransmitContext extends MessageContext {
 	target: TransmitIds;
 }
+
+export type MessageListenerMethod = (registration: ServiceRegistration, event: MessageEvent) => Promise<void>;
 
 export interface MessageEmitContext extends ServiceEmitContext {
 	endpoint: object;

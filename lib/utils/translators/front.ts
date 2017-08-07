@@ -109,7 +109,7 @@ export class FrontTranslator implements Translator.Translator {
 					event: 'message',
 				},
 				rawEvent,
-				source: event.source,
+				source: 'messenger',
 			};
 		});
 	}

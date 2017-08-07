@@ -82,7 +82,7 @@ export class FlowdockTranslator implements Translator.Translator {
 					event: 'message',
 				},
 				rawEvent,
-				source: event.source,
+				source: 'messenger',
 			});
 		});
 	}

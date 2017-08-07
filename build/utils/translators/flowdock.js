@@ -62,7 +62,7 @@ class FlowdockTranslator {
                     event: 'message',
                 },
                 rawEvent,
-                source: event.source,
+                source: 'messenger',
             });
         });
     }
