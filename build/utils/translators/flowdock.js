@@ -4,7 +4,7 @@ const Promise = require("bluebird");
 const flowdock_1 = require("flowdock");
 const Translator = require("./translator");
 class FlowdockTranslator {
-    constructor(data) {
+    constructor(data, hub) {
         this.fetchFromSession = (path, search) => {
             return new Promise((resolve, reject) => {
                 this.session.on('error', reject);
@@ -16,6 +16,7 @@ class FlowdockTranslator {
                 });
             });
         };
+        this.hub = hub;
         this.session = new flowdock_1.Session(data.token);
         this.organization = data.organization;
     }
@@ -108,8 +109,8 @@ class FlowdockTranslator {
     }
 }
 exports.FlowdockTranslator = FlowdockTranslator;
-function createTranslator(data) {
-    return new FlowdockTranslator(data);
+function createTranslator(data, hub) {
+    return new FlowdockTranslator(data, hub);
 }
 exports.createTranslator = createTranslator;
 

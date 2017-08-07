@@ -23,6 +23,7 @@ import {
 import {
 	ServiceEmitContext, ServiceEvent,
 } from '../../services/service-types';
+import { DataHub } from '../datahubs/datahub';
 
 export interface PublicityIndicator {
 	emoji: string;
@@ -191,8 +192,9 @@ function getIndicatorArrays(): { 'shown': PublicityIndicator, 'hidden': Publicit
  * Retrieves and loads a Translator by name.
  * @param name  The name of the Translator to load.
  * @param data  The constructor object for the createTranslator method.
+ * @param hub   The source for any extra information required.
  * @return      The newly instantiated Translator.
  */
-export function createTranslator(name: string, data: any): Translator {
-	return require(`./${name}`).createTranslator(data);
+export function createTranslator(name: string, data: any, hub: DataHub): Translator {
+	return require(`./${name}`).createTranslator(data, hub);
 }

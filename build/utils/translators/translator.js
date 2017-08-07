@@ -78,8 +78,8 @@ function getIndicatorArrays() {
     }
     return { hidden, shown };
 }
-function createTranslator(name, data) {
-    return require(`./${name}`).createTranslator(data);
+function createTranslator(name, data, hub) {
+    return require(`./${name}`).createTranslator(data, hub);
 }
 exports.createTranslator = createTranslator;
 

@@ -5,7 +5,8 @@ const _ = require("lodash");
 const request = require("request-promise");
 const Translator = require("./translator");
 class DiscourseTranslator {
-    constructor(data) {
+    constructor(data, hub) {
+        this.hub = hub;
         this.connectionDetails = data;
     }
     eventIntoMessage(event) {
@@ -116,8 +117,8 @@ class DiscourseTranslator {
     }
 }
 exports.DiscourseTranslator = DiscourseTranslator;
-function createTranslator(data) {
-    return new DiscourseTranslator(data);
+function createTranslator(data, hub) {
+    return new DiscourseTranslator(data, hub);
 }
 exports.createTranslator = createTranslator;
 

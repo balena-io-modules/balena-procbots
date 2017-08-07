@@ -20,18 +20,21 @@ import * as _ from 'lodash';
 import * as request from 'request-promise';
 import { FrontConnectionDetails, FrontEmitContext, FrontEvent } from '../../services/front-types';
 import {  MessageContext, MessageEvent, TransmitContext } from '../../services/messenger-types';
+import { DataHub } from '../datahubs/datahub';
 import * as Translator from './translator';
 
 export class FrontTranslator implements Translator.Translator {
 	/** Underlying SDK object to query for data */
 	private session: Front;
+	private hub: DataHub;
 	// #200: requests that rely on this to be migrated to Front SDK
 	private token: string;
 	private channelPerInbox: {
 		[inbox: string]: string;
 	};
 
-	constructor(data: FrontConnectionDetails) {
+	constructor(data: FrontConnectionDetails, hub: DataHub) {
+		this.hub = hub;
 		this.session = new Front(data.token);
 		this.token = data.token;
 		this.channelPerInbox = data.channelPerInbox || {};
@@ -245,6 +248,6 @@ export class FrontTranslator implements Translator.Translator {
 	}
 }
 
-export function createTranslator(data: FrontConnectionDetails): Translator.Translator {
-	return new FrontTranslator(data);
+export function createTranslator(data: FrontConnectionDetails, hub: DataHub): Translator.Translator {
+	return new FrontTranslator(data, hub);
 }

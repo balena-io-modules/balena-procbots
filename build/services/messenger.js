@@ -2,20 +2,18 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const _ = require("lodash");
 const path = require("path");
-const DataHub = require("../utils/datahubs/datahub");
 const Translator = require("../utils/translators/translator");
 const service_utilities_1 = require("./service-utilities");
 class MessengerService extends service_utilities_1.ServiceUtilities {
     connect(data) {
-        this.connectionDetails = data;
+        this.connectionDetails = data.subServices;
         this.translators = {};
-        _.map(data, (subConnectionDetails, serviceName) => {
-            this.translators[serviceName] = Translator.createTranslator(serviceName, subConnectionDetails);
+        _.map(data.subServices, (subConnectionDetails, serviceName) => {
+            this.translators[serviceName] = Translator.createTranslator(serviceName, subConnectionDetails, data.dataHub);
         });
-        this.hub = DataHub.createDataHub(process.env.SYNCBOT_HUB_SERVICE, data[process.env.SYNCBOT_HUB_SERVICE]);
     }
     emitData(_data) {
-        throw new Error('Not yet implemented');
+        throw new Error('Not supported');
     }
     startListening() {
         _.map(this.connectionDetails, (subConnectionDetails, subServiceName) => {

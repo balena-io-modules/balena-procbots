@@ -15,6 +15,7 @@
  */
 
 import * as Promise from 'bluebird';
+import { DataHub } from '../utils/datahubs/datahub';
 import {
 	ServiceEmitContext,
 	ServiceEmitResponse, ServiceRegistration,
@@ -96,6 +97,11 @@ export interface FlowDefinition {
 
 export interface MessengerConnectionDetails {
 	[serviceName: string]: object;
+}
+
+export interface MessengerConstructionDetails {
+	dataHub: DataHub;
+	subServices: MessengerConnectionDetails;
 }
 
 export interface MessageEvent extends UtilityServiceEvent {

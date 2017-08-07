@@ -19,16 +19,26 @@ import { ProcBot } from '../framework/procbot';
 import {
 	FlowDefinition, MessageEvent, MessageListenerMethod, TransmitContext,
 } from '../services/messenger-types';
+import { createDataHub } from '../utils/datahubs/datahub';
 
 // TODO: Implement this whole thing
 export class SyncBot extends ProcBot {
 	constructor(name = 'SyncBot') {
 		super(name);
 
+		// Build the dataHub object
+		const dataHub = createDataHub(
+			process.env.SYNCBOT_DATAHUB_SERVICE,
+			JSON.parse(process.env.SYNCBOT_DATAHUB_CONSTRUCTOR)
+		);
+
 		// Build the message listener object, with the sub-listeners
 		const messageListener = this.addServiceListener(
 			'messenger',
-			JSON.parse(process.env.SYNCBOT_LISTENER_CONSTRUCTORS)
+			{
+				dataHub,
+				subServices: JSON.parse(process.env.SYNCBOT_LISTENER_CONSTRUCTORS),
+			},
 		);
 		if (!messageListener) {
 			throw new Error('Could not create Message Listener.');
@@ -111,7 +121,7 @@ export function createBot(): SyncBot {
 // }
 //
 // // These objects store built objects, typed and indexed, to help minimise object rebuilding
-// private messengers = new Map<string, MessengerService>();
+// private messengers = new Map<string, MessageListener>();
 // private hub: DataHub;
 //
 // /**

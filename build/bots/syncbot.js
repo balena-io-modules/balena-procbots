@@ -2,10 +2,15 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const Promise = require("bluebird");
 const procbot_1 = require("../framework/procbot");
+const datahub_1 = require("../utils/datahubs/datahub");
 class SyncBot extends procbot_1.ProcBot {
     constructor(name = 'SyncBot') {
         super(name);
-        const messageListener = this.addServiceListener('messenger', JSON.parse(process.env.SYNCBOT_LISTENER_CONSTRUCTORS));
+        const dataHub = datahub_1.createDataHub(process.env.SYNCBOT_DATAHUB_SERVICE, JSON.parse(process.env.SYNCBOT_DATAHUB_CONSTRUCTOR));
+        const messageListener = this.addServiceListener('messenger', {
+            dataHub,
+            subServices: JSON.parse(process.env.SYNCBOT_LISTENER_CONSTRUCTORS),
+        });
         if (!messageListener) {
             throw new Error('Could not create Message Listener.');
         }

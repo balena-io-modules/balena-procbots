@@ -18,13 +18,16 @@ import * as Promise from 'bluebird';
 import { Session } from 'flowdock';
 import { FlowdockConnectionDetails, FlowdockEmitContext, FlowdockEvent } from '../../services/flowdock-types';
 import { MessageContext, MessageEvent, TransmitContext } from '../../services/messenger-types';
+import { DataHub } from '../datahubs/datahub';
 import * as Translator from './translator';
 
 export class FlowdockTranslator implements Translator.Translator {
+	private hub: DataHub;
 	private session: Session;
 	private organization: string;
 
-	constructor(data: FlowdockConnectionDetails) {
+	constructor(data: FlowdockConnectionDetails, hub: DataHub) {
+		this.hub = hub;
 		this.session = new Session(data.token);
 		this.organization = data.organization;
 	}
@@ -178,6 +181,6 @@ export class FlowdockTranslator implements Translator.Translator {
 	}
 }
 
-export function createTranslator(data: FlowdockConnectionDetails): Translator.Translator {
-	return new FlowdockTranslator(data);
+export function createTranslator(data: FlowdockConnectionDetails, hub: DataHub): Translator.Translator {
+	return new FlowdockTranslator(data, hub);
 }

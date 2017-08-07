@@ -19,12 +19,15 @@ import * as _ from 'lodash';
 import * as request from 'request-promise';
 import { DiscourseConnectionDetails, DiscourseEmitContext, DiscourseEvent } from '../../services/discourse-types';
 import { MessageContext, MessageEvent, TransmitContext } from '../../services/messenger-types';
+import { DataHub } from '../datahubs/datahub';
 import * as Translator from './translator';
 
 export class DiscourseTranslator implements Translator.Translator {
+	private hub: DataHub;
 	private connectionDetails: DiscourseConnectionDetails;
 
-	constructor(data: DiscourseConnectionDetails) {
+	constructor(data: DiscourseConnectionDetails, hub: DataHub) {
+		this.hub = hub;
 		this.connectionDetails = data;
 	}
 
@@ -173,6 +176,6 @@ export class DiscourseTranslator implements Translator.Translator {
 	}
 }
 
-export function createTranslator(data: DiscourseConnectionDetails): Translator.Translator {
-	return new DiscourseTranslator(data);
+export function createTranslator(data: DiscourseConnectionDetails, hub: DataHub): Translator.Translator {
+	return new DiscourseTranslator(data, hub);
 }

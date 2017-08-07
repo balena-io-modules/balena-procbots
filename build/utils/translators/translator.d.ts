@@ -1,6 +1,7 @@
 import * as Promise from 'bluebird';
 import { InterimContext, MessageContext, MessageEvent, MessageIds, Metadata, TransmitContext } from '../../services/messenger-types';
 import { ServiceEmitContext, ServiceEvent } from '../../services/service-types';
+import { DataHub } from '../datahubs/datahub';
 export interface PublicityIndicator {
     emoji: string;
     word: string;
@@ -16,4 +17,4 @@ export interface Translator {
 export declare function initInterimContext(event: MessageContext, target: MessageIds | string): InterimContext;
 export declare function stringifyMetadata(data: MessageContext, format?: 'markdown' | 'plaintext'): string;
 export declare function extractMetadata(message: string, format: string): Metadata;
-export declare function createTranslator(name: string, data: any): Translator;
+export declare function createTranslator(name: string, data: any, hub: DataHub): Translator;

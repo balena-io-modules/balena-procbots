@@ -18,9 +18,8 @@ import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import * as path from 'path';
 
-import * as DataHub from '../utils/datahubs/datahub';
 import * as Translator from '../utils/translators/translator';
-import { MessengerConnectionDetails, TransmitContext } from './messenger-types';
+import { MessengerConnectionDetails, MessengerConstructionDetails, TransmitContext } from './messenger-types';
 import {
 	ServiceEmitResponse,
 	ServiceEmitter, ServiceEvent,
@@ -31,39 +30,22 @@ import { ServiceUtilities } from './service-utilities';
 export class MessengerService extends ServiceUtilities implements ServiceListener, ServiceEmitter {
 	private static _serviceName = path.basename(__filename.split('.')[0]);
 	private translators: { [service: string]: Translator.Translator };
-	private hub: DataHub.DataHub;
 	private connectionDetails: MessengerConnectionDetails;
 
 	/**
 	 * Connect to the service, used as part of construction.
 	 * @param data  Object containing the required details for the service.
 	 */
-	protected connect(data: MessengerConnectionDetails): void {
-		this.connectionDetails = data;
+	protected connect(data: MessengerConstructionDetails): void {
+		this.connectionDetails = data.subServices;
 		this.translators = {};
-		_.map(data, (subConnectionDetails, serviceName) => {
-			this.translators[serviceName] = Translator.createTranslator(serviceName, subConnectionDetails);
+		_.map(data.subServices, (subConnectionDetails, serviceName) => {
+			this.translators[serviceName] = Translator.createTranslator(serviceName, subConnectionDetails, data.dataHub);
 		});
-		// TODO: It is not the place of messenger to understand data hub?
-		this.hub = DataHub.createDataHub(process.env.SYNCBOT_HUB_SERVICE, data[process.env.SYNCBOT_HUB_SERVICE]);
 	}
 
 	protected emitData(_data: TransmitContext): Promise<ServiceEmitResponse> {
-		throw new Error('Not yet implemented');
-		// const valueFetcher = _.partial(this.hub.fetchValue, data.toIds.user);
-		// const genericValues = this.connectionDetails[data.to];
-		// const translator = this.translators[data.to];
-		// return Promise.props({
-		// 	data: translator.messageIntoEmitCreateMessage(data),
-		// 	emitter: translator.makeEmitter(valueFetcher, genericValues),
-		// })
-		// .then((details: {emitter: ServiceEmitter, data: ServiceEmitContext}) => {
-		// 	// TODO: Source???
-		// 	return details.emitter.sendData({
-		// 		contexts: {[data.to]: details.data},
-		// 		source: 'messenger',
-		// 	});
-		// });
+		throw new Error('Not supported');
 	}
 
 	protected startListening(): void {
@@ -110,7 +92,7 @@ export class MessengerService extends ServiceUtilities implements ServiceListene
  * Build this class, typed and activated as a listener.
  * @returns  Service Listener object, awakened and ready to go.
  */
-export function createServiceListener(data: MessengerConnectionDetails): ServiceListener {
+export function createServiceListener(data: MessengerConstructionDetails): ServiceListener {
 	return new MessengerService(data, true);
 }
 
@@ -118,6 +100,23 @@ export function createServiceListener(data: MessengerConnectionDetails): Service
  * Build this class, typed as an emitter.
  * @returns  Service Emitter object, ready for your events.
  */
-export function createServiceEmitter(data: MessengerConnectionDetails): ServiceEmitter {
+export function createServiceEmitter(data: MessengerConstructionDetails): ServiceEmitter {
 	return new MessengerService(data, false);
 }
+
+// Orphaned
+// emitData
+// const valueFetcher = _.partial(this.hub.fetchValue, data.toIds.user);
+// const genericValues = this.connectionDetails[data.to];
+// const translator = this.translators[data.to];
+// return Promise.props({
+// 	data: translator.messageIntoEmitCreateMessage(data),
+// 	emitter: translator.makeEmitter(valueFetcher, genericValues),
+// })
+// .then((details: {emitter: ServiceEmitter, data: ServiceEmitContext}) => {
+// 	// TODO: Source???
+// 	return details.emitter.sendData({
+// 		contexts: {[data.to]: details.data},
+// 		source: 'messenger',
+// 	});
+// });

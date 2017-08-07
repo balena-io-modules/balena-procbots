@@ -6,7 +6,7 @@ const _ = require("lodash");
 const request = require("request-promise");
 const Translator = require("./translator");
 class FrontTranslator {
-    constructor(data) {
+    constructor(data, hub) {
         this.fetchUserId = (username) => {
             const getTeammates = {
                 headers: {
@@ -25,6 +25,7 @@ class FrontTranslator {
                 }
             });
         };
+        this.hub = hub;
         this.session = new front_sdk_1.Front(data.token);
         this.token = data.token;
         this.channelPerInbox = data.channelPerInbox || {};
@@ -174,8 +175,8 @@ class FrontTranslator {
     }
 }
 exports.FrontTranslator = FrontTranslator;
-function createTranslator(data) {
-    return new FrontTranslator(data);
+function createTranslator(data, hub) {
+    return new FrontTranslator(data, hub);
 }
 exports.createTranslator = createTranslator;
 
