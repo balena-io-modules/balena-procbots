@@ -21,6 +21,7 @@ import * as path from 'path';
 import * as Translator from '../utils/translators/translator';
 import { MessengerConnectionDetails, MessengerConstructionDetails, TransmitContext } from './messenger-types';
 import {
+	ServiceEmitContext,
 	ServiceEmitResponse,
 	ServiceEmitter, ServiceEvent,
 	ServiceListener, ServiceRegistration,
@@ -45,13 +46,13 @@ export class MessengerService extends ServiceUtilities<string> implements Servic
 	}
 
 	protected emitData(data: TransmitContext): Promise<ServiceEmitResponse> {
-		// TODO: messageIntoEmitter???
 		return Promise.props({
 			connectionDetails: this.translators[data.target.service].messageIntoConnectionDetails(data),
 			emitContext: this.translators[data.target.service].messageIntoEmitCreateMessage(data),
-		}).then((details) => {
-			console.log(details);
-			return { source: 'messenger' };
+		}).then((details: { connectionDetails: any, emitContext: ServiceEmitContext } ) => {
+			// TODO: This stuff should go through a method that typeguards
+			const emitter = require(`./${data.target.service}`).createServiceEmitter(details.connectionDetails);
+			return emitter.sendData({ contexts: { discourse: details.emitContext } });
 		});
 	}
 
@@ -64,6 +65,7 @@ export class MessengerService extends ServiceUtilities<string> implements Servic
 
 	private startListening(): void {
 		_.forEach(this.connectionDetails, (subConnectionDetails, subServiceName) => {
+			// TODO: This stuff should go through a method that typeguards
 			const subListener = require(`./${subServiceName}`).createServiceListener(subConnectionDetails);
 			subListener.registerEvent({
 				// TODO: This is potentially noisy.  It is translating every event it can, including ones it might ...

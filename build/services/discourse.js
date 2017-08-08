@@ -15,6 +15,7 @@ class DiscourseService extends service_utilities_1.ServiceUtilities {
         }
     }
     emitData(context) {
+        console.log(this.connectionDetails, context);
         return new Promise((resolve) => {
             const qs = {
                 api_key: this.connectionDetails.token,

@@ -22,8 +22,8 @@ class MessengerService extends service_utilities_1.ServiceUtilities {
             connectionDetails: this.translators[data.target.service].messageIntoConnectionDetails(data),
             emitContext: this.translators[data.target.service].messageIntoEmitCreateMessage(data),
         }).then((details) => {
-            console.log(details);
-            return { source: 'messenger' };
+            const emitter = require(`./${data.target.service}`).createServiceEmitter(details.connectionDetails);
+            return emitter.sendData({ contexts: { discourse: details.emitContext } });
         });
     }
     verify() {
