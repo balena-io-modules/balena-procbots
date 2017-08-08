@@ -104,6 +104,7 @@
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_utils_translators_discourse_.discoursetranslator.html#eventintomessage" class="tsd-kind-icon">event<wbr>Into<wbr>Message</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_utils_translators_discourse_.discoursetranslator.html#eventnameintotriggers" class="tsd-kind-icon">event<wbr>Name<wbr>Into<wbr>Triggers</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_utils_translators_discourse_.discoursetranslator.html#getalltriggers" class="tsd-kind-icon">get<wbr>All<wbr>Triggers</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_utils_translators_discourse_.discoursetranslator.html#messageintoconnectiondetails" class="tsd-kind-icon">message<wbr>Into<wbr>Connection<wbr>Details</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_utils_translators_discourse_.discoursetranslator.html#messageintoemitcreatemessage" class="tsd-kind-icon">message<wbr>Into<wbr>Emit<wbr>Create<wbr>Message</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_utils_translators_discourse_.discoursetranslator.html#messageintoemitreadthread" class="tsd-kind-icon">message<wbr>Into<wbr>Emit<wbr>Read<wbr>Thread</a></li>
 							</ul>
@@ -176,7 +177,7 @@
 							<aside class="tsd-sources">
 								<p>Implementation of <a href="../interfaces/_utils_translators_translator_.translator.html">Translator</a>.<a href="../interfaces/_utils_translators_translator_.translator.html#eventintomessage">eventIntoMessage</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/utils/translators/discourse.ts#L38">utils/translators/discourse.ts:38</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/utils/translators/discourse.ts#L49">utils/translators/discourse.ts:49</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -208,7 +209,7 @@
 							<aside class="tsd-sources">
 								<p>Implementation of <a href="../interfaces/_utils_translators_translator_.translator.html">Translator</a>.<a href="../interfaces/_utils_translators_translator_.translator.html#eventnameintotriggers">eventNameIntoTriggers</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/utils/translators/discourse.ts#L164">utils/translators/discourse.ts:164</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/utils/translators/discourse.ts#L174">utils/translators/discourse.ts:174</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -240,7 +241,7 @@
 							<aside class="tsd-sources">
 								<p>Implementation of <a href="../interfaces/_utils_translators_translator_.translator.html">Translator</a>.<a href="../interfaces/_utils_translators_translator_.translator.html#getalltriggers">getAllTriggers</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/utils/translators/discourse.ts#L174">utils/translators/discourse.ts:174</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/utils/translators/discourse.ts#L184">utils/translators/discourse.ts:184</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -249,6 +250,30 @@
 								</div>
 							</div>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+					<a name="messageintoconnectiondetails" class="tsd-anchor"></a>
+					<h3>message<wbr>Into<wbr>Connection<wbr>Details</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">message<wbr>Into<wbr>Connection<wbr>Details<span class="tsd-signature-symbol">(</span>message<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">TransmitContext</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">DiscourseConnectionDetails</span><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<p>Implementation of <a href="../interfaces/_utils_translators_translator_.translator.html">Translator</a>.<a href="../interfaces/_utils_translators_translator_.translator.html#messageintoconnectiondetails">messageIntoConnectionDetails</a></p>
+								<ul>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/utils/translators/discourse.ts#L34">utils/translators/discourse.ts:34</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>message: <span class="tsd-signature-type">TransmitContext</span></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">DiscourseConnectionDetails</span><span class="tsd-signature-symbol">&gt;</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -263,7 +288,7 @@
 							<aside class="tsd-sources">
 								<p>Implementation of <a href="../interfaces/_utils_translators_translator_.translator.html">Translator</a>.<a href="../interfaces/_utils_translators_translator_.translator.html#messageintoemitcreatemessage">messageIntoEmitCreateMessage</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/utils/translators/discourse.ts#L99">utils/translators/discourse.ts:99</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/utils/translators/discourse.ts#L109">utils/translators/discourse.ts:109</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -295,7 +320,7 @@
 							<aside class="tsd-sources">
 								<p>Implementation of <a href="../interfaces/_utils_translators_translator_.translator.html">Translator</a>.<a href="../interfaces/_utils_translators_translator_.translator.html#messageintoemitreadthread">messageIntoEmitReadThread</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/utils/translators/discourse.ts#L139">utils/translators/discourse.ts:139</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/utils/translators/discourse.ts#L149">utils/translators/discourse.ts:149</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -420,6 +445,9 @@
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="_utils_translators_discourse_.discoursetranslator.html#getalltriggers" class="tsd-kind-icon">get<wbr>All<wbr>Triggers</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="_utils_translators_discourse_.discoursetranslator.html#messageintoconnectiondetails" class="tsd-kind-icon">message<wbr>Into<wbr>Connection<wbr>Details</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class">
 								<a href="_utils_translators_discourse_.discoursetranslator.html#messageintoemitcreatemessage" class="tsd-kind-icon">message<wbr>Into<wbr>Emit<wbr>Create<wbr>Message</a>

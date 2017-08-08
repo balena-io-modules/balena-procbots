@@ -22,9 +22,9 @@ export interface DataHub {
 	 * Retrieve a value that a user has set.
 	 * @param user   The user who's data set we wish to search, eg sqweelygig
 	 * @param service The service for which we seek a value, eg discourse
-	 * @param value  The data we wish to search for, eg token
+	 * @param key     The data we wish to search for, eg token
 	 */
-	fetchValue(user: string, service: string, value: string): Promise<string>;
+	fetchValue(user: string, service: string, key: string): Promise<string>;
 }
 
 /**

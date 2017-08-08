@@ -5,7 +5,7 @@ export declare class FlowdockDataHub implements DataHub {
     private session;
     private organization;
     constructor(data: FlowdockConnectionDetails);
-    fetchValue(user: string, key: string): Promise<string>;
+    fetchValue(user: string, service: string, key: string): Promise<string>;
     private fetchPrivateMessages(username, filter);
     private fetchUserId;
     private fetchFromSession;

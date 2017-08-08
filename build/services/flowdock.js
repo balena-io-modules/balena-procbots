@@ -5,9 +5,13 @@ const flowdock_1 = require("flowdock");
 const path = require("path");
 const service_utilities_1 = require("./service-utilities");
 class FlowdockService extends service_utilities_1.ServiceUtilities {
-    connect(data) {
+    constructor(data, listen) {
+        super();
         this.session = new flowdock_1.Session(data.token);
         this.org = data.organization;
+        if (listen) {
+            this.startListening();
+        }
     }
     emitData(context) {
         return new Promise((resolve, reject) => {
@@ -23,6 +27,9 @@ class FlowdockService extends service_utilities_1.ServiceUtilities {
             });
         });
     }
+    verify() {
+        return true;
+    }
     startListening() {
         this.session.flows((error, flows) => {
             if (error) {
@@ -35,11 +42,11 @@ class FlowdockService extends service_utilities_1.ServiceUtilities {
             const stream = this.session.stream(Object.keys(flowIdToFlowName));
             stream.on('message', (message) => {
                 this.queueData({
+                    context: message.thread_id,
                     cookedEvent: {
-                        context: message.thread_id,
                         flow: flowIdToFlowName[message.flow],
-                        event: message.event,
                     },
+                    event: message.event,
                     rawEvent: message,
                     source: FlowdockService._serviceName,
                 });
@@ -48,9 +55,6 @@ class FlowdockService extends service_utilities_1.ServiceUtilities {
         this.expressApp.get(`/${FlowdockService._serviceName}/`, (_formData, response) => {
             response.sendStatus(200);
         });
-    }
-    verify() {
-        return true;
     }
     get serviceName() {
         return FlowdockService._serviceName;

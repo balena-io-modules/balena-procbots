@@ -56,6 +56,8 @@ export interface Translator {
 
 	// messageIntoEmitUpdateTags
 
+	messageIntoConnectionDetails(message: TransmitContext): Promise<object>;
+
 	/**
 	 * Translate the provided message context into an emit context that will retrieve the thread history.
 	 * @param message    Standard form of the message.
@@ -98,14 +100,17 @@ export function initInterimContext(event: MessageContext, target: MessageIds | s
  * @param format  Optional, markdown or plaintext, defaults to markdown.
  * @returns       Text with data embedded.
  */
-export function stringifyMetadata(data: MessageContext, format: 'markdown'|'plaintext' = 'markdown'): string {
-	const indicators = getIndicatorArrays();
-	// Build the content with the indicator and genesis at the front
+export function stringifyMetadata(data: MessageContext, format: string): string {
+	const indicators = data.details.hidden ? getIndicatorArrays().hidden : getIndicatorArrays().shown;
 	switch (format) {
-		case 'markdown':
-			return `[${data.details.hidden ? indicators.hidden.word : indicators.shown.word}](${data.source})`;
-		case 'plaintext':
-			return `${data.details.hidden ? indicators.hidden.word : indicators.shown.word}:${data.source}`;
+		case 'human':
+			return `${indicators.word} from ${data.source.service}`;
+		case 'emoji':
+			return `[${indicators.emoji}](${data.source.service})`;
+		case 'img':
+			const baseUrl = process.env.MESSAGE_CONVERTER_IMG_BASE_URL;
+			const queryString = `?hidden=${indicators.word}&source=${data.source.service}`;
+			return `<img src="${baseUrl}${queryString}" height="18" \/>`;
 		default:
 			throw new Error(`${format} format not recognised`);
 	}
@@ -134,10 +139,6 @@ export function extractMetadata(message: string, format: string): Metadata {
 			const querystring = `\\?hidden=${wordCapture}&source=(\\w*)`;
 			const imgRegex = new RegExp(`${beginsLine}<img src="${baseUrl}${querystring}" height="18" \/>`, 'i');
 			return metadataByRegex(message, imgRegex);
-		case 'char':
-			const charCapture = `(${indicators.hidden.char}|${indicators.shown.char})`;
-			const charRegex = new RegExp(`${beginsLine}${charCapture}`, 'i');
-			return metadataByRegex(message, charRegex);
 		default:
 			throw new Error(`${format} format not recognised`);
 	}

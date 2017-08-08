@@ -48,6 +48,9 @@ export interface TransmitIds extends MessageIds {
 	user: string;
 	flow: string;
 }
+export interface HubIds extends MessageIds {
+	user: string;
+}
 
 export interface MessageDetails {
 	genesis: string;
@@ -65,6 +68,7 @@ export interface InterimContext extends MessageContext {
 	target: MessageIds;
 }
 export interface TransmitContext extends MessageContext {
+	hub: HubIds;
 	target: TransmitIds;
 }
 
@@ -105,5 +109,5 @@ export interface MessengerConstructionDetails {
 }
 
 export interface MessageEvent extends UtilityServiceEvent {
-	rawEvent: MessageContext;
+	cookedEvent: MessageContext;
 }

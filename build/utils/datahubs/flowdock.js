@@ -30,8 +30,8 @@ class FlowdockDataHub {
         this.session = new flowdock_1.Session(data.token);
         this.organization = data.organization;
     }
-    fetchValue(user, key) {
-        const findKey = new RegExp(`My ${key} is (\\S+)`, 'i');
+    fetchValue(user, service, key) {
+        const findKey = new RegExp(`My ${service} ${key} is (\\S+)`, 'i');
         return this.fetchPrivateMessages(user, findKey)
             .then((valueArray) => {
             const value = valueArray[valueArray.length - 1].match(findKey);

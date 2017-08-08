@@ -25,18 +25,18 @@ import {
 import { ServiceEmitter, ServiceListener } from './service-types';
 import { ServiceUtilities } from './service-utilities';
 
-export class FrontService extends ServiceUtilities implements ServiceListener, ServiceEmitter {
+export class FrontService extends ServiceUtilities<string> implements ServiceListener, ServiceEmitter {
 	private static _serviceName = path.basename(__filename.split('.')[0]);
 
 	/** Underlying SDK object that we route requests to */
 	private session: Front;
 
-	/**
-	 * Connect to the service, used as part of construction.
-	 * @param data  Object containing the required details for the service.
-	 */
-	protected connect(data: FrontConnectionDetails) {
+	constructor(data: FrontConnectionDetails, listen: boolean) {
+		super();
 		this.session = new Front(data.token);
+		if (listen) {
+			this.startListening();
+		}
 	}
 
 	/**
@@ -61,9 +61,17 @@ export class FrontService extends ServiceUtilities implements ServiceListener, S
 	}
 
 	/**
+		* Verify the event before enqueueing.  For now uses the naive approach of returning true.
+		*/
+	protected verify(_data: FrontEvent): boolean {
+		// #204: This to be properly implemented.
+		return true;
+	}
+
+	/**
 	 * Activate this service as a listener.
 	 */
-	protected startListening(): void {
+	private startListening(): void {
 		// This swallows webhook events.  When operating on an entire inbox we use its webhook rule, but a webhook
 		// channel still requires somewhere to send its webhooks to.
 		this.expressApp.post('/front-dev-null', (_formData, response) => {
@@ -72,23 +80,14 @@ export class FrontService extends ServiceUtilities implements ServiceListener, S
 		// Create an endpoint for this listener and enqueue events
 		this.expressApp.post(`/${FrontService._serviceName}/`, (formData, response) => {
 			this.queueData({
-				cookedEvent: {
-					context: formData.body.conversation.id,
-					event: formData.body.type,
-				},
+				context: formData.body.conversation.id,
+				event: formData.body.type,
+				cookedEvent: {},
 				rawEvent: formData.body,
 				source: FrontService._serviceName,
 			});
 			response.sendStatus(200);
 		});
-	}
-
-	/**
-	 * Verify the event before enqueueing.  For now uses the naive approach of returning true.
-	 */
-	protected verify(_data: FrontEvent): boolean {
-		// #204: This to be properly implemented.
-		return true;
 	}
 
 	/**

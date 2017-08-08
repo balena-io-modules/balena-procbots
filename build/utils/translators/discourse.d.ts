@@ -7,6 +7,7 @@ export declare class DiscourseTranslator implements Translator.Translator {
     private hub;
     private connectionDetails;
     constructor(data: DiscourseConnectionDetails, hub: DataHub);
+    messageIntoConnectionDetails(message: TransmitContext): Promise<DiscourseConnectionDetails>;
     eventIntoMessage(event: DiscourseEvent): Promise<MessageEvent>;
     messageIntoEmitCreateMessage(message: TransmitContext): Promise<DiscourseEmitContext>;
     messageIntoEmitReadThread(message: MessageContext, shortlist?: RegExp): Promise<DiscourseEmitContext>;

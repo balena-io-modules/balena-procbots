@@ -27,29 +27,43 @@ import {
 } from './service-types';
 import { ServiceUtilities } from './service-utilities';
 
-export class MessengerService extends ServiceUtilities implements ServiceListener, ServiceEmitter {
+export class MessengerService extends ServiceUtilities<string> implements ServiceListener, ServiceEmitter {
 	private static _serviceName = path.basename(__filename.split('.')[0]);
 	private translators: { [service: string]: Translator.Translator };
 	private connectionDetails: MessengerConnectionDetails;
 
-	/**
-	 * Connect to the service, used as part of construction.
-	 * @param data  Object containing the required details for the service.
-	 */
-	protected connect(data: MessengerConstructionDetails): void {
+	constructor(data: MessengerConstructionDetails, listen: boolean) {
+		super();
 		this.connectionDetails = data.subServices;
 		this.translators = {};
-		_.map(data.subServices, (subConnectionDetails, serviceName) => {
+		_.forEach(data.subServices, (subConnectionDetails, serviceName) => {
 			this.translators[serviceName] = Translator.createTranslator(serviceName, subConnectionDetails, data.dataHub);
+		});
+		if (listen) {
+			this.startListening();
+		}
+	}
+
+	protected emitData(data: TransmitContext): Promise<ServiceEmitResponse> {
+		// TODO: messageIntoEmitter???
+		return Promise.props({
+			connectionDetails: this.translators[data.target.service].messageIntoConnectionDetails(data),
+			emitContext: this.translators[data.target.service].messageIntoEmitCreateMessage(data),
+		}).then((details) => {
+			console.log(details);
+			return { source: 'messenger' };
 		});
 	}
 
-	protected emitData(_data: TransmitContext): Promise<ServiceEmitResponse> {
-		throw new Error('Not supported');
+	/**
+		* Verify the event before enqueueing.  Trusts that the sub-listener will have performed it's own verification.
+		*/
+	protected verify(): boolean {
+		return true;
 	}
 
-	protected startListening(): void {
-		_.map(this.connectionDetails, (subConnectionDetails, subServiceName) => {
+	private startListening(): void {
+		_.forEach(this.connectionDetails, (subConnectionDetails, subServiceName) => {
 			const subListener = require(`./${subServiceName}`).createServiceListener(subConnectionDetails);
 			subListener.registerEvent({
 				// TODO: This is potentially noisy.  It is translating every event it can, including ones it might ...
@@ -62,13 +76,6 @@ export class MessengerService extends ServiceUtilities implements ServiceListene
 				name: `${subServiceName}=>${this.serviceName}`,
 			});
 		});
-	}
-
-	/**
-	 * Verify the event before enqueueing.  Trusts that the sub-listener will have performed it's own verification.
-	 */
-	protected verify(): boolean {
-		return true;
 	}
 
 	/**

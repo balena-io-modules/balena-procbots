@@ -9,6 +9,16 @@ class DiscourseTranslator {
         this.hub = hub;
         this.connectionDetails = data;
     }
+    messageIntoConnectionDetails(message) {
+        return this.hub.fetchValue(message.hub.user, 'discourse', 'token')
+            .then((token) => {
+            return {
+                token,
+                username: message.target.user,
+                instance: this.connectionDetails.instance,
+            };
+        });
+    }
     eventIntoMessage(event) {
         const getGeneric = {
             json: true,
@@ -30,7 +40,7 @@ class DiscourseTranslator {
             .then((details) => {
             const metadata = Translator.extractMetadata(details.post.raw, 'img');
             const first = details.post.post_number === 1;
-            const rawEvent = {
+            const cookedEvent = {
                 details: {
                     genesis: metadata.genesis || event.source,
                     hidden: first ? !details.topic.visible : details.post.post_type === 4,
@@ -47,11 +57,10 @@ class DiscourseTranslator {
                 },
             };
             return {
-                cookedEvent: {
-                    context: `${event.source}.${event.cookedEvent.context}`,
-                    event: 'message',
-                },
-                rawEvent,
+                context: `${event.source}.${event.cookedEvent.context}`,
+                event: 'message',
+                cookedEvent,
+                rawEvent: event.rawEvent,
                 source: 'messenger',
             };
         });
@@ -69,7 +78,7 @@ class DiscourseTranslator {
                 path: '/posts',
                 payload: {
                     category: message.target.flow,
-                    raw: `${message.details.text}\n\n---\n${Translator.stringifyMetadata(message)}`,
+                    raw: `${message.details.text}\n\n---\n${Translator.stringifyMetadata(message, 'img')}`,
                     title,
                     unlist_topic: message.details.hidden ? 'true' : 'false',
                 },
@@ -80,7 +89,7 @@ class DiscourseTranslator {
             method: 'POST',
             path: '/posts',
             payload: {
-                raw: `${message.details.text}\n\n---\n${Translator.stringifyMetadata(message)}`,
+                raw: `${message.details.text}\n\n---\n${Translator.stringifyMetadata(message, 'img')}`,
                 topic_id: topicId,
                 whisper: message.details.hidden ? 'true' : 'false',
             },

@@ -8,11 +8,10 @@ const worker_1 = require("../framework/worker");
 const worker_client_1 = require("../framework/worker-client");
 const logger_1 = require("../utils/logger");
 class ServiceUtilities extends worker_client_1.WorkerClient {
-    constructor(data, listen) {
+    constructor() {
         super();
         this._logger = new logger_1.Logger();
         this.eventListeners = {};
-        this.listening = false;
         this.queueData = (data) => {
             if (this.verify(data)) {
                 super.queueEvent({
@@ -25,7 +24,7 @@ class ServiceUtilities extends worker_client_1.WorkerClient {
             }
         };
         this.getWorker = (event) => {
-            const context = event.data.cookedEvent.context;
+            const context = event.data.context;
             const retrieved = this.workers.get(context);
             if (retrieved) {
                 return retrieved;
@@ -35,23 +34,12 @@ class ServiceUtilities extends worker_client_1.WorkerClient {
             return created;
         };
         this.handleEvent = (data) => {
-            const listeners = this.eventListeners[data.cookedEvent.event] || [];
+            const listeners = this.eventListeners[data.event] || [];
             return Promise.map(listeners, (listener) => {
                 return listener.listenerMethod(listener, data);
             }).return();
         };
-        this.listen = () => {
-            if (!this.listening) {
-                this.listening = true;
-                this.startListening();
-                this.logger.log(logger_1.LogLevel.INFO, `---> '${this.serviceName}' listening.`);
-            }
-        };
-        this.connect(data);
-        this.logger.log(logger_1.LogLevel.INFO, `---> '${this.serviceName}' connected.`);
-        if (listen) {
-            this.listen();
-        }
+        this.logger.log(logger_1.LogLevel.INFO, `---> '${this.serviceName}' constructing.`);
     }
     registerEvent(registration) {
         for (const event of registration.events) {

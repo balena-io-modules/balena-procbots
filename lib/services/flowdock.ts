@@ -24,14 +24,18 @@ import {
 import { ServiceEmitter, ServiceListener } from './service-types';
 import { ServiceUtilities } from './service-utilities';
 
-export class FlowdockService extends ServiceUtilities implements ServiceEmitter, ServiceListener {
+export class FlowdockService extends ServiceUtilities<string> implements ServiceEmitter, ServiceListener {
 	private static _serviceName = path.basename(__filename.split('.')[0]);
 	private session: Session;
 	private org: string;
 
-	protected connect(data: FlowdockConnectionDetails): void {
+	constructor(data: FlowdockConnectionDetails, listen: boolean) {
+		super();
 		this.session = new Session(data.token);
 		this.org = data.organization;
+		if (listen) {
+			this.startListening();
+		}
 	}
 
 	protected emitData(context: FlowdockEmitContext): Promise<FlowdockResponse> {
@@ -48,7 +52,14 @@ export class FlowdockService extends ServiceUtilities implements ServiceEmitter,
 		});
 	}
 
-	protected startListening(): void {
+	/**
+		* Verify the event before enqueueing. Since we connect to a web stream we can assume events are legitimate.
+		*/
+	protected verify(): boolean {
+		return true;
+	}
+
+	private startListening(): void {
 		// Get a list of known flows from the session
 		this.session.flows((error: any, flows: any) => {
 			if (error) {
@@ -62,11 +73,11 @@ export class FlowdockService extends ServiceUtilities implements ServiceEmitter,
 			const stream = this.session.stream(Object.keys(flowIdToFlowName));
 			stream.on('message', (message: any) => {
 				this.queueData({
+					context: message.thread_id,
 					cookedEvent: {
-						context: message.thread_id,
 						flow: flowIdToFlowName[message.flow],
-						event: message.event,
 					},
+					event: message.event,
 					rawEvent: message,
 					source: FlowdockService._serviceName,
 				});
@@ -76,13 +87,6 @@ export class FlowdockService extends ServiceUtilities implements ServiceEmitter,
 		this.expressApp.get(`/${FlowdockService._serviceName}/`, (_formData, response) => {
 			response.sendStatus(200);
 		});
-	}
-
-	/**
-	 * Verify the event before enqueueing. Since we connect to a web stream we can assume events are legitimate.
-	 */
-	protected verify(): boolean {
-		return true;
 	}
 
 	/**

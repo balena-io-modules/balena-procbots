@@ -32,6 +32,16 @@ export class FlowdockTranslator implements Translator.Translator {
 		this.organization = data.organization;
 	}
 
+	public messageIntoConnectionDetails(message: TransmitContext): Promise<FlowdockConnectionDetails> {
+		return this.hub.fetchValue(message.hub.user, 'flowdock', 'token')
+		.then((token) => {
+			return {
+				organization: this.organization,
+				token,
+			};
+		});
+	}
+
 	/**
 	 * Translate the provided event, enqueued by the service, into a message context.
 	 * @param event  Data in the form raw to the service.
@@ -44,14 +54,14 @@ export class FlowdockTranslator implements Translator.Translator {
 		const thread = event.rawEvent.thread_id;
 		const userId = event.rawEvent.user;
 		const org = this.organization;
-		const rawEvent: MessageContext = {
+		const cookedEvent: MessageContext = {
 			// action: MessageAction.Create,
 			// first: event.rawEvent.id === event.rawEvent.thread.initial_message,
 			details: {
 				genesis: metadata.genesis || event.source,
 				hidden: metadata.hidden,
 				text: titleAndText ? titleAndText[2] : metadata.content,
-				title: titleAndText ? titleAndText[1] : undefined,
+				title: titleAndText ? titleAndText[1] : metadata.content,
 			},
 			source: {
 				service: event.source,
@@ -64,27 +74,25 @@ export class FlowdockTranslator implements Translator.Translator {
 		};
 		// If the data provided a username
 		if (event.rawEvent.external_user_name) {
-			rawEvent.source.user = event.rawEvent.external_user_name;
+			cookedEvent.source.user = event.rawEvent.external_user_name;
 			return Promise.resolve({
-				cookedEvent: {
-					// TODO: This to translate event.cookedEvent.type
-					context: `${event.source}.${event.cookedEvent.context}`,
-					event: 'message',
-				},
-				rawEvent,
+				context: `${event.source}.${event.cookedEvent.context}`,
+				// TODO: This to translate
+				event: 'message',
+				cookedEvent,
+				rawEvent: event.rawEvent,
 				source: event.source,
 			});
 		}
 		return this.fetchFromSession(`/organizations/${org}/users/${userId}`)
 		.then((user) => {
-			rawEvent.source.user = user.nick;
+			cookedEvent.source.user = user.nick;
 			return({
-				cookedEvent: {
-					// TODO: This to translate event.cookedEvent.type
-					context: `${event.source}.${event.cookedEvent.context}`,
-					event: 'message',
-				},
-				rawEvent,
+				context: `${event.source}.${event.cookedEvent.context}`,
+				// TODO: This to translate
+				event: 'message',
+				cookedEvent,
+				rawEvent: event.rawEvent,
 				source: 'messenger',
 			});
 		});
@@ -105,7 +113,7 @@ export class FlowdockTranslator implements Translator.Translator {
 				path: '/flows/${org}/${flow}/messages/',
 				payload: {
 					// The concatenated string, of various data nuggets, to emit
-					content: titleText + message.details.text + '\n' + Translator.stringifyMetadata(message),
+					content: titleText + message.details.text + '\n' + Translator.stringifyMetadata(message, 'emoji'),
 					event: 'message',
 					// TODO: Something with this?!?!
 					// external_user_name:

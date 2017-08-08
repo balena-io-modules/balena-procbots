@@ -25,19 +25,19 @@ import {
 import { ServiceEmitter, ServiceListener } from './service-types';
 import { ServiceUtilities } from './service-utilities';
 
-export class DiscourseService extends ServiceUtilities implements ServiceListener, ServiceEmitter {
+export class DiscourseService extends ServiceUtilities<string> implements ServiceListener, ServiceEmitter {
 	private static _serviceName = path.basename(__filename.split('.')[0]);
 	// There are circumstances in which the discourse web-hook will fire twice for the same post, so track.
 	private postsSynced = new Set<number>();
 	private connectionDetails: DiscourseConnectionDetails;
 
-	/**
-	 * Connect to Discourse.
-	 * @param data  Object containing the required details for Discourse.
-	 */
-	protected connect(data: DiscourseConnectionDetails): void {
+	constructor(data: DiscourseConnectionDetails, listen: boolean) {
+		super();
 		// #203: Verify connection data
 		this.connectionDetails = data;
+		if (listen) {
+			this.startListening();
+		}
 	}
 
 	protected emitData(context: DiscourseEmitContext): Promise<DiscourseResponse> {
@@ -62,31 +62,30 @@ export class DiscourseService extends ServiceUtilities implements ServiceListene
 		});
 	}
 
+	/**
+		* Verify the event before enqueueing.  For now uses the naive approach of returning true.
+		*/
+	protected verify(_data: DiscourseEvent): boolean {
+		// #202: This to be properly implemented.
+		return true;
+	}
+
 	/** Awaken this class as a listener. */
-	protected startListening(): void {
+	private startListening(): void {
 		this.expressApp.post(`/${DiscourseService._serviceName}/`, (formData, response) => {
 			if (!this.postsSynced.has(formData.body.post.id)) {
 				this.postsSynced.add(formData.body.post.id);
 				this.queueData({
-					cookedEvent: {
-						context: formData.body.post.topic_id,
-						// #201: I'm sure there's something in the headers that could improve this
-						event: 'post'
-					},
+					context: formData.body.post.topic_id,
+					cookedEvent: {},
+					// #201: I'm sure there's something in the headers that could improve this
+					event: 'post',
 					rawEvent: formData.body.post,
 					source: DiscourseService._serviceName,
 				});
 				response.sendStatus(200);
 			}
 		});
-	}
-
-	/**
-	 * Verify the event before enqueueing.  For now uses the naive approach of returning true.
-	 */
-	protected verify(_data: DiscourseEvent): boolean {
-		// #202: This to be properly implemented.
-		return true;
 	}
 
 	/**

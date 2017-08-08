@@ -33,24 +33,20 @@ import {
  * A utility class to handle a bunch of the repetitive work associated with being a ServiceListener and ServiceEmitter
  *
  * This class provides:
- * - An always connect then maybe listen constructor flow.
  * - An express app, if asked for.
  * - A logger.
  * - An event registration and handling standard.
  * - Checks for and extracts data from context.
  * - A standard way of getting contextualised workers.
- * - Ensure activating as a listener only gets called once.
  *
  * In exchange you agree to:
- * - provide a `connect` method to connect this class to the service, called during construction and only once.
- * - provide a `startListening` method to activate this class as a listener, calling queueEvent as required.
  * - provide a `emitData` method which takes a ServiceEmitContext and returns a promise.
  * - provide a `verify` function which should check that incoming data isn't spoofed.
  * - provide a `serviceName` getter, which because it is based on file path cannot be inherited away.
  * - provide a `apiHandle` getter, which should return the underlying object that executes the requests.
- * - enqueue your events with `context` and `event` in cookedData, as per `UtilityServiceEvent`.
+ * - enqueue your events with `context` and `event`, as per `UtilityServiceEvent`.
  */
-export abstract class ServiceUtilities extends WorkerClient<string> implements ServiceListener, ServiceEmitter {
+export abstract class ServiceUtilities<T> extends WorkerClient<T> implements ServiceListener, ServiceEmitter {
 	/** A singleton express instance for all web-hook based services to share. */
 	private static _expressApp: express.Express;
 
@@ -60,21 +56,9 @@ export abstract class ServiceUtilities extends WorkerClient<string> implements S
 	/** Store a list of actions to perform when particular actions happen */
 	private eventListeners: { [event: string]: ServiceRegistration[] } = {};
 
-	/** A boolean flag for if this object has been activated as a listener. */
-	private listening: boolean = false;
-
-	/**
-	 * Build this service, specifying whether to awaken as a listener.
-	 * @param data    Object containing the required details for the service.
-	 * @param listen  Whether to start listening during construction.
-	 */
-	constructor(data: object, listen: boolean) {
+	constructor() {
 		super();
-		this.connect(data);
-		this.logger.log(LogLevel.INFO, `---> '${this.serviceName}' connected.`);
-		if (listen) {
-			this.listen();
-		}
+		this.logger.log(LogLevel.INFO, `---> '${this.serviceName}' constructing.`);
 	}
 
 	/**
@@ -97,6 +81,7 @@ export abstract class ServiceUtilities extends WorkerClient<string> implements S
 	 * @returns     Details of the successful transmission from the service.
 	 */
 	public sendData(data: ServiceEmitRequest): Promise<ServiceEmitResponse> {
+		// TODO: Simplify this
 		try {
 			const context = data.contexts[this.serviceName] as ServiceEmitContext;
 			if (context) {
@@ -145,20 +130,11 @@ export abstract class ServiceUtilities extends WorkerClient<string> implements S
 	}
 
 	/**
-	 * Connect to the service, used as part of construction.
-	 * @param data  Object containing the required details for the service.
-	 */
-	protected abstract connect(data: any): void
-
-	/**
 	 * Emit a payload to the endpoint defined, resolving when done.
 	 * endpoint  Definition of the endpoint to emit to.
 	 * payload   Data to be delivered.
 	 */
 	protected abstract emitData(data: ServiceEmitContext): any;
-
-	/** Awaken this class as a listener. */
-	protected abstract startListening(): void;
 
 	/**
 	 * Verify the event before enqueueing.  A naive approach could be to simply return true, but that must be explicit.
@@ -171,15 +147,15 @@ export abstract class ServiceUtilities extends WorkerClient<string> implements S
 	 * @param event  Event as enqueued by the listener.
 	 * @returns      Worker for the context associated.
 	 */
-	protected getWorker = (event: UtilityWorkerEvent): Worker<string> => {
+	protected getWorker = (event: UtilityWorkerEvent): Worker<T> => {
 		// Attempt to retrieve an active worker for the context
-		const context = event.data.cookedEvent.context;
+		const context = event.data.context;
 		const retrieved = this.workers.get(context);
 		if (retrieved) {
 			return retrieved;
 		}
 		// Create and store a worker for the context
-		const created = new Worker<string>(context, this.removeWorker);
+		const created = new Worker<T>(context, this.removeWorker);
 		this.workers.set(context, created);
 		return created;
 	}
@@ -219,20 +195,10 @@ export abstract class ServiceUtilities extends WorkerClient<string> implements S
 	 */
 	protected handleEvent = (data: UtilityServiceEvent): Promise<void> => {
 		// Retrieve and execute all the listener methods, squashing their responses
-		const listeners = this.eventListeners[data.cookedEvent.event] || [];
+		const listeners = this.eventListeners[data.event] || [];
 		return Promise.map(listeners, (listener) => {
 			return listener.listenerMethod(listener, data);
 		}).return();
-	}
-
-	/** Start the object listening if it isn't already. */
-	private listen = () => {
-		// Ensure the code in the child object gets executed a maximum of once
-		if (!this.listening) {
-			this.listening = true;
-			this.startListening();
-			this.logger.log(LogLevel.INFO, `---> '${this.serviceName}' listening.`);
-		}
 	}
 
 	/**

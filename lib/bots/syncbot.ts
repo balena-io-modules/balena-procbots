@@ -16,6 +16,7 @@ limitations under the License.
 
 import * as Promise from 'bluebird';
 import { ProcBot } from '../framework/procbot';
+import { MessengerService } from '../services/messenger';
 import {
 	FlowDefinition, MessageEvent, MessageListenerMethod, TransmitContext,
 } from '../services/messenger-types';
@@ -23,6 +24,46 @@ import { createDataHub } from '../utils/datahubs/datahub';
 
 // TODO: Implement this whole thing
 export class SyncBot extends ProcBot {
+	private static getEquivalentUsername(from: string, to: string, username: string): string {
+		const lookupString = process.env.SYNCBOT_ACCOUNTS_WITH_DIFFERING_USERNAMES || '[]';
+		const lookups: Array<{ [service: string]: string }> = JSON.parse(lookupString);
+		for (const lookup of lookups) {
+			if (lookup[from] === username && lookup[to]) {
+				return lookup[to];
+			}
+		}
+		return username;
+	}
+
+	private static makeRouter(from: FlowDefinition, to: FlowDefinition, emitter: MessengerService): MessageListenerMethod {
+		return (_registration, event: MessageEvent) => {
+			if (from.service === event.cookedEvent.source.service && from.flow === event.cookedEvent.source.flow) {
+				const hubService = process.env.SYNCBOT_DATAHUB_SERVICE;
+				const transmitMessage: TransmitContext = {
+					details: event.cookedEvent.details,
+					hub: {
+						service: hubService,
+						user: SyncBot.getEquivalentUsername(from.service, hubService, event.cookedEvent.source.user),
+					},
+					source: event.cookedEvent.source,
+					target: {
+						flow: to.flow,
+						service: to.service,
+						user: SyncBot.getEquivalentUsername(from.service, to.service, event.cookedEvent.source.user),
+					},
+				};
+				return emitter.sendData({
+					contexts: {
+						messenger: transmitMessage,
+					},
+					source: 'messenger',
+				}).then(() => {	 /* void */ });
+			}
+			// The event received doesn't match the profile being routed, so no-op is the correct action.
+			return Promise.resolve();
+		};
+	}
+
 	constructor(name = 'SyncBot') {
 		super(name);
 
@@ -32,16 +73,16 @@ export class SyncBot extends ProcBot {
 			JSON.parse(process.env.SYNCBOT_DATAHUB_CONSTRUCTOR)
 		);
 
-		// Build the message listener object, with the sub-listeners
-		const messageListener = this.addServiceListener(
-			'messenger',
+		// Build the messenger object, with the sub-listeners
+		const messenger = new MessengerService(
 			{
 				dataHub,
 				subServices: JSON.parse(process.env.SYNCBOT_LISTENER_CONSTRUCTORS),
 			},
+			true,
 		);
-		if (!messageListener) {
-			throw new Error('Could not create Message Listener.');
+		if (!messenger) {
+			throw new Error('Could not create Messenger.');
 		}
 
 		// Register each edge in the mappings array bidirectionally
@@ -50,50 +91,20 @@ export class SyncBot extends ProcBot {
 			let priorFlow = null;
 			for(const focusFlow of mapping) {
 				if(priorFlow) {
-					messageListener.registerEvent({
+					messenger.registerEvent({
 						events: ['message'],
-						listenerMethod: this.createRouter(priorFlow, focusFlow),
+						listenerMethod: SyncBot.makeRouter(priorFlow, focusFlow, messenger),
 						name: `${priorFlow.service}.${priorFlow.flow}=>${focusFlow.service}.${focusFlow.flow}`,
 					});
-					messageListener.registerEvent({
+					messenger.registerEvent({
 						events: ['message'],
-						listenerMethod: this.createRouter(focusFlow, priorFlow),
+						listenerMethod: SyncBot.makeRouter(focusFlow, priorFlow, messenger),
 						name: `${focusFlow.service}.${focusFlow.flow}=>${priorFlow.service}.${priorFlow.flow}`,
 					});
 				}
 				priorFlow = focusFlow;
 			}
 		}
-	}
-
-	private createRouter(from: FlowDefinition, to: FlowDefinition): MessageListenerMethod {
-		return (_registration, event: MessageEvent) => {
-			if (from.service === event.rawEvent.source.service && from.flow === event.rawEvent.source.flow) {
-				const transmitMessage: TransmitContext = {
-					details: event.rawEvent.details,
-					source: event.rawEvent.source,
-					target: {
-						flow: to.flow,
-						service: to.service,
-						user: this.getEquivalentUsername(from.service, to.service, event.rawEvent.source.user)
-					}
-				};
-				console.log(transmitMessage);
-			}
-			// The event received doesn't match the profile being routed, so no-op is the correct action.
-			return Promise.resolve();
-		};
-	}
-
-	private getEquivalentUsername(from: string, to: string, username: string): string {
-		const lookupString = process.env.SYNCBOT_ACCOUNTS_WITH_DIFFERING_USERNAMES || '[]';
-		const lookups: Array<{ [service: string]: string }> = JSON.parse(lookupString);
-		for (const lookup of lookups) {
-			if (lookup[from] === username && lookup[to]) {
-				return lookup[to];
-			}
-		}
-		return username;
 	}
 }
 

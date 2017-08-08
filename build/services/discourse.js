@@ -6,12 +6,13 @@ const path = require("path");
 const request = require("request-promise");
 const service_utilities_1 = require("./service-utilities");
 class DiscourseService extends service_utilities_1.ServiceUtilities {
-    constructor() {
-        super(...arguments);
+    constructor(data, listen) {
+        super();
         this.postsSynced = new Set();
-    }
-    connect(data) {
         this.connectionDetails = data;
+        if (listen) {
+            this.startListening();
+        }
     }
     emitData(context) {
         return new Promise((resolve) => {
@@ -33,24 +34,23 @@ class DiscourseService extends service_utilities_1.ServiceUtilities {
             });
         });
     }
+    verify(_data) {
+        return true;
+    }
     startListening() {
         this.expressApp.post(`/${DiscourseService._serviceName}/`, (formData, response) => {
             if (!this.postsSynced.has(formData.body.post.id)) {
                 this.postsSynced.add(formData.body.post.id);
                 this.queueData({
-                    cookedEvent: {
-                        context: formData.body.post.topic_id,
-                        event: 'post'
-                    },
+                    context: formData.body.post.topic_id,
+                    cookedEvent: {},
+                    event: 'post',
                     rawEvent: formData.body.post,
                     source: DiscourseService._serviceName,
                 });
                 response.sendStatus(200);
             }
         });
-    }
-    verify(_data) {
-        return true;
     }
     get serviceName() {
         return DiscourseService._serviceName;

@@ -31,6 +31,17 @@ export class DiscourseTranslator implements Translator.Translator {
 		this.connectionDetails = data;
 	}
 
+	public messageIntoConnectionDetails(message: TransmitContext): Promise<DiscourseConnectionDetails> {
+		return this.hub.fetchValue(message.hub.user, 'discourse', 'token')
+		.then((token) => {
+			return {
+				token,
+				username: message.target.user,
+				instance: this.connectionDetails.instance,
+			};
+		});
+	}
+
 	/**
 	 * Translate the provided event, enqueued by the service, into a message context.
 	 * @param event  Data in the form raw to the service.
@@ -60,7 +71,7 @@ export class DiscourseTranslator implements Translator.Translator {
 			// Gather metadata and resolve
 			const metadata = Translator.extractMetadata(details.post.raw, 'img');
 			const first = details.post.post_number === 1;
-			const rawEvent: MessageContext = {
+			const cookedEvent: MessageContext = {
 				// action: MessageAction.Create,
 				// first,
 				details: {
@@ -81,12 +92,11 @@ export class DiscourseTranslator implements Translator.Translator {
 				},
 			};
 			return {
-				cookedEvent: {
-					// TODO: This to use translate event.cookedEvent.type
-					context: `${event.source}.${event.cookedEvent.context}`,
-					event: 'message',
-				},
-				rawEvent,
+				context: `${event.source}.${event.cookedEvent.context}`,
+				// TODO: This to use translate
+				event: 'message',
+				cookedEvent,
+				rawEvent: event.rawEvent,
 				source: 'messenger',
 			};
 		});
@@ -111,7 +121,7 @@ export class DiscourseTranslator implements Translator.Translator {
 				path: '/posts',
 				payload: {
 					category: message.target.flow,
-					raw: `${message.details.text}\n\n---\n${Translator.stringifyMetadata(message)}`,
+					raw: `${message.details.text}\n\n---\n${Translator.stringifyMetadata(message, 'img')}`,
 					title,
 					unlist_topic: message.details.hidden ? 'true' : 'false',
 				},
@@ -123,7 +133,7 @@ export class DiscourseTranslator implements Translator.Translator {
 			method: 'POST',
 			path: '/posts',
 			payload: {
-				raw: `${message.details.text}\n\n---\n${Translator.stringifyMetadata(message)}`,
+				raw: `${message.details.text}\n\n---\n${Translator.stringifyMetadata(message, 'img')}`,
 				topic_id: topicId,
 				whisper: message.details.hidden ? 'true' : 'false',
 			},

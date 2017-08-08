@@ -9,6 +9,7 @@ export declare class FrontTranslator implements Translator.Translator {
     private token;
     private channelPerInbox;
     constructor(data: FrontConnectionDetails, hub: DataHub);
+    messageIntoConnectionDetails(_message: TransmitContext): Promise<FrontConnectionDetails>;
     eventIntoMessage(event: FrontEvent): Promise<MessageEvent>;
     messageIntoEmitCreateMessage(message: TransmitContext): Promise<FrontEmitContext>;
     messageIntoEmitReadThread(message: MessageContext, _shortlist?: RegExp): Promise<FrontEmitContext>;

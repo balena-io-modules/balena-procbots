@@ -4,8 +4,12 @@ const front_sdk_1 = require("front-sdk");
 const path = require("path");
 const service_utilities_1 = require("./service-utilities");
 class FrontService extends service_utilities_1.ServiceUtilities {
-    connect(data) {
+    constructor(data, listen) {
+        super();
         this.session = new front_sdk_1.Front(data.token);
+        if (listen) {
+            this.startListening();
+        }
     }
     emitData(context) {
         const sessionEndpoints = {
@@ -15,24 +19,23 @@ class FrontService extends service_utilities_1.ServiceUtilities {
         };
         return sessionEndpoints[context.objectType][context.action](context.payload);
     }
+    verify(_data) {
+        return true;
+    }
     startListening() {
         this.expressApp.post('/front-dev-null', (_formData, response) => {
             response.sendStatus(200);
         });
         this.expressApp.post(`/${FrontService._serviceName}/`, (formData, response) => {
             this.queueData({
-                cookedEvent: {
-                    context: formData.body.conversation.id,
-                    event: formData.body.type,
-                },
+                context: formData.body.conversation.id,
+                event: formData.body.type,
+                cookedEvent: {},
                 rawEvent: formData.body,
                 source: FrontService._serviceName,
             });
             response.sendStatus(200);
         });
-    }
-    verify(_data) {
-        return true;
     }
     get serviceName() {
         return FrontService._serviceName;

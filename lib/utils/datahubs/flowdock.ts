@@ -31,13 +31,14 @@ export class FlowdockDataHub implements DataHub {
 
 	/**
 	 * Search for the specified value associated with a user.
-	 * @param user  Username to search associated with.
-	 * @param key   Name of the value to retrieve.
-	 * @returns     Promise that resolves to the value.
+	 * @param user    Username to search associated with.
+	 * @param service The service for which we seek a value, eg discourse
+	 * @param key     Name of the value to retrieve.
+	 * @returns       Promise that resolves to the value.
 	 */
-	public fetchValue(user: string, key: string): Promise<string> {
+	public fetchValue(user: string, service: string, key: string): Promise<string> {
 		// Retrieve a particular regex from the 1-1 message history of the user
-		const findKey = new RegExp(`My ${key} is (\\S+)`, 'i');
+		const findKey = new RegExp(`My ${service} ${key} is (\\S+)`, 'i');
 		return this.fetchPrivateMessages(user, findKey)
 		.then((valueArray) => {
 			const value = valueArray[valueArray.length - 1].match(findKey);

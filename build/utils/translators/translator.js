@@ -9,13 +9,17 @@ function initInterimContext(event, target) {
     };
 }
 exports.initInterimContext = initInterimContext;
-function stringifyMetadata(data, format = 'markdown') {
-    const indicators = getIndicatorArrays();
+function stringifyMetadata(data, format) {
+    const indicators = data.details.hidden ? getIndicatorArrays().hidden : getIndicatorArrays().shown;
     switch (format) {
-        case 'markdown':
-            return `[${data.details.hidden ? indicators.hidden.word : indicators.shown.word}](${data.source})`;
-        case 'plaintext':
-            return `${data.details.hidden ? indicators.hidden.word : indicators.shown.word}:${data.source}`;
+        case 'human':
+            return `${indicators.word} from ${data.source.service}`;
+        case 'emoji':
+            return `[${indicators.emoji}](${data.source.service})`;
+        case 'img':
+            const baseUrl = process.env.MESSAGE_CONVERTER_IMG_BASE_URL;
+            const queryString = `?hidden=${indicators.word}&source=${data.source.service}`;
+            return `<img src="${baseUrl}${queryString}" height="18" \/>`;
         default:
             throw new Error(`${format} format not recognised`);
     }
@@ -38,10 +42,6 @@ function extractMetadata(message, format) {
             const querystring = `\\?hidden=${wordCapture}&source=(\\w*)`;
             const imgRegex = new RegExp(`${beginsLine}<img src="${baseUrl}${querystring}" height="18" \/>`, 'i');
             return metadataByRegex(message, imgRegex);
-        case 'char':
-            const charCapture = `(${indicators.hidden.char}|${indicators.shown.char})`;
-            const charRegex = new RegExp(`${beginsLine}${charCapture}`, 'i');
-            return metadataByRegex(message, charRegex);
         default:
             throw new Error(`${format} format not recognised`);
     }

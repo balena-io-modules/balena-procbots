@@ -40,6 +40,13 @@ export class FrontTranslator implements Translator.Translator {
 		this.channelPerInbox = data.channelPerInbox || {};
 	}
 
+	public messageIntoConnectionDetails(_message: TransmitContext): Promise<FrontConnectionDetails> {
+		return Promise.resolve({
+			channelPerInbox: this.channelPerInbox,
+			token: this.token,
+		});
+	}
+
 	/**
 	 * Translate the provided data, enqueued by the service, into a message context.
 	 * @param event  Data in the form raw to the service.
@@ -74,7 +81,7 @@ export class FrontTranslator implements Translator.Translator {
 			// Pre-calculate a couple of values, to save line width
 			const message = details.event.target.data;
 			const first = details.comments._results.length + details.messages._results.length === 1;
-			const metadata = Translator.extractMetadata(message.text || message.body, 'emoji');
+			const metadata = Translator.extractMetadata(message.text || message.body, 'img');
 			// Attempt to find the author of a message from the various places front might store it
 			let author = 'Unknown';
 			if (message.author) {
@@ -87,7 +94,7 @@ export class FrontTranslator implements Translator.Translator {
 				}
 			}
 			// Return the generic form of this event
-			const rawEvent: MessageContext = {
+			const cookedEvent: MessageContext = {
 				details: {
 					// action: MessageAction.Create,
 					// first,
@@ -106,12 +113,11 @@ export class FrontTranslator implements Translator.Translator {
 				},
 			};
 			return {
-				cookedEvent: {
-					// TODO: This to translate event.cookedEvent.type
-					context: `${event.source}.${event.cookedEvent.context}`,
-					event: 'message',
-				},
-				rawEvent,
+				context: `${event.source}.${event.cookedEvent.context}`,
+				// TODO: This to translate
+				event: 'message',
+				cookedEvent,
+				rawEvent: event.rawEvent,
 				source: 'messenger',
 			};
 		});
@@ -137,7 +143,7 @@ export class FrontTranslator implements Translator.Translator {
 					objectType: 'message',
 					payload: {
 						author_id: userId,
-						body: `${message.details.text}<hr/><br/>${Translator.stringifyMetadata(message, 'plaintext')}`,
+						body: `${message.details.text}<hr/><br/>${Translator.stringifyMetadata(message, 'human')}`,
 						// Find the relevant channel for the inbox
 						channel_id: this.channelPerInbox[message.target.flow],
 						metadata: {
@@ -165,7 +171,7 @@ export class FrontTranslator implements Translator.Translator {
 					objectType: 'comment',
 					payload: {
 						author_id: details.userId,
-						body: `${message.details.text}\n\n---\n${Translator.stringifyMetadata(message, 'plaintext')}`,
+						body: `${message.details.text}\n\n---\n${Translator.stringifyMetadata(message, 'human')}`,
 						conversation_id: conversationId,
 					}
 				};
@@ -175,7 +181,7 @@ export class FrontTranslator implements Translator.Translator {
 				objectType: 'message',
 				payload: {
 					author_id: details.userId,
-					body: `${message.details.text}<hr/><br/>${Translator.stringifyMetadata(message, 'plaintext')}`,
+					body: `${message.details.text}<hr/><br/>${Translator.stringifyMetadata(message, 'human')}`,
 					conversation_id: conversationId,
 					options: {
 						archive: false,

@@ -30,6 +30,12 @@ class FrontTranslator {
         this.token = data.token;
         this.channelPerInbox = data.channelPerInbox || {};
     }
+    messageIntoConnectionDetails(_message) {
+        return Promise.resolve({
+            channelPerInbox: this.channelPerInbox,
+            token: this.token,
+        });
+    }
     eventIntoMessage(event) {
         const getGeneric = {
             headers: {
@@ -56,7 +62,7 @@ class FrontTranslator {
             .then((details) => {
             const message = details.event.target.data;
             const first = details.comments._results.length + details.messages._results.length === 1;
-            const metadata = Translator.extractMetadata(message.text || message.body, 'emoji');
+            const metadata = Translator.extractMetadata(message.text || message.body, 'img');
             let author = 'Unknown';
             if (message.author) {
                 author = message.author.username;
@@ -68,7 +74,7 @@ class FrontTranslator {
                     }
                 }
             }
-            const rawEvent = {
+            const cookedEvent = {
                 details: {
                     genesis: metadata.genesis || event.source,
                     hidden: first ? metadata.hidden : details.event.type === 'comment',
@@ -85,11 +91,10 @@ class FrontTranslator {
                 },
             };
             return {
-                cookedEvent: {
-                    context: `${event.source}.${event.cookedEvent.context}`,
-                    event: 'message',
-                },
-                rawEvent,
+                context: `${event.source}.${event.cookedEvent.context}`,
+                event: 'message',
+                cookedEvent,
+                rawEvent: event.rawEvent,
                 source: 'messenger',
             };
         });
@@ -107,7 +112,7 @@ class FrontTranslator {
                     objectType: 'message',
                     payload: {
                         author_id: userId,
-                        body: `${message.details.text}<hr/><br/>${Translator.stringifyMetadata(message, 'plaintext')}`,
+                        body: `${message.details.text}<hr/><br/>${Translator.stringifyMetadata(message, 'human')}`,
                         channel_id: this.channelPerInbox[message.target.flow],
                         metadata: {
                             thread_ref: message.source.thread,
@@ -134,7 +139,7 @@ class FrontTranslator {
                     objectType: 'comment',
                     payload: {
                         author_id: details.userId,
-                        body: `${message.details.text}\n\n---\n${Translator.stringifyMetadata(message, 'plaintext')}`,
+                        body: `${message.details.text}\n\n---\n${Translator.stringifyMetadata(message, 'human')}`,
                         conversation_id: conversationId,
                     }
                 };
@@ -144,7 +149,7 @@ class FrontTranslator {
                 objectType: 'message',
                 payload: {
                     author_id: details.userId,
-                    body: `${message.details.text}<hr/><br/>${Translator.stringifyMetadata(message, 'plaintext')}`,
+                    body: `${message.details.text}<hr/><br/>${Translator.stringifyMetadata(message, 'human')}`,
                     conversation_id: conversationId,
                     options: {
                         archive: false,

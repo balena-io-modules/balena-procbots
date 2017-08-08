@@ -1,22 +1,36 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const Promise = require("bluebird");
 const _ = require("lodash");
 const path = require("path");
 const Translator = require("../utils/translators/translator");
 const service_utilities_1 = require("./service-utilities");
 class MessengerService extends service_utilities_1.ServiceUtilities {
-    connect(data) {
+    constructor(data, listen) {
+        super();
         this.connectionDetails = data.subServices;
         this.translators = {};
-        _.map(data.subServices, (subConnectionDetails, serviceName) => {
+        _.forEach(data.subServices, (subConnectionDetails, serviceName) => {
             this.translators[serviceName] = Translator.createTranslator(serviceName, subConnectionDetails, data.dataHub);
         });
+        if (listen) {
+            this.startListening();
+        }
     }
-    emitData(_data) {
-        throw new Error('Not supported');
+    emitData(data) {
+        return Promise.props({
+            connectionDetails: this.translators[data.target.service].messageIntoConnectionDetails(data),
+            emitContext: this.translators[data.target.service].messageIntoEmitCreateMessage(data),
+        }).then((details) => {
+            console.log(details);
+            return { source: 'messenger' };
+        });
+    }
+    verify() {
+        return true;
     }
     startListening() {
-        _.map(this.connectionDetails, (subConnectionDetails, subServiceName) => {
+        _.forEach(this.connectionDetails, (subConnectionDetails, subServiceName) => {
             const subListener = require(`./${subServiceName}`).createServiceListener(subConnectionDetails);
             subListener.registerEvent({
                 events: this.translators[subServiceName].getAllTriggers(),
@@ -26,9 +40,6 @@ class MessengerService extends service_utilities_1.ServiceUtilities {
                 name: `${subServiceName}=>${this.serviceName}`,
             });
         });
-    }
-    verify() {
-        return true;
     }
     get serviceName() {
         return MessengerService._serviceName;

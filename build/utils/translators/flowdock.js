@@ -20,6 +20,15 @@ class FlowdockTranslator {
         this.session = new flowdock_1.Session(data.token);
         this.organization = data.organization;
     }
+    messageIntoConnectionDetails(message) {
+        return this.hub.fetchValue(message.hub.user, 'flowdock', 'token')
+            .then((token) => {
+            return {
+                organization: this.organization,
+                token,
+            };
+        });
+    }
     eventIntoMessage(event) {
         const metadata = Translator.extractMetadata(event.rawEvent.content, 'emoji');
         const titleAndText = metadata.content.match(/^(.*)\n--\n((?:\r|\n|.)*)$/);
@@ -27,12 +36,12 @@ class FlowdockTranslator {
         const thread = event.rawEvent.thread_id;
         const userId = event.rawEvent.user;
         const org = this.organization;
-        const rawEvent = {
+        const cookedEvent = {
             details: {
                 genesis: metadata.genesis || event.source,
                 hidden: metadata.hidden,
                 text: titleAndText ? titleAndText[2] : metadata.content,
-                title: titleAndText ? titleAndText[1] : undefined,
+                title: titleAndText ? titleAndText[1] : metadata.content,
             },
             source: {
                 service: event.source,
@@ -44,25 +53,23 @@ class FlowdockTranslator {
             },
         };
         if (event.rawEvent.external_user_name) {
-            rawEvent.source.user = event.rawEvent.external_user_name;
+            cookedEvent.source.user = event.rawEvent.external_user_name;
             return Promise.resolve({
-                cookedEvent: {
-                    context: `${event.source}.${event.cookedEvent.context}`,
-                    event: 'message',
-                },
-                rawEvent,
+                context: `${event.source}.${event.cookedEvent.context}`,
+                event: 'message',
+                cookedEvent,
+                rawEvent: event.rawEvent,
                 source: event.source,
             });
         }
         return this.fetchFromSession(`/organizations/${org}/users/${userId}`)
             .then((user) => {
-            rawEvent.source.user = user.nick;
+            cookedEvent.source.user = user.nick;
             return ({
-                cookedEvent: {
-                    context: `${event.source}.${event.cookedEvent.context}`,
-                    event: 'message',
-                },
-                rawEvent,
+                context: `${event.source}.${event.cookedEvent.context}`,
+                event: 'message',
+                cookedEvent,
+                rawEvent: event.rawEvent,
                 source: 'messenger',
             });
         });
@@ -74,7 +81,7 @@ class FlowdockTranslator {
                 method: 'POST',
                 path: '/flows/${org}/${flow}/messages/',
                 payload: {
-                    content: titleText + message.details.text + '\n' + Translator.stringifyMetadata(message),
+                    content: titleText + message.details.text + '\n' + Translator.stringifyMetadata(message, 'emoji'),
                     event: 'message',
                     thread_id: message.target.thread,
                 },
