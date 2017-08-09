@@ -17,8 +17,8 @@
 import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import * as request from 'request-promise';
-import { DiscourseConnectionDetails, DiscourseEmitContext, DiscourseEvent } from '../../services/discourse-types';
-import { MessageContext, MessageEvent, TransmitContext } from '../../services/messenger-types';
+import { DiscourseConnectionDetails, DiscourseEmitContext, DiscourseEvent } from '../../discourse-types';
+import { MessageContext, MessageEvent, TransmitContext } from '../../messenger-types';
 import { DataHub } from '../datahubs/datahub';
 import * as Translator from './translator';
 

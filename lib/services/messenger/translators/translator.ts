@@ -19,10 +19,10 @@ import * as _ from 'lodash';
 import {
 	InterimContext, MessageContext, MessageEvent, MessageIds,
 	Metadata, TransmitContext,
-} from '../../services/messenger-types';
+} from '../../messenger-types';
 import {
 	ServiceEmitContext, ServiceEvent,
-} from '../../services/service-types';
+} from '../../service-types';
 import { DataHub } from '../datahubs/datahub';
 
 export interface PublicityIndicator {

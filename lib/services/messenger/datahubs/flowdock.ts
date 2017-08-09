@@ -17,7 +17,7 @@
 import * as Promise from 'bluebird';
 import { Session } from 'flowdock';
 import * as _ from 'lodash';
-import { FlowdockConnectionDetails, FlowdockMessage } from '../../services/flowdock-types';
+import { FlowdockConnectionDetails, FlowdockMessage } from '../../flowdock-types';
 import { DataHub } from './datahub';
 
 export class FlowdockDataHub implements DataHub {

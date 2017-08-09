@@ -20,7 +20,7 @@ import { MessengerService } from '../services/messenger';
 import {
 	FlowDefinition, MessageEvent, MessageListenerMethod, TransmitContext,
 } from '../services/messenger-types';
-import { createDataHub } from '../utils/datahubs/datahub';
+import { createDataHub } from '../services/messenger/datahubs/datahub';
 
 // TODO: Implement this whole thing
 export class SyncBot extends ProcBot {

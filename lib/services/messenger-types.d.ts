@@ -15,7 +15,7 @@
  */
 
 import * as Promise from 'bluebird';
-import { DataHub } from '../utils/datahubs/datahub';
+import { DataHub } from './messenger/datahubs/datahub';
 import {
 	ServiceEmitContext,
 	ServiceEmitResponse, ServiceRegistration,
