@@ -61,7 +61,7 @@ export class FlowdockTranslator implements Translator.Translator {
 				genesis: metadata.genesis || event.source,
 				hidden: metadata.hidden,
 				text: titleAndText ? titleAndText[2] : metadata.content,
-				title: titleAndText ? titleAndText[1] : metadata.content,
+				title: titleAndText ? titleAndText[1] : undefined,
 			},
 			source: {
 				service: event.source,
