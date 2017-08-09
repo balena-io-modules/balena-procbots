@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const Promise = require("bluebird");
 const procbot_1 = require("../framework/procbot");
 const messenger_1 = require("../services/messenger");
-const datahub_1 = require("../utils/datahubs/datahub");
+const datahub_1 = require("../services/messenger/datahubs/datahub");
 class SyncBot extends procbot_1.ProcBot {
     static getEquivalentUsername(from, to, username) {
         const lookupString = process.env.SYNCBOT_ACCOUNTS_WITH_DIFFERING_USERNAMES || '[]';

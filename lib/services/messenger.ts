@@ -18,8 +18,8 @@ import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import * as path from 'path';
 
-import * as Translator from './messenger/translators/translator';
 import { MessengerConnectionDetails, MessengerConstructionDetails, TransmitContext } from './messenger-types';
+import * as Translator from './messenger/translators/translator';
 import {
 	ServiceEmitContext,
 	ServiceEmitResponse,

@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>&quot;utils/translators/flowdock&quot; | Resin ProcBots</title>
+	<title>&quot;services/messenger/datahubs/datahub&quot; | Resin ProcBots</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -54,10 +54,10 @@
 					<a href="../globals.html">Globals</a>
 				</li>
 				<li>
-					<a href="_utils_translators_flowdock_.html">&quot;utils/translators/flowdock&quot;</a>
+					<a href="_services_messenger_datahubs_datahub_.html">&quot;services/messenger/datahubs/datahub&quot;</a>
 				</li>
 			</ul>
-			<h1>External module &quot;utils/translators/flowdock&quot;</h1>
+			<h1>External module &quot;services/messenger/datahubs/datahub&quot;</h1>
 		</div>
 	</div>
 </header>
@@ -69,15 +69,15 @@
 				<section class="tsd-panel tsd-index-panel">
 					<div class="tsd-index-content">
 						<section class="tsd-index-section ">
-							<h3>Classes</h3>
+							<h3>Interfaces</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-class tsd-parent-kind-external-module"><a href="../classes/_utils_translators_flowdock_.flowdocktranslator.html" class="tsd-kind-icon">Flowdock<wbr>Translator</a></li>
+								<li class="tsd-kind-interface tsd-parent-kind-external-module"><a href="../interfaces/_services_messenger_datahubs_datahub_.datahub.html" class="tsd-kind-icon">Data<wbr>Hub</a></li>
 							</ul>
 						</section>
 						<section class="tsd-index-section ">
 							<h3>Functions</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_utils_translators_flowdock_.html#createtranslator" class="tsd-kind-icon">create<wbr>Translator</a></li>
+								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_services_messenger_datahubs_datahub_.html#createdatahub" class="tsd-kind-icon">create<wbr>Data<wbr>Hub</a></li>
 							</ul>
 						</section>
 					</div>
@@ -86,28 +86,40 @@
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Functions</h2>
 				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-external-module">
-					<a name="createtranslator" class="tsd-anchor"></a>
-					<h3>create<wbr>Translator</h3>
+					<a name="createdatahub" class="tsd-anchor"></a>
+					<h3>create<wbr>Data<wbr>Hub</h3>
 					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-external-module">
-						<li class="tsd-signature tsd-kind-icon">create<wbr>Translator<span class="tsd-signature-symbol">(</span>data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">FlowdockConnectionDetails</span>, hub<span class="tsd-signature-symbol">: </span><a href="../interfaces/_utils_datahubs_datahub_.datahub.html" class="tsd-signature-type">DataHub</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../interfaces/_utils_translators_translator_.translator.html" class="tsd-signature-type">Translator</a></li>
+						<li class="tsd-signature tsd-kind-icon">create<wbr>Data<wbr>Hub<span class="tsd-signature-symbol">(</span>name<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span>, data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="../interfaces/_services_messenger_datahubs_datahub_.datahub.html" class="tsd-signature-type">DataHub</a></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/utils/translators/flowdock.ts#L192">utils/translators/flowdock.ts:192</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/messenger/datahubs/datahub.ts#L36">services/messenger/datahubs/datahub.ts:36</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Retrieves and loads a DataHub by name.</p>
+								</div>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>data: <span class="tsd-signature-type">FlowdockConnectionDetails</span></h5>
+									<h5>name: <span class="tsd-signature-type">string</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The name of the DataHub to load.</p>
+									</div>
 								</li>
 								<li>
-									<h5>hub: <a href="../interfaces/_utils_datahubs_datahub_.datahub.html" class="tsd-signature-type">DataHub</a></h5>
+									<h5>data: <span class="tsd-signature-type">any</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The constructor object for the createDataHub method.</p>
+									</div>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <a href="../interfaces/_utils_translators_translator_.translator.html" class="tsd-signature-type">Translator</a></h4>
+							<h4 class="tsd-returns-title">Returns <a href="../interfaces/_services_messenger_datahubs_datahub_.datahub.html" class="tsd-signature-type">DataHub</a></h4>
+							<p>The newly instantiated DataHub.</p>
 						</li>
 					</ul>
 				</section>
@@ -155,14 +167,26 @@
 					<li class=" tsd-kind-external-module">
 						<a href="_services_messenger_.html">"services/messenger"</a>
 					</li>
+					<li class="current tsd-kind-external-module">
+						<a href="_services_messenger_datahubs_datahub_.html">"services/messenger/datahubs/datahub"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="_services_messenger_datahubs_flowdock_.html">"services/messenger/datahubs/flowdock"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="_services_messenger_translators_discourse_.html">"services/messenger/translators/discourse"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="_services_messenger_translators_flowdock_.html">"services/messenger/translators/flowdock"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="_services_messenger_translators_front_.html">"services/messenger/translators/front"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="_services_messenger_translators_translator_.html">"services/messenger/translators/translator"</a>
+					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="_services_service_utilities_.html">"services/service-<wbr>utilities"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_utils_datahubs_datahub_.html">"utils/datahubs/datahub"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_utils_datahubs_flowdock_.html">"utils/datahubs/flowdock"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="_utils_environment_.html">"utils/environment"</a>
@@ -170,27 +194,15 @@
 					<li class=" tsd-kind-external-module">
 						<a href="_utils_logger_.html">"utils/logger"</a>
 					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_utils_translators_discourse_.html">"utils/translators/discourse"</a>
-					</li>
-					<li class="current tsd-kind-external-module">
-						<a href="_utils_translators_flowdock_.html">"utils/translators/flowdock"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_utils_translators_front_.html">"utils/translators/front"</a>
-					</li>
-					<li class=" tsd-kind-external-module">
-						<a href="_utils_translators_translator_.html">"utils/translators/translator"</a>
-					</li>
 				</ul>
 			</nav>
 			<nav class="tsd-navigation secondary menu-sticky">
 				<ul class="before-current">
-					<li class=" tsd-kind-class tsd-parent-kind-external-module">
-						<a href="../classes/_utils_translators_flowdock_.flowdocktranslator.html" class="tsd-kind-icon">Flowdock<wbr>Translator</a>
+					<li class=" tsd-kind-interface tsd-parent-kind-external-module">
+						<a href="../interfaces/_services_messenger_datahubs_datahub_.datahub.html" class="tsd-kind-icon">Data<wbr>Hub</a>
 					</li>
 					<li class=" tsd-kind-function tsd-parent-kind-external-module">
-						<a href="_utils_translators_flowdock_.html#createtranslator" class="tsd-kind-icon">create<wbr>Translator</a>
+						<a href="_services_messenger_datahubs_datahub_.html#createdatahub" class="tsd-kind-icon">create<wbr>Data<wbr>Hub</a>
 					</li>
 				</ul>
 			</nav>

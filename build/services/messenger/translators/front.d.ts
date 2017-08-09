@@ -1,6 +1,6 @@
 import * as Promise from 'bluebird';
-import { FrontConnectionDetails, FrontEmitContext, FrontEvent } from '../../services/front-types';
-import { MessageContext, MessageEvent, TransmitContext } from '../../services/messenger-types';
+import { FrontConnectionDetails, FrontEmitContext, FrontEvent } from '../../front-types';
+import { MessageContext, MessageEvent, TransmitContext } from '../../messenger-types';
 import { DataHub } from '../datahubs/datahub';
 import * as Translator from './translator';
 export declare class FrontTranslator implements Translator.Translator {

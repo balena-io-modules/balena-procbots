@@ -1,6 +1,6 @@
 import * as Promise from 'bluebird';
-import { InterimContext, MessageContext, MessageEvent, MessageIds, Metadata, TransmitContext } from '../../services/messenger-types';
-import { ServiceEmitContext, ServiceEvent } from '../../services/service-types';
+import { InterimContext, MessageContext, MessageEvent, MessageIds, Metadata, TransmitContext } from '../../messenger-types';
+import { ServiceEmitContext, ServiceEvent } from '../../service-types';
 import { DataHub } from '../datahubs/datahub';
 export interface PublicityIndicator {
     emoji: string;

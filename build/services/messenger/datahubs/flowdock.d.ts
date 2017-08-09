@@ -1,5 +1,5 @@
 import * as Promise from 'bluebird';
-import { FlowdockConnectionDetails } from '../../services/flowdock-types';
+import { FlowdockConnectionDetails } from '../../flowdock-types';
 import { DataHub } from './datahub';
 export declare class FlowdockDataHub implements DataHub {
     private session;

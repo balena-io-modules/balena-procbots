@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const Promise = require("bluebird");
 const _ = require("lodash");
 const path = require("path");
-const Translator = require("../utils/translators/translator");
+const Translator = require("./messenger/translators/translator");
 const service_utilities_1 = require("./service-utilities");
 class MessengerService extends service_utilities_1.ServiceUtilities {
     constructor(data, listen) {
