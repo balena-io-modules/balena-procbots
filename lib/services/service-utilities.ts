@@ -102,6 +102,7 @@ export abstract class ServiceUtilities<T> extends WorkerClient<T> implements Ser
 				});
 			} else {
 				return Promise.resolve({
+					// TODO: TypedError should be treated as abstract. Do not directly invoke.
 					err: new TypedError(`No ${this.serviceName} context`),
 					source: this.serviceName,
 				});
