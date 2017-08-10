@@ -50,6 +50,7 @@ export class DiscourseTranslator implements Translator.Translator {
 	 * @param event  Data in the form raw to the service.
 	 */
 	public eventIntoMessage(event: DiscourseEvent): Promise<MessageEvent> {
+		// TODO: Is this method calling the minimum quantity of API call possible?
 		// Encode once the common parts of a request
 		const getGeneric = {
 			json: true,
@@ -103,6 +104,14 @@ export class DiscourseTranslator implements Translator.Translator {
 				source: 'messenger',
 			};
 		});
+	}
+
+	public eventIntoMessageEventName(event: DiscourseEvent): string {
+		const equivalents: {[key: string]: string} = {
+			// TODO: Structure this properly
+			post: 'message',
+		};
+		return equivalents[event.event];
 	}
 
 	public messageIntoMethodPath(_message: TransmitContext): Promise<string[]> {

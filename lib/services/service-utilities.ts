@@ -14,6 +14,7 @@
  limitations under the License.
  */
 
+import * as _ from 'lodash';
 import TypedError = require('typed-error');
 import * as Promise from 'bluebird';
 import * as bodyParser from 'body-parser';
@@ -54,7 +55,7 @@ export abstract class ServiceUtilities<T> extends WorkerClient<T> implements Ser
 	private _logger = new Logger();
 
 	/** Store a list of actions to perform when particular actions happen */
-	private eventListeners: { [event: string]: ServiceRegistration[] } = {};
+	private _eventListeners: { [event: string]: ServiceRegistration[] } = {};
 
 	/**
 	 * Store an event of interest, so that the method gets triggered appropriately.
@@ -63,10 +64,10 @@ export abstract class ServiceUtilities<T> extends WorkerClient<T> implements Ser
 	public registerEvent(registration: ServiceRegistration): void {
 		// Store each event registration in an object of arrays.
 		for (const event of registration.events) {
-			if (!this.eventListeners[event]) {
-				this.eventListeners[event] = [];
+			if (!this._eventListeners[event]) {
+				this._eventListeners[event] = [];
 			}
-			this.eventListeners[event].push(registration);
+			this._eventListeners[event].push(registration);
 		}
 	}
 
@@ -172,6 +173,10 @@ export abstract class ServiceUtilities<T> extends WorkerClient<T> implements Ser
 		return this._logger;
 	}
 
+	protected get eventsRegistered(): string[] {
+		return _.keys(this._eventListeners);
+	}
+
 	/**
 	 * Pass an event to registered listenerMethods.
 	 * @param data  Enqueued data from the listener.
@@ -179,7 +184,7 @@ export abstract class ServiceUtilities<T> extends WorkerClient<T> implements Ser
 	 */
 	protected handleEvent = (data: UtilityServiceEvent): Promise<void> => {
 		// Retrieve and execute all the listener methods, squashing their responses
-		const listeners = this.eventListeners[data.event] || [];
+		const listeners = this._eventListeners[data.event] || [];
 		return Promise.map(listeners, (listener) => {
 			return listener.listenerMethod(listener, data);
 		}).return();

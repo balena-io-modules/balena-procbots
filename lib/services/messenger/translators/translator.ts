@@ -46,6 +46,8 @@ export interface Translator {
 	 */
 	eventIntoMessage(event: ServiceEvent): Promise<MessageEvent>;
 
+	eventIntoMessageEventName(event: ServiceEvent): string;
+
 	/**
 	 * Translate the provided message context into an emit context that will create the message.
 	 * @param message  Standard form of the message.

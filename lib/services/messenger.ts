@@ -32,29 +32,25 @@ import { ServiceUtilities } from './service-utilities';
 export class MessengerService extends ServiceUtilities<string> implements ServiceListener, ServiceEmitter {
 	private static _serviceName = path.basename(__filename.split('.')[0]);
 	private translators: { [service: string]: Translator.Translator };
-	private connectionDetails: MessengerConnectionDetails;
 
 	constructor(data: MessengerConstructionDetails, listen: boolean) {
 		super();
-		this.connectionDetails = data.subServices;
 		this.translators = {};
 		_.forEach(data.subServices, (subConnectionDetails, serviceName) => {
 			this.logger.log(LogLevel.INFO, `---> Constructing '${serviceName}' translator.`);
 			this.translators[serviceName] = Translator.createTranslator(serviceName, subConnectionDetails, data.dataHub);
 		});
 		if (listen) {
-			this.startListening();
+			this.startListening(data.subServices);
 		}
 	}
 
 	protected emitData(data: TransmitContext): Promise<ServiceEmitResponse> {
 		return Promise.props({
 			connection: this.translators[data.target.service].messageIntoConnectionDetails(data),
-			// TODO: Consider combining these two translations, since we probably will never need them separately
 			method: this.translators[data.target.service].messageIntoMethodPath(data),
 			payload: this.translators[data.target.service].messageIntoEmitCreateMessage(data),
 		}).then((details: { connection: object, payload: ServiceEmitContext, method: string[] } ) => {
-			// TODO: This require should go through a method that typeguards
 			const emitter = require(`./${data.target.service}`).createServiceEmitter(details.connection);
 			const sdk = emitter.apiHandle[data.target.service];
 			let method = sdk;
@@ -72,23 +68,22 @@ export class MessengerService extends ServiceUtilities<string> implements Servic
 		return true;
 	}
 
-	private startListening(): void {
-		_.forEach(this.connectionDetails, (subConnectionDetails, subServiceName) => {
+	private startListening(connectionDetails: MessengerConnectionDetails): void {
+		_.forEach(connectionDetails, (subConnectionDetails, subServiceName) => {
 			this.logger.log(LogLevel.INFO, `---> Constructing '${subServiceName}' listener.`);
 			const subListener = require(`./${subServiceName}`).createServiceListener(subConnectionDetails);
 			subListener.registerEvent({
-				// TODO: This is potentially noisy.  It is translating every event it can, including ones it might ...
-				// ... not care about.  Which isn't so bad, except some translations require API calls.
-				// Possibly a two stage translate (quick translate and full translate)???
 				events: this.translators[subServiceName].getAllTriggers(),
 				listenerMethod: (_registration: ServiceRegistration, event: ServiceEvent) => {
-					this.translators[subServiceName].eventIntoMessage(event)
-					.then((message) => {
-						this.logger.log(
-							LogLevel.INFO, `Heard '${message.cookedEvent.details.text}' on ${message.cookedEvent.source.service}.`
-						);
-						this.queueData(message);
-					});
+					if (_.includes(this.eventsRegistered, this.translators[subServiceName].eventIntoMessageEventName(event))) {
+						this.translators[subServiceName].eventIntoMessage(event)
+						.then((message) => {
+							this.logger.log(
+								LogLevel.INFO, `Heard '${message.cookedEvent.details.text}' on ${message.cookedEvent.source.service}.`
+							);
+							this.queueData(message);
+						});
+					}
 				},
 				name: `${subServiceName}=>${this.serviceName}`,
 			});
@@ -127,20 +122,3 @@ export function createServiceListener(data: MessengerConstructionDetails): Servi
 export function createServiceEmitter(data: MessengerConstructionDetails): ServiceEmitter {
 	return new MessengerService(data, false);
 }
-
-// Orphaned
-// emitData
-// const valueFetcher = _.partial(this.hub.fetchValue, data.toIds.user);
-// const genericValues = this.connectionDetails[data.to];
-// const translator = this.translators[data.to];
-// return Promise.props({
-// 	data: translator.messageIntoEmitCreateMessage(data),
-// 	emitter: translator.makeEmitter(valueFetcher, genericValues),
-// })
-// .then((details: {emitter: ServiceEmitter, data: ServiceEmitContext}) => {
-// 	// TODO: Source???
-// 	return details.emitter.sendData({
-// 		contexts: {[data.to]: details.data},
-// 		source: 'messenger',
-// 	});
-// });

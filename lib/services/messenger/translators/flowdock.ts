@@ -51,6 +51,7 @@ export class FlowdockTranslator implements Translator.Translator {
 	 * @param event  Data in the form raw to the service.
 	 */
 	public eventIntoMessage(event: FlowdockEvent): Promise<MessageEvent> {
+		// TODO: Is this method calling the minimum quantity of API call possible?
 		// Separate out some parts of the message
 		const metadata = Translator.extractMetadata(event.rawEvent.content, 'emoji');
 		const titleAndText = metadata.content.match(/^(.*)\n--\n((?:\r|\n|.)*)$/);
@@ -100,6 +101,14 @@ export class FlowdockTranslator implements Translator.Translator {
 				source: 'messenger',
 			});
 		});
+	}
+
+	public eventIntoMessageEventName(event: FlowdockEvent): string {
+		const equivalents: {[key: string]: string} = {
+			// TODO: Structure this properly
+			message: 'message',
+		};
+		return equivalents[event.event];
 	}
 
 	/**

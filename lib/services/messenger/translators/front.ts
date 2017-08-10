@@ -52,6 +52,7 @@ export class FrontTranslator implements Translator.Translator {
 	 * @param event  Data in the form raw to the service.
 	 */
 	public eventIntoMessage(event: FrontEvent): Promise<MessageEvent> {
+		// TODO: Is this method calling the minimum quantity of API call possible?
 		// Calculate common request details once
 		const getGeneric = {
 			headers: {
@@ -123,6 +124,14 @@ export class FrontTranslator implements Translator.Translator {
 				source: 'messenger',
 			};
 		});
+	}
+
+	public eventIntoMessageEventName(event: FrontEvent): string {
+		const equivalents: {[key: string]: string} = {
+			// TODO: Structure this properly
+			out_reply: 'message',
+		};
+		return equivalents[event.event];
 	}
 
 	public messageIntoMethodPath(_message: TransmitContext): Promise<string[]> {
