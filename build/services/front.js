@@ -12,12 +12,7 @@ class FrontService extends service_utilities_1.ServiceUtilities {
         }
     }
     emitData(context) {
-        const sessionEndpoints = {
-            comment: this.session.comment,
-            message: this.session.message,
-            topic: this.session.topic,
-        };
-        return sessionEndpoints[context.objectType][context.action](context.payload);
+        return context.method(context.data);
     }
     verify(_data) {
         return true;

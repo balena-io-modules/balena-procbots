@@ -14,7 +14,11 @@
  limitations under the License.
  */
 
-import { ServiceEmitContext } from './service-types';
+import * as Promise from 'bluebird';
+import { UrlOptions } from 'request';
+import { RequestPromiseOptions } from 'request-promise';
+import { DiscourseService } from './discourse';
+import { ServiceAPIHandle, ServiceEmitContext } from './service-types';
 import { UtilityServiceEvent } from './service-utilities-types';
 
 export interface DiscourseBasePayload {
@@ -37,10 +41,16 @@ export type DiscoursePayload = DiscoursePostPayload | DiscourseTopicPayload;
 export type DiscourseResponse = any;
 
 export interface DiscourseEmitContext extends ServiceEmitContext {
-	json: boolean;
+	data: DiscourseEmitData;
+	method: DiscourseEmitMethod;
+}
+
+export type DiscourseEmitMethod = (requestOptions: UrlOptions & RequestPromiseOptions) => Promise<DiscourseResponse>;
+
+export interface DiscourseEmitData {
 	method: string;
 	path: string;
-	payload?: DiscoursePayload;
+	body?: DiscoursePayload;
 	qs?: { [key: string]: string };
 }
 
@@ -48,6 +58,10 @@ export interface DiscourseConnectionDetails {
 	token: string;
 	username: string;
 	instance: string;
+}
+
+export interface DiscourseHandle extends ServiceAPIHandle {
+	discourse: DiscourseService;
 }
 
 export interface DiscourseEvent extends UtilityServiceEvent {

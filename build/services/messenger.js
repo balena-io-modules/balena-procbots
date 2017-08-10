@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const Promise = require("bluebird");
 const _ = require("lodash");
 const path = require("path");
+const logger_1 = require("../utils/logger");
 const Translator = require("./messenger/translators/translator");
 const service_utilities_1 = require("./service-utilities");
 class MessengerService extends service_utilities_1.ServiceUtilities {
@@ -11,6 +12,7 @@ class MessengerService extends service_utilities_1.ServiceUtilities {
         this.connectionDetails = data.subServices;
         this.translators = {};
         _.forEach(data.subServices, (subConnectionDetails, serviceName) => {
+            this.logger.log(logger_1.LogLevel.INFO, `---> Constructing '${serviceName}' translator.`);
             this.translators[serviceName] = Translator.createTranslator(serviceName, subConnectionDetails, data.dataHub);
         });
         if (listen) {
@@ -19,11 +21,17 @@ class MessengerService extends service_utilities_1.ServiceUtilities {
     }
     emitData(data) {
         return Promise.props({
-            connectionDetails: this.translators[data.target.service].messageIntoConnectionDetails(data),
-            emitContext: this.translators[data.target.service].messageIntoEmitCreateMessage(data),
+            connection: this.translators[data.target.service].messageIntoConnectionDetails(data),
+            method: this.translators[data.target.service].messageIntoMethodPath(data),
+            payload: this.translators[data.target.service].messageIntoEmitCreateMessage(data),
         }).then((details) => {
-            const emitter = require(`./${data.target.service}`).createServiceEmitter(details.connectionDetails);
-            return emitter.sendData({ contexts: { discourse: details.emitContext } });
+            const emitter = require(`./${data.target.service}`).createServiceEmitter(details.connection);
+            const sdk = emitter.apiHandle[data.target.service];
+            let method = sdk;
+            _.forEach(details.method, (nodeName) => {
+                method = method[nodeName];
+            });
+            return emitter.sendData({ contexts: { discourse: { method: method.bind(sdk), data: details.payload } } });
         });
     }
     verify() {
@@ -31,11 +39,16 @@ class MessengerService extends service_utilities_1.ServiceUtilities {
     }
     startListening() {
         _.forEach(this.connectionDetails, (subConnectionDetails, subServiceName) => {
+            this.logger.log(logger_1.LogLevel.INFO, `---> Constructing '${subServiceName}' listener.`);
             const subListener = require(`./${subServiceName}`).createServiceListener(subConnectionDetails);
             subListener.registerEvent({
                 events: this.translators[subServiceName].getAllTriggers(),
                 listenerMethod: (_registration, event) => {
-                    this.translators[subServiceName].eventIntoMessage(event).then(this.queueData);
+                    this.translators[subServiceName].eventIntoMessage(event)
+                        .then((message) => {
+                        this.logger.log(logger_1.LogLevel.INFO, `Heard '${message.cookedEvent.details.text}' on '${message.cookedEvent.source.service}'`);
+                        this.queueData(message);
+                    });
                 },
                 name: `${subServiceName}=>${this.serviceName}`,
             });

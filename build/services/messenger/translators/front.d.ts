@@ -11,6 +11,7 @@ export declare class FrontTranslator implements Translator.Translator {
     constructor(data: FrontConnectionDetails, hub: DataHub);
     messageIntoConnectionDetails(_message: TransmitContext): Promise<FrontConnectionDetails>;
     eventIntoMessage(event: FrontEvent): Promise<MessageEvent>;
+    messageIntoMethodPath(_message: TransmitContext): Promise<string[]>;
     messageIntoEmitCreateMessage(message: TransmitContext): Promise<FrontEmitContext>;
     messageIntoEmitReadThread(message: MessageContext, _shortlist?: RegExp): Promise<FrontEmitContext>;
     eventNameIntoTriggers(name: string): string[];

@@ -29,6 +29,9 @@ class FlowdockTranslator {
             };
         });
     }
+    messageIntoMethodPath(_message) {
+        return Promise.resolve(['_request']);
+    }
     eventIntoMessage(event) {
         const metadata = Translator.extractMetadata(event.rawEvent.content, 'emoji');
         const titleAndText = metadata.content.match(/^(.*)\n--\n((?:\r|\n|.)*)$/);
@@ -41,7 +44,7 @@ class FlowdockTranslator {
                 genesis: metadata.genesis || event.source,
                 hidden: metadata.hidden,
                 text: titleAndText ? titleAndText[2] : metadata.content,
-                title: titleAndText ? titleAndText[1] : metadata.content,
+                title: titleAndText ? titleAndText[1] : undefined,
             },
             source: {
                 service: event.source,
@@ -76,16 +79,14 @@ class FlowdockTranslator {
     }
     messageIntoEmitCreateMessage(message) {
         const titleText = message.details.title ? message.details.title + '\n--\n' : '';
-        return new Promise((resolve) => {
-            resolve({
-                method: 'POST',
-                path: '/flows/${org}/${flow}/messages/',
-                payload: {
-                    content: titleText + message.details.text + '\n' + Translator.stringifyMetadata(message, 'emoji'),
-                    event: 'message',
-                    thread_id: message.target.thread,
-                },
-            });
+        return Promise.resolve({
+            htmlVerb: 'POST',
+            path: '/flows/${org}/${flow}/messages/',
+            payload: {
+                content: titleText + message.details.text + '\n' + Translator.stringifyMetadata(message, 'emoji'),
+                event: 'message',
+                thread_id: message.target.thread,
+            },
         });
     }
     messageIntoEmitReadThread(message, shortlist) {
@@ -93,7 +94,7 @@ class FlowdockTranslator {
         const firstWords = shortlist && shortlist.source.match(/^([\w\s]+)/i);
         if (firstWords) {
             return Promise.resolve({
-                method: 'GET',
+                htmlVerb: 'GET',
                 path: `/flows/${org}/${message.source.flow}/threads/${message.source.thread}/messages`,
                 payload: {
                     search: firstWords[1],
@@ -101,7 +102,7 @@ class FlowdockTranslator {
             });
         }
         return Promise.resolve({
-            method: 'GET',
+            htmlVerb: 'GET',
             path: `/flows/${org}/${message.source.flow}/threads/${message.source.thread}/messages`,
         });
     }

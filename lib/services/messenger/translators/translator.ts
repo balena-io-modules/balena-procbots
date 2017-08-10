@@ -52,6 +52,8 @@ export interface Translator {
 	 */
 	messageIntoEmitCreateMessage(message: TransmitContext): Promise<ServiceEmitContext>;
 
+	messageIntoMethodPath(message: TransmitContext): Promise<string[]>;
+
 	// messageIntoEmitCreateTopic
 
 	// messageIntoEmitUpdateTags

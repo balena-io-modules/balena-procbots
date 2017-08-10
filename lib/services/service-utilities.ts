@@ -56,11 +56,6 @@ export abstract class ServiceUtilities<T> extends WorkerClient<T> implements Ser
 	/** Store a list of actions to perform when particular actions happen */
 	private eventListeners: { [event: string]: ServiceRegistration[] } = {};
 
-	constructor() {
-		super();
-		this.logger.log(LogLevel.INFO, `---> '${this.serviceName}' constructing.`);
-	}
-
 	/**
 	 * Store an event of interest, so that the method gets triggered appropriately.
 	 * @param registration  Registration object with event trigger and other details.
@@ -81,38 +76,26 @@ export abstract class ServiceUtilities<T> extends WorkerClient<T> implements Ser
 	 * @returns     Details of the successful transmission from the service.
 	 */
 	public sendData(data: ServiceEmitRequest): Promise<ServiceEmitResponse> {
-		// TODO: Simplify this
-		try {
-			const context = data.contexts[this.serviceName] as ServiceEmitContext;
-			if (context) {
-				return new Promise<ServiceEmitResponse>((resolve) => {
-					this.emitData(context)
-					.then((response: any) => {
-						resolve({
-							response,
-							source: this.serviceName,
-						});
-					})
-					.catch((err: TypedError) => {
-						resolve({
-							err,
-							source: this.serviceName,
-						});
-					});
-				});
-			} else {
-				return Promise.resolve({
-					// TODO: TypedError should be treated as abstract. Do not directly invoke.
-					err: new TypedError(`No ${this.serviceName} context`),
-					source: this.serviceName,
-				});
-			}
-		} catch(err) {
+		const context = data.contexts[this.serviceName] as ServiceEmitContext;
+		if (!context) {
 			return Promise.resolve({
-				err,
+				// TODO: TypedError should be treated as abstract. Do not directly invoke.
+				err: new TypedError(`No ${this.serviceName} context`),
 				source: this.serviceName,
 			});
 		}
+
+		return this.emitData(context).then((response: any) => {
+			return {
+				response,
+				source: this.serviceName,
+			};
+		}).catch((err: TypedError) => {
+			return {
+				err,
+				source: this.serviceName,
+			};
+		});
 	}
 
 	/**
@@ -135,7 +118,7 @@ export abstract class ServiceUtilities<T> extends WorkerClient<T> implements Ser
 	 * endpoint  Definition of the endpoint to emit to.
 	 * payload   Data to be delivered.
 	 */
-	protected abstract emitData(data: ServiceEmitContext): any;
+	protected abstract emitData(data: ServiceEmitContext): Promise<any>;
 
 	/**
 	 * Verify the event before enqueueing.  A naive approach could be to simply return true, but that must be explicit.

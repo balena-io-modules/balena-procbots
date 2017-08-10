@@ -41,14 +41,17 @@ export class FlowdockService extends ServiceUtilities<string> implements Service
 	protected emitData(context: FlowdockEmitContext): Promise<FlowdockResponse> {
 		return new Promise<FlowdockResponse>((resolve, reject) => {
 			this.session.on('error', reject);
-			this.session._request(context.method, context.path, context.payload, (error, response) => {
-				this.session.removeListener('error', reject);
-				if (error) {
-					reject(error);
-				} else {
-					resolve(response);
+			context.method(
+				context.data.htmlVerb, context.data.path, context.data.payload,
+				(error: Error, response: FlowdockResponse) => {
+					this.session.removeListener('error', reject);
+					if (error) {
+						reject(error);
+					} else {
+						resolve(response);
+					}
 				}
-			});
+			);
 		});
 	}
 

@@ -16,7 +16,7 @@ limitations under the License.
 
 import * as Promise from 'bluebird';
 import { Session } from 'flowdock';
-import { FlowdockConnectionDetails, FlowdockEmitContext, FlowdockEvent } from '../../flowdock-types';
+import { FlowdockConnectionDetails, FlowdockEmitData, FlowdockEvent } from '../../flowdock-types';
 import { MessageContext, MessageEvent, TransmitContext } from '../../messenger-types';
 import { DataHub } from '../datahubs/datahub';
 import * as Translator from './translator';
@@ -40,6 +40,10 @@ export class FlowdockTranslator implements Translator.Translator {
 				token,
 			};
 		});
+	}
+
+	public messageIntoMethodPath(_message: TransmitContext): Promise<string[]> {
+		return Promise.resolve(['_request']);
 	}
 
 	/**
@@ -102,26 +106,23 @@ export class FlowdockTranslator implements Translator.Translator {
 	 * Translate the provided message context into an emit context.
 	 * @param message  Standard form of the message.
 	 */
-	public messageIntoEmitCreateMessage(message: TransmitContext): Promise<FlowdockEmitContext> {
+	public messageIntoEmitCreateMessage(message: TransmitContext): Promise<FlowdockEmitData> {
 		// Build a string for the title, if appropriate.
 		// TODO: Replace the reliance on the first boolean
 		const titleText = /* message.details.first && */ message.details.title ? message.details.title + '\n--\n' : '';
-		return new Promise<FlowdockEmitContext>((resolve) => {
-			// TODO: Remember that this used to have a pass-through and probably recycle that idea in messenger.ts
-			resolve({
-				method: 'POST',
-				path: '/flows/${org}/${flow}/messages/',
-				payload: {
-					// The concatenated string, of various data nuggets, to emit
-					content: titleText + message.details.text + '\n' + Translator.stringifyMetadata(message, 'emoji'),
-					event: 'message',
-					// TODO: Something with this?!?!
-					// external_user_name:
-					// If this is using the generic token, then they must be an external user, so indicate this
-					// 	message.toIds.token === this.data.token ? message.toIds.user.substring(0, 16) : undefined,
-					thread_id: message.target.thread,
-				},
-			});
+		return Promise.resolve({
+			htmlVerb: 'POST',
+			path: '/flows/${org}/${flow}/messages/',
+			payload: {
+				// The concatenated string, of various data nuggets, to emit
+				content: titleText + message.details.text + '\n' + Translator.stringifyMetadata(message, 'emoji'),
+				event: 'message',
+				// TODO: Something with this?!?!
+				// external_user_name:
+				// If this is using the generic token, then they must be an external user, so indicate this
+				// 	message.toIds.token === this.data.token ? message.toIds.user.substring(0, 16) : undefined,
+				thread_id: message.target.thread,
+			},
 		});
 	}
 
@@ -131,13 +132,13 @@ export class FlowdockTranslator implements Translator.Translator {
 	 * @param shortlist  *DO NOT RELY ON THIS BEING USED.*  Purely optional optimisation.
 	 *                   If the endpoint supports it then it may use this to shortlist the responses.
 	 */
-	public messageIntoEmitReadThread(message: MessageContext, shortlist?: RegExp): Promise<FlowdockEmitContext> {
+	public messageIntoEmitReadThread(message: MessageContext, shortlist?: RegExp): Promise<FlowdockEmitData> {
 		// Query the API
 		const org = this.organization;
 		const firstWords = shortlist && shortlist.source.match(/^([\w\s]+)/i);
 		if (firstWords) {
 			return Promise.resolve({
-				method: 'GET',
+				htmlVerb: 'GET',
 				path: `/flows/${org}/${message.source.flow}/threads/${message.source.thread}/messages`,
 				payload: {
 					search: firstWords[1],
@@ -145,7 +146,7 @@ export class FlowdockTranslator implements Translator.Translator {
 			});
 		}
 		return Promise.resolve({
-			method: 'GET',
+			htmlVerb: 'GET',
 			path: `/flows/${org}/${message.source.flow}/threads/${message.source.thread}/messages`,
 		});
 	}

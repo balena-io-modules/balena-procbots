@@ -9,7 +9,7 @@ const worker_client_1 = require("../framework/worker-client");
 const logger_1 = require("../utils/logger");
 class ServiceUtilities extends worker_client_1.WorkerClient {
     constructor() {
-        super();
+        super(...arguments);
         this._logger = new logger_1.Logger();
         this.eventListeners = {};
         this.queueData = (data) => {
@@ -39,7 +39,6 @@ class ServiceUtilities extends worker_client_1.WorkerClient {
                 return listener.listenerMethod(listener, data);
             }).return();
         };
-        this.logger.log(logger_1.LogLevel.INFO, `---> '${this.serviceName}' constructing.`);
     }
     registerEvent(registration) {
         for (const event of registration.events) {
@@ -50,38 +49,24 @@ class ServiceUtilities extends worker_client_1.WorkerClient {
         }
     }
     sendData(data) {
-        try {
-            const context = data.contexts[this.serviceName];
-            if (context) {
-                return new Promise((resolve) => {
-                    this.emitData(context)
-                        .then((response) => {
-                        resolve({
-                            response,
-                            source: this.serviceName,
-                        });
-                    })
-                        .catch((err) => {
-                        resolve({
-                            err,
-                            source: this.serviceName,
-                        });
-                    });
-                });
-            }
-            else {
-                return Promise.resolve({
-                    err: new TypedError(`No ${this.serviceName} context`),
-                    source: this.serviceName,
-                });
-            }
-        }
-        catch (err) {
+        const context = data.contexts[this.serviceName];
+        if (!context) {
             return Promise.resolve({
-                err,
+                err: new TypedError(`No ${this.serviceName} context`),
                 source: this.serviceName,
             });
         }
+        return this.emitData(context).then((response) => {
+            return {
+                response,
+                source: this.serviceName,
+            };
+        }).catch((err) => {
+            return {
+                err,
+                source: this.serviceName,
+            };
+        });
     }
     get expressApp() {
         if (!ServiceUtilities._expressApp) {

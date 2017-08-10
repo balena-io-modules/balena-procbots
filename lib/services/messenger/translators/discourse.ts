@@ -17,7 +17,10 @@
 import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import * as request from 'request-promise';
-import { DiscourseConnectionDetails, DiscourseEmitContext, DiscourseEvent } from '../../discourse-types';
+import {
+	DiscourseConnectionDetails, DiscourseEmitData,
+	DiscourseEvent
+} from '../../discourse-types';
 import { MessageContext, MessageEvent, TransmitContext } from '../../messenger-types';
 import { DataHub } from '../datahubs/datahub';
 import * as Translator from './translator';
@@ -102,11 +105,15 @@ export class DiscourseTranslator implements Translator.Translator {
 		});
 	}
 
+	public messageIntoMethodPath(_message: TransmitContext): Promise<string[]> {
+		return Promise.resolve(['request']);
+	}
+
 	/**
 	 * Translate the provided message context into an emit context.
 	 * @param message  Standard form of the message.
 	 */
-	public messageIntoEmitCreateMessage(message: TransmitContext): Promise<DiscourseEmitContext> {
+	public messageIntoEmitCreateMessage(message: TransmitContext): Promise<DiscourseEmitData> {
 		// Attempt to find the thread ID to know if this is a new topic or not
 		const topicId = message.target.thread;
 		if (!topicId) {
@@ -116,10 +123,9 @@ export class DiscourseTranslator implements Translator.Translator {
 			}
 			// A new topic request for discourse
 			return Promise.resolve({
-				json: true,
 				method: 'POST',
 				path: '/posts',
-				payload: {
+				body: {
 					category: message.target.flow,
 					raw: `${message.details.text}\n\n---\n${Translator.stringifyMetadata(message, 'img')}`,
 					title,
@@ -146,7 +152,7 @@ export class DiscourseTranslator implements Translator.Translator {
 	 * @param shortlist  *DO NOT RELY ON THIS BEING USED.*  Purely optional optimisation.
 	 *                   If the endpoint supports it then it may use this to shortlist the responses.
 	 */
-	public messageIntoEmitReadThread(message: MessageContext, shortlist?: RegExp): Promise<DiscourseEmitContext> {
+	public messageIntoEmitReadThread(message: MessageContext, shortlist?: RegExp): Promise<DiscourseEmitData> {
 		const firstWords = shortlist && shortlist.source.match(/^([\w\s]+)/i);
 		if (firstWords) {
 			return Promise.resolve({

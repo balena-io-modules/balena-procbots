@@ -14,25 +14,28 @@ class DiscourseService extends service_utilities_1.ServiceUtilities {
             this.startListening();
         }
     }
-    emitData(context) {
+    request(requestOptions) {
         return new Promise((resolve) => {
-            const qs = {
-                api_key: this.connectionDetails.token,
-                api_username: this.connectionDetails.username,
-            };
-            _.merge(qs, context.qs);
-            const requestOptions = {
-                body: context.payload,
-                json: true,
-                qs,
-                url: `https://${this.connectionDetails.instance}/${context.path}`,
-                method: context.method,
-            };
             request(requestOptions)
                 .then((result) => {
                 resolve(result);
             });
         });
+    }
+    emitData(context) {
+        const qs = {
+            api_key: this.connectionDetails.token,
+            api_username: this.connectionDetails.username,
+        };
+        _.merge(qs, context.data.qs);
+        const requestOptions = {
+            body: context.data.body,
+            json: true,
+            qs,
+            url: `https://${this.connectionDetails.instance}/${context.data.path}`,
+            method: context.data.method,
+        };
+        return context.method(requestOptions);
     }
     verify(_data) {
         return true;
@@ -56,7 +59,9 @@ class DiscourseService extends service_utilities_1.ServiceUtilities {
         return DiscourseService._serviceName;
     }
     get apiHandle() {
-        return;
+        return {
+            discourse: this,
+        };
     }
 }
 DiscourseService._serviceName = path.basename(__filename.split('.')[0]);

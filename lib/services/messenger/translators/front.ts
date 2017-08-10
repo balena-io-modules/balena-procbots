@@ -93,6 +93,8 @@ export class FrontTranslator implements Translator.Translator {
 					}
 				}
 			}
+			const userSubstituted = author.replace('_', '-');
+			const user = /^-/.test(userSubstituted) ? `${userSubstituted.replace(/^-/, '')}-` : userSubstituted;
 			// Return the generic form of this event
 			const cookedEvent: MessageContext = {
 				details: {
@@ -109,7 +111,7 @@ export class FrontTranslator implements Translator.Translator {
 					message: message.id,
 					thread: details.event.conversation.id,
 					url: `https://app.frontapp.com/open/${details.event.conversation.id}`,
-					user: author,
+					user,
 				},
 			};
 			return {
@@ -123,11 +125,17 @@ export class FrontTranslator implements Translator.Translator {
 		});
 	}
 
+	public messageIntoMethodPath(_message: TransmitContext): Promise<string[]> {
+		// TODO: This needs to translate
+		return Promise.resolve([ 'comment', 'create' ]);
+	}
+
 	/**
 	 * Translate the provided message context into an emit context.
 	 * @param message  Standard form of the message.
 	 */
 	public messageIntoEmitCreateMessage(message: TransmitContext): Promise<FrontEmitContext> {
+		// TODO: This needs to morph the username out of generic format
 		// Attempt to find the thread ID to know if this is a new conversation or not
 		const conversationId = message.target.thread;
 		if (!conversationId) {

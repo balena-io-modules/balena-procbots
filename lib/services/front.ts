@@ -15,7 +15,7 @@
  */
 
 import * as Promise from 'bluebird';
-import { Front, RequestData } from 'front-sdk';
+import { Front } from 'front-sdk';
 import * as path from 'path';
 
 import {
@@ -44,20 +44,21 @@ export class FrontService extends ServiceUtilities<string> implements ServiceLis
 	 * @param context  Context to be emitted
 	 */
 	protected emitData(context: FrontEmitContext): Promise<FrontResponse> {
-		const sessionEndpoints: {
-			[key: string]: {
-				[key: string]: (payload: RequestData) => Promise<FrontResponse>;
-			}
-		} = {
-			comment: this.session.comment,
+		return context.method(context.data);
+		// const sessionEndpoints: {
+		// 	[key: string]: {
+		// 		[key: string]: (payload: RequestData) => Promise<FrontResponse>;
+		// 	}
+		// } = {
+		// 	comment: this.session.comment,
 			// At the moment .list, specifically optional params, causes a problem.
 			// conversation: this.session.conversation,
 			// At the moment .list, specifically it not taking params, causes a problem.
 			// inbox: this.session.inbox,
-			message: this.session.message,
-			topic: this.session.topic,
-		};
-		return sessionEndpoints[context.objectType][context.action](context.payload);
+		// 	message: this.session.message,
+		// 	topic: this.session.topic,
+		// };
+		// return sessionEndpoints[context.objectType][context.action](context.payload);
 	}
 
 	/**

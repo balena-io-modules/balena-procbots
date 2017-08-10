@@ -4,32 +4,22 @@ const Promise = require("bluebird");
 const procbot_1 = require("../framework/procbot");
 const messenger_1 = require("../services/messenger");
 const datahub_1 = require("../services/messenger/datahubs/datahub");
+const logger_1 = require("../utils/logger");
 class SyncBot extends procbot_1.ProcBot {
-    static getEquivalentUsername(from, to, username) {
-        const lookupString = process.env.SYNCBOT_ACCOUNTS_WITH_DIFFERING_USERNAMES || '[]';
-        const lookups = JSON.parse(lookupString);
-        for (const lookup of lookups) {
-            if (lookup[from] === username && lookup[to]) {
-                return lookup[to];
-            }
-        }
-        return username;
-    }
-    static makeRouter(from, to, emitter) {
+    static makeRouter(from, to, emitter, logger) {
         return (_registration, event) => {
             if (from.service === event.cookedEvent.source.service && from.flow === event.cookedEvent.source.flow) {
-                const hubService = process.env.SYNCBOT_DATAHUB_SERVICE;
                 const transmitMessage = {
                     details: event.cookedEvent.details,
                     hub: {
-                        service: hubService,
-                        user: SyncBot.getEquivalentUsername(from.service, hubService, event.cookedEvent.source.user),
+                        service: process.env.SYNCBOT_DATAHUB_SERVICE,
+                        user: event.cookedEvent.source.user,
                     },
                     source: event.cookedEvent.source,
                     target: {
                         flow: to.flow,
                         service: to.service,
-                        user: SyncBot.getEquivalentUsername(from.service, to.service, event.cookedEvent.source.user),
+                        user: event.cookedEvent.source.user,
                     },
                 };
                 return emitter.sendData({
@@ -37,13 +27,18 @@ class SyncBot extends procbot_1.ProcBot {
                         messenger: transmitMessage,
                     },
                     source: 'messenger',
-                }).then(() => { });
+                }).then(() => {
+                    if (logger) {
+                        logger.log(logger_1.LogLevel.INFO, `---> Emitted '${event.cookedEvent.details.text}' to '${to.service}`);
+                    }
+                });
             }
             return Promise.resolve();
         };
     }
     constructor(name = 'SyncBot') {
         super(name);
+        const logger = new logger_1.Logger();
         const dataHub = datahub_1.createDataHub(process.env.SYNCBOT_DATAHUB_SERVICE, JSON.parse(process.env.SYNCBOT_DATAHUB_CONSTRUCTOR));
         const messenger = new messenger_1.MessengerService({
             dataHub,
@@ -59,12 +54,12 @@ class SyncBot extends procbot_1.ProcBot {
                 if (priorFlow) {
                     messenger.registerEvent({
                         events: ['message'],
-                        listenerMethod: SyncBot.makeRouter(priorFlow, focusFlow, messenger),
+                        listenerMethod: SyncBot.makeRouter(priorFlow, focusFlow, messenger, logger),
                         name: `${priorFlow.service}.${priorFlow.flow}=>${focusFlow.service}.${focusFlow.flow}`,
                     });
                     messenger.registerEvent({
                         events: ['message'],
-                        listenerMethod: SyncBot.makeRouter(focusFlow, priorFlow, messenger),
+                        listenerMethod: SyncBot.makeRouter(focusFlow, priorFlow, messenger, logger),
                         name: `${focusFlow.service}.${focusFlow.flow}=>${priorFlow.service}.${priorFlow.flow}`,
                     });
                 }

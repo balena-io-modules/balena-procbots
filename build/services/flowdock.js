@@ -16,7 +16,7 @@ class FlowdockService extends service_utilities_1.ServiceUtilities {
     emitData(context) {
         return new Promise((resolve, reject) => {
             this.session.on('error', reject);
-            this.session._request(context.method, context.path, context.payload, (error, response) => {
+            context.method(context.data.htmlVerb, context.data.path, context.data.payload, (error, response) => {
                 this.session.removeListener('error', reject);
                 if (error) {
                     reject(error);

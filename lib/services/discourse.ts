@@ -17,9 +17,11 @@
 import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import * as path from 'path';
+import { UrlOptions } from 'request';
 import * as request from 'request-promise';
+import { RequestPromiseOptions } from 'request-promise';
 import {
-	DiscourseConnectionDetails, DiscourseEmitContext, DiscourseEvent,
+	DiscourseConnectionDetails, DiscourseEmitContext, DiscourseEvent, DiscourseHandle,
 	DiscourseResponse
 } from './discourse-types';
 import { ServiceEmitter, ServiceListener } from './service-types';
@@ -40,26 +42,30 @@ export class DiscourseService extends ServiceUtilities<string> implements Servic
 		}
 	}
 
-	protected emitData(context: DiscourseEmitContext): Promise<DiscourseResponse> {
+	public request(requestOptions: UrlOptions & RequestPromiseOptions): Promise<DiscourseResponse> {
+		// This type massages request-promise into bluebird
 		return new Promise((resolve) => {
-			const qs = {
-				api_key: this.connectionDetails.token,
-				api_username: this.connectionDetails.username,
-			};
-			_.merge(qs, context.qs);
-			const requestOptions = {
-				body: context.payload,
-				json: true,
-				qs,
-				url: `https://${this.connectionDetails.instance}/${context.path}`,
-				method: context.method,
-			};
-			// This type massages request-promise into bluebird
 			request(requestOptions)
-			.then((result) => {
-				resolve(result);
-			});
+				.then((result) => {
+					resolve(result);
+				});
 		});
+	}
+
+	protected emitData(context: DiscourseEmitContext): Promise<DiscourseResponse> {
+		const qs = {
+			api_key: this.connectionDetails.token,
+			api_username: this.connectionDetails.username,
+		};
+		_.merge(qs, context.data.qs);
+		const requestOptions = {
+			body: context.data.body,
+			json: true,
+			qs,
+			url: `https://${this.connectionDetails.instance}/${context.data.path}`,
+			method: context.data.method,
+		};
+		return context.method(requestOptions);
 	}
 
 	/**
@@ -100,8 +106,10 @@ export class DiscourseService extends ServiceUtilities<string> implements Servic
 	 * Retrieve Discourse API SDK handle (currently none).
 	 * @returns void (currently no Discourse SDK API handle).
 	 */
-	get apiHandle(): void {
-		return;
+	get apiHandle(): DiscourseHandle {
+		return {
+			discourse: this,
+		};
 	}
 }
 

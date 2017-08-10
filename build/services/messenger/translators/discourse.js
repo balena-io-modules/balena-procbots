@@ -65,6 +65,9 @@ class DiscourseTranslator {
             };
         });
     }
+    messageIntoMethodPath(_message) {
+        return Promise.resolve(['request']);
+    }
     messageIntoEmitCreateMessage(message) {
         const topicId = message.target.thread;
         if (!topicId) {
@@ -73,10 +76,9 @@ class DiscourseTranslator {
                 throw new Error('Cannot create Discourse Thread without a title');
             }
             return Promise.resolve({
-                json: true,
                 method: 'POST',
                 path: '/posts',
-                payload: {
+                body: {
                     category: message.target.flow,
                     raw: `${message.details.text}\n\n---\n${Translator.stringifyMetadata(message, 'img')}`,
                     title,

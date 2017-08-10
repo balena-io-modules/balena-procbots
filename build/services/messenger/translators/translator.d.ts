@@ -10,6 +10,7 @@ export interface PublicityIndicator {
 export interface Translator {
     eventIntoMessage(event: ServiceEvent): Promise<MessageEvent>;
     messageIntoEmitCreateMessage(message: TransmitContext): Promise<ServiceEmitContext>;
+    messageIntoMethodPath(message: TransmitContext): Promise<string[]>;
     messageIntoConnectionDetails(message: TransmitContext): Promise<object>;
     messageIntoEmitReadThread(message: MessageContext, shortlist?: RegExp): Promise<ServiceEmitContext>;
     eventNameIntoTriggers(name: string): string[];

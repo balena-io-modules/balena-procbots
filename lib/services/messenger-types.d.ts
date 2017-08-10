@@ -29,6 +29,7 @@ import { UtilityServiceEvent } from './service-utilities-types';
 // Generic forms of message objects
 export interface MessageIds {
 	service: string;
+	// TODO: Add and use if the user is internal or external
 	user?: string;
 	message?: string;
 	thread?: string;

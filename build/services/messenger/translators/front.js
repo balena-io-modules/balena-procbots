@@ -74,6 +74,8 @@ class FrontTranslator {
                     }
                 }
             }
+            const userSubstituted = author.replace('_', '-');
+            const user = /^-/.test(userSubstituted) ? `${userSubstituted.replace(/^-/, '')}-` : userSubstituted;
             const cookedEvent = {
                 details: {
                     genesis: metadata.genesis || event.source,
@@ -87,7 +89,7 @@ class FrontTranslator {
                     message: message.id,
                     thread: details.event.conversation.id,
                     url: `https://app.frontapp.com/open/${details.event.conversation.id}`,
-                    user: author,
+                    user,
                 },
             };
             return {
@@ -98,6 +100,9 @@ class FrontTranslator {
                 source: 'messenger',
             };
         });
+    }
+    messageIntoMethodPath(_message) {
+        return Promise.resolve(['comment', 'create']);
     }
     messageIntoEmitCreateMessage(message) {
         const conversationId = message.target.thread;

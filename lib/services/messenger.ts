@@ -18,6 +18,7 @@ import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import * as path from 'path';
 
+import { LogLevel } from '../utils/logger';
 import { MessengerConnectionDetails, MessengerConstructionDetails, TransmitContext } from './messenger-types';
 import * as Translator from './messenger/translators/translator';
 import {
@@ -38,6 +39,7 @@ export class MessengerService extends ServiceUtilities<string> implements Servic
 		this.connectionDetails = data.subServices;
 		this.translators = {};
 		_.forEach(data.subServices, (subConnectionDetails, serviceName) => {
+			this.logger.log(LogLevel.INFO, `---> Constructing '${serviceName}' translator.`);
 			this.translators[serviceName] = Translator.createTranslator(serviceName, subConnectionDetails, data.dataHub);
 		});
 		if (listen) {
@@ -47,12 +49,19 @@ export class MessengerService extends ServiceUtilities<string> implements Servic
 
 	protected emitData(data: TransmitContext): Promise<ServiceEmitResponse> {
 		return Promise.props({
-			connectionDetails: this.translators[data.target.service].messageIntoConnectionDetails(data),
-			emitContext: this.translators[data.target.service].messageIntoEmitCreateMessage(data),
-		}).then((details: { connectionDetails: any, emitContext: ServiceEmitContext } ) => {
-			// TODO: This stuff should go through a method that typeguards
-			const emitter = require(`./${data.target.service}`).createServiceEmitter(details.connectionDetails);
-			return emitter.sendData({ contexts: { discourse: details.emitContext } });
+			connection: this.translators[data.target.service].messageIntoConnectionDetails(data),
+			// TODO: Consider combining these two translations, since we probably will never need them separately
+			method: this.translators[data.target.service].messageIntoMethodPath(data),
+			payload: this.translators[data.target.service].messageIntoEmitCreateMessage(data),
+		}).then((details: { connection: object, payload: ServiceEmitContext, method: string[] } ) => {
+			// TODO: This require should go through a method that typeguards
+			const emitter = require(`./${data.target.service}`).createServiceEmitter(details.connection);
+			const sdk = emitter.apiHandle[data.target.service];
+			let method = sdk;
+			_.forEach(details.method, (nodeName) => {
+				method = method[nodeName];
+			});
+			return emitter.sendData({ contexts: { discourse: { method: method.bind(sdk), data: details.payload } } });
 		});
 	}
 
@@ -65,7 +74,7 @@ export class MessengerService extends ServiceUtilities<string> implements Servic
 
 	private startListening(): void {
 		_.forEach(this.connectionDetails, (subConnectionDetails, subServiceName) => {
-			// TODO: This stuff should go through a method that typeguards
+			this.logger.log(LogLevel.INFO, `---> Constructing '${subServiceName}' listener.`);
 			const subListener = require(`./${subServiceName}`).createServiceListener(subConnectionDetails);
 			subListener.registerEvent({
 				// TODO: This is potentially noisy.  It is translating every event it can, including ones it might ...
@@ -73,7 +82,13 @@ export class MessengerService extends ServiceUtilities<string> implements Servic
 				// Possibly a two stage translate (quick translate and full translate)???
 				events: this.translators[subServiceName].getAllTriggers(),
 				listenerMethod: (_registration: ServiceRegistration, event: ServiceEvent) => {
-					this.translators[subServiceName].eventIntoMessage(event).then(this.queueData);
+					this.translators[subServiceName].eventIntoMessage(event)
+					.then((message) => {
+						this.logger.log(
+							LogLevel.INFO, `Heard '${message.cookedEvent.details.text}' on ${message.cookedEvent.source.service}.`
+						);
+						this.queueData(message);
+					});
 				},
 				name: `${subServiceName}=>${this.serviceName}`,
 			});

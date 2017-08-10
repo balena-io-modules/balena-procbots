@@ -21,35 +21,26 @@ import {
 	FlowDefinition, MessageEvent, MessageListenerMethod, TransmitContext,
 } from '../services/messenger-types';
 import { createDataHub } from '../services/messenger/datahubs/datahub';
+import { Logger, LogLevel } from '../utils/logger';
 
 // TODO: Implement this whole thing
 export class SyncBot extends ProcBot {
-	private static getEquivalentUsername(from: string, to: string, username: string): string {
-		const lookupString = process.env.SYNCBOT_ACCOUNTS_WITH_DIFFERING_USERNAMES || '[]';
-		const lookups: Array<{ [service: string]: string }> = JSON.parse(lookupString);
-		for (const lookup of lookups) {
-			if (lookup[from] === username && lookup[to]) {
-				return lookup[to];
-			}
-		}
-		return username;
-	}
-
-	private static makeRouter(from: FlowDefinition, to: FlowDefinition, emitter: MessengerService): MessageListenerMethod {
+	private static makeRouter(
+		from: FlowDefinition, to: FlowDefinition, emitter: MessengerService, logger?: Logger
+	): MessageListenerMethod {
 		return (_registration, event: MessageEvent) => {
 			if (from.service === event.cookedEvent.source.service && from.flow === event.cookedEvent.source.flow) {
-				const hubService = process.env.SYNCBOT_DATAHUB_SERVICE;
 				const transmitMessage: TransmitContext = {
 					details: event.cookedEvent.details,
 					hub: {
-						service: hubService,
-						user: SyncBot.getEquivalentUsername(from.service, hubService, event.cookedEvent.source.user),
+						service: process.env.SYNCBOT_DATAHUB_SERVICE,
+						user: event.cookedEvent.source.user,
 					},
 					source: event.cookedEvent.source,
 					target: {
 						flow: to.flow,
 						service: to.service,
-						user: SyncBot.getEquivalentUsername(from.service, to.service, event.cookedEvent.source.user),
+						user: event.cookedEvent.source.user,
 					},
 				};
 				return emitter.sendData({
@@ -57,7 +48,11 @@ export class SyncBot extends ProcBot {
 						messenger: transmitMessage,
 					},
 					source: 'messenger',
-				}).then(() => {	 /* void */ });
+				}).then(() => {
+					if(logger) {
+						logger.log(LogLevel.INFO, `---> Emitted '${event.cookedEvent.details.text}' to ${to.service}.`);
+					}
+				});
 			}
 			// The event received doesn't match the profile being routed, so no-op is the correct action.
 			return Promise.resolve();
@@ -66,12 +61,16 @@ export class SyncBot extends ProcBot {
 
 	constructor(name = 'SyncBot') {
 		super(name);
+		const logger = new Logger();
 
 		// Build the dataHub object
 		const dataHub = createDataHub(
 			process.env.SYNCBOT_DATAHUB_SERVICE,
 			JSON.parse(process.env.SYNCBOT_DATAHUB_CONSTRUCTOR)
 		);
+		if (!dataHub) {
+			throw new Error('Could not create dataHub.');
+		}
 
 		// Build the messenger object, with the sub-listeners
 		const messenger = new MessengerService(
@@ -93,12 +92,12 @@ export class SyncBot extends ProcBot {
 				if(priorFlow) {
 					messenger.registerEvent({
 						events: ['message'],
-						listenerMethod: SyncBot.makeRouter(priorFlow, focusFlow, messenger),
+						listenerMethod: SyncBot.makeRouter(priorFlow, focusFlow, messenger, logger),
 						name: `${priorFlow.service}.${priorFlow.flow}=>${focusFlow.service}.${focusFlow.flow}`,
 					});
 					messenger.registerEvent({
 						events: ['message'],
-						listenerMethod: SyncBot.makeRouter(focusFlow, priorFlow, messenger),
+						listenerMethod: SyncBot.makeRouter(focusFlow, priorFlow, messenger, logger),
 						name: `${focusFlow.service}.${focusFlow.flow}=>${priorFlow.service}.${priorFlow.flow}`,
 					});
 				}

@@ -9,11 +9,10 @@ export declare abstract class ServiceUtilities<T> extends WorkerClient<T> implem
     private static _expressApp;
     private _logger;
     private eventListeners;
-    constructor();
     registerEvent(registration: ServiceRegistration): void;
     sendData(data: ServiceEmitRequest): Promise<ServiceEmitResponse>;
     protected queueData: (data: UtilityServiceEvent) => void;
-    protected abstract emitData(data: ServiceEmitContext): any;
+    protected abstract emitData(data: ServiceEmitContext): Promise<any>;
     protected abstract verify(data: UtilityServiceEvent): boolean;
     protected getWorker: (event: UtilityWorkerEvent) => Worker<T>;
     protected readonly expressApp: express.Express;

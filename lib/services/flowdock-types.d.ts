@@ -44,14 +44,23 @@ export interface FlowdockHandle extends ServiceAPIHandle {
 	flowdock: Session;
 }
 
-export type FlowdockPayload = FlowdockMessagePayload | FlowdockInboxPayload | FlowdockSearchPayload;
+export type FlowdockPayload = FlowdockMessagePayload | FlowdockInboxPayload | FlowdockSearchPayload | undefined;
 
 export type FlowdockResponse = any;
 
-export interface FlowdockEmitContext extends ServiceEmitContext {
-	method: string;
+type Callback = (error: Error, response: FlowdockResponse) => void;
+
+export interface FlowdockEmitData {
+	htmlVerb: string;
 	path: string;
 	payload?: FlowdockPayload;
+}
+
+export type FlowdockEmitMethod = (htmlVerb: string, path: string, payload: FlowdockPayload, callback: Callback) => void;
+
+export interface FlowdockEmitContext extends ServiceEmitContext {
+	data: FlowdockEmitData;
+	method: FlowdockEmitMethod;
 }
 
 /** A message template, rather sparse and ripe for expansion */
