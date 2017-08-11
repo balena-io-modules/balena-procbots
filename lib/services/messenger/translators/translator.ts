@@ -38,11 +38,7 @@ export interface Translator {
 
 	messageIntoConnectionDetails(message: TransmitContext): Promise<object>;
 
-	messageIntoCreateThread(message: TransmitContext): {method: string[], payload: any};
-	// messageIntoCreateComment
-	// messageIntoCreateWhisper
-	// messageIntoUpdateTags
-	// messageIntoReadThread
+	messageIntoEmitDetails(message: TransmitContext): {method: string[], payload: any};
 
 	responseIntoMessageResponse(payload: TransmitContext, response: any): MessageResponseData;
 }
@@ -146,9 +142,9 @@ function getIndicatorArrays(): { 'shown': PublicityIndicator, 'hidden': Publicit
  * Retrieves and loads a Translator by name.
  * @param name  The name of the Translator to load.
  * @param data  The constructor object for the createTranslator method.
- * @param hub   The source for any extra information required.
+ * @param hubs  The sources for any extra information required.
  * @return      The newly instantiated Translator.
  */
-export function createTranslator(name: string, data: any, hub: DataHub): Translator {
-	return require(`./${name}`).createTranslator(data, hub);
+export function createTranslator(name: string, data: any, hubs: DataHub[]): Translator {
+	return require(`./${name}`).createTranslator(data, hubs);
 }

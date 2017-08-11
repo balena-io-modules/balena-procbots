@@ -51,7 +51,10 @@ export interface MessageContext {
 	source: ReceiptIds;
 }
 export interface TransmitContext extends MessageContext {
-	hubUsername: string;
+	action: string;
+	hub: {
+		username: string;
+	};
 	target: TransmitIds;
 }
 
@@ -83,7 +86,7 @@ export interface MessengerConnectionDetails {
 }
 
 export interface MessengerConstructionDetails {
-	dataHub: DataHub;
+	dataHubs: DataHub[];
 	subServices: MessengerConnectionDetails;
 }
 

@@ -9,7 +9,7 @@ class FlowdockDataHub {
             return this.fetchFromSession(`/organizations/${this.organization}/users`)
                 .then((foundUsers) => {
                 const matchingUsers = _.filter(foundUsers, (eachUser) => {
-                    return eachUser.nick === username;
+                    return eachUser.nick.toLowerCase() === username.toLowerCase();
                 });
                 if (matchingUsers.length === 1) {
                     return (matchingUsers[0].id);

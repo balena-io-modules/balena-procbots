@@ -5,7 +5,7 @@ const flowdock_1 = require("flowdock");
 const _ = require("lodash");
 const Translator = require("./translator");
 class FlowdockTranslator {
-    constructor(data, hub) {
+    constructor(data, hubs) {
         this.eventEquivalencies = {
             message: ['message'],
         };
@@ -20,13 +20,13 @@ class FlowdockTranslator {
                 });
             });
         };
-        this.hub = hub;
+        this.hubs = hubs;
         this.session = new flowdock_1.Session(data.token);
         this.organization = data.organization;
     }
-    eventTypeIntoMessageType(type) {
+    eventIntoMessageType(event) {
         return _.findKey(this.eventEquivalencies, (value) => {
-            return _.includes(value, type);
+            return _.includes(value, event.type);
         }) || 'Misc event';
     }
     messageTypeIntoEventTypes(type) {
@@ -63,7 +63,7 @@ class FlowdockTranslator {
             cookedEvent.source.username = event.rawEvent.external_user_name;
             return Promise.resolve({
                 context: `${event.source}.${event.cookedEvent.context}`,
-                type: this.eventTypeIntoMessageType(event.type),
+                type: this.eventIntoMessageType(event),
                 cookedEvent,
                 rawEvent: event.rawEvent,
                 source: event.source,
@@ -74,7 +74,7 @@ class FlowdockTranslator {
             cookedEvent.source.username = user.nick;
             return ({
                 context: `${event.source}.${event.cookedEvent.context}`,
-                type: this.eventTypeIntoMessageType(event.type),
+                type: this.eventIntoMessageType(event),
                 cookedEvent,
                 rawEvent: event.rawEvent,
                 source: 'messenger',
@@ -82,7 +82,10 @@ class FlowdockTranslator {
         });
     }
     messageIntoConnectionDetails(message) {
-        return this.hub.fetchValue(message.hubUsername, 'flowdock', 'token')
+        const promises = _.map(this.hubs, (hub) => {
+            return hub.fetchValue(message.hub.username, 'flowdock', 'token');
+        });
+        return Promise.any(promises)
             .then((token) => {
             return {
                 organization: this.organization,
@@ -90,20 +93,29 @@ class FlowdockTranslator {
             };
         });
     }
-    messageIntoCreateThread(message) {
-        const titleText = message.target.flow ? message.details.title + '\n--\n' : '';
-        const org = this.organization;
-        const flow = message.target.flow;
-        return { method: ['_request'], payload: {
-                htmlVerb: 'POST',
-                path: `/flows/${org}/${flow}/messages/`,
-                payload: {
-                    content: titleText + message.details.text + '\n' + Translator.stringifyMetadata(message, 'emoji'),
-                    event: 'message',
-                    external_user_name: message.details.internal ? undefined : message.source.username.substring(0, 16),
-                    thread_id: message.target.thread,
-                },
-            } };
+    messageIntoEmitDetails(message) {
+        switch (message.action) {
+            case 'createThread':
+                const title = message.details.title;
+                if (!title) {
+                    throw new Error('Cannot create Discourse Thread without a title');
+                }
+                const org = this.organization;
+                const flow = message.target.flow;
+                const titleText = title + '\n--\n';
+                return { method: ['_request'], payload: {
+                        htmlVerb: 'POST',
+                        path: `/flows/${org}/${flow}/messages/`,
+                        payload: {
+                            content: titleText + message.details.text + '\n' + Translator.stringifyMetadata(message, 'emoji'),
+                            event: 'message',
+                            external_user_name: message.details.internal ? undefined : message.source.username.substring(0, 16),
+                            thread_id: message.target.thread,
+                        },
+                    } };
+            default:
+                throw new Error(`${message.action} not supported on ${message.target.service}`);
+        }
     }
     responseIntoMessageResponse(payload, response) {
         const thread = response.thread_id;
@@ -118,8 +130,8 @@ class FlowdockTranslator {
     }
 }
 exports.FlowdockTranslator = FlowdockTranslator;
-function createTranslator(data, hub) {
-    return new FlowdockTranslator(data, hub);
+function createTranslator(data, hubs) {
+    return new FlowdockTranslator(data, hubs);
 }
 exports.createTranslator = createTranslator;
 

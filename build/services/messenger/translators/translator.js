@@ -50,7 +50,7 @@ function metadataByRegex(message, regex) {
         };
     }
     return {
-        content: message,
+        content: message.trim(),
         genesis: null,
         hidden: true,
     };
@@ -70,8 +70,8 @@ function getIndicatorArrays() {
     }
     return { hidden, shown };
 }
-function createTranslator(name, data, hub) {
-    return require(`./${name}`).createTranslator(data, hub);
+function createTranslator(name, data, hubs) {
+    return require(`./${name}`).createTranslator(data, hubs);
 }
 exports.createTranslator = createTranslator;
 

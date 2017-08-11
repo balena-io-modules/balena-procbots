@@ -4,21 +4,21 @@ import { MessageEvent, MessageResponseData, TransmitContext } from '../../messen
 import { DataHub } from '../datahubs/datahub';
 import * as Translator from './translator';
 export declare class FlowdockTranslator implements Translator.Translator {
-    private hub;
+    private hubs;
     private session;
     private organization;
     private eventEquivalencies;
-    constructor(data: FlowdockConnectionDetails, hub: DataHub);
-    eventTypeIntoMessageType(type: string): string;
+    constructor(data: FlowdockConnectionDetails, hubs: DataHub[]);
+    eventIntoMessageType(event: MessageEvent): string;
     messageTypeIntoEventTypes(type: string): string[];
     getAllEventTypes(): string[];
     eventIntoMessage(event: FlowdockEvent): Promise<MessageEvent>;
     messageIntoConnectionDetails(message: TransmitContext): Promise<FlowdockConnectionDetails>;
-    messageIntoCreateThread(message: TransmitContext): {
+    messageIntoEmitDetails(message: TransmitContext): {
         method: string[];
         payload: FlowdockEmitData;
     };
     responseIntoMessageResponse(payload: TransmitContext, response: FlowdockResponse): MessageResponseData;
     private fetchFromSession;
 }
-export declare function createTranslator(data: FlowdockConnectionDetails, hub: DataHub): Translator.Translator;
+export declare function createTranslator(data: FlowdockConnectionDetails, hubs: DataHub[]): Translator.Translator;

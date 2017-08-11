@@ -23,15 +23,15 @@ import { DataHub } from '../datahubs/datahub';
 import * as Translator from './translator';
 
 export class FlowdockTranslator implements Translator.Translator {
-	private hub: DataHub;
+	private hubs: DataHub[];
 	private session: Session;
 	private organization: string;
 	private eventEquivalencies: {[generic: string]: string[]} = {
 		message: ['message'],
 	};
 
-	constructor(data: FlowdockConnectionDetails, hub: DataHub) {
-		this.hub = hub;
+	constructor(data: FlowdockConnectionDetails, hubs: DataHub[]) {
+		this.hubs = hubs;
 		this.session = new Session(data.token);
 		this.organization = data.organization;
 	}
@@ -82,7 +82,7 @@ export class FlowdockTranslator implements Translator.Translator {
 			cookedEvent.source.username = event.rawEvent.external_user_name;
 			return Promise.resolve({
 				context: `${event.source}.${event.cookedEvent.context}`,
-				type: this.eventTypeIntoMessageType(event.type),
+				type: this.eventIntoMessageType(event),
 				cookedEvent,
 				rawEvent: event.rawEvent,
 				source: event.source,
@@ -93,7 +93,7 @@ export class FlowdockTranslator implements Translator.Translator {
 				cookedEvent.source.username = user.nick;
 				return({
 					context: `${event.source}.${event.cookedEvent.context}`,
-					type: this.eventTypeIntoMessageType(event.type),
+					type: this.eventIntoMessageType(event),
 					cookedEvent,
 					rawEvent: event.rawEvent,
 					source: 'messenger',
@@ -102,31 +102,42 @@ export class FlowdockTranslator implements Translator.Translator {
 	}
 
 	public messageIntoConnectionDetails(message: TransmitContext): Promise<FlowdockConnectionDetails> {
-		return this.hub.fetchValue(message.hubUsername, 'flowdock', 'token')
-			.then((token) => {
-				return {
-					organization: this.organization,
-					token,
-				};
-			});
+		const promises: Array<Promise<string>> = _.map(this.hubs, (hub) => {
+			return hub.fetchValue(message.hub.username, 'flowdock', 'token');
+		});
+		return Promise.any(promises)
+		.then((token) => {
+			return {
+				organization: this.organization,
+				token,
+			};
+		});
 	}
 
-	public messageIntoCreateThread(message: TransmitContext): {method: string[], payload: FlowdockEmitData} {
-		// Build a string for the title, if appropriate.
-		const titleText = message.target.flow ? message.details.title + '\n--\n' : '';
-		const org = this.organization;
-		const flow = message.target.flow;
-		return {method: ['_request'], payload: {
-			htmlVerb: 'POST',
-			path: `/flows/${org}/${flow}/messages/`,
-			payload: {
-				// The concatenated string, of various data nuggets, to emit
-				content: titleText + message.details.text + '\n' + Translator.stringifyMetadata(message, 'emoji'),
-				event: 'message',
-				external_user_name: message.details.internal ? undefined : message.source.username.substring(0, 16),
-				thread_id: message.target.thread,
-			},
-		}};
+	public messageIntoEmitDetails(message: TransmitContext): {method: string[], payload: FlowdockEmitData} {
+		switch (message.action) {
+			case 'createThread':
+				const title = message.details.title;
+				if (!title) {
+					throw new Error('Cannot create Discourse Thread without a title');
+				}
+				const org = this.organization;
+				const flow = message.target.flow;
+				const titleText = title + '\n--\n';
+				return {method: ['_request'], payload: {
+					htmlVerb: 'POST',
+					path: `/flows/${org}/${flow}/messages/`,
+					payload: {
+						// The concatenated string, of various data nuggets, to emit
+						content: titleText + message.details.text + '\n' + Translator.stringifyMetadata(message, 'emoji'),
+						event: 'message',
+						external_user_name: message.details.internal ? undefined : message.source.username.substring(0, 16),
+						thread_id: message.target.thread,
+					},
+				}};
+			default:
+				throw new Error(`${message.action} not supported on ${message.target.service}`);
+		}
 	}
 
 	public responseIntoMessageResponse(payload: TransmitContext, response: FlowdockResponse): MessageResponseData {
@@ -162,6 +173,6 @@ export class FlowdockTranslator implements Translator.Translator {
 	}
 }
 
-export function createTranslator(data: FlowdockConnectionDetails, hub: DataHub): Translator.Translator {
-	return new FlowdockTranslator(data, hub);
+export function createTranslator(data: FlowdockConnectionDetails, hubs: DataHub[]): Translator.Translator {
+	return new FlowdockTranslator(data, hubs);
 }

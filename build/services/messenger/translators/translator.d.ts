@@ -8,12 +8,12 @@ export interface PublicityIndicator {
     char: string;
 }
 export interface Translator {
-    eventTypeIntoMessageType(type: string): string;
+    eventIntoMessageType(event: MessageEvent): string;
     messageTypeIntoEventTypes(type: string): string[];
     getAllEventTypes(): string[];
     eventIntoMessage(event: ServiceEvent): Promise<MessageEvent>;
     messageIntoConnectionDetails(message: TransmitContext): Promise<object>;
-    messageIntoCreateThread(message: TransmitContext): {
+    messageIntoEmitDetails(message: TransmitContext): {
         method: string[];
         payload: any;
     };
@@ -21,4 +21,4 @@ export interface Translator {
 }
 export declare function stringifyMetadata(data: MessageContext, format: string): string;
 export declare function extractMetadata(message: string, format: string): Metadata;
-export declare function createTranslator(name: string, data: any, hub: DataHub): Translator;
+export declare function createTranslator(name: string, data: any, hubs: DataHub[]): Translator;

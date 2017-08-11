@@ -15,10 +15,11 @@ limitations under the License.
 */
 
 import * as Promise from 'bluebird';
+import * as _ from 'lodash';
 import { ProcBot } from '../framework/procbot';
 import { MessengerService } from '../services/messenger';
 import {
-	FlowDefinition, MessageEvent, MessageListenerMethod, TransmitContext,
+	FlowDefinition, MessageEmitResponse, MessageEvent, MessageListenerMethod, TransmitContext,
 } from '../services/messenger-types';
 import { createDataHub } from '../services/messenger/datahubs/datahub';
 import { Logger, LogLevel } from '../utils/logger';
@@ -30,8 +31,11 @@ export class SyncBot extends ProcBot {
 		return (_registration, event: MessageEvent) => {
 			if (from.service === event.cookedEvent.source.service && from.flow === event.cookedEvent.source.flow) {
 				const transmitMessage: TransmitContext = {
+					action: 'createThread',
 					details: event.cookedEvent.details,
-					hubUsername: event.cookedEvent.source.username,
+					hub: {
+						username: event.cookedEvent.source.username,
+					},
 					source: event.cookedEvent.source,
 					target: {
 						flow: to.flow,
@@ -43,10 +47,60 @@ export class SyncBot extends ProcBot {
 					contexts: {
 						messenger: transmitMessage,
 					},
-					source: 'messenger',
-				}).then(() => {
-					if(logger) {
-						logger.log(LogLevel.INFO, `---> Emitted '${event.cookedEvent.details.text}' to ${to.service}.`);
+					source: 'syncbot',
+				}).then((emitResponse: MessageEmitResponse) => {
+					const response = emitResponse.response;
+					if (response) {
+						const genericData: TransmitContext = {
+							action: 'createComment',
+							details: {
+								genesis: 'system',
+								hidden: true,
+								internal: true,
+								text: 'This ticket is mirrored in ' // will be appended
+							},
+							hub: {
+								username: 'syncbot',
+							},
+							source: {
+								message: 'duff',
+								thread: 'duff',
+								flow: 'duff',
+								service: 'system',
+								username: 'syncbot',
+							},
+							target: {
+								flow: 'duff', // will be replaced
+								service: 'duff', // will be replaced
+								username: 'syncbot',
+								thread: 'duff' // will be replaced
+							}
+						};
+
+						const sourceDetails = event.cookedEvent.source;
+						const updateTarget = _.cloneDeep(genericData);
+						updateTarget.target = {
+							flow: to.flow,
+							service: to.service,
+							username: 'syncbot',
+							thread: sourceDetails.thread,
+						};
+						updateTarget.details.text += `[${from.service} thread ${sourceDetails.thread}](${sourceDetails.url})`;
+						emitter.sendData({contexts: {messenger: updateTarget}, source: 'syncbot'});
+
+						const updateSource = _.cloneDeep(genericData);
+						updateSource.target = {
+							flow: from.flow,
+							service: from.service,
+							username: 'syncbot',
+							thread: response.thread,
+						};
+						updateSource.details.text += `[${to.service} thread ${response.thread}](${response.url})`;
+						emitter.sendData({contexts: {messenger: updateSource}, source: 'syncbot'});
+
+						if (logger) {
+							logger.log(LogLevel.INFO, `---> Emitted '${event.cookedEvent.details.text}' to ${to.service}.`);
+						}
 					}
 				});
 			}
@@ -67,11 +121,15 @@ export class SyncBot extends ProcBot {
 		if (!dataHub) {
 			throw new Error('Could not create dataHub.');
 		}
+		const dataHubs = [
+			createDataHub('configuration', 'syncbot'),
+			dataHub,
+		];
 
 		// Build the messenger object, with the sub-listeners
 		const messenger = new MessengerService(
 			{
-				dataHub,
+				dataHubs,
 				subServices: JSON.parse(process.env.SYNCBOT_LISTENER_CONSTRUCTORS),
 			},
 			true,

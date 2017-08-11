@@ -4,19 +4,19 @@ import { MessageEvent, MessageResponseData, TransmitContext } from '../../messen
 import { DataHub } from '../datahubs/datahub';
 import * as Translator from './translator';
 export declare class DiscourseTranslator implements Translator.Translator {
-    private hub;
+    private hubs;
     private connectionDetails;
     private eventEquivalencies;
-    constructor(data: DiscourseConnectionDetails, hub: DataHub);
-    eventTypeIntoMessageType(type: string): string;
+    constructor(data: DiscourseConnectionDetails, hubs: DataHub[]);
+    eventIntoMessageType(event: MessageEvent): string;
     messageTypeIntoEventTypes(type: string): string[];
     getAllEventTypes(): string[];
     eventIntoMessage(event: DiscourseEvent): Promise<MessageEvent>;
     messageIntoConnectionDetails(message: TransmitContext): Promise<DiscourseConnectionDetails>;
-    messageIntoCreateThread(message: TransmitContext): {
+    messageIntoEmitDetails(message: TransmitContext): {
         method: string[];
         payload: DiscourseEmitData;
     };
     responseIntoMessageResponse(_payload: TransmitContext, response: DiscourseResponse): MessageResponseData;
 }
-export declare function createTranslator(data: DiscourseConnectionDetails, hub: DataHub): Translator.Translator;
+export declare function createTranslator(data: DiscourseConnectionDetails, hubs: DataHub[]): Translator.Translator;

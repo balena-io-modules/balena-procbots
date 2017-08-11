@@ -41,7 +41,7 @@ export class MessengerService extends ServiceUtilities<string> implements Servic
 		this.translators = {};
 		_.forEach(data.subServices, (subConnectionDetails, serviceName) => {
 			this.logger.log(LogLevel.INFO, `---> Constructing '${serviceName}' translator.`);
-			this.translators[serviceName] = Translator.createTranslator(serviceName, subConnectionDetails, data.dataHub);
+			this.translators[serviceName] = Translator.createTranslator(serviceName, subConnectionDetails, data.dataHubs);
 		});
 		if (listen) {
 			this.startListening(data.subServices);
@@ -51,7 +51,7 @@ export class MessengerService extends ServiceUtilities<string> implements Servic
 	protected emitData(data: TransmitContext): Promise<MessageEmitResponse> {
 		return Promise.props({
 			connection: this.translators[data.target.service].messageIntoConnectionDetails(data),
-			emit: this.translators[data.target.service].messageIntoCreateThread(data),
+			emit: this.translators[data.target.service].messageIntoEmitDetails(data),
 		}).then((details: { connection: object, emit: { payload: ServiceEmitContext, method: string[] } } ) => {
 			const emitter = require(`./${data.target.service}`).createServiceEmitter(details.connection);
 			const sdk = emitter.apiHandle[data.target.service];
@@ -94,7 +94,7 @@ export class MessengerService extends ServiceUtilities<string> implements Servic
 						this.translators[subServiceName].eventIntoMessage(event)
 						.then((message) => {
 							this.logger.log(
-								LogLevel.INFO, `Heard '${message.cookedEvent.details.text}' on ${message.cookedEvent.source.service}.`
+								LogLevel.INFO, `---> Heard '${message.cookedEvent.details.text}' on ${message.cookedEvent.source.service}.`
 							);
 							this.queueData(message);
 						});

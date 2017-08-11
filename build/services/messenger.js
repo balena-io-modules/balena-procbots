@@ -12,7 +12,7 @@ class MessengerService extends service_utilities_1.ServiceUtilities {
         this.translators = {};
         _.forEach(data.subServices, (subConnectionDetails, serviceName) => {
             this.logger.log(logger_1.LogLevel.INFO, `---> Constructing '${serviceName}' translator.`);
-            this.translators[serviceName] = Translator.createTranslator(serviceName, subConnectionDetails, data.dataHub);
+            this.translators[serviceName] = Translator.createTranslator(serviceName, subConnectionDetails, data.dataHubs);
         });
         if (listen) {
             this.startListening(data.subServices);
@@ -21,7 +21,7 @@ class MessengerService extends service_utilities_1.ServiceUtilities {
     emitData(data) {
         return Promise.props({
             connection: this.translators[data.target.service].messageIntoConnectionDetails(data),
-            emit: this.translators[data.target.service].messageIntoCreateThread(data),
+            emit: this.translators[data.target.service].messageIntoEmitDetails(data),
         }).then((details) => {
             const emitter = require(`./${data.target.service}`).createServiceEmitter(details.connection);
             const sdk = emitter.apiHandle[data.target.service];
@@ -55,10 +55,10 @@ class MessengerService extends service_utilities_1.ServiceUtilities {
             subListener.registerEvent({
                 events: this.translators[subServiceName].getAllEventTypes(),
                 listenerMethod: (_registration, event) => {
-                    if (_.includes(this.eventsRegistered, this.translators[subServiceName].eventTypeIntoMessageType(event.type))) {
+                    if (_.includes(this.eventsRegistered, this.translators[subServiceName].eventIntoMessageType(event))) {
                         this.translators[subServiceName].eventIntoMessage(event)
                             .then((message) => {
-                            this.logger.log(logger_1.LogLevel.INFO, `Heard '${message.cookedEvent.details.text}' on ${message.cookedEvent.source.service}.`);
+                            this.logger.log(logger_1.LogLevel.INFO, `---> Heard '${message.cookedEvent.details.text}' on ${message.cookedEvent.source.service}.`);
                             this.queueData(message);
                         });
                     }

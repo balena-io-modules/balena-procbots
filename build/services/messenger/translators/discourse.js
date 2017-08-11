@@ -5,16 +5,16 @@ const _ = require("lodash");
 const request = require("request-promise");
 const Translator = require("./translator");
 class DiscourseTranslator {
-    constructor(data, hub) {
+    constructor(data, hubs) {
         this.eventEquivalencies = {
             message: ['post'],
         };
-        this.hub = hub;
+        this.hubs = hubs;
         this.connectionDetails = data;
     }
-    eventTypeIntoMessageType(type) {
+    eventIntoMessageType(event) {
         return _.findKey(this.eventEquivalencies, (value) => {
-            return _.includes(value, type);
+            return _.includes(value, event.type);
         }) || 'Misc event';
     }
     messageTypeIntoEventTypes(type) {
@@ -62,7 +62,7 @@ class DiscourseTranslator {
             };
             return {
                 context: `${event.source}.${event.cookedEvent.context}`,
-                type: this.eventTypeIntoMessageType(event.type),
+                type: this.eventIntoMessageType(event),
                 cookedEvent,
                 rawEvent: event.rawEvent,
                 source: 'messenger',
@@ -70,7 +70,10 @@ class DiscourseTranslator {
         });
     }
     messageIntoConnectionDetails(message) {
-        return this.hub.fetchValue(message.hubUsername, 'discourse', 'token')
+        const promises = _.map(this.hubs, (hub) => {
+            return hub.fetchValue(message.hub.username, 'discourse', 'token');
+        });
+        return Promise.any(promises)
             .then((token) => {
             return {
                 token,
@@ -79,33 +82,26 @@ class DiscourseTranslator {
             };
         });
     }
-    messageIntoCreateThread(message) {
-        const topicId = message.target.thread;
-        if (!topicId) {
-            const title = message.details.title;
-            if (!title) {
-                throw new Error('Cannot create Discourse Thread without a title');
-            }
-            return { method: ['request'], payload: {
-                    method: 'POST',
-                    path: '/posts',
-                    body: {
-                        category: message.target.flow,
-                        raw: `${message.details.text}\n\n---\n${Translator.stringifyMetadata(message, 'img')}`,
-                        title,
-                        unlist_topic: 'false',
-                    },
-                } };
+    messageIntoEmitDetails(message) {
+        switch (message.action) {
+            case 'createThread':
+                const title = message.details.title;
+                if (!title) {
+                    throw new Error('Cannot create Discourse Thread without a title');
+                }
+                return { method: ['request'], payload: {
+                        method: 'POST',
+                        path: '/posts',
+                        body: {
+                            category: message.target.flow,
+                            raw: `${message.details.text}\n\n---\n${Translator.stringifyMetadata(message, 'img')}`,
+                            title,
+                            unlist_topic: 'false',
+                        },
+                    } };
+            default:
+                throw new Error(`${message.action} not supported on ${message.target.service}`);
         }
-        return { method: ['request'], payload: {
-                method: 'POST',
-                path: '/posts',
-                body: {
-                    raw: `${message.details.text}\n\n---\n${Translator.stringifyMetadata(message, 'img')}`,
-                    topic_id: topicId,
-                    whisper: message.details.hidden ? 'true' : 'false',
-                },
-            } };
     }
     responseIntoMessageResponse(_payload, response) {
         return {
@@ -116,8 +112,8 @@ class DiscourseTranslator {
     }
 }
 exports.DiscourseTranslator = DiscourseTranslator;
-function createTranslator(data, hub) {
-    return new DiscourseTranslator(data, hub);
+function createTranslator(data, hubs) {
+    return new DiscourseTranslator(data, hubs);
 }
 exports.createTranslator = createTranslator;
 

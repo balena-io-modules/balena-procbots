@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const Promise = require("bluebird");
+const _ = require("lodash");
 const procbot_1 = require("../framework/procbot");
 const messenger_1 = require("../services/messenger");
 const datahub_1 = require("../services/messenger/datahubs/datahub");
@@ -10,8 +11,11 @@ class SyncBot extends procbot_1.ProcBot {
         return (_registration, event) => {
             if (from.service === event.cookedEvent.source.service && from.flow === event.cookedEvent.source.flow) {
                 const transmitMessage = {
+                    action: 'createThread',
                     details: event.cookedEvent.details,
-                    hubUsername: event.cookedEvent.source.username,
+                    hub: {
+                        username: event.cookedEvent.source.username,
+                    },
                     source: event.cookedEvent.source,
                     target: {
                         flow: to.flow,
@@ -23,10 +27,57 @@ class SyncBot extends procbot_1.ProcBot {
                     contexts: {
                         messenger: transmitMessage,
                     },
-                    source: 'messenger',
-                }).then(() => {
-                    if (logger) {
-                        logger.log(logger_1.LogLevel.INFO, `---> Emitted '${event.cookedEvent.details.text}' to ${to.service}.`);
+                    source: 'syncbot',
+                }).then((emitResponse) => {
+                    const response = emitResponse.response;
+                    if (response) {
+                        const genericData = {
+                            action: 'createComment',
+                            details: {
+                                genesis: 'system',
+                                hidden: true,
+                                internal: true,
+                                text: 'This ticket is mirrored in '
+                            },
+                            hub: {
+                                username: 'syncbot',
+                            },
+                            source: {
+                                message: 'duff',
+                                thread: 'duff',
+                                flow: 'duff',
+                                service: 'system',
+                                username: 'syncbot',
+                            },
+                            target: {
+                                flow: 'duff',
+                                service: 'duff',
+                                username: 'syncbot',
+                                thread: 'duff'
+                            }
+                        };
+                        const sourceDetails = event.cookedEvent.source;
+                        const updateTarget = _.cloneDeep(genericData);
+                        updateTarget.target = {
+                            flow: to.flow,
+                            service: to.service,
+                            username: 'syncbot',
+                            thread: sourceDetails.thread,
+                        };
+                        updateTarget.details.text += `[${from.service} thread ${sourceDetails.thread}](${sourceDetails.url})`;
+                        emitter.sendData({ contexts: { messenger: updateTarget }, source: 'syncbot' });
+                        const updateSource = _.cloneDeep(genericData);
+                        updateSource.target = {
+                            flow: from.flow,
+                            service: from.service,
+                            username: 'syncbot',
+                            thread: response.thread,
+                        };
+                        updateSource.details.text += `[${to.service} thread ${response.thread}](${response.url})`;
+                        emitter.sendData({ contexts: { messenger: updateSource }, source: 'syncbot' });
+                        if (logger) {
+                            logger.log(logger_1.LogLevel.INFO, `---> Emitted '${event.cookedEvent.details.text}' to ${to.service}.`);
+                        }
                     }
                 });
             }
@@ -40,8 +91,12 @@ class SyncBot extends procbot_1.ProcBot {
         if (!dataHub) {
             throw new Error('Could not create dataHub.');
         }
-        const messenger = new messenger_1.MessengerService({
+        const dataHubs = [
+            datahub_1.createDataHub('configuration', 'syncbot'),
             dataHub,
+        ];
+        const messenger = new messenger_1.MessengerService({
+            dataHubs,
             subServices: JSON.parse(process.env.SYNCBOT_LISTENER_CONSTRUCTORS),
         }, true);
         if (!messenger) {

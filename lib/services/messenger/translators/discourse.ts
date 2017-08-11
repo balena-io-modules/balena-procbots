@@ -26,14 +26,14 @@ import { DataHub } from '../datahubs/datahub';
 import * as Translator from './translator';
 
 export class DiscourseTranslator implements Translator.Translator {
-	private hub: DataHub;
+	private hubs: DataHub[];
 	private connectionDetails: DiscourseConnectionDetails;
 	private eventEquivalencies: {[generic: string]: string[]} = {
 		message: ['post'],
 	};
 
-	constructor(data: DiscourseConnectionDetails, hub: DataHub) {
-		this.hub = hub;
+	constructor(data: DiscourseConnectionDetails, hubs: DataHub[]) {
+		this.hubs = hubs;
 		this.connectionDetails = data;
 	}
 
@@ -96,7 +96,7 @@ export class DiscourseTranslator implements Translator.Translator {
 				};
 				return {
 					context: `${event.source}.${event.cookedEvent.context}`,
-					type: this.eventTypeIntoMessageType(event.type),
+					type: this.eventIntoMessageType(event),
 					cookedEvent,
 					rawEvent: event.rawEvent,
 					source: 'messenger',
@@ -105,46 +105,39 @@ export class DiscourseTranslator implements Translator.Translator {
 	}
 
 	public messageIntoConnectionDetails(message: TransmitContext): Promise<DiscourseConnectionDetails> {
-		return this.hub.fetchValue(message.hubUsername, 'discourse', 'token')
-			.then((token) => {
-				return {
-					token,
-					username: message.target.username,
-					instance: this.connectionDetails.instance,
-				};
-			});
+		const promises: Array<Promise<string>> = _.map(this.hubs, (hub) => {
+			return hub.fetchValue(message.hub.username, 'discourse', 'token');
+		});
+		return Promise.any(promises)
+		.then((token) => {
+			return {
+				token,
+				username: message.target.username,
+				instance: this.connectionDetails.instance,
+			};
+		});
 	}
 
-	public messageIntoCreateThread(message: TransmitContext): {method: string[], payload: DiscourseEmitData} {
-		// Attempt to find the thread ID to know if this is a new topic or not
-		const topicId = message.target.thread;
-		if (!topicId) {
-			const title = message.details.title;
-			if (!title) {
-				throw new Error('Cannot create Discourse Thread without a title');
-			}
-			// A new topic request for discourse
-			return {method: ['request'], payload: {
-				method: 'POST',
-				path: '/posts',
-				body: {
-					category: message.target.flow,
-					raw: `${message.details.text}\n\n---\n${Translator.stringifyMetadata(message, 'img')}`,
-					title,
-					unlist_topic: 'false',
-				},
-			}};
+	public messageIntoEmitDetails(message: TransmitContext): {method: string[], payload: DiscourseEmitData} {
+		switch (message.action) {
+			case 'createThread':
+				const title = message.details.title;
+				if (!title) {
+					throw new Error('Cannot create Discourse Thread without a title');
+				}
+				return {method: ['request'], payload: {
+					method: 'POST',
+					path: '/posts',
+					body: {
+						category: message.target.flow,
+						raw: `${message.details.text}\n\n---\n${Translator.stringifyMetadata(message, 'img')}`,
+						title,
+						unlist_topic: 'false',
+					},
+				}};
+			default:
+				throw new Error(`${message.action} not supported on ${message.target.service}`);
 		}
-		// A new message request for discourse
-		return {method: ['request'], payload: {
-			method: 'POST',
-			path: '/posts',
-			body: {
-				raw: `${message.details.text}\n\n---\n${Translator.stringifyMetadata(message, 'img')}`,
-				topic_id: topicId,
-				whisper: message.details.hidden ? 'true' : 'false',
-			},
-		}};
 	}
 
 	public responseIntoMessageResponse(_payload: TransmitContext, response: DiscourseResponse): MessageResponseData {
@@ -156,6 +149,6 @@ export class DiscourseTranslator implements Translator.Translator {
 	}
 }
 
-export function createTranslator(data: DiscourseConnectionDetails, hub: DataHub): Translator.Translator {
-	return new DiscourseTranslator(data, hub);
+export function createTranslator(data: DiscourseConnectionDetails, hubs: DataHub[]): Translator.Translator {
+	return new DiscourseTranslator(data, hubs);
 }
