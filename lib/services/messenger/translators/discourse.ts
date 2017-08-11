@@ -115,7 +115,7 @@ export class DiscourseTranslator implements Translator.Translator {
 			});
 	}
 
-	public messageIntoEmitCreateComment(message: TransmitContext): {method: string[], payload: DiscourseEmitData} {
+	public messageIntoCreateThread(message: TransmitContext): {method: string[], payload: DiscourseEmitData} {
 		// Attempt to find the thread ID to know if this is a new topic or not
 		const topicId = message.target.thread;
 		if (!topicId) {

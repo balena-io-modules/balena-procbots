@@ -38,9 +38,10 @@ export interface Translator {
 
 	messageIntoConnectionDetails(message: TransmitContext): Promise<object>;
 
-	messageIntoEmitCreateComment(message: TransmitContext): {method: string[], payload: any};
-	// messageIntoEmitCreateTopic
-	// messageIntoEmitUpdateTags
+	messageIntoCreateThread(message: TransmitContext): {method: string[], payload: any};
+	// messageIntoCreateComment
+	// messageIntoCreateWhisper
+	// messageIntoUpdateTags
 	// messageIntoReadThread
 
 	responseIntoMessageResponse(payload: TransmitContext, response: any): MessageResponseData;

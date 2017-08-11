@@ -13,7 +13,7 @@ export declare class DiscourseTranslator implements Translator.Translator {
     getAllEventTypes(): string[];
     eventIntoMessage(event: DiscourseEvent): Promise<MessageEvent>;
     messageIntoConnectionDetails(message: TransmitContext): Promise<DiscourseConnectionDetails>;
-    messageIntoEmitCreateComment(message: TransmitContext): {
+    messageIntoCreateThread(message: TransmitContext): {
         method: string[];
         payload: DiscourseEmitData;
     };

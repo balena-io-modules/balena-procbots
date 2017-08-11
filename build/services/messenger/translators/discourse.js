@@ -79,7 +79,7 @@ class DiscourseTranslator {
             };
         });
     }
-    messageIntoEmitCreateComment(message) {
+    messageIntoCreateThread(message) {
         const topicId = message.target.thread;
         if (!topicId) {
             const title = message.details.title;

@@ -51,7 +51,7 @@ export class MessengerService extends ServiceUtilities<string> implements Servic
 	protected emitData(data: TransmitContext): Promise<MessageEmitResponse> {
 		return Promise.props({
 			connection: this.translators[data.target.service].messageIntoConnectionDetails(data),
-			emit: this.translators[data.target.service].messageIntoEmitCreateComment(data),
+			emit: this.translators[data.target.service].messageIntoCreateThread(data),
 		}).then((details: { connection: object, emit: { payload: ServiceEmitContext, method: string[] } } ) => {
 			const emitter = require(`./${data.target.service}`).createServiceEmitter(details.connection);
 			const sdk = emitter.apiHandle[data.target.service];

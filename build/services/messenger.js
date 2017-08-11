@@ -21,7 +21,7 @@ class MessengerService extends service_utilities_1.ServiceUtilities {
     emitData(data) {
         return Promise.props({
             connection: this.translators[data.target.service].messageIntoConnectionDetails(data),
-            emit: this.translators[data.target.service].messageIntoEmitCreateComment(data),
+            emit: this.translators[data.target.service].messageIntoCreateThread(data),
         }).then((details) => {
             const emitter = require(`./${data.target.service}`).createServiceEmitter(details.connection);
             const sdk = emitter.apiHandle[data.target.service];

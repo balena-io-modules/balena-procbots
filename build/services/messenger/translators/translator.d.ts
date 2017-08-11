@@ -13,7 +13,7 @@ export interface Translator {
     getAllEventTypes(): string[];
     eventIntoMessage(event: ServiceEvent): Promise<MessageEvent>;
     messageIntoConnectionDetails(message: TransmitContext): Promise<object>;
-    messageIntoEmitCreateComment(message: TransmitContext): {
+    messageIntoCreateThread(message: TransmitContext): {
         method: string[];
         payload: any;
     };

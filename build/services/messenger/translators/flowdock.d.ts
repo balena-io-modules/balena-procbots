@@ -14,7 +14,7 @@ export declare class FlowdockTranslator implements Translator.Translator {
     getAllEventTypes(): string[];
     eventIntoMessage(event: FlowdockEvent): Promise<MessageEvent>;
     messageIntoConnectionDetails(message: TransmitContext): Promise<FlowdockConnectionDetails>;
-    messageIntoEmitCreateComment(message: TransmitContext): {
+    messageIntoCreateThread(message: TransmitContext): {
         method: string[];
         payload: FlowdockEmitData;
     };

@@ -90,7 +90,7 @@ class FlowdockTranslator {
             };
         });
     }
-    messageIntoEmitCreateComment(message) {
+    messageIntoCreateThread(message) {
         const titleText = message.target.flow ? message.details.title + '\n--\n' : '';
         const org = this.organization;
         const flow = message.target.flow;

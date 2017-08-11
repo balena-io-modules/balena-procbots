@@ -111,7 +111,7 @@ export class FlowdockTranslator implements Translator.Translator {
 			});
 	}
 
-	public messageIntoEmitCreateComment(message: TransmitContext): {method: string[], payload: FlowdockEmitData} {
+	public messageIntoCreateThread(message: TransmitContext): {method: string[], payload: FlowdockEmitData} {
 		// Build a string for the title, if appropriate.
 		const titleText = message.target.flow ? message.details.title + '\n--\n' : '';
 		const org = this.organization;
