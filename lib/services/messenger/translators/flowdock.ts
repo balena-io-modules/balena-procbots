@@ -36,9 +36,9 @@ export class FlowdockTranslator implements Translator.Translator {
 		this.organization = data.organization;
 	}
 
-	public eventTypeIntoMessageType(type: string): string {
+	public eventIntoMessageType(event: MessageEvent): string {
 		return _.findKey(this.eventEquivalencies, (value: string[]) => {
-			return _.includes(value, type);
+			return _.includes(value, event.type);
 		}) || 'Misc event';
 	}
 

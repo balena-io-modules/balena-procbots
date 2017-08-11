@@ -90,7 +90,7 @@ export class MessengerService extends ServiceUtilities<string> implements Servic
 			subListener.registerEvent({
 				events: this.translators[subServiceName].getAllEventTypes(),
 				listenerMethod: (_registration: ServiceRegistration, event: UtilityServiceEvent) => {
-					if (_.includes(this.eventsRegistered, this.translators[subServiceName].eventTypeIntoMessageType(event.type))) {
+					if (_.includes(this.eventsRegistered, this.translators[subServiceName].eventIntoMessageType(event))) {
 						this.translators[subServiceName].eventIntoMessage(event)
 						.then((message) => {
 							this.logger.log(

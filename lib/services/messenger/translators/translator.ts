@@ -30,7 +30,7 @@ export interface PublicityIndicator {
 }
 
 export interface Translator {
-	eventTypeIntoMessageType(type: string): string;
+	eventIntoMessageType(event: MessageEvent): string;
 	messageTypeIntoEventTypes(type: string): string[];
 	getAllEventTypes(): string[];
 
