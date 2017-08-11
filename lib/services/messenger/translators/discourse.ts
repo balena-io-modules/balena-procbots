@@ -123,7 +123,7 @@ export class DiscourseTranslator implements Translator.Translator {
 			case 'createThread':
 				const title = message.details.title;
 				if (!title) {
-					throw new Error('Cannot create Discourse Thread without a title');
+					throw new Error('Cannot create Discourse Thread without a title.');
 				}
 				return {method: ['request'], payload: {
 					method: 'POST',
@@ -135,8 +135,22 @@ export class DiscourseTranslator implements Translator.Translator {
 						unlist_topic: 'false',
 					},
 				}};
+			case 'createComment':
+				const topic = message.target.thread;
+				if (!topic) {
+					throw new Error('Cannot create Discourse comment without a topic.');
+				}
+				return {method: ['request'], payload: {
+					method: 'POST',
+					path: '/posts',
+					body: {
+						raw: `${message.details.text}\n\n---\n${Translator.stringifyMetadata(message, 'img')}`,
+						topic_id: topic,
+						whisper: message.details.hidden ? 'true' : 'false',
+					}
+				}};
 			default:
-				throw new Error(`${message.action} not supported on ${message.target.service}`);
+				throw new Error(`${message.action} not translatable to ${message.target.service} yet.`);
 		}
 	}
 

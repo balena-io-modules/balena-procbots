@@ -20,7 +20,7 @@ import * as path from 'path';
 
 import { LogLevel } from '../utils/logger';
 import {
-	MessageEmitResponse, MessengerConnectionDetails, MessengerConstructionDetails,
+	MessageResponseData, MessengerConnectionDetails, MessengerConstructionDetails,
 	TransmitContext
 } from './messenger-types';
 import * as Translator from './messenger/translators/translator';
@@ -48,7 +48,7 @@ export class MessengerService extends ServiceUtilities<string> implements Servic
 		}
 	}
 
-	protected emitData(data: TransmitContext): Promise<MessageEmitResponse> {
+	protected emitData(data: TransmitContext): Promise<MessageResponseData> {
 		return Promise.props({
 			connection: this.translators[data.target.service].messageIntoConnectionDetails(data),
 			emit: this.translators[data.target.service].messageIntoEmitDetails(data),
@@ -65,14 +65,7 @@ export class MessengerService extends ServiceUtilities<string> implements Servic
 			};
 			return emitter.sendData(request);
 		}).then((response: ServiceEmitResponse) => {
-			if (response.response) {
-				return {
-					err: response.err,
-					response: this.translators[data.target.service].responseIntoMessageResponse(data, response.response),
-					source: response.source,
-				};
-			}
-			return response;
+			return this.translators[data.target.service].responseIntoMessageResponse(data, response.response);
 		});
 	}
 

@@ -9,7 +9,9 @@ const logger_1 = require("../utils/logger");
 class SyncBot extends procbot_1.ProcBot {
     static makeRouter(from, to, emitter, logger) {
         return (_registration, event) => {
-            if (from.service === event.cookedEvent.source.service && from.flow === event.cookedEvent.source.flow) {
+            if (from.service === event.cookedEvent.source.service &&
+                from.flow === event.cookedEvent.source.flow &&
+                event.cookedEvent.details.genesis !== 'system') {
                 const transmitMessage = {
                     action: 'createThread',
                     details: event.cookedEvent.details,
@@ -23,6 +25,31 @@ class SyncBot extends procbot_1.ProcBot {
                         username: event.cookedEvent.source.username,
                     },
                 };
+                const updateConnections = {
+                    action: 'createComment',
+                    details: {
+                        genesis: 'system',
+                        hidden: true,
+                        internal: true,
+                        text: 'This ticket is mirrored in '
+                    },
+                    hub: {
+                        username: process.env.SYNCBOT_NAME,
+                    },
+                    source: {
+                        message: 'duff',
+                        thread: 'duff',
+                        flow: 'duff',
+                        service: 'system',
+                        username: 'duff',
+                    },
+                    target: {
+                        flow: 'duff',
+                        service: 'duff',
+                        username: process.env.SYNCBOT_NAME,
+                        thread: 'duff'
+                    }
+                };
                 return emitter.sendData({
                     contexts: {
                         messenger: transmitMessage,
@@ -31,53 +58,31 @@ class SyncBot extends procbot_1.ProcBot {
                 }).then((emitResponse) => {
                     const response = emitResponse.response;
                     if (response) {
-                        const genericData = {
-                            action: 'createComment',
-                            details: {
-                                genesis: 'system',
-                                hidden: true,
-                                internal: true,
-                                text: 'This ticket is mirrored in '
-                            },
-                            hub: {
-                                username: 'syncbot',
-                            },
-                            source: {
-                                message: 'duff',
-                                thread: 'duff',
-                                flow: 'duff',
-                                service: 'system',
-                                username: 'syncbot',
-                            },
-                            target: {
-                                flow: 'duff',
-                                service: 'duff',
-                                username: 'syncbot',
-                                thread: 'duff'
-                            }
+                        const updateSource = _.cloneDeep(updateConnections);
+                        updateSource.target = {
+                            flow: event.cookedEvent.source.flow,
+                            service: event.cookedEvent.source.service,
+                            username: process.env.SYNCBOT_NAME,
+                            thread: event.cookedEvent.source.thread,
                         };
+                        updateSource.details.text += `[${to.service} thread ${response.thread}](${response.url})`;
                         const sourceDetails = event.cookedEvent.source;
-                        const updateTarget = _.cloneDeep(genericData);
+                        const updateTarget = _.cloneDeep(updateConnections);
                         updateTarget.target = {
                             flow: to.flow,
                             service: to.service,
-                            username: 'syncbot',
-                            thread: sourceDetails.thread,
-                        };
-                        updateTarget.details.text += `[${from.service} thread ${sourceDetails.thread}](${sourceDetails.url})`;
-                        emitter.sendData({ contexts: { messenger: updateTarget }, source: 'syncbot' });
-                        const updateSource = _.cloneDeep(genericData);
-                        updateSource.target = {
-                            flow: from.flow,
-                            service: from.service,
-                            username: 'syncbot',
+                            username: process.env.SYNCBOT_NAME,
                             thread: response.thread,
                         };
-                        updateSource.details.text += `[${to.service} thread ${response.thread}](${response.url})`;
-                        emitter.sendData({ contexts: { messenger: updateSource }, source: 'syncbot' });
-                        if (logger) {
-                            logger.log(logger_1.LogLevel.INFO, `---> Emitted '${event.cookedEvent.details.text}' to ${to.service}.`);
-                        }
+                        updateTarget.details.text += `[${from.service} thread ${sourceDetails.thread}](${sourceDetails.url})`;
+                        return Promise.all([
+                            emitter.sendData({ contexts: { messenger: updateSource }, source: 'syncbot' }),
+                            emitter.sendData({ contexts: { messenger: updateTarget }, source: 'syncbot' }),
+                        ]).then(() => {
+                            if (logger) {
+                                logger.log(logger_1.LogLevel.INFO, `---> Emitted '${event.cookedEvent.details.text}' to ${to.service}.`);
+                            }
+                        });
                     }
                 });
             }

@@ -35,14 +35,7 @@ class MessengerService extends service_utilities_1.ServiceUtilities {
             };
             return emitter.sendData(request);
         }).then((response) => {
-            if (response.response) {
-                return {
-                    err: response.err,
-                    response: this.translators[data.target.service].responseIntoMessageResponse(data, response.response),
-                    source: response.source,
-                };
-            }
-            return response;
+            return this.translators[data.target.service].responseIntoMessageResponse(data, response.response);
         });
     }
     verify() {

@@ -94,14 +94,14 @@ class FlowdockTranslator {
         });
     }
     messageIntoEmitDetails(message) {
+        const org = this.organization;
+        const flow = message.target.flow;
         switch (message.action) {
             case 'createThread':
                 const title = message.details.title;
                 if (!title) {
                     throw new Error('Cannot create Discourse Thread without a title');
                 }
-                const org = this.organization;
-                const flow = message.target.flow;
                 const titleText = title + '\n--\n';
                 return { method: ['_request'], payload: {
                         htmlVerb: 'POST',
@@ -110,8 +110,17 @@ class FlowdockTranslator {
                             content: titleText + message.details.text + '\n' + Translator.stringifyMetadata(message, 'emoji'),
                             event: 'message',
                             external_user_name: message.details.internal ? undefined : message.source.username.substring(0, 16),
-                            thread_id: message.target.thread,
                         },
+                    } };
+            case 'createComment':
+                return { method: ['_request'], payload: {
+                        htmlVerb: 'POST',
+                        path: `/flows/${org}/${flow}/threads/${message.target.thread}/messages/`,
+                        payload: {
+                            content: message.details.text + '\n' + Translator.stringifyMetadata(message, 'emoji'),
+                            event: 'message',
+                            external_user_name: message.details.internal ? undefined : message.source.username.substring(0, 16),
+                        }
                     } };
             default:
                 throw new Error(`${message.action} not supported on ${message.target.service}`);
