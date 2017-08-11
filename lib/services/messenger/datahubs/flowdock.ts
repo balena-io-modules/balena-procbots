@@ -82,7 +82,7 @@ export class FlowdockDataHub implements DataHub {
 			.then((foundUsers) => {
 				// Generate an array of user objects with matching username
 				const matchingUsers = _.filter(foundUsers, (eachUser: any) => {
-					return eachUser.nick === username;
+					return eachUser.nick.toLowerCase() === username.toLowerCase();
 				});
 				// Return id if we've exactly one user for a particular username
 				if (matchingUsers.length === 1) {

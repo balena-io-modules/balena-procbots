@@ -116,7 +116,7 @@ function metadataByRegex(message: string, regex: RegExp): Metadata {
 		};
 	}
 	return {
-		content: message,
+		content: message.trim(),
 		genesis: null,
 		hidden: true,
 	};
