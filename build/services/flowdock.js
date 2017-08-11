@@ -46,7 +46,7 @@ class FlowdockService extends service_utilities_1.ServiceUtilities {
                     cookedEvent: {
                         flow: flowIdToFlowName[message.flow],
                     },
-                    event: message.event,
+                    type: message.event,
                     rawEvent: message,
                     source: FlowdockService._serviceName,
                 });

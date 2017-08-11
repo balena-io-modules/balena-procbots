@@ -1,14 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const _ = require("lodash");
-function initInterimContext(event, target) {
-    return {
-        details: event.details,
-        source: event.source,
-        target: _.isString(target) ? { service: target } : target,
-    };
-}
-exports.initInterimContext = initInterimContext;
 function stringifyMetadata(data, format) {
     const indicators = data.details.hidden ? getIndicatorArrays().hidden : getIndicatorArrays().shown;
     switch (format) {

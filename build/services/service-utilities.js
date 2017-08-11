@@ -1,17 +1,18 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const TypedError = require("typed-error");
+const _ = require("lodash");
 const Promise = require("bluebird");
 const bodyParser = require("body-parser");
 const express = require("express");
 const worker_1 = require("../framework/worker");
 const worker_client_1 = require("../framework/worker-client");
 const logger_1 = require("../utils/logger");
+const context_absent_1 = require("./errors/context-absent");
 class ServiceUtilities extends worker_client_1.WorkerClient {
     constructor() {
         super(...arguments);
         this._logger = new logger_1.Logger();
-        this.eventListeners = {};
+        this._eventListeners = {};
         this.queueData = (data) => {
             if (this.verify(data)) {
                 super.queueEvent({
@@ -34,7 +35,7 @@ class ServiceUtilities extends worker_client_1.WorkerClient {
             return created;
         };
         this.handleEvent = (data) => {
-            const listeners = this.eventListeners[data.event] || [];
+            const listeners = this._eventListeners[data.type] || [];
             return Promise.map(listeners, (listener) => {
                 return listener.listenerMethod(listener, data);
             }).return();
@@ -42,17 +43,17 @@ class ServiceUtilities extends worker_client_1.WorkerClient {
     }
     registerEvent(registration) {
         for (const event of registration.events) {
-            if (!this.eventListeners[event]) {
-                this.eventListeners[event] = [];
+            if (!this._eventListeners[event]) {
+                this._eventListeners[event] = [];
             }
-            this.eventListeners[event].push(registration);
+            this._eventListeners[event].push(registration);
         }
     }
     sendData(data) {
         const context = data.contexts[this.serviceName];
         if (!context) {
             return Promise.resolve({
-                err: new TypedError(`No ${this.serviceName} context`),
+                err: new context_absent_1.ContextAbsentError(`No ${this.serviceName} context`),
                 source: this.serviceName,
             });
         }
@@ -83,6 +84,9 @@ class ServiceUtilities extends worker_client_1.WorkerClient {
     }
     get logger() {
         return this._logger;
+    }
+    get eventsRegistered() {
+        return _.keys(this._eventListeners);
     }
 }
 exports.ServiceUtilities = ServiceUtilities;

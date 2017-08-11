@@ -16,8 +16,9 @@ limitations under the License.
 
 import * as Promise from 'bluebird';
 import { Session } from 'flowdock';
-import { FlowdockConnectionDetails, FlowdockEmitData, FlowdockEvent } from '../../flowdock-types';
-import { MessageContext, MessageEvent, TransmitContext } from '../../messenger-types';
+import * as _ from 'lodash';
+import { FlowdockConnectionDetails, FlowdockEmitData, FlowdockEvent, FlowdockResponse } from '../../flowdock-types';
+import { MessageContext, MessageEvent, MessageResponseData, TransmitContext } from '../../messenger-types';
 import { DataHub } from '../datahubs/datahub';
 import * as Translator from './translator';
 
@@ -25,6 +26,9 @@ export class FlowdockTranslator implements Translator.Translator {
 	private hub: DataHub;
 	private session: Session;
 	private organization: string;
+	private eventEquivalencies: {[generic: string]: string[]} = {
+		message: ['message'],
+	};
 
 	constructor(data: FlowdockConnectionDetails, hub: DataHub) {
 		this.hub = hub;
@@ -32,26 +36,21 @@ export class FlowdockTranslator implements Translator.Translator {
 		this.organization = data.organization;
 	}
 
-	public messageIntoConnectionDetails(message: TransmitContext): Promise<FlowdockConnectionDetails> {
-		return this.hub.fetchValue(message.hub.user, 'flowdock', 'token')
-		.then((token) => {
-			return {
-				organization: this.organization,
-				token,
-			};
-		});
+	public eventTypeIntoMessageType(type: string): string {
+		return _.findKey(this.eventEquivalencies, (value: string[]) => {
+			return _.includes(value, type);
+		}) || 'Misc event';
 	}
 
-	public messageIntoMethodPath(_message: TransmitContext): Promise<string[]> {
-		return Promise.resolve(['_request']);
+	public messageTypeIntoEventTypes(type: string): string[] {
+		return this.eventEquivalencies[type];
 	}
 
-	/**
-	 * Translate the provided event, enqueued by the service, into a message context.
-	 * @param event  Data in the form raw to the service.
-	 */
+	public getAllEventTypes(): string[] {
+		return _.flatMap(this.eventEquivalencies, _.identity);
+	}
+
 	public eventIntoMessage(event: FlowdockEvent): Promise<MessageEvent> {
-		// TODO: Is this method calling the minimum quantity of API call possible?
 		// Separate out some parts of the message
 		const metadata = Translator.extractMetadata(event.rawEvent.content, 'emoji');
 		const titleAndText = metadata.content.match(/^(.*)\n--\n((?:\r|\n|.)*)$/);
@@ -65,7 +64,8 @@ export class FlowdockTranslator implements Translator.Translator {
 			details: {
 				genesis: metadata.genesis || event.source,
 				hidden: metadata.hidden,
-				text: titleAndText ? titleAndText[2] : metadata.content,
+				internal: !!event.rawEvent.external_user_name,
+				text: titleAndText ? titleAndText[2].trim() : metadata.content.trim(),
 				title: titleAndText ? titleAndText[1] : undefined,
 			},
 			source: {
@@ -74,108 +74,71 @@ export class FlowdockTranslator implements Translator.Translator {
 				flow,
 				thread,
 				url: `https://www.flowdock.com/app/${org}/${flow}/threads/${thread}`,
-				user: 'duff', // gets replaced
+				username: 'duff', // gets replaced
 			},
 		};
 		// If the data provided a username
 		if (event.rawEvent.external_user_name) {
-			cookedEvent.source.user = event.rawEvent.external_user_name;
+			cookedEvent.source.username = event.rawEvent.external_user_name;
 			return Promise.resolve({
 				context: `${event.source}.${event.cookedEvent.context}`,
-				// TODO: This to translate
-				event: 'message',
+				type: this.eventTypeIntoMessageType(event.type),
 				cookedEvent,
 				rawEvent: event.rawEvent,
 				source: event.source,
 			});
 		}
 		return this.fetchFromSession(`/organizations/${org}/users/${userId}`)
-		.then((user) => {
-			cookedEvent.source.user = user.nick;
-			return({
-				context: `${event.source}.${event.cookedEvent.context}`,
-				// TODO: This to translate
-				event: 'message',
-				cookedEvent,
-				rawEvent: event.rawEvent,
-				source: 'messenger',
+			.then((user) => {
+				cookedEvent.source.username = user.nick;
+				return({
+					context: `${event.source}.${event.cookedEvent.context}`,
+					type: this.eventTypeIntoMessageType(event.type),
+					cookedEvent,
+					rawEvent: event.rawEvent,
+					source: 'messenger',
+				});
 			});
-		});
 	}
 
-	public eventIntoMessageEventName(event: FlowdockEvent): string {
-		const equivalents: {[key: string]: string} = {
-			// TODO: Structure this properly
-			message: 'message',
-		};
-		return equivalents[event.event];
+	public messageIntoConnectionDetails(message: TransmitContext): Promise<FlowdockConnectionDetails> {
+		return this.hub.fetchValue(message.hubUsername, 'flowdock', 'token')
+			.then((token) => {
+				return {
+					organization: this.organization,
+					token,
+				};
+			});
 	}
 
-	/**
-	 * Translate the provided message context into an emit context.
-	 * @param message  Standard form of the message.
-	 */
-	public messageIntoEmitCreateMessage(message: TransmitContext): Promise<FlowdockEmitData> {
+	public messageIntoEmitCreateComment(message: TransmitContext): {method: string[], payload: FlowdockEmitData} {
 		// Build a string for the title, if appropriate.
-		// TODO: Replace the reliance on the first boolean
-		const titleText = /* message.details.first && */ message.details.title ? message.details.title + '\n--\n' : '';
-		return Promise.resolve({
+		const titleText = message.target.flow ? message.details.title + '\n--\n' : '';
+		const org = this.organization;
+		const flow = message.target.flow;
+		return {method: ['_request'], payload: {
 			htmlVerb: 'POST',
-			path: '/flows/${org}/${flow}/messages/',
+			path: `/flows/${org}/${flow}/messages/`,
 			payload: {
 				// The concatenated string, of various data nuggets, to emit
 				content: titleText + message.details.text + '\n' + Translator.stringifyMetadata(message, 'emoji'),
 				event: 'message',
-				// TODO: Something with this?!?!
-				// external_user_name:
-				// If this is using the generic token, then they must be an external user, so indicate this
-				// 	message.toIds.token === this.data.token ? message.toIds.user.substring(0, 16) : undefined,
+				external_user_name: message.details.internal ? undefined : message.source.username.substring(0, 16),
 				thread_id: message.target.thread,
 			},
-		});
+		}};
 	}
 
-	/**
-	 * Translate the provided message context into an emit context that will retrieve the thread history.
-	 * @param message    Standard form of the message.
-	 * @param shortlist  *DO NOT RELY ON THIS BEING USED.*  Purely optional optimisation.
-	 *                   If the endpoint supports it then it may use this to shortlist the responses.
-	 */
-	public messageIntoEmitReadThread(message: MessageContext, shortlist?: RegExp): Promise<FlowdockEmitData> {
-		// Query the API
+	public responseIntoMessageResponse(payload: TransmitContext, response: FlowdockResponse): MessageResponseData {
+		const thread = response.thread_id;
 		const org = this.organization;
-		const firstWords = shortlist && shortlist.source.match(/^([\w\s]+)/i);
-		if (firstWords) {
-			return Promise.resolve({
-				htmlVerb: 'GET',
-				path: `/flows/${org}/${message.source.flow}/threads/${message.source.thread}/messages`,
-				payload: {
-					search: firstWords[1],
-				},
-			});
-		}
-		return Promise.resolve({
-			htmlVerb: 'GET',
-			path: `/flows/${org}/${message.source.flow}/threads/${message.source.thread}/messages`,
-		});
-	}
-
-	/**
-	 * Translate the provided generic name for an event into the service events to listen to.
-	 * @param name  Generic name for an event.
-	 */
-	public eventNameIntoTriggers(name: string): string[] {
-		const equivalents: {[key: string]: string[]} = {
-			message: ['message'],
+		const flow = payload.target.flow;
+		const url = `https://www.flowdock.com/app/${org}/${flow}/threads/${thread}`;
+		return {
+			message: response.id,
+			thread: response.thread_id,
+			url,
 		};
-		return equivalents[name];
-	}
-
-	/**
-	 * Returns an array of all the service events that may be translated.
-	 */
-	public getAllTriggers(): string[] {
-		return ['message'];
 	}
 
 	/**

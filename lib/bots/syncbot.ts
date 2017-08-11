@@ -31,15 +31,12 @@ export class SyncBot extends ProcBot {
 			if (from.service === event.cookedEvent.source.service && from.flow === event.cookedEvent.source.flow) {
 				const transmitMessage: TransmitContext = {
 					details: event.cookedEvent.details,
-					hub: {
-						service: process.env.SYNCBOT_DATAHUB_SERVICE,
-						user: event.cookedEvent.source.user,
-					},
+					hubUsername: event.cookedEvent.source.username,
 					source: event.cookedEvent.source,
 					target: {
 						flow: to.flow,
 						service: to.service,
-						user: event.cookedEvent.source.user,
+						username: event.cookedEvent.source.username,
 					},
 				};
 				return emitter.sendData({

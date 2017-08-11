@@ -19,15 +19,18 @@ import * as _ from 'lodash';
 import * as path from 'path';
 
 import { LogLevel } from '../utils/logger';
-import { MessengerConnectionDetails, MessengerConstructionDetails, TransmitContext } from './messenger-types';
+import {
+	MessageEmitResponse, MessengerConnectionDetails, MessengerConstructionDetails,
+	TransmitContext
+} from './messenger-types';
 import * as Translator from './messenger/translators/translator';
 import {
-	ServiceEmitContext,
-	ServiceEmitResponse,
-	ServiceEmitter, ServiceEvent,
+	ServiceEmitContext, ServiceEmitRequest, ServiceEmitResponse,
+	ServiceEmitter,
 	ServiceListener, ServiceRegistration,
 } from './service-types';
 import { ServiceUtilities } from './service-utilities';
+import { UtilityServiceEvent } from './service-utilities-types';
 
 export class MessengerService extends ServiceUtilities<string> implements ServiceListener, ServiceEmitter {
 	private static _serviceName = path.basename(__filename.split('.')[0]);
@@ -45,19 +48,31 @@ export class MessengerService extends ServiceUtilities<string> implements Servic
 		}
 	}
 
-	protected emitData(data: TransmitContext): Promise<ServiceEmitResponse> {
+	protected emitData(data: TransmitContext): Promise<MessageEmitResponse> {
 		return Promise.props({
 			connection: this.translators[data.target.service].messageIntoConnectionDetails(data),
-			method: this.translators[data.target.service].messageIntoMethodPath(data),
-			payload: this.translators[data.target.service].messageIntoEmitCreateMessage(data),
-		}).then((details: { connection: object, payload: ServiceEmitContext, method: string[] } ) => {
+			emit: this.translators[data.target.service].messageIntoEmitCreateComment(data),
+		}).then((details: { connection: object, emit: { payload: ServiceEmitContext, method: string[] } } ) => {
 			const emitter = require(`./${data.target.service}`).createServiceEmitter(details.connection);
 			const sdk = emitter.apiHandle[data.target.service];
 			let method = sdk;
-			_.forEach(details.method, (nodeName) => {
+			_.forEach(details.emit.method, (nodeName) => {
 				method = method[nodeName];
 			});
-			return emitter.sendData({ contexts: { discourse: { method: method.bind(sdk), data: details.payload } } });
+			const request: ServiceEmitRequest = {
+				contexts: { [emitter.serviceName]: { method: method.bind(sdk), data: details.emit.payload } },
+				source: this.serviceName,
+			};
+			return emitter.sendData(request);
+		}).then((response: ServiceEmitResponse) => {
+			if (response.response) {
+				return {
+					err: response.err,
+					response: this.translators[data.target.service].responseIntoMessageResponse(data, response.response),
+					source: response.source,
+				};
+			}
+			return response;
 		});
 	}
 
@@ -73,9 +88,9 @@ export class MessengerService extends ServiceUtilities<string> implements Servic
 			this.logger.log(LogLevel.INFO, `---> Constructing '${subServiceName}' listener.`);
 			const subListener = require(`./${subServiceName}`).createServiceListener(subConnectionDetails);
 			subListener.registerEvent({
-				events: this.translators[subServiceName].getAllTriggers(),
-				listenerMethod: (_registration: ServiceRegistration, event: ServiceEvent) => {
-					if (_.includes(this.eventsRegistered, this.translators[subServiceName].eventIntoMessageEventName(event))) {
+				events: this.translators[subServiceName].getAllEventTypes(),
+				listenerMethod: (_registration: ServiceRegistration, event: UtilityServiceEvent) => {
+					if (_.includes(this.eventsRegistered, this.translators[subServiceName].eventTypeIntoMessageType(event.type))) {
 						this.translators[subServiceName].eventIntoMessage(event)
 						.then((message) => {
 							this.logger.log(

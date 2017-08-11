@@ -1,20 +1,24 @@
 import * as Promise from 'bluebird';
-import { FlowdockConnectionDetails, FlowdockEmitData, FlowdockEvent } from '../../flowdock-types';
-import { MessageContext, MessageEvent, TransmitContext } from '../../messenger-types';
+import { FlowdockConnectionDetails, FlowdockEmitData, FlowdockEvent, FlowdockResponse } from '../../flowdock-types';
+import { MessageEvent, MessageResponseData, TransmitContext } from '../../messenger-types';
 import { DataHub } from '../datahubs/datahub';
 import * as Translator from './translator';
 export declare class FlowdockTranslator implements Translator.Translator {
     private hub;
     private session;
     private organization;
+    private eventEquivalencies;
     constructor(data: FlowdockConnectionDetails, hub: DataHub);
-    messageIntoConnectionDetails(message: TransmitContext): Promise<FlowdockConnectionDetails>;
-    messageIntoMethodPath(_message: TransmitContext): Promise<string[]>;
+    eventTypeIntoMessageType(type: string): string;
+    messageTypeIntoEventTypes(type: string): string[];
+    getAllEventTypes(): string[];
     eventIntoMessage(event: FlowdockEvent): Promise<MessageEvent>;
-    messageIntoEmitCreateMessage(message: TransmitContext): Promise<FlowdockEmitData>;
-    messageIntoEmitReadThread(message: MessageContext, shortlist?: RegExp): Promise<FlowdockEmitData>;
-    eventNameIntoTriggers(name: string): string[];
-    getAllTriggers(): string[];
+    messageIntoConnectionDetails(message: TransmitContext): Promise<FlowdockConnectionDetails>;
+    messageIntoEmitCreateComment(message: TransmitContext): {
+        method: string[];
+        payload: FlowdockEmitData;
+    };
+    responseIntoMessageResponse(payload: TransmitContext, response: FlowdockResponse): MessageResponseData;
     private fetchFromSession;
 }
 export declare function createTranslator(data: FlowdockConnectionDetails, hub: DataHub): Translator.Translator;

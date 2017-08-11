@@ -22,6 +22,7 @@ import * as express from 'express';
 import { Worker } from '../framework/worker';
 import { WorkerClient } from '../framework/worker-client';
 import { Logger, LogLevel } from '../utils/logger';
+import { ContextAbsentError } from './errors/context-absent';
 import {
 	ServiceAPIHandle, ServiceEmitContext, ServiceEmitRequest, ServiceEmitResponse,
 	ServiceEmitter, ServiceListener, ServiceRegistration,
@@ -80,8 +81,7 @@ export abstract class ServiceUtilities<T> extends WorkerClient<T> implements Ser
 		const context = data.contexts[this.serviceName] as ServiceEmitContext;
 		if (!context) {
 			return Promise.resolve({
-				// TODO: TypedError should be treated as abstract. Do not directly invoke.
-				err: new TypedError(`No ${this.serviceName} context`),
+				err: new ContextAbsentError(`No ${this.serviceName} context`),
 				source: this.serviceName,
 			});
 		}
@@ -184,7 +184,7 @@ export abstract class ServiceUtilities<T> extends WorkerClient<T> implements Ser
 	 */
 	protected handleEvent = (data: UtilityServiceEvent): Promise<void> => {
 		// Retrieve and execute all the listener methods, squashing their responses
-		const listeners = this._eventListeners[data.event] || [];
+		const listeners = this._eventListeners[data.type] || [];
 		return Promise.map(listeners, (listener) => {
 			return listener.listenerMethod(listener, data);
 		}).return();

@@ -17,45 +17,31 @@
 import * as Promise from 'bluebird';
 import { DataHub } from './messenger/datahubs/datahub';
 import {
-	ServiceEmitContext,
 	ServiceEmitResponse, ServiceRegistration,
 } from './service-types';
 import { UtilityServiceEvent } from './service-utilities-types';
 
-// export enum MessageAction {
-// 	Create,
-// }
-
-// Generic forms of message objects
 export interface MessageIds {
 	service: string;
-	// TODO: Add and use if the user is internal or external
-	user?: string;
+	username: string;
 	message?: string;
 	thread?: string;
 	flow?: string;
 	url?: string;
 }
 export interface ReceiptIds extends MessageIds {
-	service: string;
-	user: string;
 	message: string;
 	thread: string;
 	flow: string;
 }
-// Message objects suitable for the transmission of messages
 export interface TransmitIds extends MessageIds {
-	service: string;
-	user: string;
 	flow: string;
-}
-export interface HubIds extends MessageIds {
-	user: string;
 }
 
 export interface MessageDetails {
 	genesis: string;
 	hidden: boolean;
+	internal: boolean;
 	text: string;
 	title?: string;
 }
@@ -64,29 +50,21 @@ export interface MessageContext {
 	details: MessageDetails;
 	source: ReceiptIds;
 }
-// Message objects suitable for the handling of messages
-export interface InterimContext extends MessageContext {
-	target: MessageIds;
-}
 export interface TransmitContext extends MessageContext {
-	hub: HubIds;
+	hubUsername: string;
 	target: TransmitIds;
 }
 
 export type MessageListenerMethod = (registration: ServiceRegistration, event: MessageEvent) => Promise<void>;
 
-export interface MessageEmitContext extends ServiceEmitContext {
-	endpoint: object;
-	meta?: any;
-	payload: object;
+export interface MessageResponseData {
+	message: string;
+	thread: string;
+	url?: string;
 }
 
 export interface MessageEmitResponse extends ServiceEmitResponse {
-	response?: {
-		message: string;
-		thread: string;
-		url?: string;
-	};
+	response?: MessageResponseData;
 }
 
 export interface Metadata {

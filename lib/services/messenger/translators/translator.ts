@@ -17,12 +17,10 @@
 import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import {
-	InterimContext, MessageContext, MessageEvent, MessageIds,
+	MessageContext, MessageEvent, MessageResponseData,
 	Metadata, TransmitContext,
 } from '../../messenger-types';
-import {
-	ServiceEmitContext, ServiceEvent,
-} from '../../service-types';
+import { ServiceEvent } from '../../service-types';
 import { DataHub } from '../datahubs/datahub';
 
 export interface PublicityIndicator {
@@ -32,70 +30,20 @@ export interface PublicityIndicator {
 }
 
 export interface Translator {
-	// TODO: This does not belong here but is going here for now.
-	// This is to reconcile:
-	// * Some services require credentials provided by the user in the hub service
-	// * Some services require centrally provided credentials
-	// * An emitter operates with exactly one set of credentials
-	// This maybe shouldn't use dataHub and could just use the getter function
-	// makeEmitter(specificFetcher: (key: string) => Promise<string>, genericDetails: object): Promise<ServiceEmitter>;
+	eventTypeIntoMessageType(type: string): string;
+	messageTypeIntoEventTypes(type: string): string[];
+	getAllEventTypes(): string[];
 
-	/**
-	 * Translate the provided event, enqueued by the service, into a message context.
-	 * @param event  Data in the form raw to the service.
-	 */
 	eventIntoMessage(event: ServiceEvent): Promise<MessageEvent>;
-
-	eventIntoMessageEventName(event: ServiceEvent): string;
-
-	/**
-	 * Translate the provided message context into an emit context that will create the message.
-	 * @param message  Standard form of the message.
-	 */
-	messageIntoEmitCreateMessage(message: TransmitContext): Promise<ServiceEmitContext>;
-
-	messageIntoMethodPath(message: TransmitContext): Promise<string[]>;
-
-	// messageIntoEmitCreateTopic
-
-	// messageIntoEmitUpdateTags
 
 	messageIntoConnectionDetails(message: TransmitContext): Promise<object>;
 
-	/**
-	 * Translate the provided message context into an emit context that will retrieve the thread history.
-	 * @param message    Standard form of the message.
-	 * @param shortlist  *DO NOT RELY ON THIS BEING USED.*
-	 *                   Optional, if the API supports it then it may use this to shortlist the responses server-side.
-	 */
-	messageIntoEmitReadThread(message: MessageContext, shortlist?: RegExp): Promise<ServiceEmitContext>;
+	messageIntoEmitCreateComment(message: TransmitContext): {method: string[], payload: any};
+	// messageIntoEmitCreateTopic
+	// messageIntoEmitUpdateTags
+	// messageIntoReadThread
 
-	/**
-	 * Translate the provided generic name for an event into the service events to listen to.
-	 * @param name  Generic name for an event.
-	 */
-	eventNameIntoTriggers(name: string): string[];
-
-	/**
-	 * Returns an array of all the service events that may be translated.
-	 */
-	getAllTriggers(): string[];
-}
-
-/**
- * Make a handle context, using a receipt context and some extra information.
- * @param event  Event to be converted.
- * @param target Destination for the handle context.
- * @returns      Newly created context for handling a message.
- */
-// TODO: Transfer this across to syncbot.ts
-export function initInterimContext(event: MessageContext, target: MessageIds | string): InterimContext {
-	return {
-		// Details from the ReceiptContext
-		details: event.details,
-		source: event.source,
-		target: _.isString(target) ? { service: target } : target,
-	};
+	responseIntoMessageResponse(payload: TransmitContext, response: any): MessageResponseData;
 }
 
 /**

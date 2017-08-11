@@ -1,6 +1,6 @@
 import * as Promise from 'bluebird';
-import { InterimContext, MessageContext, MessageEvent, MessageIds, Metadata, TransmitContext } from '../../messenger-types';
-import { ServiceEmitContext, ServiceEvent } from '../../service-types';
+import { MessageContext, MessageEvent, MessageResponseData, Metadata, TransmitContext } from '../../messenger-types';
+import { ServiceEvent } from '../../service-types';
 import { DataHub } from '../datahubs/datahub';
 export interface PublicityIndicator {
     emoji: string;
@@ -8,15 +8,17 @@ export interface PublicityIndicator {
     char: string;
 }
 export interface Translator {
+    eventTypeIntoMessageType(type: string): string;
+    messageTypeIntoEventTypes(type: string): string[];
+    getAllEventTypes(): string[];
     eventIntoMessage(event: ServiceEvent): Promise<MessageEvent>;
-    messageIntoEmitCreateMessage(message: TransmitContext): Promise<ServiceEmitContext>;
-    messageIntoMethodPath(message: TransmitContext): Promise<string[]>;
     messageIntoConnectionDetails(message: TransmitContext): Promise<object>;
-    messageIntoEmitReadThread(message: MessageContext, shortlist?: RegExp): Promise<ServiceEmitContext>;
-    eventNameIntoTriggers(name: string): string[];
-    getAllTriggers(): string[];
+    messageIntoEmitCreateComment(message: TransmitContext): {
+        method: string[];
+        payload: any;
+    };
+    responseIntoMessageResponse(payload: TransmitContext, response: any): MessageResponseData;
 }
-export declare function initInterimContext(event: MessageContext, target: MessageIds | string): InterimContext;
 export declare function stringifyMetadata(data: MessageContext, format: string): string;
 export declare function extractMetadata(message: string, format: string): Metadata;
 export declare function createTranslator(name: string, data: any, hub: DataHub): Translator;

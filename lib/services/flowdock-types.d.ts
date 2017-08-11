@@ -48,13 +48,13 @@ export type FlowdockPayload = FlowdockMessagePayload | FlowdockInboxPayload | Fl
 
 export type FlowdockResponse = any;
 
-type Callback = (error: Error, response: FlowdockResponse) => void;
-
 export interface FlowdockEmitData {
 	htmlVerb: string;
 	path: string;
 	payload?: FlowdockPayload;
 }
+
+type Callback = (error: Error, response: FlowdockResponse) => void;
 
 export type FlowdockEmitMethod = (htmlVerb: string, path: string, payload: FlowdockPayload, callback: Callback) => void;
 

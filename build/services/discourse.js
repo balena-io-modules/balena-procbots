@@ -47,7 +47,7 @@ class DiscourseService extends service_utilities_1.ServiceUtilities {
                 this.queueData({
                     context: formData.body.post.topic_id,
                     cookedEvent: {},
-                    event: 'post',
+                    type: 'post',
                     rawEvent: formData.body.post,
                     source: DiscourseService._serviceName,
                 });

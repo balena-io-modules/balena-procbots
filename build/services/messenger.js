@@ -9,46 +9,59 @@ const service_utilities_1 = require("./service-utilities");
 class MessengerService extends service_utilities_1.ServiceUtilities {
     constructor(data, listen) {
         super();
-        this.connectionDetails = data.subServices;
         this.translators = {};
         _.forEach(data.subServices, (subConnectionDetails, serviceName) => {
             this.logger.log(logger_1.LogLevel.INFO, `---> Constructing '${serviceName}' translator.`);
             this.translators[serviceName] = Translator.createTranslator(serviceName, subConnectionDetails, data.dataHub);
         });
         if (listen) {
-            this.startListening();
+            this.startListening(data.subServices);
         }
     }
     emitData(data) {
         return Promise.props({
             connection: this.translators[data.target.service].messageIntoConnectionDetails(data),
-            method: this.translators[data.target.service].messageIntoMethodPath(data),
-            payload: this.translators[data.target.service].messageIntoEmitCreateMessage(data),
+            emit: this.translators[data.target.service].messageIntoEmitCreateComment(data),
         }).then((details) => {
             const emitter = require(`./${data.target.service}`).createServiceEmitter(details.connection);
             const sdk = emitter.apiHandle[data.target.service];
             let method = sdk;
-            _.forEach(details.method, (nodeName) => {
+            _.forEach(details.emit.method, (nodeName) => {
                 method = method[nodeName];
             });
-            return emitter.sendData({ contexts: { discourse: { method: method.bind(sdk), data: details.payload } } });
+            const request = {
+                contexts: { [emitter.serviceName]: { method: method.bind(sdk), data: details.emit.payload } },
+                source: this.serviceName,
+            };
+            return emitter.sendData(request);
+        }).then((response) => {
+            if (response.response) {
+                return {
+                    err: response.err,
+                    response: this.translators[data.target.service].responseIntoMessageResponse(data, response.response),
+                    source: response.source,
+                };
+            }
+            return response;
         });
     }
     verify() {
         return true;
     }
-    startListening() {
-        _.forEach(this.connectionDetails, (subConnectionDetails, subServiceName) => {
+    startListening(connectionDetails) {
+        _.forEach(connectionDetails, (subConnectionDetails, subServiceName) => {
             this.logger.log(logger_1.LogLevel.INFO, `---> Constructing '${subServiceName}' listener.`);
             const subListener = require(`./${subServiceName}`).createServiceListener(subConnectionDetails);
             subListener.registerEvent({
-                events: this.translators[subServiceName].getAllTriggers(),
+                events: this.translators[subServiceName].getAllEventTypes(),
                 listenerMethod: (_registration, event) => {
-                    this.translators[subServiceName].eventIntoMessage(event)
-                        .then((message) => {
-                        this.logger.log(logger_1.LogLevel.INFO, `Heard '${message.cookedEvent.details.text}' on '${message.cookedEvent.source.service}'`);
-                        this.queueData(message);
-                    });
+                    if (_.includes(this.eventsRegistered, this.translators[subServiceName].eventTypeIntoMessageType(event.type))) {
+                        this.translators[subServiceName].eventIntoMessage(event)
+                            .then((message) => {
+                            this.logger.log(logger_1.LogLevel.INFO, `Heard '${message.cookedEvent.details.text}' on ${message.cookedEvent.source.service}.`);
+                            this.queueData(message);
+                        });
+                    }
                 },
                 name: `${subServiceName}=>${this.serviceName}`,
             });

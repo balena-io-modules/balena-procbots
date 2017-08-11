@@ -2,9 +2,13 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const Promise = require("bluebird");
 const flowdock_1 = require("flowdock");
+const _ = require("lodash");
 const Translator = require("./translator");
 class FlowdockTranslator {
     constructor(data, hub) {
+        this.eventEquivalencies = {
+            message: ['message'],
+        };
         this.fetchFromSession = (path, search) => {
             return new Promise((resolve, reject) => {
                 this.session.on('error', reject);
@@ -20,17 +24,16 @@ class FlowdockTranslator {
         this.session = new flowdock_1.Session(data.token);
         this.organization = data.organization;
     }
-    messageIntoConnectionDetails(message) {
-        return this.hub.fetchValue(message.hub.user, 'flowdock', 'token')
-            .then((token) => {
-            return {
-                organization: this.organization,
-                token,
-            };
-        });
+    eventTypeIntoMessageType(type) {
+        return _.findKey(this.eventEquivalencies, (value) => {
+            return _.includes(value, type);
+        }) || 'Misc event';
     }
-    messageIntoMethodPath(_message) {
-        return Promise.resolve(['_request']);
+    messageTypeIntoEventTypes(type) {
+        return this.eventEquivalencies[type];
+    }
+    getAllEventTypes() {
+        return _.flatMap(this.eventEquivalencies, _.identity);
     }
     eventIntoMessage(event) {
         const metadata = Translator.extractMetadata(event.rawEvent.content, 'emoji');
@@ -43,7 +46,8 @@ class FlowdockTranslator {
             details: {
                 genesis: metadata.genesis || event.source,
                 hidden: metadata.hidden,
-                text: titleAndText ? titleAndText[2] : metadata.content,
+                internal: !!event.rawEvent.external_user_name,
+                text: titleAndText ? titleAndText[2].trim() : metadata.content.trim(),
                 title: titleAndText ? titleAndText[1] : undefined,
             },
             source: {
@@ -52,14 +56,14 @@ class FlowdockTranslator {
                 flow,
                 thread,
                 url: `https://www.flowdock.com/app/${org}/${flow}/threads/${thread}`,
-                user: 'duff',
+                username: 'duff',
             },
         };
         if (event.rawEvent.external_user_name) {
-            cookedEvent.source.user = event.rawEvent.external_user_name;
+            cookedEvent.source.username = event.rawEvent.external_user_name;
             return Promise.resolve({
                 context: `${event.source}.${event.cookedEvent.context}`,
-                event: 'message',
+                type: this.eventTypeIntoMessageType(event.type),
                 cookedEvent,
                 rawEvent: event.rawEvent,
                 source: event.source,
@@ -67,53 +71,50 @@ class FlowdockTranslator {
         }
         return this.fetchFromSession(`/organizations/${org}/users/${userId}`)
             .then((user) => {
-            cookedEvent.source.user = user.nick;
+            cookedEvent.source.username = user.nick;
             return ({
                 context: `${event.source}.${event.cookedEvent.context}`,
-                event: 'message',
+                type: this.eventTypeIntoMessageType(event.type),
                 cookedEvent,
                 rawEvent: event.rawEvent,
                 source: 'messenger',
             });
         });
     }
-    messageIntoEmitCreateMessage(message) {
-        const titleText = message.details.title ? message.details.title + '\n--\n' : '';
-        return Promise.resolve({
-            htmlVerb: 'POST',
-            path: '/flows/${org}/${flow}/messages/',
-            payload: {
-                content: titleText + message.details.text + '\n' + Translator.stringifyMetadata(message, 'emoji'),
-                event: 'message',
-                thread_id: message.target.thread,
-            },
+    messageIntoConnectionDetails(message) {
+        return this.hub.fetchValue(message.hubUsername, 'flowdock', 'token')
+            .then((token) => {
+            return {
+                organization: this.organization,
+                token,
+            };
         });
     }
-    messageIntoEmitReadThread(message, shortlist) {
+    messageIntoEmitCreateComment(message) {
+        const titleText = message.target.flow ? message.details.title + '\n--\n' : '';
         const org = this.organization;
-        const firstWords = shortlist && shortlist.source.match(/^([\w\s]+)/i);
-        if (firstWords) {
-            return Promise.resolve({
-                htmlVerb: 'GET',
-                path: `/flows/${org}/${message.source.flow}/threads/${message.source.thread}/messages`,
+        const flow = message.target.flow;
+        return { method: ['_request'], payload: {
+                htmlVerb: 'POST',
+                path: `/flows/${org}/${flow}/messages/`,
                 payload: {
-                    search: firstWords[1],
+                    content: titleText + message.details.text + '\n' + Translator.stringifyMetadata(message, 'emoji'),
+                    event: 'message',
+                    external_user_name: message.details.internal ? undefined : message.source.username.substring(0, 16),
+                    thread_id: message.target.thread,
                 },
-            });
-        }
-        return Promise.resolve({
-            htmlVerb: 'GET',
-            path: `/flows/${org}/${message.source.flow}/threads/${message.source.thread}/messages`,
-        });
+            } };
     }
-    eventNameIntoTriggers(name) {
-        const equivalents = {
-            message: ['message'],
+    responseIntoMessageResponse(payload, response) {
+        const thread = response.thread_id;
+        const org = this.organization;
+        const flow = payload.target.flow;
+        const url = `https://www.flowdock.com/app/${org}/${flow}/threads/${thread}`;
+        return {
+            message: response.id,
+            thread: response.thread_id,
+            url,
         };
-        return equivalents[name];
-    }
-    getAllTriggers() {
-        return ['message'];
     }
 }
 exports.FlowdockTranslator = FlowdockTranslator;

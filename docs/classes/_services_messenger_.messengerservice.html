@@ -102,7 +102,6 @@
 						<section class="tsd-index-section tsd-is-private-protected">
 							<h3>Properties</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="_services_messenger_.messengerservice.html#connectiondetails" class="tsd-kind-icon">connection<wbr>Details</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="_services_messenger_.messengerservice.html#translators" class="tsd-kind-icon">translators</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-protected"><a href="_services_messenger_.messengerservice.html#workers" class="tsd-kind-icon">workers</a></li>
 								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private tsd-is-static"><a href="_services_messenger_.messengerservice.html#_servicename" class="tsd-kind-icon">_service<wbr>Name</a></li>
@@ -112,6 +111,7 @@
 							<h3>Accessors</h3>
 							<ul class="tsd-index-list">
 								<li class="tsd-kind-get-signature tsd-parent-kind-class tsd-is-overwrite"><a href="_services_messenger_.messengerservice.html#apihandle" class="tsd-kind-icon">api<wbr>Handle</a></li>
+								<li class="tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited tsd-is-protected"><a href="_services_messenger_.messengerservice.html#eventsregistered" class="tsd-kind-icon">events<wbr>Registered</a></li>
 								<li class="tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited tsd-is-protected"><a href="_services_messenger_.messengerservice.html#expressapp" class="tsd-kind-icon">express<wbr>App</a></li>
 								<li class="tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited tsd-is-protected"><a href="_services_messenger_.messengerservice.html#logger" class="tsd-kind-icon">logger</a></li>
 								<li class="tsd-kind-get-signature tsd-parent-kind-class tsd-is-overwrite"><a href="_services_messenger_.messengerservice.html#servicename" class="tsd-kind-icon">service<wbr>Name</a></li>
@@ -147,7 +147,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/messenger.ts#L35">services/messenger.ts:35</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/messenger.ts#L37">services/messenger.ts:37</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -167,22 +167,12 @@
 			<section class="tsd-panel-group tsd-member-group tsd-is-private-protected">
 				<h2>Properties</h2>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private">
-					<a name="connectiondetails" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagPrivate">Private</span> connection<wbr>Details</h3>
-					<div class="tsd-signature tsd-kind-icon">connection<wbr>Details<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">MessengerConnectionDetails</span></div>
-					<aside class="tsd-sources">
-						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/messenger.ts#L35">services/messenger.ts:35</a></li>
-						</ul>
-					</aside>
-				</section>
-				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private">
 					<a name="translators" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagPrivate">Private</span> translators</h3>
 					<div class="tsd-signature tsd-kind-icon">translators<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">object</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/messenger.ts#L34">services/messenger.ts:34</a></li>
+							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/messenger.ts#L37">services/messenger.ts:37</a></li>
 						</ul>
 					</aside>
 					<div class="tsd-type-declaration">
@@ -211,7 +201,7 @@
 					<div class="tsd-signature tsd-kind-icon">_service<wbr>Name<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> =&nbsp;path.basename(__filename.split(&#x27;.&#x27;)[0])</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/messenger.ts#L33">services/messenger.ts:33</a></li>
+							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/messenger.ts#L36">services/messenger.ts:36</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -229,7 +219,7 @@
 							<aside class="tsd-sources">
 								<p>Overrides <a href="_services_service_utilities_.serviceutilities.html">ServiceUtilities</a>.<a href="_services_service_utilities_.serviceutilities.html#apihandle">apiHandle</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/messenger.ts#L111">services/messenger.ts:111</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/messenger.ts#L120">services/messenger.ts:120</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -239,6 +229,24 @@
 							</div>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
 							<p>void</p>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
+					<a name="eventsregistered" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagProtected">Protected</span> events<wbr>Registered</h3>
+					<ul class="tsd-signatures tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
+						<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">get</span> eventsRegistered<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<p>Inherited from <a href="_services_service_utilities_.serviceutilities.html">ServiceUtilities</a>.<a href="_services_service_utilities_.serviceutilities.html#eventsregistered">eventsRegistered</a></p>
+								<ul>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/service-utilities.ts#L176">services/service-utilities.ts:176</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -253,7 +261,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_services_service_utilities_.serviceutilities.html">ServiceUtilities</a>.<a href="_services_service_utilities_.serviceutilities.html#expressapp">expressApp</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/service-utilities.ts#L151">services/service-utilities.ts:151</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/service-utilities.ts#L152">services/service-utilities.ts:152</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -277,7 +285,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_services_service_utilities_.serviceutilities.html">ServiceUtilities</a>.<a href="_services_service_utilities_.serviceutilities.html#logger">logger</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/service-utilities.ts#L171">services/service-utilities.ts:171</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/service-utilities.ts#L172">services/service-utilities.ts:172</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -301,7 +309,7 @@
 							<aside class="tsd-sources">
 								<p>Overrides <a href="_services_service_utilities_.serviceutilities.html">ServiceUtilities</a>.<a href="_services_service_utilities_.serviceutilities.html#servicename">serviceName</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/messenger.ts#L103">services/messenger.ts:103</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/messenger.ts#L112">services/messenger.ts:112</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -321,14 +329,14 @@
 					<a name="emitdata" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagProtected">Protected</span> emit<wbr>Data</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-protected">
-						<li class="tsd-signature tsd-kind-icon">emit<wbr>Data<span class="tsd-signature-symbol">(</span>data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">TransmitContext</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ServiceEmitResponse</span><span class="tsd-signature-symbol">&gt;</span></li>
+						<li class="tsd-signature tsd-kind-icon">emit<wbr>Data<span class="tsd-signature-symbol">(</span>data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">TransmitContext</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">MessageEmitResponse</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<p>Overrides <a href="_services_service_utilities_.serviceutilities.html">ServiceUtilities</a>.<a href="_services_service_utilities_.serviceutilities.html#emitdata">emitData</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/messenger.ts#L50">services/messenger.ts:50</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/messenger.ts#L51">services/messenger.ts:51</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -337,7 +345,7 @@
 									<h5>data: <span class="tsd-signature-type">TransmitContext</span></h5>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ServiceEmitResponse</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">MessageEmitResponse</span><span class="tsd-signature-symbol">&gt;</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -353,7 +361,7 @@
 								<p>Inherited from <a href="_services_service_utilities_.serviceutilities.html">ServiceUtilities</a>.<a href="_services_service_utilities_.serviceutilities.html#getworker">getWorker</a></p>
 								<p>Overrides <a href="_framework_worker_client_.workerclient.html">WorkerClient</a>.<a href="_framework_worker_client_.workerclient.html#getworker">getWorker</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/service-utilities.ts#L134">services/service-utilities.ts:134</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/service-utilities.ts#L135">services/service-utilities.ts:135</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -388,7 +396,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_services_service_utilities_.serviceutilities.html">ServiceUtilities</a>.<a href="_services_service_utilities_.serviceutilities.html#handleevent">handleEvent</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/service-utilities.ts#L180">services/service-utilities.ts:180</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/service-utilities.ts#L185">services/service-utilities.ts:185</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -423,7 +431,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_services_service_utilities_.serviceutilities.html">ServiceUtilities</a>.<a href="_services_service_utilities_.serviceutilities.html#queuedata">queueData</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/service-utilities.ts#L105">services/service-utilities.ts:105</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/service-utilities.ts#L106">services/service-utilities.ts:106</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -489,7 +497,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_services_service_utilities_.serviceutilities.html">ServiceUtilities</a>.<a href="_services_service_utilities_.serviceutilities.html#registerevent">registerEvent</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/service-utilities.ts#L63">services/service-utilities.ts:63</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/service-utilities.ts#L65">services/service-utilities.ts:65</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -555,7 +563,7 @@
 							<aside class="tsd-sources">
 								<p>Inherited from <a href="_services_service_utilities_.serviceutilities.html">ServiceUtilities</a>.<a href="_services_service_utilities_.serviceutilities.html#senddata">sendData</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/service-utilities.ts#L78">services/service-utilities.ts:78</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/service-utilities.ts#L80">services/service-utilities.ts:80</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -581,15 +589,21 @@
 					<a name="startlistening" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagPrivate">Private</span> start<wbr>Listening</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private">
-						<li class="tsd-signature tsd-kind-icon">start<wbr>Listening<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+						<li class="tsd-signature tsd-kind-icon">start<wbr>Listening<span class="tsd-signature-symbol">(</span>connectionDetails<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">MessengerConnectionDetails</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/messenger.ts#L75">services/messenger.ts:75</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/messenger.ts#L86">services/messenger.ts:86</a></li>
 								</ul>
 							</aside>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>connectionDetails: <span class="tsd-signature-type">MessengerConnectionDetails</span></h5>
+								</li>
+							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
 						</li>
 					</ul>
@@ -605,7 +619,7 @@
 							<aside class="tsd-sources">
 								<p>Overrides <a href="_services_service_utilities_.serviceutilities.html">ServiceUtilities</a>.<a href="_services_service_utilities_.serviceutilities.html#verify">verify</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/messenger.ts#L71">services/messenger.ts:71</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/messenger.ts#L82">services/messenger.ts:82</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -648,6 +662,9 @@
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_services_discourse_.html">"services/discourse"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="../modules/_services_errors_context_absent_.html">"services/errors/context-<wbr>absent"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_services_flowdock_.html">"services/flowdock"</a>
@@ -701,9 +718,6 @@
 								<a href="_services_messenger_.messengerservice.html#constructor" class="tsd-kind-icon">constructor</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-private">
-								<a href="_services_messenger_.messengerservice.html#connectiondetails" class="tsd-kind-icon">connection<wbr>Details</a>
-							</li>
-							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-private">
 								<a href="_services_messenger_.messengerservice.html#translators" class="tsd-kind-icon">translators</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
@@ -714,6 +728,9 @@
 							</li>
 							<li class=" tsd-kind-get-signature tsd-parent-kind-class tsd-is-overwrite">
 								<a href="_services_messenger_.messengerservice.html#apihandle" class="tsd-kind-icon">api<wbr>Handle</a>
+							</li>
+							<li class=" tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
+								<a href="_services_messenger_.messengerservice.html#eventsregistered" class="tsd-kind-icon">events<wbr>Registered</a>
 							</li>
 							<li class=" tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
 								<a href="_services_messenger_.messengerservice.html#expressapp" class="tsd-kind-icon">express<wbr>App</a>

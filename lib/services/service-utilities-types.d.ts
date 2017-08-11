@@ -14,14 +14,13 @@
  limitations under the License.
  */
 
-import TypedError = require('typed-error');
 import { WorkerEvent } from '../framework/worker';
 import { ServiceEvent } from './service-types';
 
 /** Data object the ensures the existence of context and event for serviceUtilities. */
 export interface UtilityServiceEvent extends ServiceEvent {
 	context: any;
-	event: string;
+	type: string;
 }
 
 /** Incoming event object that guarantees some details about the data for serviceUtilities generic handling. */

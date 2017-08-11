@@ -1,18 +1,22 @@
 import * as Promise from 'bluebird';
-import { DiscourseConnectionDetails, DiscourseEmitData, DiscourseEvent } from '../../discourse-types';
-import { MessageContext, MessageEvent, TransmitContext } from '../../messenger-types';
+import { DiscourseConnectionDetails, DiscourseEmitData, DiscourseEvent, DiscourseResponse } from '../../discourse-types';
+import { MessageEvent, MessageResponseData, TransmitContext } from '../../messenger-types';
 import { DataHub } from '../datahubs/datahub';
 import * as Translator from './translator';
 export declare class DiscourseTranslator implements Translator.Translator {
     private hub;
     private connectionDetails;
+    private eventEquivalencies;
     constructor(data: DiscourseConnectionDetails, hub: DataHub);
-    messageIntoConnectionDetails(message: TransmitContext): Promise<DiscourseConnectionDetails>;
+    eventTypeIntoMessageType(type: string): string;
+    messageTypeIntoEventTypes(type: string): string[];
+    getAllEventTypes(): string[];
     eventIntoMessage(event: DiscourseEvent): Promise<MessageEvent>;
-    messageIntoMethodPath(_message: TransmitContext): Promise<string[]>;
-    messageIntoEmitCreateMessage(message: TransmitContext): Promise<DiscourseEmitData>;
-    messageIntoEmitReadThread(message: MessageContext, shortlist?: RegExp): Promise<DiscourseEmitData>;
-    eventNameIntoTriggers(name: string): string[];
-    getAllTriggers(): string[];
+    messageIntoConnectionDetails(message: TransmitContext): Promise<DiscourseConnectionDetails>;
+    messageIntoEmitCreateComment(message: TransmitContext): {
+        method: string[];
+        payload: DiscourseEmitData;
+    };
+    responseIntoMessageResponse(_payload: TransmitContext, response: DiscourseResponse): MessageResponseData;
 }
 export declare function createTranslator(data: DiscourseConnectionDetails, hub: DataHub): Translator.Translator;

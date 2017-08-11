@@ -11,15 +11,12 @@ class SyncBot extends procbot_1.ProcBot {
             if (from.service === event.cookedEvent.source.service && from.flow === event.cookedEvent.source.flow) {
                 const transmitMessage = {
                     details: event.cookedEvent.details,
-                    hub: {
-                        service: process.env.SYNCBOT_DATAHUB_SERVICE,
-                        user: event.cookedEvent.source.user,
-                    },
+                    hubUsername: event.cookedEvent.source.username,
                     source: event.cookedEvent.source,
                     target: {
                         flow: to.flow,
                         service: to.service,
-                        user: event.cookedEvent.source.user,
+                        username: event.cookedEvent.source.username,
                     },
                 };
                 return emitter.sendData({
@@ -29,7 +26,7 @@ class SyncBot extends procbot_1.ProcBot {
                     source: 'messenger',
                 }).then(() => {
                     if (logger) {
-                        logger.log(logger_1.LogLevel.INFO, `---> Emitted '${event.cookedEvent.details.text}' to '${to.service}`);
+                        logger.log(logger_1.LogLevel.INFO, `---> Emitted '${event.cookedEvent.details.text}' to ${to.service}.`);
                     }
                 });
             }
@@ -40,6 +37,9 @@ class SyncBot extends procbot_1.ProcBot {
         super(name);
         const logger = new logger_1.Logger();
         const dataHub = datahub_1.createDataHub(process.env.SYNCBOT_DATAHUB_SERVICE, JSON.parse(process.env.SYNCBOT_DATAHUB_CONSTRUCTOR));
+        if (!dataHub) {
+            throw new Error('Could not create dataHub.');
+        }
         const messenger = new messenger_1.MessengerService({
             dataHub,
             subServices: JSON.parse(process.env.SYNCBOT_LISTENER_CONSTRUCTORS),

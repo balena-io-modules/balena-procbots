@@ -8,7 +8,7 @@ import { UtilityServiceEvent, UtilityWorkerEvent } from './service-utilities-typ
 export declare abstract class ServiceUtilities<T> extends WorkerClient<T> implements ServiceListener, ServiceEmitter {
     private static _expressApp;
     private _logger;
-    private eventListeners;
+    private _eventListeners;
     registerEvent(registration: ServiceRegistration): void;
     sendData(data: ServiceEmitRequest): Promise<ServiceEmitResponse>;
     protected queueData: (data: UtilityServiceEvent) => void;
@@ -17,6 +17,7 @@ export declare abstract class ServiceUtilities<T> extends WorkerClient<T> implem
     protected getWorker: (event: UtilityWorkerEvent) => Worker<T>;
     protected readonly expressApp: express.Express;
     protected readonly logger: Logger;
+    protected readonly eventsRegistered: string[];
     protected handleEvent: (data: UtilityServiceEvent) => Promise<void>;
     readonly abstract serviceName: string;
     readonly abstract apiHandle: ServiceAPIHandle | void;

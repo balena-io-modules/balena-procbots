@@ -6,18 +6,22 @@ const request = require("request-promise");
 const Translator = require("./translator");
 class DiscourseTranslator {
     constructor(data, hub) {
+        this.eventEquivalencies = {
+            message: ['post'],
+        };
         this.hub = hub;
         this.connectionDetails = data;
     }
-    messageIntoConnectionDetails(message) {
-        return this.hub.fetchValue(message.hub.user, 'discourse', 'token')
-            .then((token) => {
-            return {
-                token,
-                username: message.target.user,
-                instance: this.connectionDetails.instance,
-            };
-        });
+    eventTypeIntoMessageType(type) {
+        return _.findKey(this.eventEquivalencies, (value) => {
+            return _.includes(value, type);
+        }) || 'Misc event';
+    }
+    messageTypeIntoEventTypes(type) {
+        return this.eventEquivalencies[type];
+    }
+    getAllEventTypes() {
+        return _.flatMap(this.eventEquivalencies, _.identity);
     }
     eventIntoMessage(event) {
         const getGeneric = {
@@ -39,12 +43,12 @@ class DiscourseTranslator {
         })
             .then((details) => {
             const metadata = Translator.extractMetadata(details.post.raw, 'img');
-            const first = details.post.post_number === 1;
             const cookedEvent = {
                 details: {
                     genesis: metadata.genesis || event.source,
-                    hidden: first ? !details.topic.visible : details.post.post_type === 4,
-                    text: metadata.content,
+                    hidden: details.post.post_type === 4,
+                    internal: details.post.staff,
+                    text: metadata.content.trim(),
                     title: details.topic.title,
                 },
                 source: {
@@ -53,78 +57,62 @@ class DiscourseTranslator {
                     message: details.post.id.toString(),
                     thread: details.post.topic_id.toString(),
                     url: getTopic.uri,
-                    user: details.post.username,
+                    username: details.post.username,
                 },
             };
             return {
                 context: `${event.source}.${event.cookedEvent.context}`,
-                event: 'message',
+                type: this.eventTypeIntoMessageType(event.type),
                 cookedEvent,
                 rawEvent: event.rawEvent,
                 source: 'messenger',
             };
         });
     }
-    messageIntoMethodPath(_message) {
-        return Promise.resolve(['request']);
+    messageIntoConnectionDetails(message) {
+        return this.hub.fetchValue(message.hubUsername, 'discourse', 'token')
+            .then((token) => {
+            return {
+                token,
+                username: message.target.username,
+                instance: this.connectionDetails.instance,
+            };
+        });
     }
-    messageIntoEmitCreateMessage(message) {
+    messageIntoEmitCreateComment(message) {
         const topicId = message.target.thread;
         if (!topicId) {
             const title = message.details.title;
             if (!title) {
                 throw new Error('Cannot create Discourse Thread without a title');
             }
-            return Promise.resolve({
+            return { method: ['request'], payload: {
+                    method: 'POST',
+                    path: '/posts',
+                    body: {
+                        category: message.target.flow,
+                        raw: `${message.details.text}\n\n---\n${Translator.stringifyMetadata(message, 'img')}`,
+                        title,
+                        unlist_topic: 'false',
+                    },
+                } };
+        }
+        return { method: ['request'], payload: {
                 method: 'POST',
                 path: '/posts',
                 body: {
-                    category: message.target.flow,
                     raw: `${message.details.text}\n\n---\n${Translator.stringifyMetadata(message, 'img')}`,
-                    title,
-                    unlist_topic: message.details.hidden ? 'true' : 'false',
+                    topic_id: topicId,
+                    whisper: message.details.hidden ? 'true' : 'false',
                 },
-            });
-        }
-        return Promise.resolve({
-            json: true,
-            method: 'POST',
-            path: '/posts',
-            payload: {
-                raw: `${message.details.text}\n\n---\n${Translator.stringifyMetadata(message, 'img')}`,
-                topic_id: topicId,
-                whisper: message.details.hidden ? 'true' : 'false',
-            },
-        });
+            } };
     }
-    messageIntoEmitReadThread(message, shortlist) {
-        const firstWords = shortlist && shortlist.source.match(/^([\w\s]+)/i);
-        if (firstWords) {
-            return Promise.resolve({
-                json: true,
-                method: 'GET',
-                qs: {
-                    'term': firstWords[1],
-                    'search_context[type]': 'topic',
-                    'search_context[id]': message.source.thread,
-                },
-                path: '/search/query',
-            });
-        }
-        return Promise.resolve({
-            json: true,
-            method: 'GET',
-            path: `/t/${message.source.thread}`,
-        });
-    }
-    eventNameIntoTriggers(name) {
-        const equivalents = {
-            message: ['post'],
+    responseIntoMessageResponse(_payload, response) {
+        return {
+            message: response.id,
+            thread: response.topic_id,
+            url: `https://${this.connectionDetails.instance}/t/${response.topic_id}`
         };
-        return equivalents[name];
-    }
-    getAllTriggers() {
-        return ['post'];
     }
 }
 exports.DiscourseTranslator = DiscourseTranslator;

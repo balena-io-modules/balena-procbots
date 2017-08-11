@@ -85,7 +85,7 @@ export class DiscourseService extends ServiceUtilities<string> implements Servic
 					context: formData.body.post.topic_id,
 					cookedEvent: {},
 					// #201: I'm sure there's something in the headers that could improve this
-					event: 'post',
+					type: 'post',
 					rawEvent: formData.body.post,
 					source: DiscourseService._serviceName,
 				});
