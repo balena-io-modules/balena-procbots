@@ -24,10 +24,10 @@ import {
 	DiscourseConnectionDetails, DiscourseEmitContext, DiscourseEvent, DiscourseHandle,
 	DiscourseResponse
 } from './discourse-types';
+import { ServiceScaffold } from './service-scaffold';
 import { ServiceEmitter, ServiceListener } from './service-types';
-import { ServiceUtilities } from './service-utilities';
 
-export class DiscourseService extends ServiceUtilities<string> implements ServiceListener, ServiceEmitter {
+export class DiscourseService extends ServiceScaffold<string> implements ServiceListener, ServiceEmitter {
 	private static _serviceName = path.basename(__filename.split('.')[0]);
 	// There are circumstances in which the discourse web-hook will fire twice for the same post, so track.
 	private postsSynced = new Set<number>();
@@ -38,18 +38,26 @@ export class DiscourseService extends ServiceUtilities<string> implements Servic
 		// #203: Verify connection data
 		this.connectionDetails = data;
 		if (listen) {
-			this.startListening();
+			this.expressApp.post(`/${DiscourseService._serviceName}/`, (formData, response) => {
+				if (!this.postsSynced.has(formData.body.post.id)) {
+					this.postsSynced.add(formData.body.post.id);
+					this.queueData({
+						context: formData.body.post.topic_id,
+						cookedEvent: {},
+						// #201: I'm sure there's something in the headers that could improve this
+						type: 'post',
+						rawEvent: formData.body.post,
+						source: DiscourseService._serviceName,
+					});
+					response.sendStatus(200);
+				}
+			});
 		}
 	}
 
 	public request(requestOptions: UrlOptions & RequestPromiseOptions): Promise<DiscourseResponse> {
 		// This type massages request-promise into bluebird
-		return new Promise((resolve) => {
-			request(requestOptions)
-				.then((result) => {
-					resolve(result);
-				});
-		});
+		return request(requestOptions).promise();
 	}
 
 	protected emitData(context: DiscourseEmitContext): Promise<DiscourseResponse> {
@@ -74,24 +82,6 @@ export class DiscourseService extends ServiceUtilities<string> implements Servic
 	protected verify(_data: DiscourseEvent): boolean {
 		// #202: This to be properly implemented.
 		return true;
-	}
-
-	/** Awaken this class as a listener. */
-	private startListening(): void {
-		this.expressApp.post(`/${DiscourseService._serviceName}/`, (formData, response) => {
-			if (!this.postsSynced.has(formData.body.post.id)) {
-				this.postsSynced.add(formData.body.post.id);
-				this.queueData({
-					context: formData.body.post.topic_id,
-					cookedEvent: {},
-					// #201: I'm sure there's something in the headers that could improve this
-					type: 'post',
-					rawEvent: formData.body.post,
-					source: DiscourseService._serviceName,
-				});
-				response.sendStatus(200);
-			}
-		});
 	}
 
 	/**

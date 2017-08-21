@@ -1,14 +1,13 @@
 import * as Promise from 'bluebird';
 import { MessageResponseData, MessengerConstructionDetails, TransmitContext } from './messenger-types';
+import { ServiceScaffold } from './service-scaffold';
 import { ServiceEmitter, ServiceListener } from './service-types';
-import { ServiceUtilities } from './service-utilities';
-export declare class MessengerService extends ServiceUtilities<string> implements ServiceListener, ServiceEmitter {
+export declare class MessengerService extends ServiceScaffold<string> implements ServiceListener, ServiceEmitter {
     private static _serviceName;
     private translators;
     constructor(data: MessengerConstructionDetails, listen: boolean);
     protected emitData(data: TransmitContext): Promise<MessageResponseData>;
     protected verify(): boolean;
-    private startListening(connectionDetails);
     readonly serviceName: string;
     readonly apiHandle: void;
 }

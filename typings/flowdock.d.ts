@@ -6,13 +6,11 @@ declare module 'flowdock' {
 	class Session {
 		constructor(token: string);
 		public get(path: string, data: {}, callback: (error: Error, body: any, result: any) => void): void;
+		public post(path: string, data: {}, callback: (error: Error, body: any, result: any) => void): void;
+		public put(path: string, data: {}, callback: (error: Error, body: any, result: any) => void): void;
 		public flows(callback: (error: Error, body: any, result: any) => void): void;
 		public stream(ids: string[]): FlowdockStream;
 		public on(event: string, callback: (error: Error) => void): void;
 		public removeListener(event: string, callback: (error: Error) => void): void;
-		public _request(
-			method: string, path: string, data: {} | undefined,
-			callback: (error: Error, body: any, result: any) => void,
-		): void;
 	}
 }

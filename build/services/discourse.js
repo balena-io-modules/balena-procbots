@@ -1,26 +1,32 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const Promise = require("bluebird");
 const _ = require("lodash");
 const path = require("path");
 const request = require("request-promise");
-const service_utilities_1 = require("./service-utilities");
-class DiscourseService extends service_utilities_1.ServiceUtilities {
+const service_scaffold_1 = require("./service-scaffold");
+class DiscourseService extends service_scaffold_1.ServiceScaffold {
     constructor(data, listen) {
         super();
         this.postsSynced = new Set();
         this.connectionDetails = data;
         if (listen) {
-            this.startListening();
+            this.expressApp.post(`/${DiscourseService._serviceName}/`, (formData, response) => {
+                if (!this.postsSynced.has(formData.body.post.id)) {
+                    this.postsSynced.add(formData.body.post.id);
+                    this.queueData({
+                        context: formData.body.post.topic_id,
+                        cookedEvent: {},
+                        type: 'post',
+                        rawEvent: formData.body.post,
+                        source: DiscourseService._serviceName,
+                    });
+                    response.sendStatus(200);
+                }
+            });
         }
     }
     request(requestOptions) {
-        return new Promise((resolve) => {
-            request(requestOptions)
-                .then((result) => {
-                resolve(result);
-            });
-        });
+        return request(requestOptions).promise();
     }
     emitData(context) {
         const qs = {
@@ -39,21 +45,6 @@ class DiscourseService extends service_utilities_1.ServiceUtilities {
     }
     verify(_data) {
         return true;
-    }
-    startListening() {
-        this.expressApp.post(`/${DiscourseService._serviceName}/`, (formData, response) => {
-            if (!this.postsSynced.has(formData.body.post.id)) {
-                this.postsSynced.add(formData.body.post.id);
-                this.queueData({
-                    context: formData.body.post.topic_id,
-                    cookedEvent: {},
-                    type: 'post',
-                    rawEvent: formData.body.post,
-                    source: DiscourseService._serviceName,
-                });
-                response.sendStatus(200);
-            }
-        });
     }
     get serviceName() {
         return DiscourseService._serviceName;

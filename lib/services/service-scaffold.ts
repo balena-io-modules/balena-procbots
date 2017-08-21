@@ -14,25 +14,26 @@
  limitations under the License.
  */
 
-import * as _ from 'lodash';
 import TypedError = require('typed-error');
 import * as Promise from 'bluebird';
 import * as bodyParser from 'body-parser';
 import * as express from 'express';
+import * as _ from 'lodash';
+import { ProcBotError } from '../framework/procbot';
+import { ProcBotErrorCode } from '../framework/procbot-types';
 import { Worker } from '../framework/worker';
 import { WorkerClient } from '../framework/worker-client';
 import { Logger, LogLevel } from '../utils/logger';
-import { ContextAbsentError } from './errors/context-absent';
+import {
+	ServiceScaffoldServiceEvent, ServiceScaffoldWorkerEvent
+} from './service-scaffold-types';
 import {
 	ServiceAPIHandle, ServiceEmitContext, ServiceEmitRequest, ServiceEmitResponse,
 	ServiceEmitter, ServiceListener, ServiceRegistration,
 } from './service-types';
-import {
-	UtilityServiceEvent, UtilityWorkerEvent
-} from './service-utilities-types';
 
 /**
- * A utility class to handle a bunch of the repetitive work associated with being a ServiceListener and ServiceEmitter
+ * A scaffold class to handle a bunch of the repetitive work associated with being a ServiceListener and ServiceEmitter
  *
  * This class provides:
  * - An express app, if asked for.
@@ -46,17 +47,24 @@ import {
  * - provide a `verify` function which should check that incoming data isn't spoofed.
  * - provide a `serviceName` getter, which because it is based on file path cannot be inherited away.
  * - provide a `apiHandle` getter, which should return the underlying object that executes the requests.
- * - enqueue your events with `context` and `event`, as per `UtilityServiceEvent`.
+ * - enqueue your events with `context` and `event`, as per `ServiceScaffoldServiceEvent`.
  */
-export abstract class ServiceUtilities<T> extends WorkerClient<T> implements ServiceListener, ServiceEmitter {
+export abstract class ServiceScaffold<T> extends WorkerClient<T> implements ServiceListener, ServiceEmitter {
 	/** A singleton express instance for all web-hook based services to share. */
-	private static _expressApp: express.Express;
+	private static singletonExpressApp: express.Express;
+
+	private instanceExpressApp?: express.Express;
 
 	/** A place to put output for debug and reference. */
-	private _logger = new Logger();
+	private loggerInstance = new Logger();
 
 	/** Store a list of actions to perform when particular actions happen */
-	private _eventListeners: { [event: string]: ServiceRegistration[] } = {};
+	private eventListeners: { [event: string]: ServiceRegistration[] } = {};
+
+	constructor(expressApp?: express.Express) {
+		super();
+		this.instanceExpressApp = expressApp;
+	}
 
 	/**
 	 * Store an event of interest, so that the method gets triggered appropriately.
@@ -65,10 +73,10 @@ export abstract class ServiceUtilities<T> extends WorkerClient<T> implements Ser
 	public registerEvent(registration: ServiceRegistration): void {
 		// Store each event registration in an object of arrays.
 		for (const event of registration.events) {
-			if (!this._eventListeners[event]) {
-				this._eventListeners[event] = [];
+			if (!this.eventListeners[event]) {
+				this.eventListeners[event] = [];
 			}
-			this._eventListeners[event].push(registration);
+			this.eventListeners[event].push(registration);
 		}
 	}
 
@@ -81,7 +89,7 @@ export abstract class ServiceUtilities<T> extends WorkerClient<T> implements Ser
 		const context = data.contexts[this.serviceName] as ServiceEmitContext;
 		if (!context) {
 			return Promise.resolve({
-				err: new ContextAbsentError(`No ${this.serviceName} context`),
+				err: new ProcBotError(ProcBotErrorCode.EmitterContextAbsent, `No ${this.serviceName} context`),
 				source: this.serviceName,
 			});
 		}
@@ -103,7 +111,7 @@ export abstract class ServiceUtilities<T> extends WorkerClient<T> implements Ser
 	 * Queue an event ready for running in a child, here to type guard.
 	 * @param data  The WorkerEvent to add to the queue for processing.
 	 */
-	protected queueData = (data: UtilityServiceEvent) => {
+	protected queueData = (data: ServiceScaffoldServiceEvent) => {
 		if (this.verify(data)) {
 			super.queueEvent({
 				data,
@@ -125,14 +133,14 @@ export abstract class ServiceUtilities<T> extends WorkerClient<T> implements Ser
 	 * Verify the event before enqueueing.  A naive approach could be to simply return true, but that must be explicit.
 	 * @param data  The data object that was enqueued.
 	 */
-	protected abstract verify(data: UtilityServiceEvent): boolean
+	protected abstract verify(data: ServiceScaffoldServiceEvent): boolean
 
 	/**
 	 * Get a Worker object for the provided event, threaded by context.
 	 * @param event  Event as enqueued by the listener.
 	 * @returns      Worker for the context associated.
 	 */
-	protected getWorker = (event: UtilityWorkerEvent): Worker<T> => {
+	protected getWorker = (event: ServiceScaffoldWorkerEvent): Worker<T> => {
 		// Attempt to retrieve an active worker for the context
 		const context = event.data.context;
 		const retrieved = this.workers.get(context);
@@ -150,19 +158,22 @@ export abstract class ServiceUtilities<T> extends WorkerClient<T> implements Ser
 	 * @returns  Express server app.
 	 */
 	protected get expressApp(): express.Express {
-		if (!ServiceUtilities._expressApp) {
+		if (this.instanceExpressApp) {
+			return this.instanceExpressApp;
+		}
+		if (!ServiceScaffold.singletonExpressApp) {
 			// Either MESSAGE_SERVICE_PORT from environment or PORT from Heroku environment
 			const port = process.env.MESSAGE_SERVICE_PORT || process.env.PORT;
 			if (!port) {
 				throw new Error('No inbound port specified for express server.');
 			}
 			// Create and log an express instance
-			ServiceUtilities._expressApp = express();
-			ServiceUtilities._expressApp.use(bodyParser.json());
-			ServiceUtilities._expressApp.listen(port);
-			this.logger.log(LogLevel.INFO, `---> Started ServiceUtility shared web server on port '${port}'.`);
+			ServiceScaffold.singletonExpressApp = express();
+			ServiceScaffold.singletonExpressApp.use(bodyParser.json());
+			ServiceScaffold.singletonExpressApp.listen(port);
+			this.logger.log(LogLevel.INFO, `---> Started ServiceScaffold shared web server on port '${port}'.`);
 		}
-		return ServiceUtilities._expressApp;
+		return ServiceScaffold.singletonExpressApp;
 	}
 
 	/**
@@ -170,11 +181,11 @@ export abstract class ServiceUtilities<T> extends WorkerClient<T> implements Ser
 	 * @returns  Logger instance for this class
 	 */
 	protected get logger(): Logger {
-		return this._logger;
+		return this.loggerInstance;
 	}
 
 	protected get eventsRegistered(): string[] {
-		return _.keys(this._eventListeners);
+		return _.keys(this.eventListeners);
 	}
 
 	/**
@@ -182,9 +193,9 @@ export abstract class ServiceUtilities<T> extends WorkerClient<T> implements Ser
 	 * @param data  Enqueued data from the listener.
 	 * @returns     Promise that resolves once the event is handled.
 	 */
-	protected handleEvent = (data: UtilityServiceEvent): Promise<void> => {
+	protected handleEvent = (data: ServiceScaffoldServiceEvent): Promise<void> => {
 		// Retrieve and execute all the listener methods, squashing their responses
-		const listeners = this._eventListeners[data.type] || [];
+		const listeners = this.eventListeners[data.type] || [];
 		return Promise.map(listeners, (listener) => {
 			return listener.listenerMethod(listener, data);
 		}).return();

@@ -20,19 +20,18 @@ import * as path from 'path';
 
 import { LogLevel } from '../utils/logger';
 import {
-	MessageResponseData, MessengerConnectionDetails, MessengerConstructionDetails,
-	TransmitContext
+	MessageResponseData, MessengerConstructionDetails, TransmitContext
 } from './messenger-types';
 import * as Translator from './messenger/translators/translator';
+import { ServiceScaffold } from './service-scaffold';
+import { ServiceScaffoldServiceEvent } from './service-scaffold-types';
 import {
 	ServiceEmitContext, ServiceEmitRequest, ServiceEmitResponse,
 	ServiceEmitter,
 	ServiceListener, ServiceRegistration,
 } from './service-types';
-import { ServiceUtilities } from './service-utilities';
-import { UtilityServiceEvent } from './service-utilities-types';
 
-export class MessengerService extends ServiceUtilities<string> implements ServiceListener, ServiceEmitter {
+export class MessengerService extends ServiceScaffold<string> implements ServiceListener, ServiceEmitter {
 	private static _serviceName = path.basename(__filename.split('.')[0]);
 	private translators: { [service: string]: Translator.Translator };
 
@@ -44,7 +43,25 @@ export class MessengerService extends ServiceUtilities<string> implements Servic
 			this.translators[serviceName] = Translator.createTranslator(serviceName, subConnectionDetails, data.dataHubs);
 		});
 		if (listen) {
-			this.startListening(data.subServices);
+			_.forEach(data.subServices, (subConnectionDetails, subServiceName) => {
+				this.logger.log(LogLevel.INFO, `---> Constructing '${subServiceName}' listener.`);
+				const subListener = require(`./${subServiceName}`).createServiceListener(subConnectionDetails);
+				subListener.registerEvent({
+					events: this.translators[subServiceName].getAllEventTypes(),
+					listenerMethod: (_registration: ServiceRegistration, event: ServiceScaffoldServiceEvent) => {
+						if (_.includes(this.eventsRegistered, this.translators[subServiceName].eventIntoMessageType(event))) {
+							this.translators[subServiceName].eventIntoMessage(event)
+								.then((message) => {
+									this.logger.log(
+										LogLevel.INFO, `---> Heard '${message.cookedEvent.details.text}' on ${message.cookedEvent.source.service}.`
+									);
+									this.queueData(message);
+								});
+						}
+					},
+					name: `${subServiceName}=>${this.serviceName}`,
+				});
+			});
 		}
 	}
 
@@ -74,28 +91,6 @@ export class MessengerService extends ServiceUtilities<string> implements Servic
 		*/
 	protected verify(): boolean {
 		return true;
-	}
-
-	private startListening(connectionDetails: MessengerConnectionDetails): void {
-		_.forEach(connectionDetails, (subConnectionDetails, subServiceName) => {
-			this.logger.log(LogLevel.INFO, `---> Constructing '${subServiceName}' listener.`);
-			const subListener = require(`./${subServiceName}`).createServiceListener(subConnectionDetails);
-			subListener.registerEvent({
-				events: this.translators[subServiceName].getAllEventTypes(),
-				listenerMethod: (_registration: ServiceRegistration, event: UtilityServiceEvent) => {
-					if (_.includes(this.eventsRegistered, this.translators[subServiceName].eventIntoMessageType(event))) {
-						this.translators[subServiceName].eventIntoMessage(event)
-						.then((message) => {
-							this.logger.log(
-								LogLevel.INFO, `---> Heard '${message.cookedEvent.details.text}' on ${message.cookedEvent.source.service}.`
-							);
-							this.queueData(message);
-						});
-					}
-				},
-				name: `${subServiceName}=>${this.serviceName}`,
-			});
-		});
 	}
 
 	/**

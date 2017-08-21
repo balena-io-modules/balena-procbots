@@ -18,8 +18,8 @@ import * as Promise from 'bluebird';
 import { UrlOptions } from 'request';
 import { RequestPromiseOptions } from 'request-promise';
 import { DiscourseService } from './discourse';
+import { ServiceScaffoldServiceEvent } from './service-scaffold-types';
 import { ServiceAPIHandle, ServiceEmitContext } from './service-types';
-import { UtilityServiceEvent } from './service-utilities-types';
 
 export interface DiscourseBasePayload {
 	raw: string;
@@ -64,5 +64,5 @@ export interface DiscourseHandle extends ServiceAPIHandle {
 	discourse: DiscourseService;
 }
 
-export interface DiscourseEvent extends UtilityServiceEvent {
+export interface DiscourseEvent extends ServiceScaffoldServiceEvent {
 }

@@ -103,8 +103,7 @@ class FlowdockTranslator {
                     throw new Error('Cannot create Discourse Thread without a title');
                 }
                 const titleText = title + '\n--\n';
-                return { method: ['_request'], payload: {
-                        htmlVerb: 'POST',
+                return { method: ['post'], payload: {
                         path: `/flows/${org}/${flow}/messages/`,
                         payload: {
                             content: titleText + message.details.text + '\n' + Translator.stringifyMetadata(message, 'emoji'),
@@ -113,8 +112,7 @@ class FlowdockTranslator {
                         },
                     } };
             case 'createComment':
-                return { method: ['_request'], payload: {
-                        htmlVerb: 'POST',
+                return { method: ['post'], payload: {
                         path: `/flows/${org}/${flow}/threads/${message.target.thread}/messages/`,
                         payload: {
                             content: message.details.text + '\n' + Translator.stringifyMetadata(message, 'emoji'),

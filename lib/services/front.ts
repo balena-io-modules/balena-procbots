@@ -1,3 +1,4 @@
+// Bring this file in line with master before implementing
 // /*
 //  Copyright 2016-2017 Resin.io
 //
@@ -23,18 +24,20 @@
 // 	FrontEvent, FrontHandle, FrontResponse,
 // } from './front-types';
 // import { ServiceEmitter, ServiceListener } from './service-types';
-// import { ServiceUtilities } from './service-utilities';
+// import { ServiceScaffold } from './service-scaffold';
 //
-// export class FrontService extends ServiceUtilities<string> implements ServiceListener, ServiceEmitter {
+// export class FrontService extends ServiceScaffold<string> implements ServiceListener, ServiceEmitter {
 // 	private static _serviceName = path.basename(__filename.split('.')[0]);
 //
 // 	/** Underlying SDK object that we route requests to */
 // 	private session: Front;
 //
 // 	constructor(data: FrontConnectionDetails, listen: boolean) {
+// Implement whatever is decided about the listen arg
 // 		super();
 // 		this.session = new Front(data.token);
 // 		if (listen) {
+// Absorb the startListening function
 // 			this.startListening();
 // 		}
 // 	}

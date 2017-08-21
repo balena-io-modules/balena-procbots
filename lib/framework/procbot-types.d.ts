@@ -40,3 +40,7 @@ export interface ConfigurationLocation {
 	 */
 	location: string | any;
 }
+
+declare const enum ProcBotErrorCode {
+	EmitterContextAbsent,
+}

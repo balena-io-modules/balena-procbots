@@ -2,9 +2,9 @@ import * as Promise from 'bluebird';
 import { UrlOptions } from 'request';
 import { RequestPromiseOptions } from 'request-promise';
 import { DiscourseConnectionDetails, DiscourseEmitContext, DiscourseEvent, DiscourseHandle, DiscourseResponse } from './discourse-types';
+import { ServiceScaffold } from './service-scaffold';
 import { ServiceEmitter, ServiceListener } from './service-types';
-import { ServiceUtilities } from './service-utilities';
-export declare class DiscourseService extends ServiceUtilities<string> implements ServiceListener, ServiceEmitter {
+export declare class DiscourseService extends ServiceScaffold<string> implements ServiceListener, ServiceEmitter {
     private static _serviceName;
     private postsSynced;
     private connectionDetails;
@@ -12,7 +12,6 @@ export declare class DiscourseService extends ServiceUtilities<string> implement
     request(requestOptions: UrlOptions & RequestPromiseOptions): Promise<DiscourseResponse>;
     protected emitData(context: DiscourseEmitContext): Promise<DiscourseResponse>;
     protected verify(_data: DiscourseEvent): boolean;
-    private startListening();
     readonly serviceName: string;
     readonly apiHandle: DiscourseHandle;
 }

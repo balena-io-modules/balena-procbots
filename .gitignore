@@ -40,3 +40,6 @@ _dev_notes
 # IDE Files
 /ProcBots.iml
 .idea
+
+# package-lock
+package-lock.json

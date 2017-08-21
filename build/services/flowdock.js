@@ -3,20 +3,43 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const Promise = require("bluebird");
 const flowdock_1 = require("flowdock");
 const path = require("path");
-const service_utilities_1 = require("./service-utilities");
-class FlowdockService extends service_utilities_1.ServiceUtilities {
+const service_scaffold_1 = require("./service-scaffold");
+class FlowdockService extends service_scaffold_1.ServiceScaffold {
     constructor(data, listen) {
         super();
         this.session = new flowdock_1.Session(data.token);
         this.org = data.organization;
         if (listen) {
-            this.startListening();
+            this.session.flows((error, flows) => {
+                if (error) {
+                    throw error;
+                }
+                const flowIdToFlowName = {};
+                for (const flow of flows) {
+                    flowIdToFlowName[flow.id] = flow.parameterized_name;
+                }
+                const stream = this.session.stream(Object.keys(flowIdToFlowName));
+                stream.on('message', (message) => {
+                    this.queueData({
+                        context: message.thread_id,
+                        cookedEvent: {
+                            flow: flowIdToFlowName[message.flow],
+                        },
+                        type: message.event,
+                        rawEvent: message,
+                        source: FlowdockService._serviceName,
+                    });
+                });
+            });
+            this.expressApp.get(`/${FlowdockService._serviceName}/`, (_formData, response) => {
+                response.sendStatus(200);
+            });
         }
     }
     emitData(context) {
         return new Promise((resolve, reject) => {
             this.session.on('error', reject);
-            context.method(context.data.htmlVerb, context.data.path, context.data.payload, (error, response) => {
+            context.method(context.data.path, context.data.payload, (error, response) => {
                 this.session.removeListener('error', reject);
                 if (error) {
                     reject(error);
@@ -29,32 +52,6 @@ class FlowdockService extends service_utilities_1.ServiceUtilities {
     }
     verify() {
         return true;
-    }
-    startListening() {
-        this.session.flows((error, flows) => {
-            if (error) {
-                throw error;
-            }
-            const flowIdToFlowName = {};
-            for (const flow of flows) {
-                flowIdToFlowName[flow.id] = flow.parameterized_name;
-            }
-            const stream = this.session.stream(Object.keys(flowIdToFlowName));
-            stream.on('message', (message) => {
-                this.queueData({
-                    context: message.thread_id,
-                    cookedEvent: {
-                        flow: flowIdToFlowName[message.flow],
-                    },
-                    type: message.event,
-                    rawEvent: message,
-                    source: FlowdockService._serviceName,
-                });
-            });
-        });
-        this.expressApp.get(`/${FlowdockService._serviceName}/`, (_formData, response) => {
-            response.sendStatus(200);
-        });
     }
     get serviceName() {
         return FlowdockService._serviceName;

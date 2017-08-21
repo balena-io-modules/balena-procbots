@@ -16,7 +16,7 @@
 //
 // import { ConversationComments, Front, RequestData, ResponseData, Status } from 'front-sdk';
 // import { ServiceAPIHandle, ServiceEmitContext } from './service-types';
-// import { UtilityServiceEvent } from './service-utilities-types';
+// import { ServiceScaffoldServiceEvent } from './service-scaffold-types';
 //
 // export type FrontResponse = ResponseData|Status|void|ConversationComments;
 //
@@ -36,5 +36,3 @@
 // 	};
 // }
 //
-// export interface FrontEvent extends UtilityServiceEvent {
-// }

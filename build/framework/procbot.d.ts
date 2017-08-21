@@ -1,7 +1,15 @@
+import TypedError = require('typed-error');
 import * as Promise from 'bluebird';
 import { ServiceEmitRequest, ServiceEmitResponse, ServiceEmitter, ServiceListener } from '../services/service-types';
 import { Logger } from '../utils/logger';
-import { ConfigurationLocation, ProcBotConfiguration } from './procbot-types';
+import { ConfigurationLocation, ProcBotConfiguration, ProcBotErrorCode } from './procbot-types';
+export declare class ProcBotError extends TypedError {
+    private errorMessage;
+    private errorCode;
+    constructor(code: ProcBotErrorCode, message: string);
+    readonly message: string;
+    readonly code: ProcBotErrorCode;
+}
 export declare class ProcBot {
     protected _botname: string;
     protected logger: Logger;

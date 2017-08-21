@@ -5,8 +5,8 @@ const _ = require("lodash");
 const path = require("path");
 const logger_1 = require("../utils/logger");
 const Translator = require("./messenger/translators/translator");
-const service_utilities_1 = require("./service-utilities");
-class MessengerService extends service_utilities_1.ServiceUtilities {
+const service_scaffold_1 = require("./service-scaffold");
+class MessengerService extends service_scaffold_1.ServiceScaffold {
     constructor(data, listen) {
         super();
         this.translators = {};
@@ -15,7 +15,23 @@ class MessengerService extends service_utilities_1.ServiceUtilities {
             this.translators[serviceName] = Translator.createTranslator(serviceName, subConnectionDetails, data.dataHubs);
         });
         if (listen) {
-            this.startListening(data.subServices);
+            _.forEach(data.subServices, (subConnectionDetails, subServiceName) => {
+                this.logger.log(logger_1.LogLevel.INFO, `---> Constructing '${subServiceName}' listener.`);
+                const subListener = require(`./${subServiceName}`).createServiceListener(subConnectionDetails);
+                subListener.registerEvent({
+                    events: this.translators[subServiceName].getAllEventTypes(),
+                    listenerMethod: (_registration, event) => {
+                        if (_.includes(this.eventsRegistered, this.translators[subServiceName].eventIntoMessageType(event))) {
+                            this.translators[subServiceName].eventIntoMessage(event)
+                                .then((message) => {
+                                this.logger.log(logger_1.LogLevel.INFO, `---> Heard '${message.cookedEvent.details.text}' on ${message.cookedEvent.source.service}.`);
+                                this.queueData(message);
+                            });
+                        }
+                    },
+                    name: `${subServiceName}=>${this.serviceName}`,
+                });
+            });
         }
     }
     emitData(data) {
@@ -40,25 +56,6 @@ class MessengerService extends service_utilities_1.ServiceUtilities {
     }
     verify() {
         return true;
-    }
-    startListening(connectionDetails) {
-        _.forEach(connectionDetails, (subConnectionDetails, subServiceName) => {
-            this.logger.log(logger_1.LogLevel.INFO, `---> Constructing '${subServiceName}' listener.`);
-            const subListener = require(`./${subServiceName}`).createServiceListener(subConnectionDetails);
-            subListener.registerEvent({
-                events: this.translators[subServiceName].getAllEventTypes(),
-                listenerMethod: (_registration, event) => {
-                    if (_.includes(this.eventsRegistered, this.translators[subServiceName].eventIntoMessageType(event))) {
-                        this.translators[subServiceName].eventIntoMessage(event)
-                            .then((message) => {
-                            this.logger.log(logger_1.LogLevel.INFO, `---> Heard '${message.cookedEvent.details.text}' on ${message.cookedEvent.source.service}.`);
-                            this.queueData(message);
-                        });
-                    }
-                },
-                name: `${subServiceName}=>${this.serviceName}`,
-            });
-        });
     }
     get serviceName() {
         return MessengerService._serviceName;

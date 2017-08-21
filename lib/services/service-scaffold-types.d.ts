@@ -17,13 +17,13 @@
 import { WorkerEvent } from '../framework/worker';
 import { ServiceEvent } from './service-types';
 
-/** Data object the ensures the existence of context and event for serviceUtilities. */
-export interface UtilityServiceEvent extends ServiceEvent {
+/** Data object the ensures the existence of context and event for ServiceScaffold. */
+export interface ServiceScaffoldServiceEvent extends ServiceEvent {
 	context: any;
 	type: string;
 }
 
-/** Incoming event object that guarantees some details about the data for serviceUtilities generic handling. */
-export interface UtilityWorkerEvent extends WorkerEvent {
-	data: UtilityServiceEvent;
+/** Incoming event object that guarantees some details about the data for ServiceScaffold generic handling. */
+export interface ServiceScaffoldWorkerEvent extends WorkerEvent {
+	data: ServiceScaffoldServiceEvent;
 }

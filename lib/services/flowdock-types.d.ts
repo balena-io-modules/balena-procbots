@@ -15,8 +15,8 @@ limitations under the License.
 */
 
 import { Session } from 'flowdock';
-import {ServiceAPIHandle, ServiceEmitContext} from './service-types';
-import {  UtilityServiceEvent } from './service-utilities-types';
+import { ServiceScaffoldServiceEvent } from './service-scaffold-types';
+import { ServiceAPIHandle, ServiceEmitContext } from './service-types';
 
 export interface FlowdockMessagePayload {
 	content: string;
@@ -49,14 +49,13 @@ export type FlowdockPayload = FlowdockMessagePayload | FlowdockInboxPayload | Fl
 export type FlowdockResponse = any;
 
 export interface FlowdockEmitData {
-	htmlVerb: string;
 	path: string;
 	payload?: FlowdockPayload;
 }
 
 type Callback = (error: Error, response: FlowdockResponse) => void;
 
-export type FlowdockEmitMethod = (htmlVerb: string, path: string, payload: FlowdockPayload, callback: Callback) => void;
+export type FlowdockEmitMethod = (path: string, payload: FlowdockPayload, callback: Callback) => void;
 
 export interface FlowdockEmitContext extends ServiceEmitContext {
 	data: FlowdockEmitData;
@@ -74,7 +73,7 @@ export interface FlowdockConnectionDetails {
 	token: string;
 }
 
-export interface FlowdockEvent extends UtilityServiceEvent {
+export interface FlowdockEvent extends ServiceScaffoldServiceEvent {
 	cookedData: {
 		flow: string;
 	};

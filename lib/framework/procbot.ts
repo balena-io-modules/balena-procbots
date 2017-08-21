@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import TypedError = require('typed-error');
 import * as Promise from 'bluebird';
 import * as ChildProcess from 'child_process';
 import * as FS from 'fs';
@@ -22,9 +23,28 @@ import * as _ from 'lodash';
 import { ServiceEmitRequest, ServiceEmitResponse, ServiceEmitter, ServiceFactory,
 	ServiceListener } from '../services/service-types';
 import { Logger } from '../utils/logger';
-import { ConfigurationLocation, ProcBotConfiguration } from './procbot-types';
+import { ConfigurationLocation, ProcBotConfiguration, ProcBotErrorCode } from './procbot-types';
 const fsReadFile = Promise.promisify(FS.readFile);
 const exec: (command: string, options?: any) => Promise<{}> = Promise.promisify(ChildProcess.exec);
+
+export class ProcBotError extends TypedError {
+	private errorMessage: string;
+	private errorCode: ProcBotErrorCode;
+
+	constructor(code: ProcBotErrorCode, message: string) {
+		super();
+		this.errorMessage = message;
+		this.errorCode = code;
+	}
+
+	public get message() {
+		return this.errorMessage;
+	}
+
+	public get code() {
+		return this.errorCode;
+	}
+}
 
 /**
  * The ProcBot class is a parent class that can be used for some top-level tasks:

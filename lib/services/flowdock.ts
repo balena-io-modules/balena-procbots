@@ -21,10 +21,10 @@ import {
 	FlowdockConnectionDetails, FlowdockEmitContext,
 	FlowdockHandle, FlowdockResponse
 } from './flowdock-types';
+import { ServiceScaffold } from './service-scaffold';
 import { ServiceEmitter, ServiceListener } from './service-types';
-import { ServiceUtilities } from './service-utilities';
 
-export class FlowdockService extends ServiceUtilities<string> implements ServiceEmitter, ServiceListener {
+export class FlowdockService extends ServiceScaffold<string> implements ServiceEmitter, ServiceListener {
 	private static _serviceName = path.basename(__filename.split('.')[0]);
 	private session: Session;
 	private org: string;
@@ -34,7 +34,33 @@ export class FlowdockService extends ServiceUtilities<string> implements Service
 		this.session = new Session(data.token);
 		this.org = data.organization;
 		if (listen) {
-			this.startListening();
+			// Get a list of known flows from the session
+			this.session.flows((error: any, flows: any) => {
+				if (error) {
+					throw error;
+				}
+				// Enclose a list of flow names
+				const flowIdToFlowName: {[key: string]: string} = {};
+				for (const flow of flows) {
+					flowIdToFlowName[flow.id] = flow.parameterized_name;
+				}
+				const stream = this.session.stream(Object.keys(flowIdToFlowName));
+				stream.on('message', (message: any) => {
+					this.queueData({
+						context: message.thread_id,
+						cookedEvent: {
+							flow: flowIdToFlowName[message.flow],
+						},
+						type: message.event,
+						rawEvent: message,
+						source: FlowdockService._serviceName,
+					});
+				});
+			});
+			// Create a keep-alive endpoint for contexts that sleep between web requests
+			this.expressApp.get(`/${FlowdockService._serviceName}/`, (_formData, response) => {
+				response.sendStatus(200);
+			});
 		}
 	}
 
@@ -42,7 +68,7 @@ export class FlowdockService extends ServiceUtilities<string> implements Service
 		return new Promise<FlowdockResponse>((resolve, reject) => {
 			this.session.on('error', reject);
 			context.method(
-				context.data.htmlVerb, context.data.path, context.data.payload,
+				context.data.path, context.data.payload,
 				(error: Error, response: FlowdockResponse) => {
 					this.session.removeListener('error', reject);
 					if (error) {
@@ -60,36 +86,6 @@ export class FlowdockService extends ServiceUtilities<string> implements Service
 		*/
 	protected verify(): boolean {
 		return true;
-	}
-
-	private startListening(): void {
-		// Get a list of known flows from the session
-		this.session.flows((error: any, flows: any) => {
-			if (error) {
-				throw error;
-			}
-			// Enclose a list of flow names
-			const flowIdToFlowName: {[key: string]: string} = {};
-			for (const flow of flows) {
-				flowIdToFlowName[flow.id] = flow.parameterized_name;
-			}
-			const stream = this.session.stream(Object.keys(flowIdToFlowName));
-			stream.on('message', (message: any) => {
-				this.queueData({
-					context: message.thread_id,
-					cookedEvent: {
-						flow: flowIdToFlowName[message.flow],
-					},
-					type: message.event,
-					rawEvent: message,
-					source: FlowdockService._serviceName,
-				});
-			});
-		});
-		// Create a keep-alive endpoint for contexts that sleep between web requests
-		this.expressApp.get(`/${FlowdockService._serviceName}/`, (_formData, response) => {
-			response.sendStatus(200);
-		});
 	}
 
 	/**

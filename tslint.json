@@ -16,6 +16,7 @@
         "trailing-comma": false,
         "no-string-literal": false,
         "interface-name": false,
+        "max-classes-per-file": [false],
         "variable-name": [
             true,
             "ban-keywords",

@@ -16,10 +16,10 @@
 
 import * as Promise from 'bluebird';
 import { DataHub } from './messenger/datahubs/datahub';
+import { ServiceScaffoldServiceEvent } from './service-scaffold-types';
 import {
 	ServiceEmitResponse, ServiceRegistration,
 } from './service-types';
-import { UtilityServiceEvent } from './service-utilities-types';
 
 export interface MessageIds {
 	service: string;
@@ -90,6 +90,6 @@ export interface MessengerConstructionDetails {
 	subServices: MessengerConnectionDetails;
 }
 
-export interface MessageEvent extends UtilityServiceEvent {
+export interface MessageEvent extends ServiceScaffoldServiceEvent {
 	cookedEvent: MessageContext;
 }

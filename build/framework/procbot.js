@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const TypedError = require("typed-error");
 const Promise = require("bluebird");
 const ChildProcess = require("child_process");
 const FS = require("fs");
@@ -8,6 +9,20 @@ const _ = require("lodash");
 const logger_1 = require("../utils/logger");
 const fsReadFile = Promise.promisify(FS.readFile);
 const exec = Promise.promisify(ChildProcess.exec);
+class ProcBotError extends TypedError {
+    constructor(code, message) {
+        super();
+        this.errorMessage = message;
+        this.errorCode = code;
+    }
+    get message() {
+        return this.errorMessage;
+    }
+    get code() {
+        return this.errorCode;
+    }
+}
+exports.ProcBotError = ProcBotError;
 class ProcBot {
     constructor(name = 'ProcBot') {
         this.logger = new logger_1.Logger();
