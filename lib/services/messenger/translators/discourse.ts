@@ -21,7 +21,10 @@ import {
 	DiscourseConnectionDetails, DiscourseEmitData,
 	DiscourseEvent, DiscourseResponse
 } from '../../discourse-types';
-import { MessageEvent, MessageInformation, MessageResponseData, TransmitInformation } from '../../messenger-types';
+import {
+	MessageAction, MessageEvent, MessageInformation, MessageResponseData,
+	TransmitInformation
+} from '../../messenger-types';
 import { DataHub } from '../datahubs/datahub';
 import * as Translator from './translator';
 
@@ -120,7 +123,7 @@ export class DiscourseTranslator implements Translator.Translator {
 
 	public messageIntoEmitDetails(message: TransmitInformation): {method: string[], payload: DiscourseEmitData} {
 		switch (message.action) {
-			case 'createThread':
+			case MessageAction.CreateThread:
 				const title = message.details.title;
 				if (!title) {
 					throw new Error('Cannot create Discourse Thread without a title.');
@@ -135,17 +138,17 @@ export class DiscourseTranslator implements Translator.Translator {
 						unlist_topic: 'false',
 					},
 				}};
-			case 'createComment':
-				const topic = message.target.thread;
-				if (!topic) {
-					throw new Error('Cannot create Discourse comment without a topic.');
+			case MessageAction.CreateMessage:
+				const thread = message.target.thread;
+				if (!thread) {
+					throw new Error('Cannot create Discourse comment without a thread.');
 				}
 				return {method: ['request'], payload: {
 					method: 'POST',
 					path: '/posts',
 					body: {
 						raw: `${message.details.text}\n\n---\n${Translator.stringifyMetadata(message, 'img')}`,
-						topic_id: topic,
+						topic_id: thread,
 						whisper: message.details.hidden ? 'true' : 'false',
 					}
 				}};
@@ -154,12 +157,17 @@ export class DiscourseTranslator implements Translator.Translator {
 		}
 	}
 
-	public responseIntoMessageResponse(_payload: TransmitInformation, response: DiscourseResponse): MessageResponseData {
-		return {
-			message: response.id,
-			thread: response.topic_id,
-			url: `https://${this.connectionDetails.instance}/t/${response.topic_id}`
-		};
+	public responseIntoMessageResponse(message: TransmitInformation, response: DiscourseResponse): MessageResponseData {
+		switch (message.action) {
+			case MessageAction.CreateThread:
+				return {
+					message: response.id,
+					thread: response.topic_id,
+					url: `https://${this.connectionDetails.instance}/t/${response.topic_id}`
+				};
+			default:
+				throw new Error(`${message.action} not translatable to ${message.target.service} yet.`);
+		}
 	}
 }
 

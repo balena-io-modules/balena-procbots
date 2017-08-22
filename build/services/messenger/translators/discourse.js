@@ -84,7 +84,7 @@ class DiscourseTranslator {
     }
     messageIntoEmitDetails(message) {
         switch (message.action) {
-            case 'createThread':
+            case 0:
                 const title = message.details.title;
                 if (!title) {
                     throw new Error('Cannot create Discourse Thread without a title.');
@@ -99,17 +99,17 @@ class DiscourseTranslator {
                             unlist_topic: 'false',
                         },
                     } };
-            case 'createComment':
-                const topic = message.target.thread;
-                if (!topic) {
-                    throw new Error('Cannot create Discourse comment without a topic.');
+            case 1:
+                const thread = message.target.thread;
+                if (!thread) {
+                    throw new Error('Cannot create Discourse comment without a thread.');
                 }
                 return { method: ['request'], payload: {
                         method: 'POST',
                         path: '/posts',
                         body: {
                             raw: `${message.details.text}\n\n---\n${Translator.stringifyMetadata(message, 'img')}`,
-                            topic_id: topic,
+                            topic_id: thread,
                             whisper: message.details.hidden ? 'true' : 'false',
                         }
                     } };
@@ -117,12 +117,17 @@ class DiscourseTranslator {
                 throw new Error(`${message.action} not translatable to ${message.target.service} yet.`);
         }
     }
-    responseIntoMessageResponse(_payload, response) {
-        return {
-            message: response.id,
-            thread: response.topic_id,
-            url: `https://${this.connectionDetails.instance}/t/${response.topic_id}`
-        };
+    responseIntoMessageResponse(message, response) {
+        switch (message.action) {
+            case 0:
+                return {
+                    message: response.id,
+                    thread: response.topic_id,
+                    url: `https://${this.connectionDetails.instance}/t/${response.topic_id}`
+                };
+            default:
+                throw new Error(`${message.action} not translatable to ${message.target.service} yet.`);
+        }
     }
 }
 exports.DiscourseTranslator = DiscourseTranslator;

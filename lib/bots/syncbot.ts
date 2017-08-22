@@ -19,14 +19,15 @@ import * as _ from 'lodash';
 import { ProcBot } from '../framework/procbot';
 import { MessengerService } from '../services/messenger';
 import {
-	FlowDefinition, MessageEmitResponse, MessageEvent, MessageInformation, MessageListenerMethod, TransmitInformation,
+	FlowDefinition, MessageAction, MessageEmitResponse, MessageEvent,
+	MessageInformation, MessageListenerMethod, TransmitInformation,
 } from '../services/messenger-types';
 import { createDataHub } from '../services/messenger/datahubs/datahub';
 import { Logger, LogLevel } from '../utils/logger';
 
 export class SyncBot extends ProcBot {
 	private static makeRouter(
-		from: FlowDefinition, to: FlowDefinition, emitter: MessengerService, logger: Logger
+		from: FlowDefinition, to: FlowDefinition, messenger: MessengerService, logger: Logger
 	): MessageListenerMethod {
 		return (_registration, event: MessageEvent) => {
 			const data = event.cookedEvent;
@@ -37,9 +38,12 @@ export class SyncBot extends ProcBot {
 			) {
 				const text = data.details.text;
 				logger.log(LogLevel.INFO, `---> Heard '${text}' on ${from.service}.`);
-				return SyncBot.createThreadAndConnect(from, to, emitter, data)
+				return SyncBot.readConnectedThread(to, messenger, data)
 				.then(() => {
-					logger.log(LogLevel.INFO, `---> Emitted '${text}' to ${to.service}.`);
+					SyncBot.createThreadAndConnect(to, messenger, data)
+					.then(() => {
+						logger.log(LogLevel.INFO, `---> Emitted '${text}' to ${to.service}.`);
+					});
 				});
 			}
 			// The event received doesn't match the profile being routed, so no-op is the correct action.
@@ -47,11 +51,35 @@ export class SyncBot extends ProcBot {
 		};
 	}
 
+	private static readConnectedThread(
+		to: FlowDefinition, messenger: MessengerService, data: MessageInformation
+	): Promise<MessageEmitResponse> {
+		const readConnection: TransmitInformation = {
+			action: MessageAction.ReadConnection,
+			details: data.details,
+			hub: {
+				username: process.env.SYNCBOT_NAME,
+			},
+			source: data.source,
+			target: {
+				flow: to.flow,
+				service: to.service,
+				username: process.env.SYNCBOT_NAME,
+			},
+		};
+		return messenger.sendData({
+			contexts: {
+				messenger: readConnection,
+			},
+			source: 'syncbot',
+		});
+	}
+
 	private static createThreadAndConnect(
-		from: FlowDefinition, to: FlowDefinition, emitter: MessengerService, data: MessageInformation
+		to: FlowDefinition, messenger: MessengerService, data: MessageInformation
 	): Promise<MessageEmitResponse> {
 		const createThread: TransmitInformation = {
-			action: 'createThread',
+			action: MessageAction.CreateThread,
 			details: data.details,
 			hub: {
 				username: data.source.username,
@@ -65,7 +93,7 @@ export class SyncBot extends ProcBot {
 		};
 
 		const createConnections: TransmitInformation = {
-			action: 'createComment',
+			action: MessageAction.CreateMessage,
 			details: {
 				genesis: 'system',
 				hidden: true,
@@ -90,7 +118,7 @@ export class SyncBot extends ProcBot {
 			}
 		};
 
-		return emitter.sendData({
+		return messenger.sendData({
 			contexts: {
 				messenger: createThread,
 			},
@@ -105,21 +133,21 @@ export class SyncBot extends ProcBot {
 					username: process.env.SYNCBOT_NAME,
 					thread: data.source.thread,
 				};
-				connectTarget.details.text += `[${to.service} thread ${response.thread}](${response.url})`;
+				connectTarget.details.text += `[${createThread.target.service} thread ${response.thread}](${response.url})`;
 
 				const sourceDetails = data.source;
 				const connectSource = _.cloneDeep(createConnections);
 				connectSource.target = {
-					flow: to.flow,
-					service: to.service,
+					flow: createThread.target.flow,
+					service: createThread.target.service,
 					username: process.env.SYNCBOT_NAME,
 					thread: response.thread,
 				};
-				connectSource.details.text += `[${from.service} thread ${sourceDetails.thread}](${sourceDetails.url})`;
+				connectSource.details.text += `[${sourceDetails.service} thread ${sourceDetails.thread}](${sourceDetails.url})`;
 
 				return Promise.all([
-					emitter.sendData({contexts: {messenger: connectTarget}, source: 'syncbot'}),
-					emitter.sendData({contexts: {messenger: connectSource}, source: 'syncbot'}),
+					messenger.sendData({contexts: {messenger: connectTarget}, source: 'syncbot'}),
+					messenger.sendData({contexts: {messenger: connectSource}, source: 'syncbot'}),
 				]).return(emitResponse);
 			}
 			return Promise.resolve(emitResponse);
@@ -130,7 +158,7 @@ export class SyncBot extends ProcBot {
 		super(name);
 		const logger = new Logger();
 
-		// Build the dataHub object
+		// Build the dataHub array
 		const dataHub = createDataHub(
 			process.env.SYNCBOT_DATAHUB_SERVICE,
 			JSON.parse(process.env.SYNCBOT_DATAHUB_CONSTRUCTOR)

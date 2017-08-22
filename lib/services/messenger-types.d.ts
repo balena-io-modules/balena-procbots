@@ -46,12 +46,16 @@ export interface Message {
 	title?: string;
 }
 
+declare const enum MessageAction {
+	CreateThread, CreateMessage, ReadConnection,
+}
+
 export interface MessageInformation {
 	details: Message;
 	source: ReceiptIds;
 }
 export interface TransmitInformation extends MessageInformation {
-	action: string;
+	action: MessageAction;
 	hub: {
 		username: string;
 	};

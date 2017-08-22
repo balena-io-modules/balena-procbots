@@ -97,7 +97,7 @@ class FlowdockTranslator {
         const org = this.organization;
         const flow = message.target.flow;
         switch (message.action) {
-            case 'createThread':
+            case 0:
                 const title = message.details.title;
                 if (!title) {
                     throw new Error('Cannot create Discourse Thread without a title');
@@ -111,7 +111,7 @@ class FlowdockTranslator {
                             external_user_name: message.details.internal ? undefined : message.source.username.substring(0, 16),
                         },
                     } };
-            case 'createComment':
+            case 1:
                 return { method: ['post'], payload: {
                         path: `/flows/${org}/${flow}/threads/${message.target.thread}/messages/`,
                         payload: {
@@ -124,16 +124,21 @@ class FlowdockTranslator {
                 throw new Error(`${message.action} not supported on ${message.target.service}`);
         }
     }
-    responseIntoMessageResponse(payload, response) {
-        const thread = response.thread_id;
-        const org = this.organization;
-        const flow = payload.target.flow;
-        const url = `https://www.flowdock.com/app/${org}/${flow}/threads/${thread}`;
-        return {
-            message: response.id,
-            thread: response.thread_id,
-            url,
-        };
+    responseIntoMessageResponse(message, response) {
+        switch (message.action) {
+            case 0:
+                const thread = response.thread_id;
+                const org = this.organization;
+                const flow = message.target.flow;
+                const url = `https://www.flowdock.com/app/${org}/${flow}/threads/${thread}`;
+                return {
+                    message: response.id,
+                    thread: response.thread_id,
+                    url,
+                };
+            default:
+                throw new Error(`${message.action} not supported on ${message.target.service}`);
+        }
     }
 }
 exports.FlowdockTranslator = FlowdockTranslator;

@@ -18,7 +18,10 @@ import * as Promise from 'bluebird';
 import { Session } from 'flowdock';
 import * as _ from 'lodash';
 import { FlowdockConnectionDetails, FlowdockEmitData, FlowdockEvent, FlowdockResponse } from '../../flowdock-types';
-import { MessageEvent, MessageInformation, MessageResponseData, TransmitInformation } from '../../messenger-types';
+import {
+	MessageAction, MessageEvent, MessageInformation, MessageResponseData,
+	TransmitInformation
+} from '../../messenger-types';
 import { DataHub } from '../datahubs/datahub';
 import * as Translator from './translator';
 
@@ -118,7 +121,7 @@ export class FlowdockTranslator implements Translator.Translator {
 		const org = this.organization;
 		const flow = message.target.flow;
 		switch (message.action) {
-			case 'createThread':
+			case MessageAction.CreateThread:
 				const title = message.details.title;
 				if (!title) {
 					throw new Error('Cannot create Discourse Thread without a title');
@@ -133,7 +136,7 @@ export class FlowdockTranslator implements Translator.Translator {
 						external_user_name: message.details.internal ? undefined : message.source.username.substring(0, 16),
 					},
 				}};
-			case 'createComment':
+			case MessageAction.CreateMessage:
 				return { method: ['post'], payload: {
 					path: `/flows/${org}/${flow}/threads/${message.target.thread}/messages/`,
 					payload: {
@@ -147,16 +150,21 @@ export class FlowdockTranslator implements Translator.Translator {
 		}
 	}
 
-	public responseIntoMessageResponse(payload: TransmitInformation, response: FlowdockResponse): MessageResponseData {
-		const thread = response.thread_id;
-		const org = this.organization;
-		const flow = payload.target.flow;
-		const url = `https://www.flowdock.com/app/${org}/${flow}/threads/${thread}`;
-		return {
-			message: response.id,
-			thread: response.thread_id,
-			url,
-		};
+	public responseIntoMessageResponse(message: TransmitInformation, response: FlowdockResponse): MessageResponseData {
+		switch (message.action) {
+			case MessageAction.CreateThread:
+				const thread = response.thread_id;
+				const org = this.organization;
+				const flow = message.target.flow;
+				const url = `https://www.flowdock.com/app/${org}/${flow}/threads/${thread}`;
+				return {
+					message: response.id,
+					thread: response.thread_id,
+					url,
+				};
+			default:
+				throw new Error(`${message.action} not supported on ${message.target.service}`);
+		}
 	}
 
 	/**

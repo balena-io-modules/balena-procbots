@@ -18,7 +18,7 @@ export declare class FlowdockTranslator implements Translator.Translator {
         method: string[];
         payload: FlowdockEmitData;
     };
-    responseIntoMessageResponse(payload: TransmitInformation, response: FlowdockResponse): MessageResponseData;
+    responseIntoMessageResponse(message: TransmitInformation, response: FlowdockResponse): MessageResponseData;
     private fetchFromSession;
 }
 export declare function createTranslator(data: FlowdockConnectionDetails, hubs: DataHub[]): Translator.Translator;

@@ -17,6 +17,6 @@ export declare class DiscourseTranslator implements Translator.Translator {
         method: string[];
         payload: DiscourseEmitData;
     };
-    responseIntoMessageResponse(_payload: TransmitInformation, response: DiscourseResponse): MessageResponseData;
+    responseIntoMessageResponse(message: TransmitInformation, response: DiscourseResponse): MessageResponseData;
 }
 export declare function createTranslator(data: DiscourseConnectionDetails, hubs: DataHub[]): Translator.Translator;

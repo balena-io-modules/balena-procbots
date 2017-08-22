@@ -7,7 +7,7 @@ const messenger_1 = require("../services/messenger");
 const datahub_1 = require("../services/messenger/datahubs/datahub");
 const logger_1 = require("../utils/logger");
 class SyncBot extends procbot_1.ProcBot {
-    static makeRouter(from, to, emitter, logger) {
+    static makeRouter(from, to, messenger, logger) {
         return (_registration, event) => {
             const data = event.cookedEvent;
             if (from.service === data.source.service &&
@@ -15,17 +15,41 @@ class SyncBot extends procbot_1.ProcBot {
                 data.details.genesis !== 'system') {
                 const text = data.details.text;
                 logger.log(logger_1.LogLevel.INFO, `---> Heard '${text}' on ${from.service}.`);
-                return SyncBot.createThreadAndConnect(from, to, emitter, data)
+                return SyncBot.readConnectedThread(to, messenger, data)
                     .then(() => {
-                    logger.log(logger_1.LogLevel.INFO, `---> Emitted '${text}' to ${to.service}.`);
+                    SyncBot.createThreadAndConnect(to, messenger, data)
+                        .then(() => {
+                        logger.log(logger_1.LogLevel.INFO, `---> Emitted '${text}' to ${to.service}.`);
+                    });
                 });
             }
             return Promise.resolve();
         };
     }
-    static createThreadAndConnect(from, to, emitter, data) {
+    static readConnectedThread(to, messenger, data) {
+        const readConnection = {
+            action: 2,
+            details: data.details,
+            hub: {
+                username: process.env.SYNCBOT_NAME,
+            },
+            source: data.source,
+            target: {
+                flow: to.flow,
+                service: to.service,
+                username: process.env.SYNCBOT_NAME,
+            },
+        };
+        return messenger.sendData({
+            contexts: {
+                messenger: readConnection,
+            },
+            source: 'syncbot',
+        });
+    }
+    static createThreadAndConnect(to, messenger, data) {
         const createThread = {
-            action: 'createThread',
+            action: 0,
             details: data.details,
             hub: {
                 username: data.source.username,
@@ -38,7 +62,7 @@ class SyncBot extends procbot_1.ProcBot {
             },
         };
         const createConnections = {
-            action: 'createComment',
+            action: 1,
             details: {
                 genesis: 'system',
                 hidden: true,
@@ -62,7 +86,7 @@ class SyncBot extends procbot_1.ProcBot {
                 thread: 'duff'
             }
         };
-        return emitter.sendData({
+        return messenger.sendData({
             contexts: {
                 messenger: createThread,
             },
@@ -77,19 +101,19 @@ class SyncBot extends procbot_1.ProcBot {
                     username: process.env.SYNCBOT_NAME,
                     thread: data.source.thread,
                 };
-                connectTarget.details.text += `[${to.service} thread ${response.thread}](${response.url})`;
+                connectTarget.details.text += `[${createThread.target.service} thread ${response.thread}](${response.url})`;
                 const sourceDetails = data.source;
                 const connectSource = _.cloneDeep(createConnections);
                 connectSource.target = {
-                    flow: to.flow,
-                    service: to.service,
+                    flow: createThread.target.flow,
+                    service: createThread.target.service,
                     username: process.env.SYNCBOT_NAME,
                     thread: response.thread,
                 };
-                connectSource.details.text += `[${from.service} thread ${sourceDetails.thread}](${sourceDetails.url})`;
+                connectSource.details.text += `[${sourceDetails.service} thread ${sourceDetails.thread}](${sourceDetails.url})`;
                 return Promise.all([
-                    emitter.sendData({ contexts: { messenger: connectTarget }, source: 'syncbot' }),
-                    emitter.sendData({ contexts: { messenger: connectSource }, source: 'syncbot' }),
+                    messenger.sendData({ contexts: { messenger: connectTarget }, source: 'syncbot' }),
+                    messenger.sendData({ contexts: { messenger: connectSource }, source: 'syncbot' }),
                 ]).return(emitResponse);
             }
             return Promise.resolve(emitResponse);
