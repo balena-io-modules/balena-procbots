@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const Promise = require("bluebird");
+const procbot_1 = require("../../../framework/procbot");
 class ConfigurationDataHub {
     constructor(prefix) {
         this.prefix = prefix;
@@ -10,7 +11,7 @@ class ConfigurationDataHub {
         if (process.env[envVar]) {
             return Promise.resolve(process.env[envVar]);
         }
-        return Promise.reject(new Error('Value not found'));
+        return Promise.reject(new procbot_1.ProcBotError(2, `${envVar} not found.`));
     }
 }
 exports.ConfigurationDataHub = ConfigurationDataHub;

@@ -17,10 +17,12 @@ limitations under the License.
 import * as Promise from 'bluebird';
 import { Session } from 'flowdock';
 import * as _ from 'lodash';
+import { ProcBotError } from '../../../framework/procbot';
+import { ProcBotErrorCode } from '../../../framework/procbot-types';
 import { FlowdockConnectionDetails, FlowdockEmitData, FlowdockEvent, FlowdockResponse } from '../../flowdock-types';
 import {
-	MessageAction, MessageEvent, MessageInformation, MessageResponseData,
-	TransmitInformation
+	MessageAction, MessageEvent, MessageInformation,
+	MessageResponseData, TransmitInformation,
 } from '../../messenger-types';
 import { DataHub } from '../datahubs/datahub';
 import * as Translator from './translator';
@@ -120,39 +122,55 @@ export class FlowdockTranslator implements Translator.Translator {
 	public messageIntoEmitDetails(message: TransmitInformation): {method: string[], payload: FlowdockEmitData} {
 		const org = this.organization;
 		const flow = message.target.flow;
+		const title = message.details.title;
+		const thread = message.target.thread;
 		switch (message.action) {
 			case MessageAction.CreateThread:
-				const title = message.details.title;
 				if (!title) {
-					throw new Error('Cannot create Discourse Thread without a title');
+					throw new Error('Cannot create a thread without a title');
 				}
-				const titleText = title + '\n--\n';
 				return {method: ['post'], payload: {
-					path: `/flows/${org}/${flow}/messages/`,
+					path: `/flows/${org}/${flow}/messages`,
 					payload: {
 						// The concatenated string, of various data nuggets, to emit
-						content: titleText + message.details.text + '\n' + Translator.stringifyMetadata(message, 'emoji'),
+						content: `${title}\n--\n${message.details.text}\n${Translator.stringifyMetadata(message, 'emoji')}`,
 						event: 'message',
 						external_user_name: message.details.internal ? undefined : message.source.username.substring(0, 16),
 					},
 				}};
 			case MessageAction.CreateMessage:
+				if (!thread) {
+					throw new Error('Cannot create a comment without a thread.');
+				}
 				return { method: ['post'], payload: {
-					path: `/flows/${org}/${flow}/threads/${message.target.thread}/messages/`,
+					path: `/flows/${org}/${flow}/threads/${thread}/messages`,
 					payload: {
-						content: message.details.text + '\n' + Translator.stringifyMetadata(message, 'emoji'),
+						content: `${message.details.text}\n${Translator.stringifyMetadata(message, 'emoji')}`,
 						event: 'message',
 						external_user_name: message.details.internal ? undefined : message.source.username.substring(0, 16),
 					}
+				}};
+			case MessageAction.ReadConnection:
+				if (!thread) {
+					throw new Error('Cannot search for connections without a thread.');
+				}
+				return { method: ['get'], payload: {
+					path: `/flows/${org}/${flow}/threads/${thread}/messages`,
+					payload: {
+						search: `This ticket is mirrored in [${message.source.service} thread`,
+					},
 				}};
 			default:
 				throw new Error(`${message.action} not supported on ${message.target.service}`);
 		}
 	}
 
-	public responseIntoMessageResponse(message: TransmitInformation, response: FlowdockResponse): MessageResponseData {
+	public responseIntoMessageResponse(
+		message: TransmitInformation, response: FlowdockResponse
+	): MessageResponseData {
 		switch (message.action) {
 			case MessageAction.CreateThread:
+			case MessageAction.CreateMessage:
 				const thread = response.thread_id;
 				const org = this.organization;
 				const flow = message.target.flow;
@@ -162,6 +180,13 @@ export class FlowdockTranslator implements Translator.Translator {
 					thread: response.thread_id,
 					url,
 				};
+			case MessageAction.ReadConnection:
+				if (response.length > 0) {
+					return {
+						thread: response[0].content.match(/This ticket is mirrored in \[(?:\w+) thread (\d+)]/i)[1]
+					};
+				}
+				throw new ProcBotError(ProcBotErrorCode.NoConnectionFound, 'No connected thread found by querying Flowdock.');
 			default:
 				throw new Error(`${message.action} not supported on ${message.target.service}`);
 		}

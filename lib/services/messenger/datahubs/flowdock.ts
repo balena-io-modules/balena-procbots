@@ -26,6 +26,9 @@ export class FlowdockDataHub implements DataHub {
 
 	constructor(data: FlowdockConnectionDetails) {
 		this.session = new Session(data.token);
+		const doNothing = () => { /* pass */ };
+		// The flowdock service both emits and calls back the error.
+		this.session.on('error', doNothing);
 		this.organization = data.organization;
 	}
 
@@ -60,14 +63,14 @@ export class FlowdockDataHub implements DataHub {
 		return this.fetchUserId(username)
 		.then((userId) => {
 			return this.fetchFromSession(`/private/${userId}/messages`)
-				.then((fetchedMessages) => {
-					// Prune and clean the message history to text of interest
-					return _.filter(fetchedMessages, (message: FlowdockMessage) => {
-						return filter.test(message.content);
-					}).map((message: FlowdockMessage) => {
-						return message.content;
-					});
+			.then((fetchedMessages) => {
+				// Prune and clean the message history to text of interest
+				return _.filter(fetchedMessages, (message: FlowdockMessage) => {
+					return filter.test(message.content);
+				}).map((message: FlowdockMessage) => {
+					return message.content;
 				});
+			});
 		});
 	}
 
@@ -99,13 +102,11 @@ export class FlowdockDataHub implements DataHub {
 	 */
 	private fetchFromSession = (path: string, search?: string): Promise<any> => {
 		return new Promise<any>((resolve, reject) => {
-			// The flowdock service both emits and calls back the error.
-			// We're wrapping the emit in a promise reject and ignoring the call back
-			this.session.on('error', reject);
-			this.session.get(path, {search}, (_error?: Error, result?: any) => {
-				this.session.removeListener('error', reject);
+			this.session.get(path, {search}, (error?: Error, result?: any) => {
 				if (result) {
 					resolve(result);
+				} else {
+					reject(error);
 				}
 			});
 		});

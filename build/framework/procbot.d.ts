@@ -4,10 +4,8 @@ import { ServiceEmitRequest, ServiceEmitResponse, ServiceEmitter, ServiceListene
 import { Logger } from '../utils/logger';
 import { ConfigurationLocation, ProcBotConfiguration, ProcBotErrorCode } from './procbot-types';
 export declare class ProcBotError extends TypedError {
-    private errorMessage;
     private errorCode;
     constructor(code: ProcBotErrorCode, message: string);
-    readonly message: string;
     readonly code: ProcBotErrorCode;
 }
 export declare class ProcBot {

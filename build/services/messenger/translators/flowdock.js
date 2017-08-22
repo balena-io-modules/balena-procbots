@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const Promise = require("bluebird");
 const flowdock_1 = require("flowdock");
 const _ = require("lodash");
+const procbot_1 = require("../../../framework/procbot");
 const Translator = require("./translator");
 class FlowdockTranslator {
     constructor(data, hubs) {
@@ -96,29 +97,42 @@ class FlowdockTranslator {
     messageIntoEmitDetails(message) {
         const org = this.organization;
         const flow = message.target.flow;
+        const title = message.details.title;
+        const thread = message.target.thread;
         switch (message.action) {
             case 0:
-                const title = message.details.title;
                 if (!title) {
-                    throw new Error('Cannot create Discourse Thread without a title');
+                    throw new Error('Cannot create a thread without a title');
                 }
-                const titleText = title + '\n--\n';
                 return { method: ['post'], payload: {
-                        path: `/flows/${org}/${flow}/messages/`,
+                        path: `/flows/${org}/${flow}/messages`,
                         payload: {
-                            content: titleText + message.details.text + '\n' + Translator.stringifyMetadata(message, 'emoji'),
+                            content: `${title}\n--\n${message.details.text}\n${Translator.stringifyMetadata(message, 'emoji')}`,
                             event: 'message',
                             external_user_name: message.details.internal ? undefined : message.source.username.substring(0, 16),
                         },
                     } };
             case 1:
+                if (!thread) {
+                    throw new Error('Cannot create a comment without a thread.');
+                }
                 return { method: ['post'], payload: {
-                        path: `/flows/${org}/${flow}/threads/${message.target.thread}/messages/`,
+                        path: `/flows/${org}/${flow}/threads/${thread}/messages`,
                         payload: {
-                            content: message.details.text + '\n' + Translator.stringifyMetadata(message, 'emoji'),
+                            content: `${message.details.text}\n${Translator.stringifyMetadata(message, 'emoji')}`,
                             event: 'message',
                             external_user_name: message.details.internal ? undefined : message.source.username.substring(0, 16),
                         }
+                    } };
+            case 2:
+                if (!thread) {
+                    throw new Error('Cannot search for connections without a thread.');
+                }
+                return { method: ['get'], payload: {
+                        path: `/flows/${org}/${flow}/threads/${thread}/messages`,
+                        payload: {
+                            search: `This ticket is mirrored in [${message.source.service} thread`,
+                        },
                     } };
             default:
                 throw new Error(`${message.action} not supported on ${message.target.service}`);
@@ -127,6 +141,7 @@ class FlowdockTranslator {
     responseIntoMessageResponse(message, response) {
         switch (message.action) {
             case 0:
+            case 1:
                 const thread = response.thread_id;
                 const org = this.organization;
                 const flow = message.target.flow;
@@ -136,6 +151,13 @@ class FlowdockTranslator {
                     thread: response.thread_id,
                     url,
                 };
+            case 2:
+                if (response.length > 0) {
+                    return {
+                        thread: response[0].content.match(/This ticket is mirrored in \[(?:\w+) thread (\d+)]/i)[1]
+                    };
+                }
+                throw new procbot_1.ProcBotError(1, 'No connected thread found by querying Flowdock.');
             default:
                 throw new Error(`${message.action} not supported on ${message.target.service}`);
         }

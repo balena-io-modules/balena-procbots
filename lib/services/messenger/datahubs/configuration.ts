@@ -15,6 +15,8 @@
  */
 
 import * as Promise from 'bluebird';
+import { ProcBotError } from '../../../framework/procbot';
+import { ProcBotErrorCode } from '../../../framework/procbot-types';
 import { DataHub } from './datahub';
 
 export class ConfigurationDataHub implements DataHub {
@@ -35,7 +37,7 @@ export class ConfigurationDataHub implements DataHub {
 		if(process.env[envVar]) {
 			return Promise.resolve(process.env[envVar]);
 		}
-		return Promise.reject(new Error('Value not found'));
+		return Promise.reject(new ProcBotError(ProcBotErrorCode.ConfigurationValueNotFound, `${envVar} not found.`));
 	}
 }
 

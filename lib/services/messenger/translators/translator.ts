@@ -40,7 +40,9 @@ export interface Translator {
 
 	messageIntoEmitDetails(message: TransmitInformation): {method: string[], payload: any};
 
-	responseIntoMessageResponse(payload: TransmitInformation, response: any): MessageResponseData;
+	responseIntoMessageResponse(
+		payload: TransmitInformation, response: any
+	): MessageResponseData;
 }
 
 /**

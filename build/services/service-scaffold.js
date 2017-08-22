@@ -58,12 +58,14 @@ class ServiceScaffold extends worker_client_1.WorkerClient {
                 source: this.serviceName,
             });
         }
-        return this.emitData(context).then((response) => {
+        return this.emitData(context)
+            .then((response) => {
             return {
                 response,
                 source: this.serviceName,
             };
-        }).catch((err) => {
+        })
+            .catch((err) => {
             return {
                 err,
                 source: this.serviceName,

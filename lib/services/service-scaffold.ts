@@ -94,12 +94,14 @@ export abstract class ServiceScaffold<T> extends WorkerClient<T> implements Serv
 			});
 		}
 
-		return this.emitData(context).then((response: any) => {
+		return this.emitData(context)
+		.then((response: any) => {
 			return {
 				response,
 				source: this.serviceName,
 			};
-		}).catch((err: TypedError) => {
+		})
+		.catch((err: TypedError) => {
 			return {
 				err,
 				source: this.serviceName,

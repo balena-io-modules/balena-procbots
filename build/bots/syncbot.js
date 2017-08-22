@@ -16,15 +16,43 @@ class SyncBot extends procbot_1.ProcBot {
                 const text = data.details.text;
                 logger.log(logger_1.LogLevel.INFO, `---> Heard '${text}' on ${from.service}.`);
                 return SyncBot.readConnectedThread(to, messenger, data)
+                    .then((threadDetails) => {
+                    const response = threadDetails.response;
+                    if (response) {
+                        return SyncBot.createComment({
+                            service: to.service, flow: to.flow, thread: response.thread,
+                        }, messenger, data);
+                    }
+                    return SyncBot.createThreadAndConnect(to, messenger, data);
+                })
                     .then(() => {
-                    SyncBot.createThreadAndConnect(to, messenger, data)
-                        .then(() => {
-                        logger.log(logger_1.LogLevel.INFO, `---> Emitted '${text}' to ${to.service}.`);
-                    });
+                    logger.log(logger_1.LogLevel.INFO, `---> Emitted '${text}' to ${to.service}.`);
                 });
             }
             return Promise.resolve();
         };
+    }
+    static createComment(to, messenger, data) {
+        const createComment = {
+            action: 1,
+            details: data.details,
+            hub: {
+                username: data.source.username,
+            },
+            source: data.source,
+            target: {
+                flow: to.flow,
+                service: to.service,
+                thread: to.thread,
+                username: data.source.username,
+            },
+        };
+        return messenger.sendData({
+            contexts: {
+                messenger: createComment,
+            },
+            source: 'syncbot',
+        });
     }
     static readConnectedThread(to, messenger, data) {
         const readConnection = {
@@ -33,12 +61,14 @@ class SyncBot extends procbot_1.ProcBot {
             hub: {
                 username: process.env.SYNCBOT_NAME,
             },
-            source: data.source,
-            target: {
+            source: {
                 flow: to.flow,
+                message: 'duff',
                 service: to.service,
+                thread: 'duff',
                 username: process.env.SYNCBOT_NAME,
             },
+            target: data.source,
         };
         return messenger.sendData({
             contexts: {

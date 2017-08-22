@@ -42,5 +42,5 @@ export interface ConfigurationLocation {
 }
 
 declare const enum ProcBotErrorCode {
-	EmitterContextAbsent,
+	EmitterContextAbsent, NoConnectionFound, ConfigurationValueNotFound,
 }

@@ -87,7 +87,7 @@ class DiscourseTranslator {
             case 0:
                 const title = message.details.title;
                 if (!title) {
-                    throw new Error('Cannot create Discourse Thread without a title.');
+                    throw new Error('Cannot create a thread without a title.');
                 }
                 return { method: ['request'], payload: {
                         method: 'POST',
@@ -102,7 +102,7 @@ class DiscourseTranslator {
             case 1:
                 const thread = message.target.thread;
                 if (!thread) {
-                    throw new Error('Cannot create Discourse comment without a thread.');
+                    throw new Error('Cannot create a comment without a thread.');
                 }
                 return { method: ['request'], payload: {
                         method: 'POST',
@@ -120,6 +120,7 @@ class DiscourseTranslator {
     responseIntoMessageResponse(message, response) {
         switch (message.action) {
             case 0:
+            case 1:
                 return {
                     message: response.id,
                     thread: response.topic_id,

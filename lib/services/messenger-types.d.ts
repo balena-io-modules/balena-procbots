@@ -64,11 +64,17 @@ export interface TransmitInformation extends MessageInformation {
 
 export type MessageListenerMethod = (registration: ServiceRegistration, event: MessageEvent) => Promise<void>;
 
-export interface MessageResponseData {
+export interface CreateMessageResponse {
 	message: string;
 	thread: string;
 	url?: string;
 }
+
+export interface ReadConnectionResponse {
+	thread: string;
+}
+
+export type MessageResponseData = CreateMessageResponse | ReadConnectionResponse;
 
 export interface MessageEmitResponse extends ServiceEmitResponse {
 	response?: MessageResponseData;
@@ -83,6 +89,10 @@ export interface Metadata {
 export interface FlowDefinition {
 	service: string;
 	flow: string;
+}
+
+export interface ThreadDefinition extends FlowDefinition {
+	thread: string;
 }
 
 export interface MessengerConnectionDetails {

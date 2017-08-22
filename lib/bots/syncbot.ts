@@ -19,8 +19,9 @@ import * as _ from 'lodash';
 import { ProcBot } from '../framework/procbot';
 import { MessengerService } from '../services/messenger';
 import {
-	FlowDefinition, MessageAction, MessageEmitResponse, MessageEvent,
-	MessageInformation, MessageListenerMethod, TransmitInformation,
+	CreateMessageResponse, FlowDefinition, MessageAction,
+	MessageEmitResponse, MessageEvent, MessageInformation,
+	MessageListenerMethod, ThreadDefinition, TransmitInformation,
 } from '../services/messenger-types';
 import { createDataHub } from '../services/messenger/datahubs/datahub';
 import { Logger, LogLevel } from '../utils/logger';
@@ -39,16 +40,47 @@ export class SyncBot extends ProcBot {
 				const text = data.details.text;
 				logger.log(LogLevel.INFO, `---> Heard '${text}' on ${from.service}.`);
 				return SyncBot.readConnectedThread(to, messenger, data)
+				.then((threadDetails: MessageEmitResponse) => {
+					const response = threadDetails.response;
+					if (response) {
+						return SyncBot.createComment({
+							service: to.service, flow: to.flow, thread: response.thread,
+						}, messenger, data);
+					}
+					return SyncBot.createThreadAndConnect(to, messenger, data);
+				})
 				.then(() => {
-					SyncBot.createThreadAndConnect(to, messenger, data)
-					.then(() => {
-						logger.log(LogLevel.INFO, `---> Emitted '${text}' to ${to.service}.`);
-					});
+					logger.log(LogLevel.INFO, `---> Emitted '${text}' to ${to.service}.`);
 				});
 			}
 			// The event received doesn't match the profile being routed, so no-op is the correct action.
 			return Promise.resolve();
 		};
+	}
+
+	private static createComment(
+		to: ThreadDefinition, messenger: MessengerService, data: MessageInformation
+	): Promise<MessageEmitResponse> {
+		const createComment: TransmitInformation = {
+			action: MessageAction.CreateMessage,
+			details: data.details,
+			hub: {
+				username: data.source.username,
+			},
+			source: data.source,
+			target: {
+				flow: to.flow,
+				service: to.service,
+				thread: to.thread,
+				username: data.source.username,
+			},
+		};
+		return messenger.sendData({
+			contexts: {
+				messenger: createComment,
+			},
+			source: 'syncbot',
+		});
 	}
 
 	private static readConnectedThread(
@@ -60,12 +92,14 @@ export class SyncBot extends ProcBot {
 			hub: {
 				username: process.env.SYNCBOT_NAME,
 			},
-			source: data.source,
-			target: {
+			source: {
 				flow: to.flow,
+				message: 'duff',
 				service: to.service,
+				thread: 'duff',
 				username: process.env.SYNCBOT_NAME,
 			},
+			target: data.source,
 		};
 		return messenger.sendData({
 			contexts: {
@@ -93,6 +127,7 @@ export class SyncBot extends ProcBot {
 		};
 
 		const createConnections: TransmitInformation = {
+			// #251 This could be .CreateConnection, and translated
 			action: MessageAction.CreateMessage,
 			details: {
 				genesis: 'system',
@@ -124,7 +159,7 @@ export class SyncBot extends ProcBot {
 			},
 			source: 'syncbot',
 		}).then((emitResponse: MessageEmitResponse) => {
-			const response = emitResponse.response;
+			const response = emitResponse.response as CreateMessageResponse;
 			if (response) {
 				const connectTarget = _.cloneDeep(createConnections);
 				connectTarget.target = {

@@ -19,11 +19,11 @@ import * as _ from 'lodash';
 import * as request from 'request-promise';
 import {
 	DiscourseConnectionDetails, DiscourseEmitData,
-	DiscourseEvent, DiscourseResponse
+	DiscourseEvent, DiscourseResponse,
 } from '../../discourse-types';
 import {
-	MessageAction, MessageEvent, MessageInformation, MessageResponseData,
-	TransmitInformation
+	CreateMessageResponse, MessageAction, MessageEvent,
+	MessageInformation, TransmitInformation,
 } from '../../messenger-types';
 import { DataHub } from '../datahubs/datahub';
 import * as Translator from './translator';
@@ -126,7 +126,7 @@ export class DiscourseTranslator implements Translator.Translator {
 			case MessageAction.CreateThread:
 				const title = message.details.title;
 				if (!title) {
-					throw new Error('Cannot create Discourse Thread without a title.');
+					throw new Error('Cannot create a thread without a title.');
 				}
 				return {method: ['request'], payload: {
 					method: 'POST',
@@ -141,7 +141,7 @@ export class DiscourseTranslator implements Translator.Translator {
 			case MessageAction.CreateMessage:
 				const thread = message.target.thread;
 				if (!thread) {
-					throw new Error('Cannot create Discourse comment without a thread.');
+					throw new Error('Cannot create a comment without a thread.');
 				}
 				return {method: ['request'], payload: {
 					method: 'POST',
@@ -157,9 +157,10 @@ export class DiscourseTranslator implements Translator.Translator {
 		}
 	}
 
-	public responseIntoMessageResponse(message: TransmitInformation, response: DiscourseResponse): MessageResponseData {
+	public responseIntoMessageResponse(message: TransmitInformation, response: DiscourseResponse): CreateMessageResponse {
 		switch (message.action) {
 			case MessageAction.CreateThread:
+			case MessageAction.CreateMessage:
 				return {
 					message: response.id,
 					thread: response.topic_id,

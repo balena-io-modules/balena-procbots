@@ -1,6 +1,6 @@
 import * as Promise from 'bluebird';
 import { DiscourseConnectionDetails, DiscourseEmitData, DiscourseEvent, DiscourseResponse } from '../../discourse-types';
-import { MessageEvent, MessageResponseData, TransmitInformation } from '../../messenger-types';
+import { CreateMessageResponse, MessageEvent, TransmitInformation } from '../../messenger-types';
 import { DataHub } from '../datahubs/datahub';
 import * as Translator from './translator';
 export declare class DiscourseTranslator implements Translator.Translator {
@@ -17,6 +17,6 @@ export declare class DiscourseTranslator implements Translator.Translator {
         method: string[];
         payload: DiscourseEmitData;
     };
-    responseIntoMessageResponse(message: TransmitInformation, response: DiscourseResponse): MessageResponseData;
+    responseIntoMessageResponse(message: TransmitInformation, response: DiscourseResponse): CreateMessageResponse;
 }
 export declare function createTranslator(data: DiscourseConnectionDetails, hubs: DataHub[]): Translator.Translator;

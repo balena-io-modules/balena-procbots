@@ -28,17 +28,11 @@ const fsReadFile = Promise.promisify(FS.readFile);
 const exec: (command: string, options?: any) => Promise<{}> = Promise.promisify(ChildProcess.exec);
 
 export class ProcBotError extends TypedError {
-	private errorMessage: string;
 	private errorCode: ProcBotErrorCode;
 
 	constructor(code: ProcBotErrorCode, message: string) {
-		super();
-		this.errorMessage = message;
+		super(message);
 		this.errorCode = code;
-	}
-
-	public get message() {
-		return this.errorMessage;
 	}
 
 	public get code() {

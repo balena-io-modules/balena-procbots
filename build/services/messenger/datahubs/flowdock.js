@@ -18,16 +18,19 @@ class FlowdockDataHub {
         };
         this.fetchFromSession = (path, search) => {
             return new Promise((resolve, reject) => {
-                this.session.on('error', reject);
-                this.session.get(path, { search }, (_error, result) => {
-                    this.session.removeListener('error', reject);
+                this.session.get(path, { search }, (error, result) => {
                     if (result) {
                         resolve(result);
+                    }
+                    else {
+                        reject(error);
                     }
                 });
             });
         };
         this.session = new flowdock_1.Session(data.token);
+        const doNothing = () => { };
+        this.session.on('error', doNothing);
         this.organization = data.organization;
     }
     fetchValue(user, service, key) {
