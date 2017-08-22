@@ -5,11 +5,11 @@ const flowdock_1 = require("flowdock");
 const path = require("path");
 const service_scaffold_1 = require("./service-scaffold");
 class FlowdockService extends service_scaffold_1.ServiceScaffold {
-    constructor(data, listen) {
+    constructor(data) {
         super();
         this.session = new flowdock_1.Session(data.token);
         this.org = data.organization;
-        if (listen) {
+        if (!data.deaf) {
             this.session.flows((error, flows) => {
                 if (error) {
                     throw error;
@@ -65,11 +65,13 @@ class FlowdockService extends service_scaffold_1.ServiceScaffold {
 FlowdockService._serviceName = path.basename(__filename.split('.')[0]);
 exports.FlowdockService = FlowdockService;
 function createServiceListener(data) {
-    return new FlowdockService(data, true);
+    data.deaf = false;
+    return new FlowdockService(data);
 }
 exports.createServiceListener = createServiceListener;
 function createServiceEmitter(data) {
-    return new FlowdockService(data, false);
+    data.deaf = true;
+    return new FlowdockService(data);
 }
 exports.createServiceEmitter = createServiceEmitter;
 

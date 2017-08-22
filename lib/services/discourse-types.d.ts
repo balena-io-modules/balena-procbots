@@ -55,6 +55,7 @@ export interface DiscourseEmitData {
 }
 
 export interface DiscourseConnectionDetails {
+	deaf?: boolean;
 	token: string;
 	username: string;
 	instance: string;

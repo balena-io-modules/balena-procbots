@@ -29,11 +29,11 @@ export class FlowdockService extends ServiceScaffold<string> implements ServiceE
 	private session: Session;
 	private org: string;
 
-	constructor(data: FlowdockConnectionDetails, listen: boolean) {
+	constructor(data: FlowdockConnectionDetails) {
 		super();
 		this.session = new Session(data.token);
 		this.org = data.organization;
-		if (listen) {
+		if (!data.deaf) {
 			// Get a list of known flows from the session
 			this.session.flows((error: any, flows: any) => {
 				if (error) {
@@ -112,7 +112,8 @@ export class FlowdockService extends ServiceScaffold<string> implements ServiceE
  * @returns  Service Listener object, awakened and ready to go.
  */
 export function createServiceListener(data: FlowdockConnectionDetails): ServiceListener {
-	return new FlowdockService(data, true);
+	data.deaf = false;
+	return new FlowdockService(data);
 }
 
 /**
@@ -120,5 +121,6 @@ export function createServiceListener(data: FlowdockConnectionDetails): ServiceL
  * @returns  Service Emitter object, ready for your events.
  */
 export function createServiceEmitter(data: FlowdockConnectionDetails): ServiceEmitter {
-	return new FlowdockService(data, false);
+	data.deaf = true;
+	return new FlowdockService(data);
 }

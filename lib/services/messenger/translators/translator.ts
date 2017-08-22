@@ -52,7 +52,6 @@ export interface Translator {
 export function stringifyMetadata(data: MessageContext, format: string): string {
 	const indicators = data.details.hidden ? getIndicatorArrays().hidden : getIndicatorArrays().shown;
 	switch (format) {
-		// TODO char
 		case 'human':
 			return `${indicators.word} from ${data.source.service}`;
 		case 'emoji':
@@ -77,7 +76,10 @@ export function extractMetadata(message: string, format: string): Metadata {
 	const wordCapture = `(${indicators.hidden.word}|${indicators.shown.word})`;
 	const beginsLine = `(?:^|\\r|\\n)(?:\\s*)`;
 	switch (format.toLowerCase()) {
-		// TODO char
+		case 'char':
+			const charCapture = `(${_.escapeRegExp(indicators.hidden.char)}|${_.escapeRegExp(indicators.shown.char)})`;
+			const charRegex = new RegExp(`${beginsLine}${charCapture}`);
+			return metadataByRegex(message, charRegex);
 		case 'human':
 			const parensRegex = new RegExp(`${beginsLine}\\(${wordCapture} from (\\w*)\\)`, 'i');
 			return metadataByRegex(message, parensRegex);

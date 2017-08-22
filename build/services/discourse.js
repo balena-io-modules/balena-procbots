@@ -5,11 +5,11 @@ const path = require("path");
 const request = require("request-promise");
 const service_scaffold_1 = require("./service-scaffold");
 class DiscourseService extends service_scaffold_1.ServiceScaffold {
-    constructor(data, listen) {
+    constructor(data) {
         super();
         this.postsSynced = new Set();
         this.connectionDetails = data;
-        if (listen) {
+        if (!data.deaf) {
             this.expressApp.post(`/${DiscourseService._serviceName}/`, (formData, response) => {
                 if (!this.postsSynced.has(formData.body.post.id)) {
                     this.postsSynced.add(formData.body.post.id);
@@ -58,11 +58,13 @@ class DiscourseService extends service_scaffold_1.ServiceScaffold {
 DiscourseService._serviceName = path.basename(__filename.split('.')[0]);
 exports.DiscourseService = DiscourseService;
 function createServiceListener(data) {
-    return new DiscourseService(data, true);
+    data.deaf = false;
+    return new DiscourseService(data);
 }
 exports.createServiceListener = createServiceListener;
 function createServiceEmitter(data) {
-    return new DiscourseService(data, false);
+    data.deaf = true;
+    return new DiscourseService(data);
 }
 exports.createServiceEmitter = createServiceEmitter;
 

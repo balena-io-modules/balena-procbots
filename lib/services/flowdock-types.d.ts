@@ -69,6 +69,7 @@ export interface FlowdockMessage {
 }
 
 export interface FlowdockConnectionDetails {
+	deaf?: boolean;
 	organization: string;
 	token: string;
 }

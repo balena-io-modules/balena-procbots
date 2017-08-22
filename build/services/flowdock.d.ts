@@ -6,7 +6,7 @@ export declare class FlowdockService extends ServiceScaffold<string> implements 
     private static _serviceName;
     private session;
     private org;
-    constructor(data: FlowdockConnectionDetails, listen: boolean);
+    constructor(data: FlowdockConnectionDetails);
     protected emitData(context: FlowdockEmitContext): Promise<FlowdockResponse>;
     protected verify(): boolean;
     readonly serviceName: string;

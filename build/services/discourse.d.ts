@@ -8,7 +8,7 @@ export declare class DiscourseService extends ServiceScaffold<string> implements
     private static _serviceName;
     private postsSynced;
     private connectionDetails;
-    constructor(data: DiscourseConnectionDetails, listen: boolean);
+    constructor(data: DiscourseConnectionDetails);
     request(requestOptions: UrlOptions & RequestPromiseOptions): Promise<DiscourseResponse>;
     protected emitData(context: DiscourseEmitContext): Promise<DiscourseResponse>;
     protected verify(_data: DiscourseEvent): boolean;

@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>FlowdockService | Resin ProcBots</title>
+	<title>ServiceScaffold | Resin ProcBots</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -54,27 +54,69 @@
 					<a href="../globals.html">Globals</a>
 				</li>
 				<li>
-					<a href="../modules/_services_flowdock_.html">&quot;services/flowdock&quot;</a>
+					<a href="../modules/_services_service_scaffold_.html">&quot;services/service-scaffold&quot;</a>
 				</li>
 				<li>
-					<a href="_services_flowdock_.flowdockservice.html">FlowdockService</a>
+					<a href="_services_service_scaffold_.servicescaffold.html">ServiceScaffold</a>
 				</li>
 			</ul>
-			<h1>Class FlowdockService</h1>
+			<h1>Class ServiceScaffold&lt;T&gt;</h1>
 		</div>
 	</div>
 </header>
 <div class="container container-main">
 	<div class="row">
 		<div class="col-8 col-content">
+			<section class="tsd-panel tsd-comment">
+				<div class="tsd-comment tsd-typography">
+					<div class="lead">
+						<p>A scaffold class to handle a bunch of the repetitive work associated with being a ServiceListener and ServiceEmitter</p>
+					</div>
+					<p>This class provides:</p>
+					<ul>
+						<li>An express app, if asked for.</li>
+						<li>A logger.</li>
+						<li>An event registration and handling standard.</li>
+						<li>Checks for and extracts data from context.</li>
+						<li>A standard way of getting contextualised workers.</li>
+					</ul>
+					<p>In exchange you agree to:</p>
+					<ul>
+						<li>provide a <code>emitData</code> method which takes a ServiceEmitContext and returns a promise.</li>
+						<li>provide a <code>verify</code> function which should check that incoming data isn&#39;t spoofed.</li>
+						<li>provide a <code>serviceName</code> getter, which because it is based on file path cannot be inherited away.</li>
+						<li>provide a <code>apiHandle</code> getter, which should return the underlying object that executes the requests.</li>
+						<li>enqueue your events with <code>context</code> and <code>event</code>, as per <code>ServiceScaffoldServiceEvent</code>.</li>
+					</ul>
+				</div>
+			</section>
+			<section class="tsd-panel tsd-type-parameters">
+				<h3>Type parameters</h3>
+				<ul class="tsd-type-parameters">
+					<li>
+						<h4>T</h4>
+					</li>
+				</ul>
+			</section>
 			<section class="tsd-panel tsd-hierarchy">
 				<h3>Hierarchy</h3>
 				<ul class="tsd-hierarchy">
 					<li>
-						<a href="_services_service_scaffold_.servicescaffold.html" class="tsd-signature-type">ServiceScaffold</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span>
+						<a href="_framework_worker_client_.workerclient.html" class="tsd-signature-type">WorkerClient</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span>
 						<ul class="tsd-hierarchy">
 							<li>
-								<span class="target">FlowdockService</span>
+								<span class="target">ServiceScaffold</span>
+								<ul class="tsd-hierarchy">
+									<li>
+										<a href="_services_messenger_.messengerservice.html" class="tsd-signature-type">MessengerService</a>
+									</li>
+									<li>
+										<a href="_services_discourse_.discourseservice.html" class="tsd-signature-type">DiscourseService</a>
+									</li>
+									<li>
+										<a href="_services_flowdock_.flowdockservice.html" class="tsd-signature-type">FlowdockService</a>
+									</li>
+								</ul>
 							</li>
 						</ul>
 					</li>
@@ -85,8 +127,6 @@
 				<ul class="tsd-hierarchy">
 					<li><span class="tsd-signature-type">ServiceListener</span></li>
 					<li><span class="tsd-signature-type">ServiceEmitter</span></li>
-					<li><span class="tsd-signature-type">ServiceEmitter</span></li>
-					<li><span class="tsd-signature-type">ServiceListener</span></li>
 				</ul>
 			</section>
 			<section class="tsd-panel-group tsd-index-group">
@@ -96,40 +136,41 @@
 						<section class="tsd-index-section ">
 							<h3>Constructors</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-constructor tsd-parent-kind-class tsd-is-overwrite"><a href="_services_flowdock_.flowdockservice.html#constructor" class="tsd-kind-icon">constructor</a></li>
+								<li class="tsd-kind-constructor tsd-parent-kind-class"><a href="_services_service_scaffold_.servicescaffold.html#constructor" class="tsd-kind-icon">constructor</a></li>
 							</ul>
 						</section>
 						<section class="tsd-index-section tsd-is-private-protected">
 							<h3>Properties</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="_services_flowdock_.flowdockservice.html#org" class="tsd-kind-icon">org</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="_services_flowdock_.flowdockservice.html#session" class="tsd-kind-icon">session</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-protected"><a href="_services_flowdock_.flowdockservice.html#workers" class="tsd-kind-icon">workers</a></li>
-								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private tsd-is-static"><a href="_services_flowdock_.flowdockservice.html#_servicename" class="tsd-kind-icon">_service<wbr>Name</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="_services_service_scaffold_.servicescaffold.html#eventlisteners" class="tsd-kind-icon">event<wbr>Listeners</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="_services_service_scaffold_.servicescaffold.html#instanceexpressapp" class="tsd-kind-icon">instance<wbr>Express<wbr>App</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><a href="_services_service_scaffold_.servicescaffold.html#loggerinstance" class="tsd-kind-icon">logger<wbr>Instance</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-protected"><a href="_services_service_scaffold_.servicescaffold.html#workers" class="tsd-kind-icon">workers</a></li>
+								<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private tsd-is-static"><a href="_services_service_scaffold_.servicescaffold.html#singletonexpressapp" class="tsd-kind-icon">singleton<wbr>Express<wbr>App</a></li>
 							</ul>
 						</section>
 						<section class="tsd-index-section ">
 							<h3>Accessors</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-get-signature tsd-parent-kind-class tsd-is-overwrite"><a href="_services_flowdock_.flowdockservice.html#apihandle" class="tsd-kind-icon">api<wbr>Handle</a></li>
-								<li class="tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited tsd-is-protected"><a href="_services_flowdock_.flowdockservice.html#eventsregistered" class="tsd-kind-icon">events<wbr>Registered</a></li>
-								<li class="tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited tsd-is-protected"><a href="_services_flowdock_.flowdockservice.html#expressapp" class="tsd-kind-icon">express<wbr>App</a></li>
-								<li class="tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited tsd-is-protected"><a href="_services_flowdock_.flowdockservice.html#logger" class="tsd-kind-icon">logger</a></li>
-								<li class="tsd-kind-get-signature tsd-parent-kind-class tsd-is-overwrite"><a href="_services_flowdock_.flowdockservice.html#servicename" class="tsd-kind-icon">service<wbr>Name</a></li>
+								<li class="tsd-kind-get-signature tsd-parent-kind-class"><a href="_services_service_scaffold_.servicescaffold.html#apihandle" class="tsd-kind-icon">api<wbr>Handle</a></li>
+								<li class="tsd-kind-get-signature tsd-parent-kind-class tsd-is-protected"><a href="_services_service_scaffold_.servicescaffold.html#eventsregistered" class="tsd-kind-icon">events<wbr>Registered</a></li>
+								<li class="tsd-kind-get-signature tsd-parent-kind-class tsd-is-protected"><a href="_services_service_scaffold_.servicescaffold.html#expressapp" class="tsd-kind-icon">express<wbr>App</a></li>
+								<li class="tsd-kind-get-signature tsd-parent-kind-class tsd-is-protected"><a href="_services_service_scaffold_.servicescaffold.html#logger" class="tsd-kind-icon">logger</a></li>
+								<li class="tsd-kind-get-signature tsd-parent-kind-class"><a href="_services_service_scaffold_.servicescaffold.html#servicename" class="tsd-kind-icon">service<wbr>Name</a></li>
 							</ul>
 						</section>
 						<section class="tsd-index-section ">
 							<h3>Methods</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-protected"><a href="_services_flowdock_.flowdockservice.html#emitdata" class="tsd-kind-icon">emit<wbr>Data</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-inherited tsd-is-protected"><a href="_services_flowdock_.flowdockservice.html#getworker" class="tsd-kind-icon">get<wbr>Worker</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected"><a href="_services_flowdock_.flowdockservice.html#handleevent" class="tsd-kind-icon">handle<wbr>Event</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected"><a href="_services_flowdock_.flowdockservice.html#queuedata" class="tsd-kind-icon">queue<wbr>Data</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected"><a href="_services_flowdock_.flowdockservice.html#queueevent" class="tsd-kind-icon">queue<wbr>Event</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_services_flowdock_.flowdockservice.html#registerevent" class="tsd-kind-icon">register<wbr>Event</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected"><a href="_services_flowdock_.flowdockservice.html#removeworker" class="tsd-kind-icon">remove<wbr>Worker</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_services_flowdock_.flowdockservice.html#senddata" class="tsd-kind-icon">send<wbr>Data</a></li>
-								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-protected"><a href="_services_flowdock_.flowdockservice.html#verify" class="tsd-kind-icon">verify</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-protected"><a href="_services_service_scaffold_.servicescaffold.html#emitdata" class="tsd-kind-icon">emit<wbr>Data</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-protected"><a href="_services_service_scaffold_.servicescaffold.html#getworker" class="tsd-kind-icon">get<wbr>Worker</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-protected"><a href="_services_service_scaffold_.servicescaffold.html#handleevent" class="tsd-kind-icon">handle<wbr>Event</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-protected"><a href="_services_service_scaffold_.servicescaffold.html#queuedata" class="tsd-kind-icon">queue<wbr>Data</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected"><a href="_services_service_scaffold_.servicescaffold.html#queueevent" class="tsd-kind-icon">queue<wbr>Event</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_services_service_scaffold_.servicescaffold.html#registerevent" class="tsd-kind-icon">register<wbr>Event</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected"><a href="_services_service_scaffold_.servicescaffold.html#removeworker" class="tsd-kind-icon">remove<wbr>Worker</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class"><a href="_services_service_scaffold_.servicescaffold.html#senddata" class="tsd-kind-icon">send<wbr>Data</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-protected"><a href="_services_service_scaffold_.servicescaffold.html#verify" class="tsd-kind-icon">verify</a></li>
 							</ul>
 						</section>
 					</div>
@@ -137,27 +178,26 @@
 			</section>
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Constructors</h2>
-				<section class="tsd-panel tsd-member tsd-kind-constructor tsd-parent-kind-class tsd-is-overwrite">
+				<section class="tsd-panel tsd-member tsd-kind-constructor tsd-parent-kind-class">
 					<a name="constructor" class="tsd-anchor"></a>
 					<h3>constructor</h3>
-					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class tsd-is-overwrite">
-						<li class="tsd-signature tsd-kind-icon">new <wbr>Flowdock<wbr>Service<span class="tsd-signature-symbol">(</span>data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">FlowdockConnectionDetails</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_services_flowdock_.flowdockservice.html" class="tsd-signature-type">FlowdockService</a></li>
+					<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon">new <wbr>Service<wbr>Scaffold<span class="tsd-signature-symbol">(</span>expressApp<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">express.Express</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_services_service_scaffold_.servicescaffold.html" class="tsd-signature-type">ServiceScaffold</a></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
-								<p>Overrides <a href="_services_service_scaffold_.servicescaffold.html">ServiceScaffold</a>.<a href="_services_service_scaffold_.servicescaffold.html#constructor">constructor</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/flowdock.ts#L30">services/flowdock.ts:30</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/service-scaffold.ts#L62">services/service-scaffold.ts:62</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>data: <span class="tsd-signature-type">FlowdockConnectionDetails</span></h5>
+									<h5><span class="tsd-flag ts-flagOptional">Optional</span> expressApp: <span class="tsd-signature-type">express.Express</span></h5>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <a href="_services_flowdock_.flowdockservice.html" class="tsd-signature-type">FlowdockService</a></h4>
+							<h4 class="tsd-returns-title">Returns <a href="_services_service_scaffold_.servicescaffold.html" class="tsd-signature-type">ServiceScaffold</a></h4>
 						</li>
 					</ul>
 				</section>
@@ -165,29 +205,57 @@
 			<section class="tsd-panel-group tsd-member-group tsd-is-private-protected">
 				<h2>Properties</h2>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private">
-					<a name="org" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagPrivate">Private</span> org</h3>
-					<div class="tsd-signature tsd-kind-icon">org<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+					<a name="eventlisteners" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagPrivate">Private</span> event<wbr>Listeners</h3>
+					<div class="tsd-signature tsd-kind-icon">event<wbr>Listeners<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">object</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/flowdock.ts#L30">services/flowdock.ts:30</a></li>
+							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/service-scaffold.ts#L62">services/service-scaffold.ts:62</a></li>
+						</ul>
+					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>Store a list of actions to perform when particular actions happen</p>
+						</div>
+					</div>
+					<div class="tsd-type-declaration">
+						<h4>Type declaration</h4>
+						<ul class="tsd-parameters">
+							<li class="tsd-parameter-index-signature">
+								<h5><span class="tsd-signature-symbol">[</span>event: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">]: </span><span class="tsd-signature-type">ServiceRegistration</span><span class="tsd-signature-symbol">[]</span></h5>
+							</li>
+						</ul>
+					</div>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private">
+					<a name="instanceexpressapp" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagPrivate">Private</span> <span class="tsd-flag ts-flagOptional">Optional</span> instance<wbr>Express<wbr>App</h3>
+					<div class="tsd-signature tsd-kind-icon">instance<wbr>Express<wbr>App<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">express.Express</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/service-scaffold.ts#L56">services/service-scaffold.ts:56</a></li>
 						</ul>
 					</aside>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private">
-					<a name="session" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagPrivate">Private</span> session</h3>
-					<div class="tsd-signature tsd-kind-icon">session<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Session</span></div>
+					<a name="loggerinstance" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagPrivate">Private</span> logger<wbr>Instance</h3>
+					<div class="tsd-signature tsd-kind-icon">logger<wbr>Instance<span class="tsd-signature-symbol">:</span> <a href="_utils_logger_.logger.html" class="tsd-signature-type">Logger</a><span class="tsd-signature-symbol"> =&nbsp;new Logger()</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/flowdock.ts#L29">services/flowdock.ts:29</a></li>
+							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/service-scaffold.ts#L59">services/service-scaffold.ts:59</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>A place to put output for debug and reference.</p>
+						</div>
+					</div>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
 					<a name="workers" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagProtected">Protected</span> workers</h3>
-					<div class="tsd-signature tsd-kind-icon">workers<span class="tsd-signature-symbol">:</span> <a href="../modules/_framework_worker_.html#workermap" class="tsd-signature-type">WorkerMap</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> =&nbsp;new Map&lt;T, Worker&lt;T&gt;&gt;()</span></div>
+					<div class="tsd-signature tsd-kind-icon">workers<span class="tsd-signature-symbol">:</span> <a href="../modules/_framework_worker_.html#workermap" class="tsd-signature-type">WorkerMap</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> =&nbsp;new Map&lt;T, Worker&lt;T&gt;&gt;()</span></div>
 					<aside class="tsd-sources">
 						<p>Inherited from <a href="_framework_worker_client_.workerclient.html">WorkerClient</a>.<a href="_framework_worker_client_.workerclient.html#workers">workers</a></p>
 						<ul>
@@ -196,52 +264,58 @@
 					</aside>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-private tsd-is-static">
-					<a name="_servicename" class="tsd-anchor"></a>
-					<h3><span class="tsd-flag ts-flagStatic">Static</span> <span class="tsd-flag ts-flagPrivate">Private</span> _service<wbr>Name</h3>
-					<div class="tsd-signature tsd-kind-icon">_service<wbr>Name<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol"> =&nbsp;path.basename(__filename.split(&#x27;.&#x27;)[0])</span></div>
+					<a name="singletonexpressapp" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagStatic">Static</span> <span class="tsd-flag ts-flagPrivate">Private</span> singleton<wbr>Express<wbr>App</h3>
+					<div class="tsd-signature tsd-kind-icon">singleton<wbr>Express<wbr>App<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">express.Express</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/flowdock.ts#L28">services/flowdock.ts:28</a></li>
+							<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/service-scaffold.ts#L54">services/service-scaffold.ts:54</a></li>
 						</ul>
 					</aside>
+					<div class="tsd-comment tsd-typography">
+						<div class="lead">
+							<p>A singleton express instance for all web-hook based services to share.</p>
+						</div>
+					</div>
 				</section>
 			</section>
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Accessors</h2>
-				<section class="tsd-panel tsd-member tsd-kind-get-signature tsd-parent-kind-class tsd-is-overwrite">
+				<section class="tsd-panel tsd-member tsd-kind-get-signature tsd-parent-kind-class">
 					<a name="apihandle" class="tsd-anchor"></a>
 					<h3>api<wbr>Handle</h3>
-					<ul class="tsd-signatures tsd-kind-get-signature tsd-parent-kind-class tsd-is-overwrite">
-						<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">get</span> apiHandle<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">FlowdockHandle</span></li>
+					<ul class="tsd-signatures tsd-kind-get-signature tsd-parent-kind-class">
+						<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">get</span> apiHandle<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ServiceAPIHandle</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">void</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
-								<p>Overrides <a href="_services_service_scaffold_.servicescaffold.html">ServiceScaffold</a>.<a href="_services_service_scaffold_.servicescaffold.html#apihandle">apiHandle</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/flowdock.ts#L103">services/flowdock.ts:103</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/service-scaffold.ts#L214">services/service-scaffold.ts:214</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
-									<p>Retrieve the SDK API handle for Flowdock.</p>
+									<p>Retrieve the SDK API instance handle for the service, should one exist.</p>
 								</div>
 							</div>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">FlowdockHandle</span></h4>
-							<p>The Flowdock SDK API handle.</p>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">ServiceAPIHandle</span>
+								<span class="tsd-signature-symbol"> | </span>
+								<span class="tsd-signature-type">void</span>
+							</h4>
+							<p>Service SDK API handle or void.</p>
 						</li>
 					</ul>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
+				<section class="tsd-panel tsd-member tsd-kind-get-signature tsd-parent-kind-class tsd-is-protected">
 					<a name="eventsregistered" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagProtected">Protected</span> events<wbr>Registered</h3>
-					<ul class="tsd-signatures tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
+					<ul class="tsd-signatures tsd-kind-get-signature tsd-parent-kind-class tsd-is-protected">
 						<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">get</span> eventsRegistered<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">[]</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
-								<p>Inherited from <a href="_services_service_scaffold_.servicescaffold.html">ServiceScaffold</a>.<a href="_services_service_scaffold_.servicescaffold.html#eventsregistered">eventsRegistered</a></p>
 								<ul>
 									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/service-scaffold.ts#L187">services/service-scaffold.ts:187</a></li>
 								</ul>
@@ -250,16 +324,15 @@
 						</li>
 					</ul>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
+				<section class="tsd-panel tsd-member tsd-kind-get-signature tsd-parent-kind-class tsd-is-protected">
 					<a name="expressapp" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagProtected">Protected</span> express<wbr>App</h3>
-					<ul class="tsd-signatures tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
+					<ul class="tsd-signatures tsd-kind-get-signature tsd-parent-kind-class tsd-is-protected">
 						<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">get</span> expressApp<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">express.Express</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
-								<p>Inherited from <a href="_services_service_scaffold_.servicescaffold.html">ServiceScaffold</a>.<a href="_services_service_scaffold_.servicescaffold.html#expressapp">expressApp</a></p>
 								<ul>
 									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/service-scaffold.ts#L160">services/service-scaffold.ts:160</a></li>
 								</ul>
@@ -274,16 +347,15 @@
 						</li>
 					</ul>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
+				<section class="tsd-panel tsd-member tsd-kind-get-signature tsd-parent-kind-class tsd-is-protected">
 					<a name="logger" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagProtected">Protected</span> logger</h3>
-					<ul class="tsd-signatures tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
+					<ul class="tsd-signatures tsd-kind-get-signature tsd-parent-kind-class tsd-is-protected">
 						<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">get</span> logger<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_utils_logger_.logger.html" class="tsd-signature-type">Logger</a></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
-								<p>Inherited from <a href="_services_service_scaffold_.servicescaffold.html">ServiceScaffold</a>.<a href="_services_service_scaffold_.servicescaffold.html#logger">logger</a></p>
 								<ul>
 									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/service-scaffold.ts#L183">services/service-scaffold.ts:183</a></li>
 								</ul>
@@ -298,18 +370,17 @@
 						</li>
 					</ul>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-get-signature tsd-parent-kind-class tsd-is-overwrite">
+				<section class="tsd-panel tsd-member tsd-kind-get-signature tsd-parent-kind-class">
 					<a name="servicename" class="tsd-anchor"></a>
 					<h3>service<wbr>Name</h3>
-					<ul class="tsd-signatures tsd-kind-get-signature tsd-parent-kind-class tsd-is-overwrite">
+					<ul class="tsd-signatures tsd-kind-get-signature tsd-parent-kind-class">
 						<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">get</span> serviceName<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
-								<p>Overrides <a href="_services_service_scaffold_.servicescaffold.html">ServiceScaffold</a>.<a href="_services_service_scaffold_.servicescaffold.html#servicename">serviceName</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/flowdock.ts#L95">services/flowdock.ts:95</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/service-scaffold.ts#L208">services/service-scaffold.ts:208</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
@@ -318,47 +389,52 @@
 								</div>
 							</div>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4>
-							<p>The specific service name for Flowdock.</p>
+							<p>Name of the service.</p>
 						</li>
 					</ul>
 				</section>
 			</section>
 			<section class="tsd-panel-group tsd-member-group ">
 				<h2>Methods</h2>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-protected">
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-protected">
 					<a name="emitdata" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagProtected">Protected</span> emit<wbr>Data</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-protected">
-						<li class="tsd-signature tsd-kind-icon">emit<wbr>Data<span class="tsd-signature-symbol">(</span>context<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">FlowdockEmitContext</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">FlowdockResponse</span><span class="tsd-signature-symbol">&gt;</span></li>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-protected">
+						<li class="tsd-signature tsd-kind-icon">emit<wbr>Data<span class="tsd-signature-symbol">(</span>data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ServiceEmitContext</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
-								<p>Overrides <a href="_services_service_scaffold_.servicescaffold.html">ServiceScaffold</a>.<a href="_services_service_scaffold_.servicescaffold.html#emitdata">emitData</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/flowdock.ts#L67">services/flowdock.ts:67</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/service-scaffold.ts#L130">services/service-scaffold.ts:130</a></li>
 								</ul>
 							</aside>
+							<div class="tsd-comment tsd-typography">
+								<div class="lead">
+									<p>Emit a payload to the endpoint defined, resolving when done.
+										endpoint  Definition of the endpoint to emit to.
+									payload   Data to be delivered.</p>
+								</div>
+							</div>
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>context: <span class="tsd-signature-type">FlowdockEmitContext</span></h5>
+									<h5>data: <span class="tsd-signature-type">ServiceEmitContext</span></h5>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">FlowdockResponse</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">&gt;</span></h4>
 						</li>
 					</ul>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-inherited tsd-is-protected">
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-protected">
 					<a name="getworker" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagProtected">Protected</span> get<wbr>Worker</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-inherited tsd-is-protected">
-						<li class="tsd-signature tsd-kind-icon">get<wbr>Worker<span class="tsd-signature-symbol">(</span>event<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ServiceScaffoldWorkerEvent</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_framework_worker_.worker.html" class="tsd-signature-type">Worker</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span></li>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-protected">
+						<li class="tsd-signature tsd-kind-icon">get<wbr>Worker<span class="tsd-signature-symbol">(</span>event<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ServiceScaffoldWorkerEvent</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_framework_worker_.worker.html" class="tsd-signature-type">Worker</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
-								<p>Inherited from <a href="_services_service_scaffold_.servicescaffold.html">ServiceScaffold</a>.<a href="_services_service_scaffold_.servicescaffold.html#getworker">getWorker</a></p>
 								<p>Overrides <a href="_framework_worker_client_.workerclient.html">WorkerClient</a>.<a href="_framework_worker_client_.workerclient.html#getworker">getWorker</a></p>
 								<ul>
 									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/service-scaffold.ts#L143">services/service-scaffold.ts:143</a></li>
@@ -380,21 +456,20 @@
 									</div>
 								</li>
 							</ul>
-							<h4 class="tsd-returns-title">Returns <a href="_framework_worker_.worker.html" class="tsd-signature-type">Worker</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							<h4 class="tsd-returns-title">Returns <a href="_framework_worker_.worker.html" class="tsd-signature-type">Worker</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">&gt;</span></h4>
 							<p>Worker for the context associated.</p>
 						</li>
 					</ul>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-protected">
 					<a name="handleevent" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagProtected">Protected</span> handle<wbr>Event</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-protected">
 						<li class="tsd-signature tsd-kind-icon">handle<wbr>Event<span class="tsd-signature-symbol">(</span>data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ServiceScaffoldServiceEvent</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
-								<p>Inherited from <a href="_services_service_scaffold_.servicescaffold.html">ServiceScaffold</a>.<a href="_services_service_scaffold_.servicescaffold.html#handleevent">handleEvent</a></p>
 								<ul>
 									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/service-scaffold.ts#L196">services/service-scaffold.ts:196</a></li>
 								</ul>
@@ -420,16 +495,15 @@
 						</li>
 					</ul>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-protected">
 					<a name="queuedata" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagProtected">Protected</span> queue<wbr>Data</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-protected">
 						<li class="tsd-signature tsd-kind-icon">queue<wbr>Data<span class="tsd-signature-symbol">(</span>data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ServiceScaffoldServiceEvent</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
-								<p>Inherited from <a href="_services_service_scaffold_.servicescaffold.html">ServiceScaffold</a>.<a href="_services_service_scaffold_.servicescaffold.html#queuedata">queueData</a></p>
 								<ul>
 									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/service-scaffold.ts#L114">services/service-scaffold.ts:114</a></li>
 								</ul>
@@ -486,16 +560,15 @@
 						</li>
 					</ul>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
 					<a name="registerevent" class="tsd-anchor"></a>
 					<h3>register<wbr>Event</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
 						<li class="tsd-signature tsd-kind-icon">register<wbr>Event<span class="tsd-signature-symbol">(</span>registration<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ServiceRegistration</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
-								<p>Inherited from <a href="_services_service_scaffold_.servicescaffold.html">ServiceScaffold</a>.<a href="_services_service_scaffold_.servicescaffold.html#registerevent">registerEvent</a></p>
 								<ul>
 									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/service-scaffold.ts#L73">services/service-scaffold.ts:73</a></li>
 								</ul>
@@ -522,7 +595,7 @@
 					<a name="removeworker" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagProtected">Protected</span> remove<wbr>Worker</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
-						<li class="tsd-signature tsd-kind-icon">remove<wbr>Worker<span class="tsd-signature-symbol">(</span>context<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
+						<li class="tsd-signature tsd-kind-icon">remove<wbr>Worker<span class="tsd-signature-symbol">(</span>context<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">T</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
@@ -540,7 +613,7 @@
 							<h4 class="tsd-parameters-title">Parameters</h4>
 							<ul class="tsd-parameters">
 								<li>
-									<h5>context: <span class="tsd-signature-type">string</span></h5>
+									<h5>context: <span class="tsd-signature-type">T</span></h5>
 									<div class="tsd-comment tsd-typography">
 										<div class="lead">
 											<p>The context in which the Worker must be removed.</p>
@@ -552,16 +625,15 @@
 						</li>
 					</ul>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
 					<a name="senddata" class="tsd-anchor"></a>
 					<h3>send<wbr>Data</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
 						<li class="tsd-signature tsd-kind-icon">send<wbr>Data<span class="tsd-signature-symbol">(</span>data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ServiceEmitRequest</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ServiceEmitResponse</span><span class="tsd-signature-symbol">&gt;</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
-								<p>Inherited from <a href="_services_service_scaffold_.servicescaffold.html">ServiceScaffold</a>.<a href="_services_service_scaffold_.servicescaffold.html#senddata">sendData</a></p>
 								<ul>
 									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/service-scaffold.ts#L88">services/service-scaffold.ts:88</a></li>
 								</ul>
@@ -585,25 +657,33 @@
 						</li>
 					</ul>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-protected">
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-protected">
 					<a name="verify" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagProtected">Protected</span> verify</h3>
-					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-protected">
-						<li class="tsd-signature tsd-kind-icon">verify<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span></li>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-protected">
+						<li class="tsd-signature tsd-kind-icon">verify<span class="tsd-signature-symbol">(</span>data<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ServiceScaffoldServiceEvent</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
 							<aside class="tsd-sources">
-								<p>Overrides <a href="_services_service_scaffold_.servicescaffold.html">ServiceScaffold</a>.<a href="_services_service_scaffold_.servicescaffold.html#verify">verify</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/flowdock.ts#L87">services/flowdock.ts:87</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/services/service-scaffold.ts#L136">services/service-scaffold.ts:136</a></li>
 								</ul>
 							</aside>
 							<div class="tsd-comment tsd-typography">
 								<div class="lead">
-									<p>Verify the event before enqueueing. Since we connect to a web stream we can assume events are legitimate.</p>
+									<p>Verify the event before enqueueing.  A naive approach could be to simply return true, but that must be explicit.</p>
 								</div>
 							</div>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>data: <span class="tsd-signature-type">ServiceScaffoldServiceEvent</span></h5>
+									<div class="tsd-comment tsd-typography">
+										<p>The data object that was enqueued.</p>
+									</div>
+								</li>
+							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
 						</li>
 					</ul>
@@ -640,7 +720,7 @@
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_services_discourse_.html">"services/discourse"</a>
 					</li>
-					<li class="current tsd-kind-external-module">
+					<li class=" tsd-kind-external-module">
 						<a href="../modules/_services_flowdock_.html">"services/flowdock"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
@@ -673,7 +753,7 @@
 					<li class=" tsd-kind-external-module">
 						<a href="../modules/_services_messenger_translators_translator_.html">"services/messenger/translators/translator"</a>
 					</li>
-					<li class=" tsd-kind-external-module">
+					<li class="current tsd-kind-external-module">
 						<a href="../modules/_services_service_scaffold_.html">"services/service-<wbr>scaffold"</a>
 					</li>
 					<li class=" tsd-kind-external-module">
@@ -688,76 +768,73 @@
 				<ul class="before-current">
 				</ul>
 				<ul class="current">
-					<li class="current tsd-kind-class tsd-parent-kind-external-module">
-						<a href="_services_flowdock_.flowdockservice.html" class="tsd-kind-icon">Flowdock<wbr>Service</a>
+					<li class="current tsd-kind-class tsd-parent-kind-external-module tsd-has-type-parameter">
+						<a href="_services_service_scaffold_.servicescaffold.html" class="tsd-kind-icon">Service<wbr>Scaffold</a>
 						<ul>
-							<li class=" tsd-kind-constructor tsd-parent-kind-class tsd-is-overwrite">
-								<a href="_services_flowdock_.flowdockservice.html#constructor" class="tsd-kind-icon">constructor</a>
+							<li class=" tsd-kind-constructor tsd-parent-kind-class">
+								<a href="_services_service_scaffold_.servicescaffold.html#constructor" class="tsd-kind-icon">constructor</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-private">
-								<a href="_services_flowdock_.flowdockservice.html#org" class="tsd-kind-icon">org</a>
+								<a href="_services_service_scaffold_.servicescaffold.html#eventlisteners" class="tsd-kind-icon">event<wbr>Listeners</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-private">
-								<a href="_services_flowdock_.flowdockservice.html#session" class="tsd-kind-icon">session</a>
+								<a href="_services_service_scaffold_.servicescaffold.html#instanceexpressapp" class="tsd-kind-icon">instance<wbr>Express<wbr>App</a>
+							</li>
+							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-private">
+								<a href="_services_service_scaffold_.servicescaffold.html#loggerinstance" class="tsd-kind-icon">logger<wbr>Instance</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
-								<a href="_services_flowdock_.flowdockservice.html#workers" class="tsd-kind-icon">workers</a>
+								<a href="_services_service_scaffold_.servicescaffold.html#workers" class="tsd-kind-icon">workers</a>
 							</li>
 							<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-private tsd-is-static">
-								<a href="_services_flowdock_.flowdockservice.html#_servicename" class="tsd-kind-icon">_service<wbr>Name</a>
+								<a href="_services_service_scaffold_.servicescaffold.html#singletonexpressapp" class="tsd-kind-icon">singleton<wbr>Express<wbr>App</a>
 							</li>
-							<li class=" tsd-kind-get-signature tsd-parent-kind-class tsd-is-overwrite">
-								<a href="_services_flowdock_.flowdockservice.html#apihandle" class="tsd-kind-icon">api<wbr>Handle</a>
+							<li class=" tsd-kind-get-signature tsd-parent-kind-class">
+								<a href="_services_service_scaffold_.servicescaffold.html#apihandle" class="tsd-kind-icon">api<wbr>Handle</a>
 							</li>
-							<li class=" tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
-								<a href="_services_flowdock_.flowdockservice.html#eventsregistered" class="tsd-kind-icon">events<wbr>Registered</a>
+							<li class=" tsd-kind-get-signature tsd-parent-kind-class tsd-is-protected">
+								<a href="_services_service_scaffold_.servicescaffold.html#eventsregistered" class="tsd-kind-icon">events<wbr>Registered</a>
 							</li>
-							<li class=" tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
-								<a href="_services_flowdock_.flowdockservice.html#expressapp" class="tsd-kind-icon">express<wbr>App</a>
+							<li class=" tsd-kind-get-signature tsd-parent-kind-class tsd-is-protected">
+								<a href="_services_service_scaffold_.servicescaffold.html#expressapp" class="tsd-kind-icon">express<wbr>App</a>
 							</li>
-							<li class=" tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
-								<a href="_services_flowdock_.flowdockservice.html#logger" class="tsd-kind-icon">logger</a>
+							<li class=" tsd-kind-get-signature tsd-parent-kind-class tsd-is-protected">
+								<a href="_services_service_scaffold_.servicescaffold.html#logger" class="tsd-kind-icon">logger</a>
 							</li>
-							<li class=" tsd-kind-get-signature tsd-parent-kind-class tsd-is-overwrite">
-								<a href="_services_flowdock_.flowdockservice.html#servicename" class="tsd-kind-icon">service<wbr>Name</a>
+							<li class=" tsd-kind-get-signature tsd-parent-kind-class">
+								<a href="_services_service_scaffold_.servicescaffold.html#servicename" class="tsd-kind-icon">service<wbr>Name</a>
 							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-protected">
-								<a href="_services_flowdock_.flowdockservice.html#emitdata" class="tsd-kind-icon">emit<wbr>Data</a>
-							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-inherited tsd-is-protected">
-								<a href="_services_flowdock_.flowdockservice.html#getworker" class="tsd-kind-icon">get<wbr>Worker</a>
-							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
-								<a href="_services_flowdock_.flowdockservice.html#handleevent" class="tsd-kind-icon">handle<wbr>Event</a>
-							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
-								<a href="_services_flowdock_.flowdockservice.html#queuedata" class="tsd-kind-icon">queue<wbr>Data</a>
-							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
-								<a href="_services_flowdock_.flowdockservice.html#queueevent" class="tsd-kind-icon">queue<wbr>Event</a>
-							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
-								<a href="_services_flowdock_.flowdockservice.html#registerevent" class="tsd-kind-icon">register<wbr>Event</a>
-							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
-								<a href="_services_flowdock_.flowdockservice.html#removeworker" class="tsd-kind-icon">remove<wbr>Worker</a>
-							</li>
-							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
-								<a href="_services_flowdock_.flowdockservice.html#senddata" class="tsd-kind-icon">send<wbr>Data</a>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-protected">
+								<a href="_services_service_scaffold_.servicescaffold.html#emitdata" class="tsd-kind-icon">emit<wbr>Data</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-overwrite tsd-is-protected">
-								<a href="_services_flowdock_.flowdockservice.html#verify" class="tsd-kind-icon">verify</a>
+								<a href="_services_service_scaffold_.servicescaffold.html#getworker" class="tsd-kind-icon">get<wbr>Worker</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-protected">
+								<a href="_services_service_scaffold_.servicescaffold.html#handleevent" class="tsd-kind-icon">handle<wbr>Event</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-protected">
+								<a href="_services_service_scaffold_.servicescaffold.html#queuedata" class="tsd-kind-icon">queue<wbr>Data</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
+								<a href="_services_service_scaffold_.servicescaffold.html#queueevent" class="tsd-kind-icon">queue<wbr>Event</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="_services_service_scaffold_.servicescaffold.html#registerevent" class="tsd-kind-icon">register<wbr>Event</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
+								<a href="_services_service_scaffold_.servicescaffold.html#removeworker" class="tsd-kind-icon">remove<wbr>Worker</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class">
+								<a href="_services_service_scaffold_.servicescaffold.html#senddata" class="tsd-kind-icon">send<wbr>Data</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-protected">
+								<a href="_services_service_scaffold_.servicescaffold.html#verify" class="tsd-kind-icon">verify</a>
 							</li>
 						</ul>
 					</li>
 				</ul>
 				<ul class="after-current">
-					<li class=" tsd-kind-function tsd-parent-kind-external-module">
-						<a href="../modules/_services_flowdock_.html#createserviceemitter" class="tsd-kind-icon">create<wbr>Service<wbr>Emitter</a>
-					</li>
-					<li class=" tsd-kind-function tsd-parent-kind-external-module">
-						<a href="../modules/_services_flowdock_.html#createservicelistener" class="tsd-kind-icon">create<wbr>Service<wbr>Listener</a>
-					</li>
 				</ul>
 			</nav>
 		</div>

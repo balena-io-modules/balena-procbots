@@ -33,11 +33,11 @@ export class DiscourseService extends ServiceScaffold<string> implements Service
 	private postsSynced = new Set<number>();
 	private connectionDetails: DiscourseConnectionDetails;
 
-	constructor(data: DiscourseConnectionDetails, listen: boolean) {
+	constructor(data: DiscourseConnectionDetails) {
 		super();
 		// #203: Verify connection data
 		this.connectionDetails = data;
-		if (listen) {
+		if (!data.deaf) {
 			this.expressApp.post(`/${DiscourseService._serviceName}/`, (formData, response) => {
 				if (!this.postsSynced.has(formData.body.post.id)) {
 					this.postsSynced.add(formData.body.post.id);
@@ -108,7 +108,8 @@ export class DiscourseService extends ServiceScaffold<string> implements Service
  * @returns  Service Listener object, awakened and ready to go.
  */
 export function createServiceListener(data: DiscourseConnectionDetails): ServiceListener {
-	return new DiscourseService(data, true);
+	data.deaf = false;
+	return new DiscourseService(data);
 }
 
 /**
@@ -116,5 +117,6 @@ export function createServiceListener(data: DiscourseConnectionDetails): Service
  * @returns  Service Emitter object, ready for your events.
  */
 export function createServiceEmitter(data: DiscourseConnectionDetails): ServiceEmitter {
-	return new DiscourseService(data, false);
+	data.deaf = true;
+	return new DiscourseService(data);
 }

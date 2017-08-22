@@ -22,6 +22,10 @@ function extractMetadata(message, format) {
     const wordCapture = `(${indicators.hidden.word}|${indicators.shown.word})`;
     const beginsLine = `(?:^|\\r|\\n)(?:\\s*)`;
     switch (format.toLowerCase()) {
+        case 'char':
+            const charCapture = `(${_.escapeRegExp(indicators.hidden.char)}|${_.escapeRegExp(indicators.shown.char)})`;
+            const charRegex = new RegExp(`${beginsLine}${charCapture}`);
+            return metadataByRegex(message, charRegex);
         case 'human':
             const parensRegex = new RegExp(`${beginsLine}\\(${wordCapture} from (\\w*)\\)`, 'i');
             return metadataByRegex(message, parensRegex);
