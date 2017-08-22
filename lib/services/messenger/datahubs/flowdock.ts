@@ -27,7 +27,8 @@ export class FlowdockDataHub implements DataHub {
 	constructor(data: FlowdockConnectionDetails) {
 		this.session = new Session(data.token);
 		const doNothing = () => { /* pass */ };
-		// The flowdock service both emits and calls back the error.
+		// The flowdock service both emits and calls back the error
+		// We'll specifically ignore the emit to prevent it bubbling
 		this.session.on('error', doNothing);
 		this.organization = data.organization;
 	}
@@ -62,7 +63,8 @@ export class FlowdockDataHub implements DataHub {
 		// Fetch the id then 1-1 history associated with the username
 		return this.fetchUserId(username)
 		.then((userId) => {
-			return this.fetchFromSession(`/private/${userId}/messages`)
+			const match = filter.source.match(/^([\w\s]+)/i);
+			return this.fetchFromSession(`/private/${userId}/messages`, match ? match[1] : undefined)
 			.then((fetchedMessages) => {
 				// Prune and clean the message history to text of interest
 				return _.filter(fetchedMessages, (message: FlowdockMessage) => {

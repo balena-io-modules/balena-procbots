@@ -32,6 +32,10 @@ export class FlowdockService extends ServiceScaffold<string> implements ServiceE
 	constructor(data: FlowdockConnectionDetails) {
 		super();
 		this.session = new Session(data.token);
+		// The flowdock service both emits and calls back the error
+		// We'll specifically ignore the emit to prevent it bubbling
+		const doNothing = () => { /* pass */ };
+		this.session.on('error', doNothing);
 		this.org = data.organization;
 		if (!data.deaf) {
 			// Get a list of known flows from the session
@@ -66,11 +70,9 @@ export class FlowdockService extends ServiceScaffold<string> implements ServiceE
 
 	protected emitData(context: FlowdockEmitContext): Promise<FlowdockResponse> {
 		return new Promise<FlowdockResponse>((resolve, reject) => {
-			this.session.on('error', reject);
 			context.method(
 				context.data.path, context.data.payload,
 				(error: Error, response: FlowdockResponse) => {
-					this.session.removeListener('error', reject);
 					if (error) {
 						reject(error);
 					} else {

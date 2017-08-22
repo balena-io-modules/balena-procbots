@@ -122,9 +122,10 @@ export class DiscourseTranslator implements Translator.Translator {
 	}
 
 	public messageIntoEmitDetails(message: TransmitInformation): {method: string[], payload: DiscourseEmitData} {
+		const title = message.details.title;
+		const thread = message.target.thread;
 		switch (message.action) {
 			case MessageAction.CreateThread:
-				const title = message.details.title;
 				if (!title) {
 					throw new Error('Cannot create a thread without a title.');
 				}
@@ -139,7 +140,6 @@ export class DiscourseTranslator implements Translator.Translator {
 					},
 				}};
 			case MessageAction.CreateMessage:
-				const thread = message.target.thread;
 				if (!thread) {
 					throw new Error('Cannot create a comment without a thread.');
 				}

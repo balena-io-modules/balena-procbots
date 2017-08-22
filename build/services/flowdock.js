@@ -8,6 +8,8 @@ class FlowdockService extends service_scaffold_1.ServiceScaffold {
     constructor(data) {
         super();
         this.session = new flowdock_1.Session(data.token);
+        const doNothing = () => { };
+        this.session.on('error', doNothing);
         this.org = data.organization;
         if (!data.deaf) {
             this.session.flows((error, flows) => {
@@ -38,9 +40,7 @@ class FlowdockService extends service_scaffold_1.ServiceScaffold {
     }
     emitData(context) {
         return new Promise((resolve, reject) => {
-            this.session.on('error', reject);
             context.method(context.data.path, context.data.payload, (error, response) => {
-                this.session.removeListener('error', reject);
                 if (error) {
                     reject(error);
                 }

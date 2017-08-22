@@ -83,9 +83,10 @@ class DiscourseTranslator {
         });
     }
     messageIntoEmitDetails(message) {
+        const title = message.details.title;
+        const thread = message.target.thread;
         switch (message.action) {
             case 0:
-                const title = message.details.title;
                 if (!title) {
                     throw new Error('Cannot create a thread without a title.');
                 }
@@ -100,7 +101,6 @@ class DiscourseTranslator {
                         },
                     } };
             case 1:
-                const thread = message.target.thread;
                 if (!thread) {
                     throw new Error('Cannot create a comment without a thread.');
                 }

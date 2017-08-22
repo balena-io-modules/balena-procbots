@@ -47,7 +47,8 @@ class FlowdockDataHub {
     fetchPrivateMessages(username, filter) {
         return this.fetchUserId(username)
             .then((userId) => {
-            return this.fetchFromSession(`/private/${userId}/messages`)
+            const match = filter.source.match(/^([\w\s]+)/i);
+            return this.fetchFromSession(`/private/${userId}/messages`, match ? match[1] : undefined)
                 .then((fetchedMessages) => {
                 return _.filter(fetchedMessages, (message) => {
                     return filter.test(message.content);
