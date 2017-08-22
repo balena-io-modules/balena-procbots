@@ -109,6 +109,7 @@
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="_bots_syncbot_.syncbot.html#getnodebinpath" class="tsd-kind-icon">get<wbr>Node<wbr>Bin<wbr>Path</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected"><a href="_bots_syncbot_.syncbot.html#processconfiguration" class="tsd-kind-icon">process<wbr>Configuration</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected"><a href="_bots_syncbot_.syncbot.html#retrieveconfiguration" class="tsd-kind-icon">retrieve<wbr>Configuration</a></li>
+								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private tsd-is-static"><a href="_bots_syncbot_.syncbot.html#createthreadandconnect" class="tsd-kind-icon">create<wbr>Thread<wbr>And<wbr>Connect</a></li>
 								<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private tsd-is-static"><a href="_bots_syncbot_.syncbot.html#makerouter" class="tsd-kind-icon">make<wbr>Router</a></li>
 							</ul>
 						</section>
@@ -128,7 +129,7 @@
 							<aside class="tsd-sources">
 								<p>Overrides <a href="_framework_procbot_.procbot.html">ProcBot</a>.<a href="_framework_procbot_.procbot.html#constructor">constructor</a></p>
 								<ul>
-									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/syncbot.ts#L118">bots/syncbot.ts:118</a></li>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/syncbot.ts#L126">bots/syncbot.ts:126</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -496,10 +497,42 @@
 					</ul>
 				</section>
 				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private tsd-is-static">
+					<a name="createthreadandconnect" class="tsd-anchor"></a>
+					<h3><span class="tsd-flag ts-flagStatic">Static</span> <span class="tsd-flag ts-flagPrivate">Private</span> create<wbr>Thread<wbr>And<wbr>Connect</h3>
+					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private tsd-is-static">
+						<li class="tsd-signature tsd-kind-icon">create<wbr>Thread<wbr>And<wbr>Connect<span class="tsd-signature-symbol">(</span>from<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">FlowDefinition</span>, to<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">FlowDefinition</span>, emitter<span class="tsd-signature-symbol">: </span><a href="_services_messenger_.messengerservice.html" class="tsd-signature-type">MessengerService</a>, event<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">MessageEvent</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">MessageEmitResponse</span><span class="tsd-signature-symbol">&gt;</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/resin-io-modules/resin-procbots/blob/master/lib/bots/syncbot.ts#L49">bots/syncbot.ts:49</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5>from: <span class="tsd-signature-type">FlowDefinition</span></h5>
+								</li>
+								<li>
+									<h5>to: <span class="tsd-signature-type">FlowDefinition</span></h5>
+								</li>
+								<li>
+									<h5>emitter: <a href="_services_messenger_.messengerservice.html" class="tsd-signature-type">MessengerService</a></h5>
+								</li>
+								<li>
+									<h5>event: <span class="tsd-signature-type">MessageEvent</span></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Promise</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">MessageEmitResponse</span><span class="tsd-signature-symbol">&gt;</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-private tsd-is-static">
 					<a name="makerouter" class="tsd-anchor"></a>
 					<h3><span class="tsd-flag ts-flagStatic">Static</span> <span class="tsd-flag ts-flagPrivate">Private</span> make<wbr>Router</h3>
 					<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-private tsd-is-static">
-						<li class="tsd-signature tsd-kind-icon">make<wbr>Router<span class="tsd-signature-symbol">(</span>from<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">FlowDefinition</span>, to<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">FlowDefinition</span>, emitter<span class="tsd-signature-symbol">: </span><a href="_services_messenger_.messengerservice.html" class="tsd-signature-type">MessengerService</a>, logger<span class="tsd-signature-symbol">?: </span><a href="_utils_logger_.logger.html" class="tsd-signature-type">Logger</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">MessageListenerMethod</span></li>
+						<li class="tsd-signature tsd-kind-icon">make<wbr>Router<span class="tsd-signature-symbol">(</span>from<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">FlowDefinition</span>, to<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">FlowDefinition</span>, emitter<span class="tsd-signature-symbol">: </span><a href="_services_messenger_.messengerservice.html" class="tsd-signature-type">MessengerService</a>, logger<span class="tsd-signature-symbol">: </span><a href="_utils_logger_.logger.html" class="tsd-signature-type">Logger</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">MessageListenerMethod</span></li>
 					</ul>
 					<ul class="tsd-descriptions">
 						<li class="tsd-description">
@@ -520,7 +553,7 @@
 									<h5>emitter: <a href="_services_messenger_.messengerservice.html" class="tsd-signature-type">MessengerService</a></h5>
 								</li>
 								<li>
-									<h5><span class="tsd-flag ts-flagOptional">Optional</span> logger: <a href="_utils_logger_.logger.html" class="tsd-signature-type">Logger</a></h5>
+									<h5>logger: <a href="_utils_logger_.logger.html" class="tsd-signature-type">Logger</a></h5>
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">MessageListenerMethod</span></h4>
@@ -645,6 +678,9 @@
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited tsd-is-protected">
 								<a href="_bots_syncbot_.syncbot.html#retrieveconfiguration" class="tsd-kind-icon">retrieve<wbr>Configuration</a>
+							</li>
+							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-private tsd-is-static">
+								<a href="_bots_syncbot_.syncbot.html#createthreadandconnect" class="tsd-kind-icon">create<wbr>Thread<wbr>And<wbr>Connect</a>
 							</li>
 							<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-private tsd-is-static">
 								<a href="_bots_syncbot_.syncbot.html#makerouter" class="tsd-kind-icon">make<wbr>Router</a>

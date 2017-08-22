@@ -23,10 +23,7 @@ class MessengerService extends service_scaffold_1.ServiceScaffold {
                     listenerMethod: (_registration, event) => {
                         if (_.includes(this.eventsRegistered, this.translators[subServiceName].eventIntoMessageType(event))) {
                             this.translators[subServiceName].eventIntoMessage(event)
-                                .then((message) => {
-                                this.logger.log(logger_1.LogLevel.INFO, `---> Heard '${message.cookedEvent.details.text}' on ${message.cookedEvent.source.service}.`);
-                                this.queueData(message);
-                            });
+                                .then(this.queueData);
                         }
                     },
                     name: `${subServiceName}=>${this.serviceName}`,

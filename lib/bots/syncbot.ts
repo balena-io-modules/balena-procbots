@@ -26,7 +26,7 @@ import { Logger, LogLevel } from '../utils/logger';
 
 export class SyncBot extends ProcBot {
 	private static makeRouter(
-		from: FlowDefinition, to: FlowDefinition, emitter: MessengerService, logger?: Logger
+		from: FlowDefinition, to: FlowDefinition, emitter: MessengerService, logger: Logger
 	): MessageListenerMethod {
 		return (_registration, event: MessageEvent) => {
 			if (
@@ -34,87 +34,95 @@ export class SyncBot extends ProcBot {
 				from.flow === event.cookedEvent.source.flow &&
 				event.cookedEvent.details.genesis !== 'system'
 			) {
-				const transmitMessage: TransmitContext = {
-					action: 'createThread',
-					details: event.cookedEvent.details,
-					hub: {
-						username: event.cookedEvent.source.username,
-					},
-					source: event.cookedEvent.source,
-					target: {
-						flow: to.flow,
-						service: to.service,
-						username: event.cookedEvent.source.username,
-					},
-				};
-
-				const updateConnections: TransmitContext = {
-					action: 'createComment',
-					details: {
-						genesis: 'system',
-						hidden: true,
-						internal: true,
-						text: 'This ticket is mirrored in ' // will be appended
-					},
-					hub: {
-						username: process.env.SYNCBOT_NAME,
-					},
-					source: {
-						message: 'duff',
-						thread: 'duff',
-						flow: 'duff',
-						service: 'system',
-						username: 'duff',
-					},
-					target: {
-						flow: 'duff', // will be replaced
-						service: 'duff', // will be replaced
-						username: process.env.SYNCBOT_NAME,
-						thread: 'duff' // will be replaced
-					}
-				};
-
-				return emitter.sendData({
-					contexts: {
-						messenger: transmitMessage,
-					},
-					source: 'syncbot',
-				}).then((emitResponse: MessageEmitResponse) => {
-					const response = emitResponse.response;
-					if (response) {
-						const updateSource = _.cloneDeep(updateConnections);
-						updateSource.target = {
-							flow: event.cookedEvent.source.flow,
-							service: event.cookedEvent.source.service,
-							username: process.env.SYNCBOT_NAME,
-							thread: event.cookedEvent.source.thread,
-						};
-						updateSource.details.text += `[${to.service} thread ${response.thread}](${response.url})`;
-
-						const sourceDetails = event.cookedEvent.source;
-						const updateTarget = _.cloneDeep(updateConnections);
-						updateTarget.target = {
-							flow: to.flow,
-							service: to.service,
-							username: process.env.SYNCBOT_NAME,
-							thread: response.thread,
-						};
-						updateTarget.details.text += `[${from.service} thread ${sourceDetails.thread}](${sourceDetails.url})`;
-
-						return Promise.all([
-							emitter.sendData({contexts: {messenger: updateSource}, source: 'syncbot'}),
-							emitter.sendData({contexts: {messenger: updateTarget}, source: 'syncbot'}),
-						]).then(() => {
-							if (logger) {
-								logger.log(LogLevel.INFO, `---> Emitted '${event.cookedEvent.details.text}' to ${to.service}.`);
-							}
-						});
-					}
+				const text = event.cookedEvent.details.text;
+				logger.log(LogLevel.INFO, `---> Heard '${text}' on ${from.service}.`);
+				return SyncBot.createThreadAndConnect(from, to, emitter, event)
+				.then(() => {
+					logger.log(LogLevel.INFO, `---> Emitted '${text}' to ${to.service}.`);
 				});
 			}
 			// The event received doesn't match the profile being routed, so no-op is the correct action.
 			return Promise.resolve();
 		};
+	}
+
+	private static createThreadAndConnect(
+		from: FlowDefinition, to: FlowDefinition, emitter: MessengerService, event: MessageEvent
+	): Promise<MessageEmitResponse> {
+		const createThread: TransmitContext = {
+			action: 'createThread',
+			details: event.cookedEvent.details,
+			hub: {
+				username: event.cookedEvent.source.username,
+			},
+			source: event.cookedEvent.source,
+			target: {
+				flow: to.flow,
+				service: to.service,
+				username: event.cookedEvent.source.username,
+			},
+		};
+
+		const createConnections: TransmitContext = {
+			action: 'createComment',
+			details: {
+				genesis: 'system',
+				hidden: true,
+				internal: true,
+				text: 'This ticket is mirrored in ' // will be appended
+			},
+			hub: {
+				username: process.env.SYNCBOT_NAME,
+			},
+			source: {
+				message: 'duff',
+				thread: 'duff',
+				flow: 'duff',
+				service: 'system',
+				username: 'duff',
+			},
+			target: {
+				flow: 'duff', // will be replaced
+				service: 'duff', // will be replaced
+				username: process.env.SYNCBOT_NAME,
+				thread: 'duff' // will be replaced
+			}
+		};
+
+		return emitter.sendData({
+			contexts: {
+				messenger: createThread,
+			},
+			source: 'syncbot',
+		}).then((emitResponse: MessageEmitResponse) => {
+			const response = emitResponse.response;
+			if (response) {
+				const connectTarget = _.cloneDeep(createConnections);
+				connectTarget.target = {
+					flow: event.cookedEvent.source.flow,
+					service: event.cookedEvent.source.service,
+					username: process.env.SYNCBOT_NAME,
+					thread: event.cookedEvent.source.thread,
+				};
+				connectTarget.details.text += `[${to.service} thread ${response.thread}](${response.url})`;
+
+				const sourceDetails = event.cookedEvent.source;
+				const connectSource = _.cloneDeep(createConnections);
+				connectSource.target = {
+					flow: to.flow,
+					service: to.service,
+					username: process.env.SYNCBOT_NAME,
+					thread: response.thread,
+				};
+				connectSource.details.text += `[${from.service} thread ${sourceDetails.thread}](${sourceDetails.url})`;
+
+				return Promise.all([
+					emitter.sendData({contexts: {messenger: connectTarget}, source: 'syncbot'}),
+					emitter.sendData({contexts: {messenger: connectSource}, source: 'syncbot'}),
+				]).return(emitResponse);
+			}
+			return Promise.resolve(emitResponse);
+		});
 	}
 
 	constructor(name = 'SyncBot') {
