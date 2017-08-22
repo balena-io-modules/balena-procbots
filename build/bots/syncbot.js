@@ -9,12 +9,13 @@ const logger_1 = require("../utils/logger");
 class SyncBot extends procbot_1.ProcBot {
     static makeRouter(from, to, emitter, logger) {
         return (_registration, event) => {
-            if (from.service === event.cookedEvent.source.service &&
-                from.flow === event.cookedEvent.source.flow &&
-                event.cookedEvent.details.genesis !== 'system') {
-                const text = event.cookedEvent.details.text;
+            const data = event.cookedEvent;
+            if (from.service === data.source.service &&
+                from.flow === data.source.flow &&
+                data.details.genesis !== 'system') {
+                const text = data.details.text;
                 logger.log(logger_1.LogLevel.INFO, `---> Heard '${text}' on ${from.service}.`);
-                return SyncBot.createThreadAndConnect(from, to, emitter, event)
+                return SyncBot.createThreadAndConnect(from, to, emitter, data)
                     .then(() => {
                     logger.log(logger_1.LogLevel.INFO, `---> Emitted '${text}' to ${to.service}.`);
                 });
@@ -22,18 +23,18 @@ class SyncBot extends procbot_1.ProcBot {
             return Promise.resolve();
         };
     }
-    static createThreadAndConnect(from, to, emitter, event) {
+    static createThreadAndConnect(from, to, emitter, data) {
         const createThread = {
             action: 'createThread',
-            details: event.cookedEvent.details,
+            details: data.details,
             hub: {
-                username: event.cookedEvent.source.username,
+                username: data.source.username,
             },
-            source: event.cookedEvent.source,
+            source: data.source,
             target: {
                 flow: to.flow,
                 service: to.service,
-                username: event.cookedEvent.source.username,
+                username: data.source.username,
             },
         };
         const createConnections = {
@@ -71,13 +72,13 @@ class SyncBot extends procbot_1.ProcBot {
             if (response) {
                 const connectTarget = _.cloneDeep(createConnections);
                 connectTarget.target = {
-                    flow: event.cookedEvent.source.flow,
-                    service: event.cookedEvent.source.service,
+                    flow: data.source.flow,
+                    service: data.source.service,
                     username: process.env.SYNCBOT_NAME,
-                    thread: event.cookedEvent.source.thread,
+                    thread: data.source.thread,
                 };
                 connectTarget.details.text += `[${to.service} thread ${response.thread}](${response.url})`;
-                const sourceDetails = event.cookedEvent.source;
+                const sourceDetails = data.source;
                 const connectSource = _.cloneDeep(createConnections);
                 connectSource.target = {
                     flow: to.flow,

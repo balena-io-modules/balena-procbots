@@ -17,8 +17,8 @@
 import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import {
-	MessageContext, MessageEvent, MessageResponseData,
-	Metadata, TransmitContext,
+	MessageEvent, MessageInformation, MessageResponseData,
+	Metadata, TransmitInformation,
 } from '../../messenger-types';
 import { ServiceEvent } from '../../service-types';
 import { DataHub } from '../datahubs/datahub';
@@ -36,11 +36,11 @@ export interface Translator {
 
 	eventIntoMessage(event: ServiceEvent): Promise<MessageEvent>;
 
-	messageIntoConnectionDetails(message: TransmitContext): Promise<object>;
+	messageIntoConnectionDetails(message: TransmitInformation): Promise<object>;
 
-	messageIntoEmitDetails(message: TransmitContext): {method: string[], payload: any};
+	messageIntoEmitDetails(message: TransmitInformation): {method: string[], payload: any};
 
-	responseIntoMessageResponse(payload: TransmitContext, response: any): MessageResponseData;
+	responseIntoMessageResponse(payload: TransmitInformation, response: any): MessageResponseData;
 }
 
 /**
@@ -49,7 +49,7 @@ export interface Translator {
  * @param format  Optional, markdown or plaintext, defaults to markdown.
  * @returns       Text with data embedded.
  */
-export function stringifyMetadata(data: MessageContext, format: string): string {
+export function stringifyMetadata(data: MessageInformation, format: string): string {
 	const indicators = data.details.hidden ? getIndicatorArrays().hidden : getIndicatorArrays().shown;
 	switch (format) {
 		case 'human':

@@ -38,7 +38,7 @@ export interface TransmitIds extends MessageIds {
 	flow: string;
 }
 
-export interface MessageDetails {
+export interface Message {
 	genesis: string;
 	hidden: boolean;
 	internal: boolean;
@@ -46,11 +46,11 @@ export interface MessageDetails {
 	title?: string;
 }
 
-export interface MessageContext {
-	details: MessageDetails;
+export interface MessageInformation {
+	details: Message;
 	source: ReceiptIds;
 }
-export interface TransmitContext extends MessageContext {
+export interface TransmitInformation extends MessageInformation {
 	action: string;
 	hub: {
 		username: string;
@@ -91,5 +91,5 @@ export interface MessengerConstructionDetails {
 }
 
 export interface MessageEvent extends ServiceScaffoldServiceEvent {
-	cookedEvent: MessageContext;
+	cookedEvent: MessageInformation;
 }

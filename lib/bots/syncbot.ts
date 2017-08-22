@@ -19,7 +19,7 @@ import * as _ from 'lodash';
 import { ProcBot } from '../framework/procbot';
 import { MessengerService } from '../services/messenger';
 import {
-	FlowDefinition, MessageEmitResponse, MessageEvent, MessageListenerMethod, TransmitContext,
+	FlowDefinition, MessageEmitResponse, MessageEvent, MessageInformation, MessageListenerMethod, TransmitInformation,
 } from '../services/messenger-types';
 import { createDataHub } from '../services/messenger/datahubs/datahub';
 import { Logger, LogLevel } from '../utils/logger';
@@ -29,14 +29,15 @@ export class SyncBot extends ProcBot {
 		from: FlowDefinition, to: FlowDefinition, emitter: MessengerService, logger: Logger
 	): MessageListenerMethod {
 		return (_registration, event: MessageEvent) => {
+			const data = event.cookedEvent;
 			if (
-				from.service === event.cookedEvent.source.service &&
-				from.flow === event.cookedEvent.source.flow &&
-				event.cookedEvent.details.genesis !== 'system'
+				from.service === data.source.service &&
+				from.flow === data.source.flow &&
+				data.details.genesis !== 'system'
 			) {
-				const text = event.cookedEvent.details.text;
+				const text = data.details.text;
 				logger.log(LogLevel.INFO, `---> Heard '${text}' on ${from.service}.`);
-				return SyncBot.createThreadAndConnect(from, to, emitter, event)
+				return SyncBot.createThreadAndConnect(from, to, emitter, data)
 				.then(() => {
 					logger.log(LogLevel.INFO, `---> Emitted '${text}' to ${to.service}.`);
 				});
@@ -47,23 +48,23 @@ export class SyncBot extends ProcBot {
 	}
 
 	private static createThreadAndConnect(
-		from: FlowDefinition, to: FlowDefinition, emitter: MessengerService, event: MessageEvent
+		from: FlowDefinition, to: FlowDefinition, emitter: MessengerService, data: MessageInformation
 	): Promise<MessageEmitResponse> {
-		const createThread: TransmitContext = {
+		const createThread: TransmitInformation = {
 			action: 'createThread',
-			details: event.cookedEvent.details,
+			details: data.details,
 			hub: {
-				username: event.cookedEvent.source.username,
+				username: data.source.username,
 			},
-			source: event.cookedEvent.source,
+			source: data.source,
 			target: {
 				flow: to.flow,
 				service: to.service,
-				username: event.cookedEvent.source.username,
+				username: data.source.username,
 			},
 		};
 
-		const createConnections: TransmitContext = {
+		const createConnections: TransmitInformation = {
 			action: 'createComment',
 			details: {
 				genesis: 'system',
@@ -74,7 +75,7 @@ export class SyncBot extends ProcBot {
 			hub: {
 				username: process.env.SYNCBOT_NAME,
 			},
-			source: {
+			source: { // this message is being created from nothing
 				message: 'duff',
 				thread: 'duff',
 				flow: 'duff',
@@ -99,14 +100,14 @@ export class SyncBot extends ProcBot {
 			if (response) {
 				const connectTarget = _.cloneDeep(createConnections);
 				connectTarget.target = {
-					flow: event.cookedEvent.source.flow,
-					service: event.cookedEvent.source.service,
+					flow: data.source.flow,
+					service: data.source.service,
 					username: process.env.SYNCBOT_NAME,
-					thread: event.cookedEvent.source.thread,
+					thread: data.source.thread,
 				};
 				connectTarget.details.text += `[${to.service} thread ${response.thread}](${response.url})`;
 
-				const sourceDetails = event.cookedEvent.source;
+				const sourceDetails = data.source;
 				const connectSource = _.cloneDeep(createConnections);
 				connectSource.target = {
 					flow: to.flow,

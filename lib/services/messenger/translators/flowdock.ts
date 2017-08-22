@@ -18,7 +18,7 @@ import * as Promise from 'bluebird';
 import { Session } from 'flowdock';
 import * as _ from 'lodash';
 import { FlowdockConnectionDetails, FlowdockEmitData, FlowdockEvent, FlowdockResponse } from '../../flowdock-types';
-import { MessageContext, MessageEvent, MessageResponseData, TransmitContext } from '../../messenger-types';
+import { MessageEvent, MessageInformation, MessageResponseData, TransmitInformation } from '../../messenger-types';
 import { DataHub } from '../datahubs/datahub';
 import * as Translator from './translator';
 
@@ -58,7 +58,7 @@ export class FlowdockTranslator implements Translator.Translator {
 		const thread = event.rawEvent.thread_id;
 		const userId = event.rawEvent.user;
 		const org = this.organization;
-		const cookedEvent: MessageContext = {
+		const cookedEvent: MessageInformation = {
 			// action: MessageAction.Create,
 			// first: event.rawEvent.id === event.rawEvent.thread.initial_message,
 			details: {
@@ -101,7 +101,7 @@ export class FlowdockTranslator implements Translator.Translator {
 			});
 	}
 
-	public messageIntoConnectionDetails(message: TransmitContext): Promise<FlowdockConnectionDetails> {
+	public messageIntoConnectionDetails(message: TransmitInformation): Promise<FlowdockConnectionDetails> {
 		const promises: Array<Promise<string>> = _.map(this.hubs, (hub) => {
 			return hub.fetchValue(message.hub.username, 'flowdock', 'token');
 		});
@@ -114,7 +114,7 @@ export class FlowdockTranslator implements Translator.Translator {
 		});
 	}
 
-	public messageIntoEmitDetails(message: TransmitContext): {method: string[], payload: FlowdockEmitData} {
+	public messageIntoEmitDetails(message: TransmitInformation): {method: string[], payload: FlowdockEmitData} {
 		const org = this.organization;
 		const flow = message.target.flow;
 		switch (message.action) {
@@ -147,7 +147,7 @@ export class FlowdockTranslator implements Translator.Translator {
 		}
 	}
 
-	public responseIntoMessageResponse(payload: TransmitContext, response: FlowdockResponse): MessageResponseData {
+	public responseIntoMessageResponse(payload: TransmitInformation, response: FlowdockResponse): MessageResponseData {
 		const thread = response.thread_id;
 		const org = this.organization;
 		const flow = payload.target.flow;

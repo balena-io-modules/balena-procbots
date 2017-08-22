@@ -21,7 +21,7 @@ import {
 	DiscourseConnectionDetails, DiscourseEmitData,
 	DiscourseEvent, DiscourseResponse
 } from '../../discourse-types';
-import { MessageContext, MessageEvent, MessageResponseData, TransmitContext } from '../../messenger-types';
+import { MessageEvent, MessageInformation, MessageResponseData, TransmitInformation } from '../../messenger-types';
 import { DataHub } from '../datahubs/datahub';
 import * as Translator from './translator';
 
@@ -75,7 +75,7 @@ export class DiscourseTranslator implements Translator.Translator {
 			.then((details: {post: any, topic: any}) => {
 				// Gather metadata and resolve
 				const metadata = Translator.extractMetadata(details.post.raw, 'img');
-				const cookedEvent: MessageContext = {
+				const cookedEvent: MessageInformation = {
 					details: {
 						genesis: metadata.genesis || event.source,
 						// post_type 4 seems to correspond to whisper
@@ -104,7 +104,7 @@ export class DiscourseTranslator implements Translator.Translator {
 			});
 	}
 
-	public messageIntoConnectionDetails(message: TransmitContext): Promise<DiscourseConnectionDetails> {
+	public messageIntoConnectionDetails(message: TransmitInformation): Promise<DiscourseConnectionDetails> {
 		const promises: Array<Promise<string>> = _.map(this.hubs, (hub) => {
 			return hub.fetchValue(message.hub.username, 'discourse', 'token');
 		});
@@ -118,7 +118,7 @@ export class DiscourseTranslator implements Translator.Translator {
 		});
 	}
 
-	public messageIntoEmitDetails(message: TransmitContext): {method: string[], payload: DiscourseEmitData} {
+	public messageIntoEmitDetails(message: TransmitInformation): {method: string[], payload: DiscourseEmitData} {
 		switch (message.action) {
 			case 'createThread':
 				const title = message.details.title;
@@ -154,7 +154,7 @@ export class DiscourseTranslator implements Translator.Translator {
 		}
 	}
 
-	public responseIntoMessageResponse(_payload: TransmitContext, response: DiscourseResponse): MessageResponseData {
+	public responseIntoMessageResponse(_payload: TransmitInformation, response: DiscourseResponse): MessageResponseData {
 		return {
 			message: response.id,
 			thread: response.topic_id,

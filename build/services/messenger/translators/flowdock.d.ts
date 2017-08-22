@@ -1,6 +1,6 @@
 import * as Promise from 'bluebird';
 import { FlowdockConnectionDetails, FlowdockEmitData, FlowdockEvent, FlowdockResponse } from '../../flowdock-types';
-import { MessageEvent, MessageResponseData, TransmitContext } from '../../messenger-types';
+import { MessageEvent, MessageResponseData, TransmitInformation } from '../../messenger-types';
 import { DataHub } from '../datahubs/datahub';
 import * as Translator from './translator';
 export declare class FlowdockTranslator implements Translator.Translator {
@@ -13,12 +13,12 @@ export declare class FlowdockTranslator implements Translator.Translator {
     messageTypeIntoEventTypes(type: string): string[];
     getAllEventTypes(): string[];
     eventIntoMessage(event: FlowdockEvent): Promise<MessageEvent>;
-    messageIntoConnectionDetails(message: TransmitContext): Promise<FlowdockConnectionDetails>;
-    messageIntoEmitDetails(message: TransmitContext): {
+    messageIntoConnectionDetails(message: TransmitInformation): Promise<FlowdockConnectionDetails>;
+    messageIntoEmitDetails(message: TransmitInformation): {
         method: string[];
         payload: FlowdockEmitData;
     };
-    responseIntoMessageResponse(payload: TransmitContext, response: FlowdockResponse): MessageResponseData;
+    responseIntoMessageResponse(payload: TransmitInformation, response: FlowdockResponse): MessageResponseData;
     private fetchFromSession;
 }
 export declare function createTranslator(data: FlowdockConnectionDetails, hubs: DataHub[]): Translator.Translator;

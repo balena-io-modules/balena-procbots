@@ -22,7 +22,7 @@
 // import { FrontConnectionDetails, FrontEmitContext, FrontEvent, FrontResponse } from '../../front-types';
 // import {
 // 	MessageContext, MessageEvent, MessageResponseData,
-// 	TransmitContext
+// 	TransmitInformation
 // } from '../../messenger-types';
 // import { DataHub } from '../datahubs/datahub';
 // import * as Translator from './translator';
@@ -44,12 +44,12 @@
 // 		this.channelPerInbox = data.channelPerInbox || {};
 // 	}
 //
-// 	public responseIntoMessageResponse(_payload: TransmitContext, _response: FrontResponse): MessageResponseData {
+// 	public responseIntoMessageResponse(_payload: TransmitInformation, _response: FrontResponse): MessageResponseData {
 // 		// TODO: Implement
 // 		throw new Error('Method not implemented.');
 // 	}
 //
-// 	public messageIntoConnectionDetails(_message: TransmitContext): Promise<FrontConnectionDetails> {
+// 	public messageIntoConnectionDetails(_message: TransmitInformation): Promise<FrontConnectionDetails> {
 // 		return Promise.resolve({
 // 			channelPerInbox: this.channelPerInbox,
 // 			token: this.token,
@@ -141,7 +141,7 @@
 // 		return equivalents[event.event];
 // 	}
 //
-// 	public messageIntoMethodPath(_message: TransmitContext): Promise<string[]> {
+// 	public messageIntoMethodPath(_message: TransmitInformation): Promise<string[]> {
 // 		// TODO: This needs to translate
 // 		return Promise.resolve([ 'comment', 'create' ]);
 // 	}
@@ -150,7 +150,7 @@
 // 	 * Translate the provided message context into an emit context.
 // 	 * @param message  Standard form of the message.
 // 	 */
-// 	public messageIntoEmitComment(message: TransmitContext): Promise<{method: string[], payload: RequestData}> {
+// 	public messageIntoEmitComment(message: TransmitInformation): Promise<{method: string[], payload: RequestData}> {
 // 		// TODO: This needs to morph the username out of generic format
 // 		// Attempt to find the thread ID to know if this is a new conversation or not
 // 		const conversationId = message.target.thread;

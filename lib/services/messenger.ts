@@ -20,7 +20,7 @@ import * as path from 'path';
 
 import { LogLevel } from '../utils/logger';
 import {
-	MessageResponseData, MessengerConstructionDetails, TransmitContext
+	MessageResponseData, MessengerConstructionDetails, TransmitInformation
 } from './messenger-types';
 import * as Translator from './messenger/translators/translator';
 import { ServiceScaffold } from './service-scaffold';
@@ -60,7 +60,7 @@ export class MessengerService extends ServiceScaffold<string> implements Service
 		}
 	}
 
-	protected emitData(data: TransmitContext): Promise<MessageResponseData> {
+	protected emitData(data: TransmitInformation): Promise<MessageResponseData> {
 		return Promise.props({
 			connection: this.translators[data.target.service].messageIntoConnectionDetails(data),
 			emit: this.translators[data.target.service].messageIntoEmitDetails(data),
