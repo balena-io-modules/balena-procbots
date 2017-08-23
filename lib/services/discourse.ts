@@ -70,8 +70,8 @@ export class DiscourseService extends ServiceScaffold<string> implements Service
 			body: context.data.body,
 			json: true,
 			qs,
-			url: `https://${this.connectionDetails.instance}/${context.data.path}`,
-			method: context.data.method,
+			url: `https://${this.connectionDetails.instance}${context.data.path}`,
+			method: context.data.htmlVerb,
 		};
 		return context.method(requestOptions);
 	}

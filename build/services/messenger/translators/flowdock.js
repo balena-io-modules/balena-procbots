@@ -12,17 +12,20 @@ class FlowdockTranslator {
         };
         this.fetchFromSession = (path, search) => {
             return new Promise((resolve, reject) => {
-                this.session.on('error', reject);
-                this.session.get(path, { search }, (_error, result) => {
-                    this.session.removeListener('error', reject);
+                this.session.get(path, { search }, (error, result) => {
                     if (result) {
                         resolve(result);
+                    }
+                    else {
+                        reject(error);
                     }
                 });
             });
         };
         this.hubs = hubs;
         this.session = new flowdock_1.Session(data.token);
+        const doNothing = () => { };
+        this.session.on('error', doNothing);
         this.organization = data.organization;
     }
     eventIntoMessageType(event) {
@@ -102,7 +105,7 @@ class FlowdockTranslator {
         switch (message.action) {
             case 0:
                 if (!title) {
-                    throw new Error('Cannot create a thread without a title');
+                    throw new procbot_1.ProcBotError(3, 'Cannot create a thread without a title');
                 }
                 return { method: ['post'], payload: {
                         path: `/flows/${org}/${flow}/messages`,
@@ -114,7 +117,7 @@ class FlowdockTranslator {
                     } };
             case 1:
                 if (!thread) {
-                    throw new Error('Cannot create a comment without a thread.');
+                    throw new procbot_1.ProcBotError(3, 'Cannot create a comment without a thread.');
                 }
                 return { method: ['post'], payload: {
                         path: `/flows/${org}/${flow}/threads/${thread}/messages`,
@@ -126,16 +129,16 @@ class FlowdockTranslator {
                     } };
             case 2:
                 if (!thread) {
-                    throw new Error('Cannot search for connections without a thread.');
+                    throw new procbot_1.ProcBotError(3, 'Cannot search for connections without a thread.');
                 }
                 return { method: ['get'], payload: {
                         path: `/flows/${org}/${flow}/threads/${thread}/messages`,
                         payload: {
-                            search: `This ticket is mirrored in [${message.source.service} thread`,
+                            search: `This thread is mirrored in [${message.source.service} thread`,
                         },
                     } };
             default:
-                throw new Error(`${message.action} not supported on ${message.target.service}`);
+                throw new procbot_1.ProcBotError(4, `${message.action} not supported on ${message.target.service}`);
         }
     }
     responseIntoMessageResponse(message, response) {
@@ -154,7 +157,7 @@ class FlowdockTranslator {
             case 2:
                 if (response.length > 0) {
                     return {
-                        thread: response[0].content.match(/This ticket is mirrored in \[(?:\w+) thread (\d+)]/i)[1]
+                        thread: response[0].content.match(/This thread is mirrored in \[(?:\w+) thread ([\d\w_]+)]/i)[1]
                     };
                 }
                 throw new procbot_1.ProcBotError(1, 'No connected thread found by querying Flowdock.');

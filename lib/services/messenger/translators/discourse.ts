@@ -17,13 +17,15 @@
 import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import * as request from 'request-promise';
+import { ProcBotError } from '../../../framework/procbot';
+import { ProcBotErrorCode } from '../../../framework/procbot-types';
 import {
 	DiscourseConnectionDetails, DiscourseEmitData,
 	DiscourseEvent, DiscourseResponse,
 } from '../../discourse-types';
 import {
-	CreateMessageResponse, MessageAction, MessageEvent,
-	MessageInformation, TransmitInformation,
+	MessageAction, MessageEvent,
+	MessageInformation, MessageResponseData, TransmitInformation,
 } from '../../messenger-types';
 import { DataHub } from '../datahubs/datahub';
 import * as Translator from './translator';
@@ -75,36 +77,36 @@ export class DiscourseTranslator implements Translator.Translator {
 			post: request(getPost),
 			topic: request(getTopic),
 		})
-			.then((details: {post: any, topic: any}) => {
-				// Gather metadata and resolve
-				const metadata = Translator.extractMetadata(details.post.raw, 'img');
-				const cookedEvent: MessageInformation = {
-					details: {
-						genesis: metadata.genesis || event.source,
-						// post_type 4 seems to correspond to whisper
-						hidden: details.post.post_type === 4,
-						internal: details.post.staff,
-						text: metadata.content.trim(),
-						title: details.topic.title,
-					},
-					source: {
-						service: event.source,
-						// These come in as integers, but should be strings
-						flow: details.topic.category_id.toString(),
-						message: details.post.id.toString(),
-						thread: details.post.topic_id.toString(),
-						url: getTopic.uri,
-						username: details.post.username,
-					},
-				};
-				return {
-					context: `${event.source}.${event.cookedEvent.context}`,
-					type: this.eventIntoMessageType(event),
-					cookedEvent,
-					rawEvent: event.rawEvent,
-					source: 'messenger',
-				};
-			});
+		.then((details: {post: any, topic: any}) => {
+			// Gather metadata and resolve
+			const metadata = Translator.extractMetadata(details.post.raw, 'img');
+			const cookedEvent: MessageInformation = {
+				details: {
+					genesis: metadata.genesis || event.source,
+					// post_type 4 seems to correspond to whisper
+					hidden: details.post.post_type === 4,
+					internal: details.post.staff,
+					text: metadata.content.trim(),
+					title: details.topic.title,
+				},
+				source: {
+					service: event.source,
+					// These come in as integers, but should be strings
+					flow: details.topic.category_id.toString(),
+					message: details.post.id.toString(),
+					thread: details.post.topic_id.toString(),
+					url: getTopic.uri,
+					username: details.post.username,
+				},
+			};
+			return {
+				context: `${event.source}.${event.cookedEvent.context}`,
+				type: this.eventIntoMessageType(event),
+				cookedEvent,
+				rawEvent: event.rawEvent,
+				source: 'messenger',
+			};
+		});
 	}
 
 	public messageIntoConnectionDetails(message: TransmitInformation): Promise<DiscourseConnectionDetails> {
@@ -127,10 +129,10 @@ export class DiscourseTranslator implements Translator.Translator {
 		switch (message.action) {
 			case MessageAction.CreateThread:
 				if (!title) {
-					throw new Error('Cannot create a thread without a title.');
+					throw new ProcBotError(ProcBotErrorCode.IncompleteMessage, 'Cannot create a thread without a title.');
 				}
-				return {method: ['request'], payload: {
-					method: 'POST',
+				return { method: ['request'], payload: {
+					htmlVerb: 'POST',
 					path: '/posts',
 					body: {
 						category: message.target.flow,
@@ -141,10 +143,10 @@ export class DiscourseTranslator implements Translator.Translator {
 				}};
 			case MessageAction.CreateMessage:
 				if (!thread) {
-					throw new Error('Cannot create a comment without a thread.');
+					throw new ProcBotError(ProcBotErrorCode.IncompleteMessage, 'Cannot create a comment without a thread.');
 				}
-				return {method: ['request'], payload: {
-					method: 'POST',
+				return { method: ['request'], payload: {
+					htmlVerb: 'POST',
 					path: '/posts',
 					body: {
 						raw: `${message.details.text}\n\n---\n${Translator.stringifyMetadata(message, 'img')}`,
@@ -152,12 +154,27 @@ export class DiscourseTranslator implements Translator.Translator {
 						whisper: message.details.hidden ? 'true' : 'false',
 					}
 				}};
+			case MessageAction.ReadConnection:
+				if (!thread) {
+					throw new ProcBotError(ProcBotErrorCode.IncompleteMessage, 'Cannot search for connections without a thread.');
+				}
+				return { method: ['request'], payload: {
+					htmlVerb: 'GET',
+					path: `/search/query`,
+					qs: {
+						'term': `This thread is mirrored in`,
+						'search_context[type]': 'topic',
+						'search_context[id]': thread,
+					}
+				}};
 			default:
-				throw new Error(`${message.action} not translatable to ${message.target.service} yet.`);
+				throw new ProcBotError(
+					ProcBotErrorCode.UnsupportedMessageAction, `${message.action} not translatable to ${message.target.service} yet.`
+				);
 		}
 	}
 
-	public responseIntoMessageResponse(message: TransmitInformation, response: DiscourseResponse): CreateMessageResponse {
+	public responseIntoMessageResponse(message: TransmitInformation, response: DiscourseResponse): MessageResponseData {
 		switch (message.action) {
 			case MessageAction.CreateThread:
 			case MessageAction.CreateMessage:
@@ -166,8 +183,14 @@ export class DiscourseTranslator implements Translator.Translator {
 					thread: response.topic_id,
 					url: `https://${this.connectionDetails.instance}/t/${response.topic_id}`
 				};
+			case MessageAction.ReadConnection:
+				return {
+					thread: response.posts[0].blurb.replace(/This thread is mirrored in \w+ thread /, '')
+				};
 			default:
-				throw new Error(`${message.action} not translatable to ${message.target.service} yet.`);
+				throw new ProcBotError(
+					ProcBotErrorCode.UnsupportedMessageAction, `${message.action} not translatable to ${message.target.service} yet.`
+				);
 		}
 	}
 }

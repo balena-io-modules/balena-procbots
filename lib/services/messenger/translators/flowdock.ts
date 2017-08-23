@@ -38,6 +38,10 @@ export class FlowdockTranslator implements Translator.Translator {
 	constructor(data: FlowdockConnectionDetails, hubs: DataHub[]) {
 		this.hubs = hubs;
 		this.session = new Session(data.token);
+		const doNothing = () => { /* pass */ };
+		// The flowdock service both emits and calls back the error
+		// We'll specifically ignore the emit to prevent it bubbling
+		this.session.on('error', doNothing);
 		this.organization = data.organization;
 	}
 
@@ -127,7 +131,7 @@ export class FlowdockTranslator implements Translator.Translator {
 		switch (message.action) {
 			case MessageAction.CreateThread:
 				if (!title) {
-					throw new Error('Cannot create a thread without a title');
+					throw new ProcBotError(ProcBotErrorCode.IncompleteMessage, 'Cannot create a thread without a title');
 				}
 				return {method: ['post'], payload: {
 					path: `/flows/${org}/${flow}/messages`,
@@ -140,7 +144,7 @@ export class FlowdockTranslator implements Translator.Translator {
 				}};
 			case MessageAction.CreateMessage:
 				if (!thread) {
-					throw new Error('Cannot create a comment without a thread.');
+					throw new ProcBotError(ProcBotErrorCode.IncompleteMessage, 'Cannot create a comment without a thread.');
 				}
 				return { method: ['post'], payload: {
 					path: `/flows/${org}/${flow}/threads/${thread}/messages`,
@@ -152,16 +156,18 @@ export class FlowdockTranslator implements Translator.Translator {
 				}};
 			case MessageAction.ReadConnection:
 				if (!thread) {
-					throw new Error('Cannot search for connections without a thread.');
+					throw new ProcBotError(ProcBotErrorCode.IncompleteMessage, 'Cannot search for connections without a thread.');
 				}
 				return { method: ['get'], payload: {
 					path: `/flows/${org}/${flow}/threads/${thread}/messages`,
 					payload: {
-						search: `This ticket is mirrored in [${message.source.service} thread`,
+						search: `This thread is mirrored in [${message.source.service} thread`,
 					},
 				}};
 			default:
-				throw new Error(`${message.action} not supported on ${message.target.service}`);
+				throw new ProcBotError(
+					ProcBotErrorCode.UnsupportedMessageAction, `${message.action} not supported on ${message.target.service}`
+				);
 		}
 	}
 
@@ -183,7 +189,7 @@ export class FlowdockTranslator implements Translator.Translator {
 			case MessageAction.ReadConnection:
 				if (response.length > 0) {
 					return {
-						thread: response[0].content.match(/This ticket is mirrored in \[(?:\w+) thread (\d+)]/i)[1]
+						thread: response[0].content.match(/This thread is mirrored in \[(?:\w+) thread ([\d\w_]+)]/i)[1]
 					};
 				}
 				throw new ProcBotError(ProcBotErrorCode.NoConnectionFound, 'No connected thread found by querying Flowdock.');
@@ -200,13 +206,11 @@ export class FlowdockTranslator implements Translator.Translator {
 	 */
 	private fetchFromSession = (path: string, search?: string): Promise<any> => {
 		return new Promise<any>((resolve, reject) => {
-			// The flowdock service both emits and calls back the error.
-			// We're wrapping the emit in a promise reject and ignoring the error in callback
-			this.session.on('error', reject);
-			this.session.get(path, {search}, (_error?: Error, result?: any) => {
-				this.session.removeListener('error', reject);
+			this.session.get(path, {search}, (error?: Error, result?: any) => {
 				if (result) {
 					resolve(result);
+				} else {
+					reject(error);
 				}
 			});
 		});

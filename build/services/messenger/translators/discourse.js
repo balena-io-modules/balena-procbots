@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const Promise = require("bluebird");
 const _ = require("lodash");
 const request = require("request-promise");
+const procbot_1 = require("../../../framework/procbot");
 const Translator = require("./translator");
 class DiscourseTranslator {
     constructor(data, hubs) {
@@ -88,10 +89,10 @@ class DiscourseTranslator {
         switch (message.action) {
             case 0:
                 if (!title) {
-                    throw new Error('Cannot create a thread without a title.');
+                    throw new procbot_1.ProcBotError(3, 'Cannot create a thread without a title.');
                 }
                 return { method: ['request'], payload: {
-                        method: 'POST',
+                        htmlVerb: 'POST',
                         path: '/posts',
                         body: {
                             category: message.target.flow,
@@ -102,10 +103,10 @@ class DiscourseTranslator {
                     } };
             case 1:
                 if (!thread) {
-                    throw new Error('Cannot create a comment without a thread.');
+                    throw new procbot_1.ProcBotError(3, 'Cannot create a comment without a thread.');
                 }
                 return { method: ['request'], payload: {
-                        method: 'POST',
+                        htmlVerb: 'POST',
                         path: '/posts',
                         body: {
                             raw: `${message.details.text}\n\n---\n${Translator.stringifyMetadata(message, 'img')}`,
@@ -113,8 +114,21 @@ class DiscourseTranslator {
                             whisper: message.details.hidden ? 'true' : 'false',
                         }
                     } };
+            case 2:
+                if (!thread) {
+                    throw new procbot_1.ProcBotError(3, 'Cannot search for connections without a thread.');
+                }
+                return { method: ['request'], payload: {
+                        htmlVerb: 'GET',
+                        path: `/search/query`,
+                        qs: {
+                            'term': `This thread is mirrored in`,
+                            'search_context[type]': 'topic',
+                            'search_context[id]': thread,
+                        }
+                    } };
             default:
-                throw new Error(`${message.action} not translatable to ${message.target.service} yet.`);
+                throw new procbot_1.ProcBotError(4, `${message.action} not translatable to ${message.target.service} yet.`);
         }
     }
     responseIntoMessageResponse(message, response) {
@@ -126,8 +140,12 @@ class DiscourseTranslator {
                     thread: response.topic_id,
                     url: `https://${this.connectionDetails.instance}/t/${response.topic_id}`
                 };
+            case 2:
+                return {
+                    thread: response.posts[0].blurb.replace(/This thread is mirrored in [\d\w_]+ thread /, '')
+                };
             default:
-                throw new Error(`${message.action} not translatable to ${message.target.service} yet.`);
+                throw new procbot_1.ProcBotError(4, `${message.action} not translatable to ${message.target.service} yet.`);
         }
     }
 }

@@ -12,7 +12,7 @@ class SyncBot extends procbot_1.ProcBot {
             const data = event.cookedEvent;
             if (from.service === data.source.service &&
                 from.flow === data.source.flow &&
-                data.details.genesis !== 'system') {
+                !_.includes(['system', to.service], data.details.genesis)) {
                 const text = data.details.text;
                 logger.log(logger_1.LogLevel.INFO, `---> Heard '${text}' on ${from.service}.`);
                 return SyncBot.readConnectedThread(to, messenger, data)
@@ -68,7 +68,12 @@ class SyncBot extends procbot_1.ProcBot {
                 thread: 'duff',
                 username: process.env.SYNCBOT_NAME,
             },
-            target: data.source,
+            target: {
+                flow: data.source.flow,
+                service: data.source.service,
+                thread: data.source.thread,
+                username: process.env.SYNCBOT_NAME,
+            },
         };
         return messenger.sendData({
             contexts: {
@@ -97,7 +102,7 @@ class SyncBot extends procbot_1.ProcBot {
                 genesis: 'system',
                 hidden: true,
                 internal: true,
-                text: 'This ticket is mirrored in '
+                text: 'This thread is mirrored in '
             },
             hub: {
                 username: process.env.SYNCBOT_NAME,

@@ -38,8 +38,8 @@ class DiscourseService extends service_scaffold_1.ServiceScaffold {
             body: context.data.body,
             json: true,
             qs,
-            url: `https://${this.connectionDetails.instance}/${context.data.path}`,
-            method: context.data.method,
+            url: `https://${this.connectionDetails.instance}${context.data.path}`,
+            method: context.data.htmlVerb,
         };
         return context.method(requestOptions);
     }

@@ -48,7 +48,7 @@ export interface DiscourseEmitContext extends ServiceEmitContext {
 export type DiscourseEmitMethod = (requestOptions: UrlOptions & RequestPromiseOptions) => Promise<DiscourseResponse>;
 
 export interface DiscourseEmitData {
-	method: string;
+	htmlVerb: string;
 	path: string;
 	body?: DiscoursePayload;
 	qs?: { [key: string]: string };
