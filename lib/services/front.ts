@@ -15,339 +15,64 @@
  */
 
 import * as Promise from 'bluebird';
-import { Conversation, Front } from 'front-sdk';
-import * as _ from 'lodash';
+import { Front } from 'front-sdk';
 import * as path from 'path';
-import * as request from 'request-promise';
-import { FrontConstructor, FrontEmitContext, FrontHandle } from './front-types';
-import { Messenger } from './messenger';
-import { MessengerAction, MessengerEmitResponse, ReceiptContext, TransmitContext } from './messenger-types';
-import { ServiceEmitter, ServiceEvent, ServiceListener } from './service-types';
 
-export class FrontService extends Messenger implements ServiceListener, ServiceEmitter {
+import {
+	FrontConnectionDetails, FrontEmitContext,
+	FrontEvent, FrontHandle, FrontResponse,
+} from './front-types';
+import { ServiceEmitter, ServiceListener } from './service-types';
+import { ServiceUtilities } from './service-utilities';
+
+export class FrontService extends ServiceUtilities<string> implements ServiceListener, ServiceEmitter {
 	private static _serviceName = path.basename(__filename.split('.')[0]);
+
+	/** Underlying SDK object that we route requests to */
 	private session: Front;
-	private data: FrontConstructor;
 
-	public constructor(data: FrontConstructor, listen = true) {
-		super(listen);
-		this.data = data;
+	constructor(data: FrontConnectionDetails, listen: boolean) {
+		super();
 		this.session = new Front(data.token);
-	}
-
-	/**
-	 * Promise to find the comment history of a particular thread.
-	 * @param thread  id of the thread to search.
-	 * @param _room   id of the room in which the thread resides.
-	 * @param filter  Criteria to match.
-	 */
-	public fetchNotes = (thread: string, _room: string, filter: RegExp): Promise<string[]> => {
-		return this.session.conversation.listComments({conversation_id: thread})
-		.then((comments) => {
-			return _.filter(comments._results, (value) => {
-				return filter.test(value.body);
-			}).map((value) => {
-				return value.body;
+		if (listen) {
+			// This swallows webhook events.  When operating on an entire inbox we use its webhook rule, but a webhook
+			// channel still requires somewhere to send its webhooks to.
+			this.expressApp.post('/front-dev-null', (_formData, response) => {
+				response.sendStatus(200);
 			});
-		});
-	}
-
-	/**
-	 * Promise to turn the data enqueued into a generic message format.
-	 * @param data  Raw data from the enqueue, remembering this is as dumb and quick as possible.
-	 * @returns     A promise that resolves to the generic form of the event.
-	 */
-	public makeGeneric = (data: ServiceEvent): Promise<ReceiptContext> => {
-		// Calculate common request details once
-		const getGeneric = {
-			headers: {
-				authorization: `Bearer ${this.data.token}`
-			},
-			json: true,
-			method: 'GET',
-			uri: '', // Will be over-written
-		};
-		// Make specific forms of the request object for further details
-		const getEvent = _.cloneDeep(getGeneric);
-		getEvent.uri = `https://api2.frontapp.com/events/${data.rawEvent.id}`;
-		const getInboxes = _.cloneDeep(getGeneric);
-		getInboxes.uri = `https://api2.frontapp.com/conversations/${data.rawEvent.conversation.id}/inboxes`;
-		const getMessages = _.cloneDeep(getGeneric);
-		getMessages.uri = `https://api2.frontapp.com/conversations/${data.rawEvent.conversation.id}/messages`;
-		const getComments = _.cloneDeep(getGeneric);
-		getComments.uri = `https://api2.frontapp.com/conversations/${data.rawEvent.conversation.id}/comments`;
-		// Gather further details of the enqueued event
-		return Promise.props({
-			comments: request(getComments),
-			event: request(getEvent),
-			inboxes: request(getInboxes),
-			messages: request(getMessages),
-		})
-		.then((details: {comments: any, event: any, inboxes: any, messages: any}) => {
-			// Pre-calculate a couple of values, to save line width
-			const message = details.event.target.data;
-			const first = details.comments._results.length + details.messages._results.length === 1;
-			const metadataFormat = details.event.type === 'comment' ? 'human' : 'img';
-			const metadata = Messenger.extractMetadata(message.body, metadataFormat);
-			const tags = _.map(details.event.conversation.tags, (tag: {name: string}) => {
-				return tag.name;
-			});
-			// Attempt to find the author of a message from the various places front might store it
-			let author = 'Unknown';
-			if (message.author) {
-				author = message.author.username;
-			} else {
-				for (const recipient of message.recipients) {
-					if (recipient.role === 'from') {
-						author = recipient.handle;
-					}
-				}
-			}
-			// Return the generic form of this event
-			return {
-				action: MessengerAction.Create,
-				first,
-				genesis: metadata.genesis || data.source || FrontService._serviceName,
-				hidden: first ? metadata.hidden : details.event.type === 'comment',
-				source: FrontService._serviceName,
-				sourceIds: {
-					flow: details.inboxes._results[0].id,
-					message: message.id,
-					thread: details.event.conversation.id,
-					url: `https://app.frontapp.com/open/${details.event.conversation.id}`,
-					user: author,
-				},
-				tags,
-				text: message.text || metadata.content,
-				title: details.event.conversation.subject,
-			};
-		});
-	}
-
-	/**
-	 * Promise to turn the generic message format into a specific form to be emitted.
-	 * @param data  Generic message format object to be encoded.
-	 * @returns     Promise that resolves to the emit suitable form.
-	 */
-	public makeSpecific = (data: TransmitContext): Promise<FrontEmitContext> => {
-		// Attempt to find the thread ID to know if this is a new conversation or not
-		const conversationId = data.toIds.thread;
-		if (!conversationId) {
-			// Find the title and user ID for the event
-			const subject = data.title;
-			if (!subject) {
-				throw new Error('Cannot create Front Conversation without a title');
-			}
-			return this.fetchUserId(data.toIds.user).then((userId) => {
-				// The specific form that may be emitted
-				const footer = `${Messenger.stringifyMetadata(data, 'img')} ${Messenger.messageOfTheDay()}`;
-				return {
-					endpoint: {
-						method: this.apiHandle.front.message.send,
-					},
-					payload: {
-						author_id: userId,
-						body: `${data.text}<hr/>${footer}`,
-						// Find the relevant channel for the inbox
-						channel_id: this.data.inbox_channels[data.toIds.flow],
-						metadata: {
-							thread_ref: data.sourceIds.thread,
-						},
-						options: {
-							archive: false,
-							tags: data.tags,
-						},
-						sender: {
-							handle: data.toIds.user,
-						},
-						subject,
-						to: [data.sourceIds.user],
-					}
-				};
-			});
-		}
-		return Promise.props({
-			conversation: this.session.conversation.get({conversation_id: conversationId}),
-			userId: this.fetchUserId(data.toIds.user)
-		}).then((details: {conversation: Conversation, userId: string}) => {
-			if (data.hidden) {
-				const footer = `${Messenger.stringifyMetadata(data, 'human')}`;
-				return {
-					endpoint: {
-						method: this.apiHandle.front.comment.create,
-					},
-					payload: {
-						author_id: details.userId,
-						body: `${data.text}${footer}`,
-						conversation_id: conversationId,
-					}
-				};
-			}
-			const footer = `${Messenger.stringifyMetadata(data, 'img')} ${Messenger.messageOfTheDay()}`;
-			return {
-				endpoint: {
-					method: this.apiHandle.front.message.reply,
-				},
-				payload: {
-					author_id: details.userId,
-					body: `${data.text}<hr/>${footer}`,
-					conversation_id: conversationId,
-					options: {
-						archive: false,
-					},
-					subject: details.conversation.subject,
-					type: 'message',
-				},
-			};
-		});
-	}
-
-	// This was created on an out-of-date understanding of how things should be structured.
-	// TODO: It should be migrated as part of https://github.com/resin-io-modules/resin-procbots/issues/173
-	/**
-	 * Promise to turn the generic message format into a tag update to be emitted.
-	 * @param data  Generic message format object to be encoded.
-	 * @returns     Promise that resolves to the tag update object.
-	 */
-	public makeTagUpdate = (data: TransmitContext): Promise<FrontEmitContext> => {
-		const topicId = data.toIds.thread;
-		if (!topicId) {
-			throw new Error('Cannot update tags without specifying thread');
-		}
-		return Promise.resolve({
-			endpoint: {
-				method: this.apiHandle.front.conversation.update,
-			},
-			payload: {
-				conversation_id: topicId,
-				tags: data.tags ? data.tags : [],
-			},
-		});
-	}
-
-	/**
-	 * Turns the generic, messenger, name for an event into a specific trigger name for this class.
-	 * @param eventType  Name of the event to translate, eg 'message'.
-	 * @returns          This class's equivalent, eg 'post'.
-	 */
-	public translateEventName(eventType: string): string {
-		const equivalents: {[key: string]: string} = {
-			message: 'event',
-		};
-		return equivalents[eventType];
-	}
-
-	/**
-	 * Activate this service as a listener.
-	 */
-	protected activateMessageListener = (): void => {
-		// This swallows response attempts to the channel, since we notice them on the inbox instead
-		Messenger.expressApp.post('/front-dev-null', (_formData, response) => {
-			response.sendStatus(200);
-		});
-		// Create an endpoint for this listener and enqueue events
-		Messenger.expressApp.post(`/${FrontService._serviceName}/`, (formData, response) => {
-			this.queueEvent({
-				data: {
-					cookedEvent: {
-						context: formData.body.conversation.id,
-						type: 'event',
-					},
+			// Create an endpoint for this listener and enqueue events
+			this.expressApp.post(`/${FrontService._serviceName}/`, (formData, response) => {
+				this.queueData({
+					context: formData.body.conversation.id,
+					event: formData.body.type,
+					cookedEvent: {},
 					rawEvent: formData.body,
 					source: FrontService._serviceName,
-				},
-				workerMethod: this.handleEvent,
-			});
-			response.sendStatus(200);
-		});
-	}
-
-	/**
-	 * Deliver the payload to the service. Sourcing the relevant context has already been performed.
-	 * @param data  The object to be delivered to the service.
-	 * @returns     Response from the service endpoint.
-	 */
-	protected sendPayload = (data: FrontEmitContext): Promise<MessengerEmitResponse> => {
-		return data.endpoint.method(data.payload).then(() => {
-			if (data.payload.conversation_id) {
-				return Promise.resolve({
-					response: {
-						message: `${data.payload.author_id}:${new Date().getTime()}`,
-						thread: data.payload.conversation_id,
-						url: `https://app.frontapp.com/open/${data.payload.conversation_id}`,
-					},
-					source: FrontService._serviceName,
 				});
-			}
-			return this.findConversation(data.payload.subject)
-			.then((conversationId) => {
-				return {
-					response: {
-						message: `${data.payload.author_id}:${new Date().getTime()}`,
-						thread: conversationId,
-						url: `https://app.frontapp.com/open/${conversationId}`,
-					},
-					source: FrontService._serviceName,
-				};
+				response.sendStatus(200);
 			});
-		});
+		}
 	}
 
 	/**
-	 * Find the ID of a user specified by username.
-	 * @param username  Target username to search for.
-	 * @returns         Promise that resolves to the user id.
+	 * Return a method that will: emit RequestData to the service, resolving to ResponseData
+	 * @param context  Context to be emitted
 	 */
-	private fetchUserId = (username: string): Promise<string|undefined> => {
-		// Request a list of all teammates
-		const getTeammates = {
-			headers: {
-				authorization: `Bearer ${this.data.token}`
-			},
-			json: true,
-			method: 'GET',
-			uri: 'https://api2.frontapp.com/teammates',
-		};
-		return request(getTeammates).then((teammates: {_results: Array<{username: string, id: string}>}) => {
-			// Resolve to the ID of the first matching teammate
-			const teammate = _.find(teammates._results, (eachTeammate) => {
-				return eachTeammate.username === username;
-			});
-			if (teammate) {
-				return teammate.id;
-			}
-		});
+	protected emitData(context: FrontEmitContext): Promise<FrontResponse> {
+		return context.method(context.data);
 	}
 
 	/**
-	 * Attempt to find a recent conversation ID from it's subject line.
-	 * Done by subject because the conversation_reference provided is sometimes junk.
-	 * @param subject       Target subject line to search for.
-	 * @param attemptsLeft  Since conversations take time to propagate this method may recurse.
-	 * @returns             Promise that resolves to the ID of the conversation.
-	 */
-	private findConversation = (subject: string, attemptsLeft: number = 10): Promise<string> => {
-		// Find all the recent conversations
-		return this.session.conversation.list().then((response) => {
-			// Filter these down to matching conversations
-			const conversationsMatched = _.filter(response._results, (conversation) => {
-				return conversation.subject === subject;
-			});
-			// Return the most recent, if any
-			if (conversationsMatched.length > 0) {
-				return conversationsMatched[0].id;
-			}
-			// Recurse up to the specified number of times
-			if (attemptsLeft > 1) {
-				return this.findConversation(subject, attemptsLeft - 1);
-			}
-			throw new Error('Could not find relevant conversation.');
-		});
+		* Verify the event before enqueueing.  For now uses the naive approach of returning true.
+		*/
+	protected verify(_data: FrontEvent): boolean {
+		// #204: This to be properly implemented.
+		return true;
 	}
 
 	/**
 	 * The name of this service, as required by the framework.
-	 * @returns  'flowdock' string.
+	 * @returns  'front' string.
 	 */
 	get serviceName(): string {
 		return FrontService._serviceName;
@@ -368,7 +93,7 @@ export class FrontService extends Messenger implements ServiceListener, ServiceE
  * Build this class, typed and activated as a listener.
  * @returns  Service Listener object, awakened and ready to go.
  */
-export function createServiceListener(data: FrontConstructor): ServiceListener {
+export function createServiceListener(data: FrontConnectionDetails): ServiceListener {
 	return new FrontService(data, true);
 }
 
@@ -376,14 +101,6 @@ export function createServiceListener(data: FrontConstructor): ServiceListener {
  * Build this class, typed as an emitter.
  * @returns  Service Emitter object, ready for your events.
  */
-export function createServiceEmitter(data: FrontConstructor): ServiceEmitter {
-	return new FrontService(data, false);
-}
-
-/**
- * Build this class, typed as a message service.
- * @returns  Message Service object, ready to convert events.
- */
-export function createMessageService(data: FrontConstructor): Messenger {
+export function createServiceEmitter(data: FrontConnectionDetails): ServiceEmitter {
 	return new FrontService(data, false);
 }

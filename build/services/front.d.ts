@@ -1,25 +1,15 @@
 import * as Promise from 'bluebird';
-import { FrontConstructor, FrontEmitContext, FrontHandle } from './front-types';
-import { Messenger } from './messenger';
-import { MessengerEmitResponse, ReceiptContext, TransmitContext } from './messenger-types';
-import { ServiceEmitter, ServiceEvent, ServiceListener } from './service-types';
-export declare class FrontService extends Messenger implements ServiceListener, ServiceEmitter {
+import { FrontConnectionDetails, FrontEmitContext, FrontEvent, FrontHandle, FrontResponse } from './front-types';
+import { ServiceEmitter, ServiceListener } from './service-types';
+import { ServiceUtilities } from './service-utilities';
+export declare class FrontService extends ServiceUtilities<string> implements ServiceListener, ServiceEmitter {
     private static _serviceName;
     private session;
-    private data;
-    constructor(data: FrontConstructor, listen?: boolean);
-    fetchNotes: (thread: string, _room: string, filter: RegExp) => Promise<string[]>;
-    makeGeneric: (data: ServiceEvent) => Promise<ReceiptContext>;
-    makeSpecific: (data: TransmitContext) => Promise<FrontEmitContext>;
-    makeTagUpdate: (data: TransmitContext) => Promise<FrontEmitContext>;
-    translateEventName(eventType: string): string;
-    protected activateMessageListener: () => void;
-    protected sendPayload: (data: FrontEmitContext) => Promise<MessengerEmitResponse>;
-    private fetchUserId;
-    private findConversation;
+    constructor(data: FrontConnectionDetails, listen: boolean);
+    protected emitData(context: FrontEmitContext): Promise<FrontResponse>;
+    protected verify(_data: FrontEvent): boolean;
     readonly serviceName: string;
     readonly apiHandle: FrontHandle;
 }
-export declare function createServiceListener(data: FrontConstructor): ServiceListener;
-export declare function createServiceEmitter(data: FrontConstructor): ServiceEmitter;
-export declare function createMessageService(data: FrontConstructor): Messenger;
+export declare function createServiceListener(data: FrontConnectionDetails): ServiceListener;
+export declare function createServiceEmitter(data: FrontConnectionDetails): ServiceEmitter;

@@ -81,3 +81,7 @@ Whilst this is a [resin.io](http://resin.io) project, we welcome any contributio
 ## KeyframeBot
 
 * [KeyframeBot HowTo](https://resin-io-modules.github.io/resin-procbots/media/KeyframeBot/keyframebot.md)
+
+## NotifyBot
+
+* [NotifyBot HowTo](https://resin-io-modules.github.io/resin-procbots/media/NotifyBot/notifybot.md)
