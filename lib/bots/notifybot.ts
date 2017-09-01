@@ -182,8 +182,8 @@ const NotifyBotPort = 8399; // Not a listed registered port
  *   * https://help.waffle.io/faq/waffle-workflow/use-waffles-connect-keyword-to-connect-prs-to-issues
  * Additionally, this searches for the 'Connects-To:` keyword, which is specified by the Commit/PR guidelines.
  */
-const IssueRefRE = new RegExp('((?:close[sd]?|fix(?:e[sd]{1})?|resolve[sd]?):?|' +
-	'connect(?:(?:s|ed)?\\s+(?:to)?:?|s-to:))\\s+(#[0-9]+)', 'gi');
+const IssueRefRE = new RegExp('(?:close[sd]?|fix(?:e[sd]{1})?|resolve[sd]?):?|' +
+	'connect(?:(?:s|ed)?\\s+(?:to)?:?|s-to:)\\s+(#[0-9]+)', 'gi');
 
 /** The RegExp used to determine if an HQ issue is linked to from a component issue. */
 const HqRE = /hq:\s+https:\/\/github.com\/resin-io\/hq\/issues\/([0-9]+)/gi;
