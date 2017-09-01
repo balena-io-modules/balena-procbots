@@ -11,7 +11,6 @@ class ExpressionGenerator {
         const subtraction = ctx.SUBTRACTED() && ctx.BY();
         const multiplication = ctx.MULTIPLIED() && ctx.BY();
         const division = ctx.DIVIDED() && ctx.BY();
-        console.log(ctx.text);
         if (atomNumber) {
             const atomExpr = new ExpressionGenerator();
             atomExpr.parent = botStructure.currentExpression;
@@ -59,7 +58,6 @@ class ExpressionGenerator {
         const subtraction = ctx.SUBTRACTED() && ctx.BY();
         const multiplication = ctx.MULTIPLIED() && ctx.BY();
         const division = ctx.DIVIDED() && ctx.BY();
-        console.log('exit');
         if (atomNumber || atomString || atomBoolean || addition || subtraction || multiplication || division) {
             if (botStructure.currentExpression) {
                 const parent = botStructure.currentExpression.parent;

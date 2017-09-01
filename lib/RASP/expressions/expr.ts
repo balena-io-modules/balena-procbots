@@ -24,7 +24,6 @@ export class ExpressionGenerator implements Expression {
 		const multiplication = ctx.MULTIPLIED() && ctx.BY();
 		const division = ctx.DIVIDED() && ctx.BY();
 
-		console.log(ctx.text);
 		if (atomNumber) {
 			const atomExpr = new ExpressionGenerator();
 			atomExpr.parent = botStructure.currentExpression;
@@ -70,7 +69,6 @@ export class ExpressionGenerator implements Expression {
 		const subtraction = ctx.SUBTRACTED() && ctx.BY();
 		const multiplication = ctx.MULTIPLIED() && ctx.BY();
 		const division = ctx.DIVIDED() && ctx.BY();		
-		console.log('exit');
 		// If it's one of our atoms, we assign, else we skip as the actual parent
 		// rule will deal with it.
 		if (atomNumber || atomString || atomBoolean || addition || subtraction || multiplication || division) {

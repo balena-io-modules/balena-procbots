@@ -21,9 +21,6 @@ export declare class RASPParser extends Parser {
     static readonly T__10: number;
     static readonly T__11: number;
     static readonly T__12: number;
-    static readonly T__13: number;
-    static readonly T__14: number;
-    static readonly T__15: number;
     static readonly BOT: number;
     static readonly EVENT: number;
     static readonly EVENTS: number;
@@ -31,6 +28,10 @@ export declare class RASPParser extends Parser {
     static readonly RECEIVES: number;
     static readonly FROM: number;
     static readonly SEND: number;
+    static readonly IF: number;
+    static readonly ELSE: number;
+    static readonly EXIT: number;
+    static readonly END: number;
     static readonly QUERIES: number;
     static readonly TO: number;
     static readonly SET: number;
@@ -73,10 +74,11 @@ export declare class RASPParser extends Parser {
     static readonly RULE_statement: number;
     static readonly RULE_assignment: number;
     static readonly RULE_r_if: number;
+    static readonly RULE_r_if_elseif: number;
+    static readonly RULE_r_if_else: number;
     static readonly RULE_r_while: number;
     static readonly RULE_loop: number;
     static readonly RULE_print: number;
-    static readonly RULE_end: number;
     static readonly RULE_sendQuery: number;
     static readonly RULE_expr: number;
     static readonly RULE_serviceName: number;
@@ -112,10 +114,11 @@ export declare class RASPParser extends Parser {
     statement(): StatementContext;
     assignment(): AssignmentContext;
     r_if(): R_ifContext;
+    r_if_elseif(): R_if_elseifContext;
+    r_if_else(): R_if_elseContext;
     r_while(): R_whileContext;
     loop(): LoopContext;
     print(): PrintContext;
-    end(): EndContext;
     sendQuery(): SendQueryContext;
     expr(): ExprContext;
     expr(_p: number): ExprContext;
@@ -283,7 +286,7 @@ export declare class StatementContext extends ParserRuleContext {
     loop(): LoopContext | undefined;
     print(): PrintContext | undefined;
     sendQuery(): SendQueryContext | undefined;
-    end(): EndContext | undefined;
+    EXIT(): TerminalNode | undefined;
     constructor(parent: ParserRuleContext, invokingState: number);
     readonly ruleIndex: number;
     enterRule(listener: RASPListener): void;
@@ -291,7 +294,9 @@ export declare class StatementContext extends ParserRuleContext {
     accept<Result>(visitor: RASPVisitor<Result>): Result;
 }
 export declare class AssignmentContext extends ParserRuleContext {
+    SET(): TerminalNode;
     variable(): VariableContext;
+    AS(): TerminalNode;
     expr(): ExprContext;
     constructor(parent: ParserRuleContext, invokingState: number);
     readonly ruleIndex: number;
@@ -300,7 +305,34 @@ export declare class AssignmentContext extends ParserRuleContext {
     accept<Result>(visitor: RASPVisitor<Result>): Result;
 }
 export declare class R_ifContext extends ParserRuleContext {
+    IF(): TerminalNode;
     expr(): ExprContext;
+    END(): TerminalNode;
+    statement(): StatementContext[];
+    statement(i: number): StatementContext;
+    r_if_elseif(): R_if_elseifContext[];
+    r_if_elseif(i: number): R_if_elseifContext;
+    r_if_else(): R_if_elseContext | undefined;
+    constructor(parent: ParserRuleContext, invokingState: number);
+    readonly ruleIndex: number;
+    enterRule(listener: RASPListener): void;
+    exitRule(listener: RASPListener): void;
+    accept<Result>(visitor: RASPVisitor<Result>): Result;
+}
+export declare class R_if_elseifContext extends ParserRuleContext {
+    ELSE(): TerminalNode;
+    IF(): TerminalNode;
+    expr(): ExprContext;
+    statement(): StatementContext[];
+    statement(i: number): StatementContext;
+    constructor(parent: ParserRuleContext, invokingState: number);
+    readonly ruleIndex: number;
+    enterRule(listener: RASPListener): void;
+    exitRule(listener: RASPListener): void;
+    accept<Result>(visitor: RASPVisitor<Result>): Result;
+}
+export declare class R_if_elseContext extends ParserRuleContext {
+    ELSE(): TerminalNode;
     statement(): StatementContext[];
     statement(i: number): StatementContext;
     constructor(parent: ParserRuleContext, invokingState: number);
@@ -311,7 +343,9 @@ export declare class R_ifContext extends ParserRuleContext {
 }
 export declare class R_whileContext extends ParserRuleContext {
     expr(): ExprContext;
-    statement(): StatementContext;
+    END(): TerminalNode;
+    statement(): StatementContext[];
+    statement(i: number): StatementContext;
     constructor(parent: ParserRuleContext, invokingState: number);
     readonly ruleIndex: number;
     enterRule(listener: RASPListener): void;
@@ -321,6 +355,8 @@ export declare class R_whileContext extends ParserRuleContext {
 export declare class LoopContext extends ParserRuleContext {
     expr(): ExprContext[];
     expr(i: number): ExprContext;
+    statement(): StatementContext;
+    END(): TerminalNode;
     constructor(parent: ParserRuleContext, invokingState: number);
     readonly ruleIndex: number;
     enterRule(listener: RASPListener): void;
@@ -329,13 +365,6 @@ export declare class LoopContext extends ParserRuleContext {
 }
 export declare class PrintContext extends ParserRuleContext {
     expr(): ExprContext;
-    constructor(parent: ParserRuleContext, invokingState: number);
-    readonly ruleIndex: number;
-    enterRule(listener: RASPListener): void;
-    exitRule(listener: RASPListener): void;
-    accept<Result>(visitor: RASPVisitor<Result>): Result;
-}
-export declare class EndContext extends ParserRuleContext {
     constructor(parent: ParserRuleContext, invokingState: number);
     readonly ruleIndex: number;
     enterRule(listener: RASPListener): void;

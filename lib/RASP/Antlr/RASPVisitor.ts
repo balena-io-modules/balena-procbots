@@ -18,10 +18,11 @@ import { ListenerErrorContext } from './RASPParser';
 import { StatementContext } from './RASPParser';
 import { AssignmentContext } from './RASPParser';
 import { R_ifContext } from './RASPParser';
+import { R_if_elseifContext } from './RASPParser';
+import { R_if_elseContext } from './RASPParser';
 import { R_whileContext } from './RASPParser';
 import { LoopContext } from './RASPParser';
 import { PrintContext } from './RASPParser';
-import { EndContext } from './RASPParser';
 import { SendQueryContext } from './RASPParser';
 import { ExprContext } from './RASPParser';
 import { ServiceNameContext } from './RASPParser';
@@ -149,6 +150,20 @@ export interface RASPVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitR_if?: (ctx: R_ifContext) => Result;
 
 	/**
+	 * Visit a parse tree produced by `RASPParser.r_if_elseif`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitR_if_elseif?: (ctx: R_if_elseifContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `RASPParser.r_if_else`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitR_if_else?: (ctx: R_if_elseContext) => Result;
+
+	/**
 	 * Visit a parse tree produced by `RASPParser.r_while`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -168,13 +183,6 @@ export interface RASPVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitPrint?: (ctx: PrintContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by `RASPParser.end`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitEnd?: (ctx: EndContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `RASPParser.sendQuery`.

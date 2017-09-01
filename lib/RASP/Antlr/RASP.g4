@@ -30,40 +30,41 @@ listenerMethod: METHOD ID (RECEIVES listenerEventReceiver (',' listenerEventRece
 listenerEventReceiver: events EVENTS FROM serviceName; // This needs to get shared with requestServiceEvents
 listenerError: ERRORMETHOD ID statement*;
 
-statement: method |
-		   assignment |
-		   r_if |
-		   r_while |
-		   loop |
-		   print |
-		   sendQuery |
-		   end;
+statement:	method |
+		assignment |
+		r_if |
+		r_while |
+		loop |
+		print |
+		sendQuery |
+		EXIT;
 
-assignment: 'set' variable 'as' expr;
-r_if: 'if' expr statement ('else' 'if' statement)* ('else' statement)?;
-r_while: 'while' expr statement;
-loop: 'loop' 'from' expr 'to' expr;
+assignment: SET variable AS expr;
+r_if: IF expr statement+ r_if_elseif* r_if_else? END;
+r_if_elseif: ELSE IF expr statement+;
+r_if_else: ELSE statement+;
+r_while: 'while' expr statement+ END;
+loop: 'loop' 'from' expr 'to' expr statement END;
 print: 'print' expr;
-end: 'end';
 sendQuery: setIdFrom? QUERY ID* object;
 
 expr: expr MULTIPLIED BY expr |
-	  expr DIVIDED BY expr |
-	  expr ADDED TO expr |
-	  expr SUBTRACTED BY expr |
-	  expr AND expr |
-	  expr OR expr |
-	  expr IS expr |
-	  expr IS NOT expr|
-	  array |
-	  method |
-	  stringMethod |
-	  variable |
-	  object |
-	  //precedence |
-	  NUMBER |
-	  STRING |
-	  BOOLEAN;
+	expr DIVIDED BY expr |
+	expr ADDED TO expr |
+	expr SUBTRACTED BY expr |
+	expr AND expr |
+	expr OR expr |
+	expr IS expr |
+	expr IS NOT expr|
+	array |
+	method |
+	stringMethod |
+	variable |
+	object |
+	//precedence |
+	NUMBER |
+	STRING |
+	BOOLEAN;
 
 serviceName: ID;
 // Bugger, this doesn't work, but it should. Suspect issue with the TS parser generation code
@@ -84,43 +85,47 @@ stringMethod: STRING '.' method;
 envvar: 'envar' ID;
 
 // Keywords
-BOT		 : 'bot';
-EVENT	   : 'event';
-EVENTS	  : 'events';
+BOT			: 'bot';
+EVENT		: 'event';
+EVENTS		: 'events';
 RECEIVER	: 'receiver';
 RECEIVES	: 'receives';
 FROM		: 'from';
 SEND		: 'send';
-QUERIES	 : 'queries';
-TO		  : 'to';
-SET		 : 'set';
-AS		  : 'as';
-ADDED	   : 'added';
-SUBTRACTED  : 'subtracted';
-MULTIPLIED  : 'multiplied';
-DIVIDED	 : 'divided';
-BY		  : 'by';
-AND		 : 'and';
-OR		  : 'or';
-IS		  : 'is';
-NOT		 : 'not';
-QUERY	   : 'query';
-METHOD	  : 'listenerMethod';
+IF			: 'if';
+ELSE		: 'else';
+EXIT		: 'exit';
+END			: 'end';
+QUERIES	: 'queries';
+TO		: 'to';
+SET		: 'set';
+AS		: 'as';
+ADDED		: 'added';
+SUBTRACTED	: 'subtracted';
+MULTIPLIED	: 'multiplied';
+DIVIDED	: 'divided';
+BY		: 'by';
+AND		: 'and';
+OR		: 'or';
+IS		: 'is';
+NOT		: 'not';
+QUERY		: 'query';
+METHOD	: 'listenerMethod';
 ERRORMETHOD : 'listenerErrorMethod';
 
-fragment DIGIT   : [0-9];
-fragment ALPHA   : [a-zA-Z];
-fragment HEX	 : [a-fA-F0-9];
+fragment DIGIT	: [0-9];
+fragment ALPHA	: [a-zA-Z];
+fragment HEX	: [a-fA-F0-9];
 
-STRING	  : '\'' (ESC|.)*? '\'';
-ESC		 : '\\' [btnr'\\];
-ID		  : ALPHA (ALPHA | DIGIT | '_' | '-')*;
-BOOLEAN	 : 'true' | 'false';
-NUMBER	  : INT | FLOAT | HEXNUMBER;
-FLOAT	   : DIGIT+ '.' DIGIT+ |
+STRING		: '\'' (ESC|.)*? '\'';
+ESC			: '\\' [btnr'\\];
+ID			: ALPHA (ALPHA | DIGIT | '_' | '-')*;
+BOOLEAN		: 'true' | 'false';
+NUMBER		: INT | FLOAT | HEXNUMBER;
+FLOAT			: DIGIT+ '.' DIGIT+ |
 			  '.' DIGIT+;
-INT		 : DIGIT+;
-HEXNUMBER   : HEX+;
-COMMENT	 : '/*' .*? '*/' -> skip;
-LINE_COMMENT: '//' .*? '\n' -> skip;
-WS		  :  [ \t\r\n]+ -> skip;
+INT			: DIGIT+;
+HEXNUMBER		: HEX+;
+COMMENT		: '/*' .*? '*/' -> skip;
+LINE_COMMENT	: '//' .*? '\n' -> skip;
+WS			:  [ \t\r\n]+ -> skip;

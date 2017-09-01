@@ -18,10 +18,11 @@ import { ListenerErrorContext } from './RASPParser';
 import { StatementContext } from './RASPParser';
 import { AssignmentContext } from './RASPParser';
 import { R_ifContext } from './RASPParser';
+import { R_if_elseifContext } from './RASPParser';
+import { R_if_elseContext } from './RASPParser';
 import { R_whileContext } from './RASPParser';
 import { LoopContext } from './RASPParser';
 import { PrintContext } from './RASPParser';
-import { EndContext } from './RASPParser';
 import { SendQueryContext } from './RASPParser';
 import { ExprContext } from './RASPParser';
 import { ServiceNameContext } from './RASPParser';
@@ -206,6 +207,28 @@ export interface RASPListener extends ParseTreeListener {
 	exitR_if?: (ctx: R_ifContext) => void;
 
 	/**
+	 * Enter a parse tree produced by `RASPParser.r_if_elseif`.
+	 * @param ctx the parse tree
+	 */
+	enterR_if_elseif?: (ctx: R_if_elseifContext) => void;
+	/**
+	 * Exit a parse tree produced by `RASPParser.r_if_elseif`.
+	 * @param ctx the parse tree
+	 */
+	exitR_if_elseif?: (ctx: R_if_elseifContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `RASPParser.r_if_else`.
+	 * @param ctx the parse tree
+	 */
+	enterR_if_else?: (ctx: R_if_elseContext) => void;
+	/**
+	 * Exit a parse tree produced by `RASPParser.r_if_else`.
+	 * @param ctx the parse tree
+	 */
+	exitR_if_else?: (ctx: R_if_elseContext) => void;
+
+	/**
 	 * Enter a parse tree produced by `RASPParser.r_while`.
 	 * @param ctx the parse tree
 	 */
@@ -237,17 +260,6 @@ export interface RASPListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitPrint?: (ctx: PrintContext) => void;
-
-	/**
-	 * Enter a parse tree produced by `RASPParser.end`.
-	 * @param ctx the parse tree
-	 */
-	enterEnd?: (ctx: EndContext) => void;
-	/**
-	 * Exit a parse tree produced by `RASPParser.end`.
-	 * @param ctx the parse tree
-	 */
-	exitEnd?: (ctx: EndContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `RASPParser.sendQuery`.

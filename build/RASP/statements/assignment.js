@@ -1,17 +1,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const _ = require("lodash");
-const helpers_1 = require("../helpers");
 class AssignmentStatementGenerator {
     constructor() {
         this.type = 0;
     }
     static enterAssignment(ctx, bot) {
-        if (bot.currentEventRegistration) {
-            throw new Error('There is already a event registration being constructed, error');
-        }
         bot.currentStatement = {
-            type: 0
+            type: 0,
+            parent: bot.currentStatement
         };
     }
     static exitAssignment(_ctx, bot) {
@@ -22,25 +19,28 @@ class AssignmentStatementGenerator {
             const assignment = bot.currentStatement;
             assignment.name = variable.name;
             assignment.value = variable.value;
-            helpers_1.DebugExpression(bot.currentExpression);
-        }
-        if (bot.currentListenerMethod) {
-            if (!bot.currentListenerMethod.statements) {
-                bot.currentListenerMethod.statements = [];
+            if (bot.currentListenerMethod) {
+                const parent = bot.currentStatement.parent;
+                if (parent && parent.assignChild) {
+                    parent.assignChild(bot.currentStatement);
+                    bot.currentStatement = parent;
+                }
+                else {
+                    if (!bot.currentListenerMethod.statements) {
+                        bot.currentListenerMethod.statements = [];
+                    }
+                    bot.currentListenerMethod.statements.push(bot.currentStatement);
+                    bot.currentStatement = undefined;
+                }
             }
-            assignmentContext = bot.currentListenerMethod.statements;
-        }
-        else {
-            if (!bot.assignments) {
-                bot.assignments = [];
+            else {
+                if (!bot.assignments) {
+                    bot.assignments = [];
+                }
+                bot.assignments.push(bot.currentStatement);
             }
-            assignmentContext = bot.assignments;
+            bot.currentExpression = undefined;
         }
-        if (bot.currentStatement) {
-            assignmentContext.push(bot.currentStatement);
-        }
-        bot.currentStatement = undefined;
-        bot.currentExpression = undefined;
     }
 }
 exports.AssignmentStatementGenerator = AssignmentStatementGenerator;

@@ -34,20 +34,20 @@ class RASPParser extends Parser_1.Parser {
         let _localctx = new InitContext(this._ctx, this.state);
         this.enterRule(_localctx, 0, RASPParser.RULE_init);
         try {
-            this.state = 62;
+            this.state = 64;
             this._errHandler.sync(this);
             switch (this._input.LA(1)) {
                 case RASPParser.BOT:
                     this.enterOuterAlt(_localctx, 1);
                     {
-                        this.state = 60;
+                        this.state = 62;
                         this.botDefinition();
                     }
                     break;
                 case RASPParser.EOF:
                     this.enterOuterAlt(_localctx, 2);
                     {
-                        this.state = 61;
+                        this.state = 63;
                         this.match(RASPParser.EOF);
                     }
                     break;
@@ -77,25 +77,25 @@ class RASPParser extends Parser_1.Parser {
         try {
             this.enterOuterAlt(_localctx, 1);
             {
-                this.state = 64;
-                this.match(RASPParser.BOT);
-                this.state = 65;
-                this.match(RASPParser.T__0);
                 this.state = 66;
-                this.match(RASPParser.ID);
+                this.match(RASPParser.BOT);
                 this.state = 67;
+                this.match(RASPParser.T__0);
+                this.state = 68;
+                this.match(RASPParser.ID);
+                this.state = 69;
                 this.match(RASPParser.T__1);
-                this.state = 71;
+                this.state = 73;
                 this._errHandler.sync(this);
                 _la = this._input.LA(1);
-                while (((((_la - 18)) & ~0x1F) === 0 && ((1 << (_la - 18)) & ((1 << (RASPParser.EVENT - 18)) | (1 << (RASPParser.SEND - 18)) | (1 << (RASPParser.SET - 18)) | (1 << (RASPParser.METHOD - 18)) | (1 << (RASPParser.ERRORMETHOD - 18)) | (1 << (RASPParser.ID - 18)))) !== 0)) {
+                while (((((_la - 15)) & ~0x1F) === 0 && ((1 << (_la - 15)) & ((1 << (RASPParser.EVENT - 15)) | (1 << (RASPParser.SEND - 15)) | (1 << (RASPParser.SET - 15)) | (1 << (RASPParser.METHOD - 15)) | (1 << (RASPParser.ERRORMETHOD - 15)) | (1 << (RASPParser.ID - 15)))) !== 0)) {
                     {
                         {
-                            this.state = 68;
+                            this.state = 70;
                             this.botBody();
                         }
                     }
-                    this.state = 73;
+                    this.state = 75;
                     this._errHandler.sync(this);
                     _la = this._input.LA(1);
                 }
@@ -120,55 +120,55 @@ class RASPParser extends Parser_1.Parser {
         let _localctx = new BotBodyContext(this._ctx, this.state);
         this.enterRule(_localctx, 4, RASPParser.RULE_botBody);
         try {
-            this.state = 81;
+            this.state = 83;
             this._errHandler.sync(this);
             switch (this.interpreter.adaptivePredict(this._input, 2, this._ctx)) {
                 case 1:
                     this.enterOuterAlt(_localctx, 1);
                     {
-                        this.state = 74;
+                        this.state = 76;
                         this.addListener();
                     }
                     break;
                 case 2:
                     this.enterOuterAlt(_localctx, 2);
                     {
-                        this.state = 75;
+                        this.state = 77;
                         this.addEmitter();
                     }
                     break;
                 case 3:
                     this.enterOuterAlt(_localctx, 3);
                     {
-                        this.state = 76;
+                        this.state = 78;
                         this.requestServiceEvents();
                     }
                     break;
                 case 4:
                     this.enterOuterAlt(_localctx, 4);
                     {
-                        this.state = 77;
+                        this.state = 79;
                         this.listenerMethod();
                     }
                     break;
                 case 5:
                     this.enterOuterAlt(_localctx, 5);
                     {
-                        this.state = 78;
+                        this.state = 80;
                         this.listenerError();
                     }
                     break;
                 case 6:
                     this.enterOuterAlt(_localctx, 6);
                     {
-                        this.state = 79;
+                        this.state = 81;
                         this.method();
                     }
                     break;
                 case 7:
                     this.enterOuterAlt(_localctx, 7);
                     {
-                        this.state = 80;
+                        this.state = 82;
                         this.assignment();
                     }
                     break;
@@ -196,35 +196,35 @@ class RASPParser extends Parser_1.Parser {
         try {
             this.enterOuterAlt(_localctx, 1);
             {
-                this.state = 84;
+                this.state = 86;
                 this._errHandler.sync(this);
                 _la = this._input.LA(1);
                 if (_la === RASPParser.SET) {
                     {
-                        this.state = 83;
+                        this.state = 85;
                         this.setServiceAs();
                     }
                 }
-                this.state = 86;
-                this.match(RASPParser.EVENT);
-                this.state = 87;
-                this.match(RASPParser.RECEIVER);
                 this.state = 88;
-                this.match(RASPParser.FROM);
+                this.match(RASPParser.EVENT);
                 this.state = 89;
+                this.match(RASPParser.RECEIVER);
+                this.state = 90;
+                this.match(RASPParser.FROM);
+                this.state = 91;
                 this.serviceName();
-                this.state = 92;
+                this.state = 94;
                 this._errHandler.sync(this);
                 switch (this.interpreter.adaptivePredict(this._input, 4, this._ctx)) {
                     case 1:
                         {
-                            this.state = 90;
+                            this.state = 92;
                             this.object();
                         }
                         break;
                     case 2:
                         {
-                            this.state = 91;
+                            this.state = 93;
                             this.variable();
                         }
                         break;
@@ -253,35 +253,35 @@ class RASPParser extends Parser_1.Parser {
         try {
             this.enterOuterAlt(_localctx, 1);
             {
-                this.state = 95;
+                this.state = 97;
                 this._errHandler.sync(this);
                 _la = this._input.LA(1);
                 if (_la === RASPParser.SET) {
                     {
-                        this.state = 94;
+                        this.state = 96;
                         this.setServiceAs();
                     }
                 }
-                this.state = 97;
-                this.match(RASPParser.SEND);
-                this.state = 98;
-                this.match(RASPParser.QUERIES);
                 this.state = 99;
-                this.match(RASPParser.TO);
+                this.match(RASPParser.SEND);
                 this.state = 100;
+                this.match(RASPParser.QUERIES);
+                this.state = 101;
+                this.match(RASPParser.TO);
+                this.state = 102;
                 this.serviceName();
-                this.state = 103;
+                this.state = 105;
                 this._errHandler.sync(this);
                 switch (this.interpreter.adaptivePredict(this._input, 6, this._ctx)) {
                     case 1:
                         {
-                            this.state = 101;
+                            this.state = 103;
                             this.object();
                         }
                         break;
                     case 2:
                         {
-                            this.state = 102;
+                            this.state = 104;
                             this.variable();
                         }
                         break;
@@ -309,19 +309,19 @@ class RASPParser extends Parser_1.Parser {
         try {
             this.enterOuterAlt(_localctx, 1);
             {
-                this.state = 105;
-                this.match(RASPParser.SEND);
-                this.state = 106;
-                this.events();
                 this.state = 107;
-                this.match(RASPParser.EVENTS);
+                this.match(RASPParser.SEND);
                 this.state = 108;
-                this.match(RASPParser.FROM);
+                this.events();
                 this.state = 109;
-                this.serviceName();
+                this.match(RASPParser.EVENTS);
                 this.state = 110;
-                this.match(RASPParser.TO);
+                this.match(RASPParser.FROM);
                 this.state = 111;
+                this.serviceName();
+                this.state = 112;
+                this.match(RASPParser.TO);
+                this.state = 113;
                 this.match(RASPParser.ID);
             }
         }
@@ -347,27 +347,27 @@ class RASPParser extends Parser_1.Parser {
         try {
             this.enterOuterAlt(_localctx, 1);
             {
-                this.state = 113;
+                this.state = 115;
                 this.match(RASPParser.T__2);
-                this.state = 114;
+                this.state = 116;
                 this.match(RASPParser.ID);
-                this.state = 119;
+                this.state = 121;
                 this._errHandler.sync(this);
                 _la = this._input.LA(1);
                 while (_la === RASPParser.T__3) {
                     {
                         {
-                            this.state = 115;
+                            this.state = 117;
                             this.match(RASPParser.T__3);
-                            this.state = 116;
+                            this.state = 118;
                             this.match(RASPParser.ID);
                         }
                     }
-                    this.state = 121;
+                    this.state = 123;
                     this._errHandler.sync(this);
                     _la = this._input.LA(1);
                 }
-                this.state = 122;
+                this.state = 124;
                 this.match(RASPParser.T__4);
             }
         }
@@ -392,11 +392,11 @@ class RASPParser extends Parser_1.Parser {
         try {
             this.enterOuterAlt(_localctx, 1);
             {
-                this.state = 124;
-                this.match(RASPParser.SET);
-                this.state = 125;
-                this.match(RASPParser.ID);
                 this.state = 126;
+                this.match(RASPParser.SET);
+                this.state = 127;
+                this.match(RASPParser.ID);
+                this.state = 128;
                 this.match(RASPParser.AS);
             }
         }
@@ -421,11 +421,11 @@ class RASPParser extends Parser_1.Parser {
         try {
             this.enterOuterAlt(_localctx, 1);
             {
-                this.state = 128;
-                this.match(RASPParser.SET);
-                this.state = 129;
-                this.match(RASPParser.ID);
                 this.state = 130;
+                this.match(RASPParser.SET);
+                this.state = 131;
+                this.match(RASPParser.ID);
+                this.state = 132;
                 this.match(RASPParser.FROM);
             }
         }
@@ -452,50 +452,50 @@ class RASPParser extends Parser_1.Parser {
             let _alt;
             this.enterOuterAlt(_localctx, 1);
             {
-                this.state = 132;
+                this.state = 134;
                 this.match(RASPParser.METHOD);
-                this.state = 133;
+                this.state = 135;
                 this.match(RASPParser.ID);
-                this.state = 143;
+                this.state = 145;
                 this._errHandler.sync(this);
                 _la = this._input.LA(1);
                 if (_la === RASPParser.RECEIVES) {
                     {
-                        this.state = 134;
+                        this.state = 136;
                         this.match(RASPParser.RECEIVES);
-                        this.state = 135;
+                        this.state = 137;
                         this.listenerEventReceiver();
-                        this.state = 140;
+                        this.state = 142;
                         this._errHandler.sync(this);
                         _la = this._input.LA(1);
                         while (_la === RASPParser.T__3) {
                             {
                                 {
-                                    this.state = 136;
+                                    this.state = 138;
                                     this.match(RASPParser.T__3);
-                                    this.state = 137;
+                                    this.state = 139;
                                     this.listenerEventReceiver();
                                 }
                             }
-                            this.state = 142;
+                            this.state = 144;
                             this._errHandler.sync(this);
                             _la = this._input.LA(1);
                         }
                     }
                 }
-                this.state = 148;
+                this.state = 150;
                 this._errHandler.sync(this);
                 _alt = this.interpreter.adaptivePredict(this._input, 10, this._ctx);
                 while (_alt !== 2 && _alt !== ATN_1.ATN.INVALID_ALT_NUMBER) {
                     if (_alt === 1) {
                         {
                             {
-                                this.state = 145;
+                                this.state = 147;
                                 this.statement();
                             }
                         }
                     }
-                    this.state = 150;
+                    this.state = 152;
                     this._errHandler.sync(this);
                     _alt = this.interpreter.adaptivePredict(this._input, 10, this._ctx);
                 }
@@ -522,13 +522,13 @@ class RASPParser extends Parser_1.Parser {
         try {
             this.enterOuterAlt(_localctx, 1);
             {
-                this.state = 151;
-                this.events();
-                this.state = 152;
-                this.match(RASPParser.EVENTS);
                 this.state = 153;
-                this.match(RASPParser.FROM);
+                this.events();
                 this.state = 154;
+                this.match(RASPParser.EVENTS);
+                this.state = 155;
+                this.match(RASPParser.FROM);
+                this.state = 156;
                 this.serviceName();
             }
         }
@@ -554,23 +554,23 @@ class RASPParser extends Parser_1.Parser {
             let _alt;
             this.enterOuterAlt(_localctx, 1);
             {
-                this.state = 156;
+                this.state = 158;
                 this.match(RASPParser.ERRORMETHOD);
-                this.state = 157;
+                this.state = 159;
                 this.match(RASPParser.ID);
-                this.state = 161;
+                this.state = 163;
                 this._errHandler.sync(this);
                 _alt = this.interpreter.adaptivePredict(this._input, 11, this._ctx);
                 while (_alt !== 2 && _alt !== ATN_1.ATN.INVALID_ALT_NUMBER) {
                     if (_alt === 1) {
                         {
                             {
-                                this.state = 158;
+                                this.state = 160;
                                 this.statement();
                             }
                         }
                     }
-                    this.state = 163;
+                    this.state = 165;
                     this._errHandler.sync(this);
                     _alt = this.interpreter.adaptivePredict(this._input, 11, this._ctx);
                 }
@@ -595,63 +595,63 @@ class RASPParser extends Parser_1.Parser {
         let _localctx = new StatementContext(this._ctx, this.state);
         this.enterRule(_localctx, 24, RASPParser.RULE_statement);
         try {
-            this.state = 172;
+            this.state = 174;
             this._errHandler.sync(this);
             switch (this.interpreter.adaptivePredict(this._input, 12, this._ctx)) {
                 case 1:
                     this.enterOuterAlt(_localctx, 1);
                     {
-                        this.state = 164;
+                        this.state = 166;
                         this.method();
                     }
                     break;
                 case 2:
                     this.enterOuterAlt(_localctx, 2);
                     {
-                        this.state = 165;
+                        this.state = 167;
                         this.assignment();
                     }
                     break;
                 case 3:
                     this.enterOuterAlt(_localctx, 3);
                     {
-                        this.state = 166;
+                        this.state = 168;
                         this.r_if();
                     }
                     break;
                 case 4:
                     this.enterOuterAlt(_localctx, 4);
                     {
-                        this.state = 167;
+                        this.state = 169;
                         this.r_while();
                     }
                     break;
                 case 5:
                     this.enterOuterAlt(_localctx, 5);
                     {
-                        this.state = 168;
+                        this.state = 170;
                         this.loop();
                     }
                     break;
                 case 6:
                     this.enterOuterAlt(_localctx, 6);
                     {
-                        this.state = 169;
+                        this.state = 171;
                         this.print();
                     }
                     break;
                 case 7:
                     this.enterOuterAlt(_localctx, 7);
                     {
-                        this.state = 170;
+                        this.state = 172;
                         this.sendQuery();
                     }
                     break;
                 case 8:
                     this.enterOuterAlt(_localctx, 8);
                     {
-                        this.state = 171;
-                        this.end();
+                        this.state = 173;
+                        this.match(RASPParser.EXIT);
                     }
                     break;
             }
@@ -677,13 +677,13 @@ class RASPParser extends Parser_1.Parser {
         try {
             this.enterOuterAlt(_localctx, 1);
             {
-                this.state = 174;
-                this.match(RASPParser.SET);
-                this.state = 175;
-                this.variable();
                 this.state = 176;
-                this.match(RASPParser.AS);
+                this.match(RASPParser.SET);
                 this.state = 177;
+                this.variable();
+                this.state = 178;
+                this.match(RASPParser.AS);
+                this.state = 179;
                 this.expr(0);
             }
         }
@@ -705,48 +705,140 @@ class RASPParser extends Parser_1.Parser {
     r_if() {
         let _localctx = new R_ifContext(this._ctx, this.state);
         this.enterRule(_localctx, 28, RASPParser.RULE_r_if);
+        let _la;
         try {
             let _alt;
             this.enterOuterAlt(_localctx, 1);
             {
-                this.state = 179;
-                this.match(RASPParser.T__5);
-                this.state = 180;
-                this.expr(0);
                 this.state = 181;
-                this.statement();
-                this.state = 187;
+                this.match(RASPParser.IF);
+                this.state = 182;
+                this.expr(0);
+                this.state = 184;
                 this._errHandler.sync(this);
-                _alt = this.interpreter.adaptivePredict(this._input, 13, this._ctx);
+                _la = this._input.LA(1);
+                do {
+                    {
+                        {
+                            this.state = 183;
+                            this.statement();
+                        }
+                    }
+                    this.state = 186;
+                    this._errHandler.sync(this);
+                    _la = this._input.LA(1);
+                } while ((((_la) & ~0x1F) === 0 && ((1 << _la) & ((1 << RASPParser.T__5) | (1 << RASPParser.T__6) | (1 << RASPParser.T__7) | (1 << RASPParser.IF) | (1 << RASPParser.EXIT) | (1 << RASPParser.SET))) !== 0) || _la === RASPParser.QUERY || _la === RASPParser.ID);
+                this.state = 191;
+                this._errHandler.sync(this);
+                _alt = this.interpreter.adaptivePredict(this._input, 14, this._ctx);
                 while (_alt !== 2 && _alt !== ATN_1.ATN.INVALID_ALT_NUMBER) {
                     if (_alt === 1) {
                         {
                             {
-                                this.state = 182;
-                                this.match(RASPParser.T__6);
-                                this.state = 183;
-                                this.match(RASPParser.T__5);
-                                this.state = 184;
-                                this.statement();
+                                this.state = 188;
+                                this.r_if_elseif();
                             }
                         }
                     }
-                    this.state = 189;
+                    this.state = 193;
                     this._errHandler.sync(this);
-                    _alt = this.interpreter.adaptivePredict(this._input, 13, this._ctx);
+                    _alt = this.interpreter.adaptivePredict(this._input, 14, this._ctx);
                 }
-                this.state = 192;
+                this.state = 195;
                 this._errHandler.sync(this);
-                switch (this.interpreter.adaptivePredict(this._input, 14, this._ctx)) {
-                    case 1:
+                _la = this._input.LA(1);
+                if (_la === RASPParser.ELSE) {
+                    {
+                        this.state = 194;
+                        this.r_if_else();
+                    }
+                }
+                this.state = 197;
+                this.match(RASPParser.END);
+            }
+        }
+        catch (re) {
+            if (re instanceof RecognitionException_1.RecognitionException) {
+                _localctx.exception = re;
+                this._errHandler.reportError(this, re);
+                this._errHandler.recover(this, re);
+            }
+            else {
+                throw re;
+            }
+        }
+        finally {
+            this.exitRule();
+        }
+        return _localctx;
+    }
+    r_if_elseif() {
+        let _localctx = new R_if_elseifContext(this._ctx, this.state);
+        this.enterRule(_localctx, 30, RASPParser.RULE_r_if_elseif);
+        let _la;
+        try {
+            this.enterOuterAlt(_localctx, 1);
+            {
+                this.state = 199;
+                this.match(RASPParser.ELSE);
+                this.state = 200;
+                this.match(RASPParser.IF);
+                this.state = 201;
+                this.expr(0);
+                this.state = 203;
+                this._errHandler.sync(this);
+                _la = this._input.LA(1);
+                do {
+                    {
                         {
-                            this.state = 190;
-                            this.match(RASPParser.T__6);
-                            this.state = 191;
+                            this.state = 202;
                             this.statement();
                         }
-                        break;
-                }
+                    }
+                    this.state = 205;
+                    this._errHandler.sync(this);
+                    _la = this._input.LA(1);
+                } while ((((_la) & ~0x1F) === 0 && ((1 << _la) & ((1 << RASPParser.T__5) | (1 << RASPParser.T__6) | (1 << RASPParser.T__7) | (1 << RASPParser.IF) | (1 << RASPParser.EXIT) | (1 << RASPParser.SET))) !== 0) || _la === RASPParser.QUERY || _la === RASPParser.ID);
+            }
+        }
+        catch (re) {
+            if (re instanceof RecognitionException_1.RecognitionException) {
+                _localctx.exception = re;
+                this._errHandler.reportError(this, re);
+                this._errHandler.recover(this, re);
+            }
+            else {
+                throw re;
+            }
+        }
+        finally {
+            this.exitRule();
+        }
+        return _localctx;
+    }
+    r_if_else() {
+        let _localctx = new R_if_elseContext(this._ctx, this.state);
+        this.enterRule(_localctx, 32, RASPParser.RULE_r_if_else);
+        let _la;
+        try {
+            this.enterOuterAlt(_localctx, 1);
+            {
+                this.state = 207;
+                this.match(RASPParser.ELSE);
+                this.state = 209;
+                this._errHandler.sync(this);
+                _la = this._input.LA(1);
+                do {
+                    {
+                        {
+                            this.state = 208;
+                            this.statement();
+                        }
+                    }
+                    this.state = 211;
+                    this._errHandler.sync(this);
+                    _la = this._input.LA(1);
+                } while ((((_la) & ~0x1F) === 0 && ((1 << _la) & ((1 << RASPParser.T__5) | (1 << RASPParser.T__6) | (1 << RASPParser.T__7) | (1 << RASPParser.IF) | (1 << RASPParser.EXIT) | (1 << RASPParser.SET))) !== 0) || _la === RASPParser.QUERY || _la === RASPParser.ID);
             }
         }
         catch (re) {
@@ -766,16 +858,31 @@ class RASPParser extends Parser_1.Parser {
     }
     r_while() {
         let _localctx = new R_whileContext(this._ctx, this.state);
-        this.enterRule(_localctx, 30, RASPParser.RULE_r_while);
+        this.enterRule(_localctx, 34, RASPParser.RULE_r_while);
+        let _la;
         try {
             this.enterOuterAlt(_localctx, 1);
             {
-                this.state = 194;
-                this.match(RASPParser.T__7);
-                this.state = 195;
+                this.state = 213;
+                this.match(RASPParser.T__5);
+                this.state = 214;
                 this.expr(0);
-                this.state = 196;
-                this.statement();
+                this.state = 216;
+                this._errHandler.sync(this);
+                _la = this._input.LA(1);
+                do {
+                    {
+                        {
+                            this.state = 215;
+                            this.statement();
+                        }
+                    }
+                    this.state = 218;
+                    this._errHandler.sync(this);
+                    _la = this._input.LA(1);
+                } while ((((_la) & ~0x1F) === 0 && ((1 << _la) & ((1 << RASPParser.T__5) | (1 << RASPParser.T__6) | (1 << RASPParser.T__7) | (1 << RASPParser.IF) | (1 << RASPParser.EXIT) | (1 << RASPParser.SET))) !== 0) || _la === RASPParser.QUERY || _la === RASPParser.ID);
+                this.state = 220;
+                this.match(RASPParser.END);
             }
         }
         catch (re) {
@@ -795,20 +902,24 @@ class RASPParser extends Parser_1.Parser {
     }
     loop() {
         let _localctx = new LoopContext(this._ctx, this.state);
-        this.enterRule(_localctx, 32, RASPParser.RULE_loop);
+        this.enterRule(_localctx, 36, RASPParser.RULE_loop);
         try {
             this.enterOuterAlt(_localctx, 1);
             {
-                this.state = 198;
-                this.match(RASPParser.T__8);
-                this.state = 199;
+                this.state = 222;
+                this.match(RASPParser.T__6);
+                this.state = 223;
                 this.match(RASPParser.FROM);
-                this.state = 200;
+                this.state = 224;
                 this.expr(0);
-                this.state = 201;
+                this.state = 225;
                 this.match(RASPParser.TO);
-                this.state = 202;
+                this.state = 226;
                 this.expr(0);
+                this.state = 227;
+                this.statement();
+                this.state = 228;
+                this.match(RASPParser.END);
             }
         }
         catch (re) {
@@ -828,39 +939,14 @@ class RASPParser extends Parser_1.Parser {
     }
     print() {
         let _localctx = new PrintContext(this._ctx, this.state);
-        this.enterRule(_localctx, 34, RASPParser.RULE_print);
+        this.enterRule(_localctx, 38, RASPParser.RULE_print);
         try {
             this.enterOuterAlt(_localctx, 1);
             {
-                this.state = 204;
-                this.match(RASPParser.T__9);
-                this.state = 205;
+                this.state = 230;
+                this.match(RASPParser.T__7);
+                this.state = 231;
                 this.expr(0);
-            }
-        }
-        catch (re) {
-            if (re instanceof RecognitionException_1.RecognitionException) {
-                _localctx.exception = re;
-                this._errHandler.reportError(this, re);
-                this._errHandler.recover(this, re);
-            }
-            else {
-                throw re;
-            }
-        }
-        finally {
-            this.exitRule();
-        }
-        return _localctx;
-    }
-    end() {
-        let _localctx = new EndContext(this._ctx, this.state);
-        this.enterRule(_localctx, 36, RASPParser.RULE_end);
-        try {
-            this.enterOuterAlt(_localctx, 1);
-            {
-                this.state = 207;
-                this.match(RASPParser.T__10);
             }
         }
         catch (re) {
@@ -880,37 +966,37 @@ class RASPParser extends Parser_1.Parser {
     }
     sendQuery() {
         let _localctx = new SendQueryContext(this._ctx, this.state);
-        this.enterRule(_localctx, 38, RASPParser.RULE_sendQuery);
+        this.enterRule(_localctx, 40, RASPParser.RULE_sendQuery);
         let _la;
         try {
             this.enterOuterAlt(_localctx, 1);
             {
-                this.state = 210;
+                this.state = 234;
                 this._errHandler.sync(this);
                 _la = this._input.LA(1);
                 if (_la === RASPParser.SET) {
                     {
-                        this.state = 209;
+                        this.state = 233;
                         this.setIdFrom();
                     }
                 }
-                this.state = 212;
+                this.state = 236;
                 this.match(RASPParser.QUERY);
-                this.state = 216;
+                this.state = 240;
                 this._errHandler.sync(this);
                 _la = this._input.LA(1);
                 while (_la === RASPParser.ID) {
                     {
                         {
-                            this.state = 213;
+                            this.state = 237;
                             this.match(RASPParser.ID);
                         }
                     }
-                    this.state = 218;
+                    this.state = 242;
                     this._errHandler.sync(this);
                     _la = this._input.LA(1);
                 }
-                this.state = 219;
+                this.state = 243;
                 this.object();
             }
         }
@@ -937,89 +1023,89 @@ class RASPParser extends Parser_1.Parser {
         let _parentState = this.state;
         let _localctx = new ExprContext(this._ctx, _parentState);
         let _prevctx = _localctx;
-        let _startState = 40;
-        this.enterRecursionRule(_localctx, 40, RASPParser.RULE_expr, _p);
+        let _startState = 42;
+        this.enterRecursionRule(_localctx, 42, RASPParser.RULE_expr, _p);
         try {
             let _alt;
             this.enterOuterAlt(_localctx, 1);
             {
-                this.state = 230;
+                this.state = 254;
                 this._errHandler.sync(this);
-                switch (this.interpreter.adaptivePredict(this._input, 17, this._ctx)) {
+                switch (this.interpreter.adaptivePredict(this._input, 21, this._ctx)) {
                     case 1:
                         {
-                            this.state = 222;
+                            this.state = 246;
                             this.array();
                         }
                         break;
                     case 2:
                         {
-                            this.state = 223;
+                            this.state = 247;
                             this.method();
                         }
                         break;
                     case 3:
                         {
-                            this.state = 224;
+                            this.state = 248;
                             this.stringMethod();
                         }
                         break;
                     case 4:
                         {
-                            this.state = 225;
+                            this.state = 249;
                             this.variable();
                         }
                         break;
                     case 5:
                         {
-                            this.state = 226;
+                            this.state = 250;
                             this.object();
                         }
                         break;
                     case 6:
                         {
-                            this.state = 227;
+                            this.state = 251;
                             this.match(RASPParser.NUMBER);
                         }
                         break;
                     case 7:
                         {
-                            this.state = 228;
+                            this.state = 252;
                             this.match(RASPParser.STRING);
                         }
                         break;
                     case 8:
                         {
-                            this.state = 229;
+                            this.state = 253;
                             this.match(RASPParser.BOOLEAN);
                         }
                         break;
                 }
                 this._ctx._stop = this._input.tryLT(-1);
-                this.state = 263;
+                this.state = 287;
                 this._errHandler.sync(this);
-                _alt = this.interpreter.adaptivePredict(this._input, 19, this._ctx);
+                _alt = this.interpreter.adaptivePredict(this._input, 23, this._ctx);
                 while (_alt !== 2 && _alt !== ATN_1.ATN.INVALID_ALT_NUMBER) {
                     if (_alt === 1) {
                         if (this._parseListeners != null)
                             this.triggerExitRuleEvent();
                         _prevctx = _localctx;
                         {
-                            this.state = 261;
+                            this.state = 285;
                             this._errHandler.sync(this);
-                            switch (this.interpreter.adaptivePredict(this._input, 18, this._ctx)) {
+                            switch (this.interpreter.adaptivePredict(this._input, 22, this._ctx)) {
                                 case 1:
                                     {
                                         _localctx = new ExprContext(_parentctx, _parentState);
                                         this.pushNewRecursionContext(_localctx, _startState, RASPParser.RULE_expr);
-                                        this.state = 232;
+                                        this.state = 256;
                                         if (!(this.precpred(this._ctx, 16)))
                                             throw new FailedPredicateException_1.FailedPredicateException(this, "this.precpred(this._ctx, 16)");
-                                        this.state = 233;
+                                        this.state = 257;
                                         this.match(RASPParser.MULTIPLIED);
-                                        this.state = 234;
+                                        this.state = 258;
                                         this.match(RASPParser.BY);
-                                        this.state = 235;
+                                        this.state = 259;
                                         this.expr(17);
                                     }
                                     break;
@@ -1027,14 +1113,14 @@ class RASPParser extends Parser_1.Parser {
                                     {
                                         _localctx = new ExprContext(_parentctx, _parentState);
                                         this.pushNewRecursionContext(_localctx, _startState, RASPParser.RULE_expr);
-                                        this.state = 236;
+                                        this.state = 260;
                                         if (!(this.precpred(this._ctx, 15)))
                                             throw new FailedPredicateException_1.FailedPredicateException(this, "this.precpred(this._ctx, 15)");
-                                        this.state = 237;
+                                        this.state = 261;
                                         this.match(RASPParser.DIVIDED);
-                                        this.state = 238;
+                                        this.state = 262;
                                         this.match(RASPParser.BY);
-                                        this.state = 239;
+                                        this.state = 263;
                                         this.expr(16);
                                     }
                                     break;
@@ -1042,14 +1128,14 @@ class RASPParser extends Parser_1.Parser {
                                     {
                                         _localctx = new ExprContext(_parentctx, _parentState);
                                         this.pushNewRecursionContext(_localctx, _startState, RASPParser.RULE_expr);
-                                        this.state = 240;
+                                        this.state = 264;
                                         if (!(this.precpred(this._ctx, 14)))
                                             throw new FailedPredicateException_1.FailedPredicateException(this, "this.precpred(this._ctx, 14)");
-                                        this.state = 241;
+                                        this.state = 265;
                                         this.match(RASPParser.ADDED);
-                                        this.state = 242;
+                                        this.state = 266;
                                         this.match(RASPParser.TO);
-                                        this.state = 243;
+                                        this.state = 267;
                                         this.expr(15);
                                     }
                                     break;
@@ -1057,14 +1143,14 @@ class RASPParser extends Parser_1.Parser {
                                     {
                                         _localctx = new ExprContext(_parentctx, _parentState);
                                         this.pushNewRecursionContext(_localctx, _startState, RASPParser.RULE_expr);
-                                        this.state = 244;
+                                        this.state = 268;
                                         if (!(this.precpred(this._ctx, 13)))
                                             throw new FailedPredicateException_1.FailedPredicateException(this, "this.precpred(this._ctx, 13)");
-                                        this.state = 245;
+                                        this.state = 269;
                                         this.match(RASPParser.SUBTRACTED);
-                                        this.state = 246;
+                                        this.state = 270;
                                         this.match(RASPParser.BY);
-                                        this.state = 247;
+                                        this.state = 271;
                                         this.expr(14);
                                     }
                                     break;
@@ -1072,12 +1158,12 @@ class RASPParser extends Parser_1.Parser {
                                     {
                                         _localctx = new ExprContext(_parentctx, _parentState);
                                         this.pushNewRecursionContext(_localctx, _startState, RASPParser.RULE_expr);
-                                        this.state = 248;
+                                        this.state = 272;
                                         if (!(this.precpred(this._ctx, 12)))
                                             throw new FailedPredicateException_1.FailedPredicateException(this, "this.precpred(this._ctx, 12)");
-                                        this.state = 249;
+                                        this.state = 273;
                                         this.match(RASPParser.AND);
-                                        this.state = 250;
+                                        this.state = 274;
                                         this.expr(13);
                                     }
                                     break;
@@ -1085,12 +1171,12 @@ class RASPParser extends Parser_1.Parser {
                                     {
                                         _localctx = new ExprContext(_parentctx, _parentState);
                                         this.pushNewRecursionContext(_localctx, _startState, RASPParser.RULE_expr);
-                                        this.state = 251;
+                                        this.state = 275;
                                         if (!(this.precpred(this._ctx, 11)))
                                             throw new FailedPredicateException_1.FailedPredicateException(this, "this.precpred(this._ctx, 11)");
-                                        this.state = 252;
+                                        this.state = 276;
                                         this.match(RASPParser.OR);
-                                        this.state = 253;
+                                        this.state = 277;
                                         this.expr(12);
                                     }
                                     break;
@@ -1098,12 +1184,12 @@ class RASPParser extends Parser_1.Parser {
                                     {
                                         _localctx = new ExprContext(_parentctx, _parentState);
                                         this.pushNewRecursionContext(_localctx, _startState, RASPParser.RULE_expr);
-                                        this.state = 254;
+                                        this.state = 278;
                                         if (!(this.precpred(this._ctx, 10)))
                                             throw new FailedPredicateException_1.FailedPredicateException(this, "this.precpred(this._ctx, 10)");
-                                        this.state = 255;
+                                        this.state = 279;
                                         this.match(RASPParser.IS);
-                                        this.state = 256;
+                                        this.state = 280;
                                         this.expr(11);
                                     }
                                     break;
@@ -1111,23 +1197,23 @@ class RASPParser extends Parser_1.Parser {
                                     {
                                         _localctx = new ExprContext(_parentctx, _parentState);
                                         this.pushNewRecursionContext(_localctx, _startState, RASPParser.RULE_expr);
-                                        this.state = 257;
+                                        this.state = 281;
                                         if (!(this.precpred(this._ctx, 9)))
                                             throw new FailedPredicateException_1.FailedPredicateException(this, "this.precpred(this._ctx, 9)");
-                                        this.state = 258;
+                                        this.state = 282;
                                         this.match(RASPParser.IS);
-                                        this.state = 259;
+                                        this.state = 283;
                                         this.match(RASPParser.NOT);
-                                        this.state = 260;
+                                        this.state = 284;
                                         this.expr(10);
                                     }
                                     break;
                             }
                         }
                     }
-                    this.state = 265;
+                    this.state = 289;
                     this._errHandler.sync(this);
-                    _alt = this.interpreter.adaptivePredict(this._input, 19, this._ctx);
+                    _alt = this.interpreter.adaptivePredict(this._input, 23, this._ctx);
                 }
             }
         }
@@ -1148,11 +1234,11 @@ class RASPParser extends Parser_1.Parser {
     }
     serviceName() {
         let _localctx = new ServiceNameContext(this._ctx, this.state);
-        this.enterRule(_localctx, 42, RASPParser.RULE_serviceName);
+        this.enterRule(_localctx, 44, RASPParser.RULE_serviceName);
         try {
             this.enterOuterAlt(_localctx, 1);
             {
-                this.state = 266;
+                this.state = 290;
                 this.match(RASPParser.ID);
             }
         }
@@ -1173,30 +1259,30 @@ class RASPParser extends Parser_1.Parser {
     }
     variable() {
         let _localctx = new VariableContext(this._ctx, this.state);
-        this.enterRule(_localctx, 44, RASPParser.RULE_variable);
+        this.enterRule(_localctx, 46, RASPParser.RULE_variable);
         try {
             let _alt;
             this.enterOuterAlt(_localctx, 1);
             {
-                this.state = 268;
+                this.state = 292;
                 this.match(RASPParser.ID);
-                this.state = 273;
+                this.state = 297;
                 this._errHandler.sync(this);
-                _alt = this.interpreter.adaptivePredict(this._input, 20, this._ctx);
+                _alt = this.interpreter.adaptivePredict(this._input, 24, this._ctx);
                 while (_alt !== 2 && _alt !== ATN_1.ATN.INVALID_ALT_NUMBER) {
                     if (_alt === 1) {
                         {
                             {
-                                this.state = 269;
-                                this.match(RASPParser.T__11);
-                                this.state = 270;
+                                this.state = 293;
+                                this.match(RASPParser.T__8);
+                                this.state = 294;
                                 this.match(RASPParser.ID);
                             }
                         }
                     }
-                    this.state = 275;
+                    this.state = 299;
                     this._errHandler.sync(this);
-                    _alt = this.interpreter.adaptivePredict(this._input, 20, this._ctx);
+                    _alt = this.interpreter.adaptivePredict(this._input, 24, this._ctx);
                 }
             }
         }
@@ -1217,33 +1303,33 @@ class RASPParser extends Parser_1.Parser {
     }
     object() {
         let _localctx = new ObjectContext(this._ctx, this.state);
-        this.enterRule(_localctx, 46, RASPParser.RULE_object);
+        this.enterRule(_localctx, 48, RASPParser.RULE_object);
         let _la;
         try {
             this.enterOuterAlt(_localctx, 1);
             {
-                this.state = 276;
-                this.match(RASPParser.T__12);
-                this.state = 277;
+                this.state = 300;
+                this.match(RASPParser.T__9);
+                this.state = 301;
                 this.property();
-                this.state = 282;
+                this.state = 306;
                 this._errHandler.sync(this);
                 _la = this._input.LA(1);
                 while (_la === RASPParser.T__3) {
                     {
                         {
-                            this.state = 278;
+                            this.state = 302;
                             this.match(RASPParser.T__3);
-                            this.state = 279;
+                            this.state = 303;
                             this.property();
                         }
                     }
-                    this.state = 284;
+                    this.state = 308;
                     this._errHandler.sync(this);
                     _la = this._input.LA(1);
                 }
-                this.state = 285;
-                this.match(RASPParser.T__13);
+                this.state = 309;
+                this.match(RASPParser.T__10);
             }
         }
         catch (re) {
@@ -1263,41 +1349,41 @@ class RASPParser extends Parser_1.Parser {
     }
     array() {
         let _localctx = new ArrayContext(this._ctx, this.state);
-        this.enterRule(_localctx, 48, RASPParser.RULE_array);
+        this.enterRule(_localctx, 50, RASPParser.RULE_array);
         let _la;
         try {
             this.enterOuterAlt(_localctx, 1);
             {
-                this.state = 288;
+                this.state = 312;
                 this._errHandler.sync(this);
                 _la = this._input.LA(1);
                 if (_la === RASPParser.ID) {
                     {
-                        this.state = 287;
+                        this.state = 311;
                         this.match(RASPParser.ID);
                     }
                 }
-                this.state = 290;
+                this.state = 314;
                 this.match(RASPParser.T__2);
-                this.state = 291;
+                this.state = 315;
                 this.expr(0);
-                this.state = 296;
+                this.state = 320;
                 this._errHandler.sync(this);
                 _la = this._input.LA(1);
                 while (_la === RASPParser.T__3) {
                     {
                         {
-                            this.state = 292;
+                            this.state = 316;
                             this.match(RASPParser.T__3);
-                            this.state = 293;
+                            this.state = 317;
                             this.expr(0);
                         }
                     }
-                    this.state = 298;
+                    this.state = 322;
                     this._errHandler.sync(this);
                     _la = this._input.LA(1);
                 }
-                this.state = 299;
+                this.state = 323;
                 this.match(RASPParser.T__4);
             }
         }
@@ -1318,26 +1404,26 @@ class RASPParser extends Parser_1.Parser {
     }
     property() {
         let _localctx = new PropertyContext(this._ctx, this.state);
-        this.enterRule(_localctx, 50, RASPParser.RULE_property);
+        this.enterRule(_localctx, 52, RASPParser.RULE_property);
         let _la;
         try {
             this.enterOuterAlt(_localctx, 1);
             {
-                this.state = 301;
+                this.state = 325;
                 this.match(RASPParser.ID);
-                this.state = 306;
+                this.state = 330;
                 this._errHandler.sync(this);
                 _la = this._input.LA(1);
-                while (_la === RASPParser.T__14) {
+                while (_la === RASPParser.T__11) {
                     {
                         {
-                            this.state = 302;
-                            this.match(RASPParser.T__14);
-                            this.state = 303;
+                            this.state = 326;
+                            this.match(RASPParser.T__11);
+                            this.state = 327;
                             this.expr(0);
                         }
                     }
-                    this.state = 308;
+                    this.state = 332;
                     this._errHandler.sync(this);
                     _la = this._input.LA(1);
                 }
@@ -1360,30 +1446,30 @@ class RASPParser extends Parser_1.Parser {
     }
     method() {
         let _localctx = new MethodContext(this._ctx, this.state);
-        this.enterRule(_localctx, 52, RASPParser.RULE_method);
+        this.enterRule(_localctx, 54, RASPParser.RULE_method);
         let _la;
         try {
             this.enterOuterAlt(_localctx, 1);
             {
-                this.state = 309;
+                this.state = 333;
                 this.variable();
-                this.state = 310;
+                this.state = 334;
                 this.match(RASPParser.T__0);
-                this.state = 314;
+                this.state = 338;
                 this._errHandler.sync(this);
                 _la = this._input.LA(1);
-                while (_la === RASPParser.T__2 || _la === RASPParser.T__12 || ((((_la - 40)) & ~0x1F) === 0 && ((1 << (_la - 40)) & ((1 << (RASPParser.STRING - 40)) | (1 << (RASPParser.ID - 40)) | (1 << (RASPParser.BOOLEAN - 40)) | (1 << (RASPParser.NUMBER - 40)))) !== 0)) {
+                while (_la === RASPParser.T__2 || _la === RASPParser.T__9 || ((((_la - 41)) & ~0x1F) === 0 && ((1 << (_la - 41)) & ((1 << (RASPParser.STRING - 41)) | (1 << (RASPParser.ID - 41)) | (1 << (RASPParser.BOOLEAN - 41)) | (1 << (RASPParser.NUMBER - 41)))) !== 0)) {
                     {
                         {
-                            this.state = 311;
+                            this.state = 335;
                             this.methodList();
                         }
                     }
-                    this.state = 316;
+                    this.state = 340;
                     this._errHandler.sync(this);
                     _la = this._input.LA(1);
                 }
-                this.state = 317;
+                this.state = 341;
                 this.match(RASPParser.T__1);
             }
         }
@@ -1404,26 +1490,26 @@ class RASPParser extends Parser_1.Parser {
     }
     methodList() {
         let _localctx = new MethodListContext(this._ctx, this.state);
-        this.enterRule(_localctx, 54, RASPParser.RULE_methodList);
+        this.enterRule(_localctx, 56, RASPParser.RULE_methodList);
         let _la;
         try {
             this.enterOuterAlt(_localctx, 1);
             {
-                this.state = 319;
+                this.state = 343;
                 this.expr(0);
-                this.state = 324;
+                this.state = 348;
                 this._errHandler.sync(this);
                 _la = this._input.LA(1);
                 while (_la === RASPParser.T__3) {
                     {
                         {
-                            this.state = 320;
+                            this.state = 344;
                             this.match(RASPParser.T__3);
-                            this.state = 321;
+                            this.state = 345;
                             this.expr(0);
                         }
                     }
-                    this.state = 326;
+                    this.state = 350;
                     this._errHandler.sync(this);
                     _la = this._input.LA(1);
                 }
@@ -1446,15 +1532,15 @@ class RASPParser extends Parser_1.Parser {
     }
     stringMethod() {
         let _localctx = new StringMethodContext(this._ctx, this.state);
-        this.enterRule(_localctx, 56, RASPParser.RULE_stringMethod);
+        this.enterRule(_localctx, 58, RASPParser.RULE_stringMethod);
         try {
             this.enterOuterAlt(_localctx, 1);
             {
-                this.state = 327;
+                this.state = 351;
                 this.match(RASPParser.STRING);
-                this.state = 328;
-                this.match(RASPParser.T__11);
-                this.state = 329;
+                this.state = 352;
+                this.match(RASPParser.T__8);
+                this.state = 353;
                 this.method();
             }
         }
@@ -1475,13 +1561,13 @@ class RASPParser extends Parser_1.Parser {
     }
     envvar() {
         let _localctx = new EnvvarContext(this._ctx, this.state);
-        this.enterRule(_localctx, 58, RASPParser.RULE_envvar);
+        this.enterRule(_localctx, 60, RASPParser.RULE_envvar);
         try {
             this.enterOuterAlt(_localctx, 1);
             {
-                this.state = 331;
-                this.match(RASPParser.T__15);
-                this.state = 332;
+                this.state = 355;
+                this.match(RASPParser.T__12);
+                this.state = 356;
                 this.match(RASPParser.ID);
             }
         }
@@ -1502,7 +1588,7 @@ class RASPParser extends Parser_1.Parser {
     }
     sempred(_localctx, ruleIndex, predIndex) {
         switch (ruleIndex) {
-            case 20:
+            case 21:
                 return this.expr_sempred(_localctx, predIndex);
         }
         return true;
@@ -1548,43 +1634,44 @@ RASPParser.T__9 = 10;
 RASPParser.T__10 = 11;
 RASPParser.T__11 = 12;
 RASPParser.T__12 = 13;
-RASPParser.T__13 = 14;
-RASPParser.T__14 = 15;
-RASPParser.T__15 = 16;
-RASPParser.BOT = 17;
-RASPParser.EVENT = 18;
-RASPParser.EVENTS = 19;
-RASPParser.RECEIVER = 20;
-RASPParser.RECEIVES = 21;
-RASPParser.FROM = 22;
-RASPParser.SEND = 23;
-RASPParser.QUERIES = 24;
-RASPParser.TO = 25;
-RASPParser.SET = 26;
-RASPParser.AS = 27;
-RASPParser.ADDED = 28;
-RASPParser.SUBTRACTED = 29;
-RASPParser.MULTIPLIED = 30;
-RASPParser.DIVIDED = 31;
-RASPParser.BY = 32;
-RASPParser.AND = 33;
-RASPParser.OR = 34;
-RASPParser.IS = 35;
-RASPParser.NOT = 36;
-RASPParser.QUERY = 37;
-RASPParser.METHOD = 38;
-RASPParser.ERRORMETHOD = 39;
-RASPParser.STRING = 40;
-RASPParser.ESC = 41;
-RASPParser.ID = 42;
-RASPParser.BOOLEAN = 43;
-RASPParser.NUMBER = 44;
-RASPParser.FLOAT = 45;
-RASPParser.INT = 46;
-RASPParser.HEXNUMBER = 47;
-RASPParser.COMMENT = 48;
-RASPParser.LINE_COMMENT = 49;
-RASPParser.WS = 50;
+RASPParser.BOT = 14;
+RASPParser.EVENT = 15;
+RASPParser.EVENTS = 16;
+RASPParser.RECEIVER = 17;
+RASPParser.RECEIVES = 18;
+RASPParser.FROM = 19;
+RASPParser.SEND = 20;
+RASPParser.IF = 21;
+RASPParser.ELSE = 22;
+RASPParser.EXIT = 23;
+RASPParser.END = 24;
+RASPParser.QUERIES = 25;
+RASPParser.TO = 26;
+RASPParser.SET = 27;
+RASPParser.AS = 28;
+RASPParser.ADDED = 29;
+RASPParser.SUBTRACTED = 30;
+RASPParser.MULTIPLIED = 31;
+RASPParser.DIVIDED = 32;
+RASPParser.BY = 33;
+RASPParser.AND = 34;
+RASPParser.OR = 35;
+RASPParser.IS = 36;
+RASPParser.NOT = 37;
+RASPParser.QUERY = 38;
+RASPParser.METHOD = 39;
+RASPParser.ERRORMETHOD = 40;
+RASPParser.STRING = 41;
+RASPParser.ESC = 42;
+RASPParser.ID = 43;
+RASPParser.BOOLEAN = 44;
+RASPParser.NUMBER = 45;
+RASPParser.FLOAT = 46;
+RASPParser.INT = 47;
+RASPParser.HEXNUMBER = 48;
+RASPParser.COMMENT = 49;
+RASPParser.LINE_COMMENT = 50;
+RASPParser.WS = 51;
 RASPParser.RULE_init = 0;
 RASPParser.RULE_botDefinition = 1;
 RASPParser.RULE_botBody = 2;
@@ -1600,202 +1687,217 @@ RASPParser.RULE_listenerError = 11;
 RASPParser.RULE_statement = 12;
 RASPParser.RULE_assignment = 13;
 RASPParser.RULE_r_if = 14;
-RASPParser.RULE_r_while = 15;
-RASPParser.RULE_loop = 16;
-RASPParser.RULE_print = 17;
-RASPParser.RULE_end = 18;
-RASPParser.RULE_sendQuery = 19;
-RASPParser.RULE_expr = 20;
-RASPParser.RULE_serviceName = 21;
-RASPParser.RULE_variable = 22;
-RASPParser.RULE_object = 23;
-RASPParser.RULE_array = 24;
-RASPParser.RULE_property = 25;
-RASPParser.RULE_method = 26;
-RASPParser.RULE_methodList = 27;
-RASPParser.RULE_stringMethod = 28;
-RASPParser.RULE_envvar = 29;
+RASPParser.RULE_r_if_elseif = 15;
+RASPParser.RULE_r_if_else = 16;
+RASPParser.RULE_r_while = 17;
+RASPParser.RULE_loop = 18;
+RASPParser.RULE_print = 19;
+RASPParser.RULE_sendQuery = 20;
+RASPParser.RULE_expr = 21;
+RASPParser.RULE_serviceName = 22;
+RASPParser.RULE_variable = 23;
+RASPParser.RULE_object = 24;
+RASPParser.RULE_array = 25;
+RASPParser.RULE_property = 26;
+RASPParser.RULE_method = 27;
+RASPParser.RULE_methodList = 28;
+RASPParser.RULE_stringMethod = 29;
+RASPParser.RULE_envvar = 30;
 RASPParser.ruleNames = [
     "init", "botDefinition", "botBody", "addListener", "addEmitter", "requestServiceEvents",
     "events", "setServiceAs", "setIdFrom", "listenerMethod", "listenerEventReceiver",
-    "listenerError", "statement", "assignment", "r_if", "r_while", "loop",
-    "print", "end", "sendQuery", "expr", "serviceName", "variable", "object",
-    "array", "property", "method", "methodList", "stringMethod", "envvar"
+    "listenerError", "statement", "assignment", "r_if", "r_if_elseif", "r_if_else",
+    "r_while", "loop", "print", "sendQuery", "expr", "serviceName", "variable",
+    "object", "array", "property", "method", "methodList", "stringMethod",
+    "envvar"
 ];
 RASPParser._LITERAL_NAMES = [
-    undefined, "'('", "')'", "'['", "','", "']'", "'if'", "'else'", "'while'",
-    "'loop'", "'print'", "'end'", "'.'", "'{'", "'}'", "':'", "'envar'", "'bot'",
-    "'event'", "'events'", "'receiver'", "'receives'", "'from'", "'send'",
-    "'queries'", "'to'", "'set'", "'as'", "'added'", "'subtracted'", "'multiplied'",
-    "'divided'", "'by'", "'and'", "'or'", "'is'", "'not'", "'query'", "'listenerMethod'",
-    "'listenerErrorMethod'"
+    undefined, "'('", "')'", "'['", "','", "']'", "'while'", "'loop'", "'print'",
+    "'.'", "'{'", "'}'", "':'", "'envar'", "'bot'", "'event'", "'events'",
+    "'receiver'", "'receives'", "'from'", "'send'", "'if'", "'else'", "'exit'",
+    "'end'", "'queries'", "'to'", "'set'", "'as'", "'added'", "'subtracted'",
+    "'multiplied'", "'divided'", "'by'", "'and'", "'or'", "'is'", "'not'",
+    "'query'", "'listenerMethod'", "'listenerErrorMethod'"
 ];
 RASPParser._SYMBOLIC_NAMES = [
     undefined, undefined, undefined, undefined, undefined, undefined, undefined,
     undefined, undefined, undefined, undefined, undefined, undefined, undefined,
-    undefined, undefined, undefined, "BOT", "EVENT", "EVENTS", "RECEIVER",
-    "RECEIVES", "FROM", "SEND", "QUERIES", "TO", "SET", "AS", "ADDED", "SUBTRACTED",
+    "BOT", "EVENT", "EVENTS", "RECEIVER", "RECEIVES", "FROM", "SEND", "IF",
+    "ELSE", "EXIT", "END", "QUERIES", "TO", "SET", "AS", "ADDED", "SUBTRACTED",
     "MULTIPLIED", "DIVIDED", "BY", "AND", "OR", "IS", "NOT", "QUERY", "METHOD",
     "ERRORMETHOD", "STRING", "ESC", "ID", "BOOLEAN", "NUMBER", "FLOAT", "INT",
     "HEXNUMBER", "COMMENT", "LINE_COMMENT", "WS"
 ];
 RASPParser.VOCABULARY = new VocabularyImpl_1.VocabularyImpl(RASPParser._LITERAL_NAMES, RASPParser._SYMBOLIC_NAMES, []);
-RASPParser._serializedATN = "\x03\uAF6F\u8320\u479D\uB75C\u4880\u1605\u191C\uAB37\x034\u0151\x04\x02" +
+RASPParser._serializedATN = "\x03\uAF6F\u8320\u479D\uB75C\u4880\u1605\u191C\uAB37\x035\u0169\x04\x02" +
     "\t\x02\x04\x03\t\x03\x04\x04\t\x04\x04\x05\t\x05\x04\x06\t\x06\x04\x07" +
     "\t\x07\x04\b\t\b\x04\t\t\t\x04\n\t\n\x04\v\t\v\x04\f\t\f\x04\r\t\r\x04" +
     "\x0E\t\x0E\x04\x0F\t\x0F\x04\x10\t\x10\x04\x11\t\x11\x04\x12\t\x12\x04" +
     "\x13\t\x13\x04\x14\t\x14\x04\x15\t\x15\x04\x16\t\x16\x04\x17\t\x17\x04" +
     "\x18\t\x18\x04\x19\t\x19\x04\x1A\t\x1A\x04\x1B\t\x1B\x04\x1C\t\x1C\x04" +
-    "\x1D\t\x1D\x04\x1E\t\x1E\x04\x1F\t\x1F\x03\x02\x03\x02\x05\x02A\n\x02" +
-    "\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x07\x03H\n\x03\f\x03\x0E\x03" +
-    "K\v\x03\x03\x04\x03\x04\x03\x04\x03\x04\x03\x04\x03\x04\x03\x04\x05\x04" +
-    "T\n\x04\x03\x05\x05\x05W\n\x05\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05" +
-    "\x03\x05\x05\x05_\n\x05\x03\x06\x05\x06b\n\x06\x03\x06\x03\x06\x03\x06" +
-    "\x03\x06\x03\x06\x03\x06\x05\x06j\n\x06\x03\x07\x03\x07\x03\x07\x03\x07" +
-    "\x03\x07\x03\x07\x03\x07\x03\x07\x03\b\x03\b\x03\b\x03\b\x07\bx\n\b\f" +
-    "\b\x0E\b{\v\b\x03\b\x03\b\x03\t\x03\t\x03\t\x03\t\x03\n\x03\n\x03\n\x03" +
-    "\n\x03\v\x03\v\x03\v\x03\v\x03\v\x03\v\x07\v\x8D\n\v\f\v\x0E\v\x90\v\v" +
-    "\x05\v\x92\n\v\x03\v\x07\v\x95\n\v\f\v\x0E\v\x98\v\v\x03\f\x03\f\x03\f" +
-    "\x03\f\x03\f\x03\r\x03\r\x03\r\x07\r\xA2\n\r\f\r\x0E\r\xA5\v\r\x03\x0E" +
-    "\x03\x0E\x03\x0E\x03\x0E\x03\x0E\x03\x0E\x03\x0E\x03\x0E\x05\x0E\xAF\n" +
-    "\x0E\x03\x0F\x03\x0F\x03\x0F\x03\x0F\x03\x0F\x03\x10\x03\x10\x03\x10\x03" +
-    "\x10\x03\x10\x03\x10\x07\x10\xBC\n\x10\f\x10\x0E\x10\xBF\v\x10\x03\x10" +
-    "\x03\x10\x05\x10\xC3\n\x10\x03\x11\x03\x11\x03\x11\x03\x11\x03\x12\x03" +
-    "\x12\x03\x12\x03\x12\x03\x12\x03\x12\x03\x13\x03\x13\x03\x13\x03\x14\x03" +
-    "\x14\x03\x15\x05\x15\xD5\n\x15\x03\x15\x03\x15\x07\x15\xD9\n\x15\f\x15" +
-    "\x0E\x15\xDC\v\x15\x03\x15\x03\x15\x03\x16\x03\x16\x03\x16\x03\x16\x03" +
-    "\x16\x03\x16\x03\x16\x03\x16\x03\x16\x05\x16\xE9\n\x16\x03\x16\x03\x16" +
-    "\x03\x16\x03\x16\x03\x16\x03\x16\x03\x16\x03\x16\x03\x16\x03\x16\x03\x16" +
-    "\x03\x16\x03\x16\x03\x16\x03\x16\x03\x16\x03\x16\x03\x16\x03\x16\x03\x16" +
-    "\x03\x16\x03\x16\x03\x16\x03\x16\x03\x16\x03\x16\x03\x16\x03\x16\x03\x16" +
-    "\x07\x16\u0108\n\x16\f\x16\x0E\x16\u010B\v\x16\x03\x17\x03\x17\x03\x18" +
-    "\x03\x18\x03\x18\x07\x18\u0112\n\x18\f\x18\x0E\x18\u0115\v\x18\x03\x19" +
-    "\x03\x19\x03\x19\x03\x19\x07\x19\u011B\n\x19\f\x19\x0E\x19\u011E\v\x19" +
-    "\x03\x19\x03\x19\x03\x1A\x05\x1A\u0123\n\x1A\x03\x1A\x03\x1A\x03\x1A\x03" +
-    "\x1A\x07\x1A\u0129\n\x1A\f\x1A\x0E\x1A\u012C\v\x1A\x03\x1A\x03\x1A\x03" +
-    "\x1B\x03\x1B\x03\x1B\x07\x1B\u0133\n\x1B\f\x1B\x0E\x1B\u0136\v\x1B\x03" +
-    "\x1C\x03\x1C\x03\x1C\x07\x1C\u013B\n\x1C\f\x1C\x0E\x1C\u013E\v\x1C\x03" +
-    "\x1C\x03\x1C\x03\x1D\x03\x1D\x03\x1D\x07\x1D\u0145\n\x1D\f\x1D\x0E\x1D" +
-    "\u0148\v\x1D\x03\x1E\x03\x1E\x03\x1E\x03\x1E\x03\x1F\x03\x1F\x03\x1F\x03" +
-    "\x1F\x02\x02\x03* \x02\x02\x04\x02\x06\x02\b\x02\n\x02\f\x02\x0E\x02\x10" +
-    "\x02\x12\x02\x14\x02\x16\x02\x18\x02\x1A\x02\x1C\x02\x1E\x02 \x02\"\x02" +
-    "$\x02&\x02(\x02*\x02,\x02.\x020\x022\x024\x026\x028\x02:\x02<\x02\x02" +
-    "\x02\u0166\x02@\x03\x02\x02\x02\x04B\x03\x02\x02\x02\x06S\x03\x02\x02" +
-    "\x02\bV\x03\x02\x02\x02\na\x03\x02\x02\x02\fk\x03\x02\x02\x02\x0Es\x03" +
-    "\x02\x02\x02\x10~\x03\x02\x02\x02\x12\x82\x03\x02\x02\x02\x14\x86\x03" +
-    "\x02\x02\x02\x16\x99\x03\x02\x02\x02\x18\x9E\x03\x02\x02\x02\x1A\xAE\x03" +
-    "\x02\x02\x02\x1C\xB0\x03\x02\x02\x02\x1E\xB5\x03\x02\x02\x02 \xC4\x03" +
-    "\x02\x02\x02\"\xC8\x03\x02\x02\x02$\xCE\x03\x02\x02\x02&\xD1\x03\x02\x02" +
-    "\x02(\xD4\x03\x02\x02\x02*\xE8\x03\x02\x02\x02,\u010C\x03\x02\x02\x02" +
-    ".\u010E\x03\x02\x02\x020\u0116\x03\x02\x02\x022\u0122\x03\x02\x02\x02" +
-    "4\u012F\x03\x02\x02\x026\u0137\x03\x02\x02\x028\u0141\x03\x02\x02\x02" +
-    ":\u0149\x03\x02\x02\x02<\u014D\x03\x02\x02\x02>A\x05\x04\x03\x02?A\x07" +
-    "\x02\x02\x03@>\x03\x02\x02\x02@?\x03\x02\x02\x02A\x03\x03\x02\x02\x02" +
-    "BC\x07\x13\x02\x02CD\x07\x03\x02\x02DE\x07,\x02\x02EI\x07\x04\x02\x02" +
-    "FH\x05\x06\x04\x02GF\x03\x02\x02\x02HK\x03\x02\x02\x02IG\x03\x02\x02\x02" +
-    "IJ\x03\x02\x02\x02J\x05\x03\x02\x02\x02KI\x03\x02\x02\x02LT\x05\b\x05" +
-    "\x02MT\x05\n\x06\x02NT\x05\f\x07\x02OT\x05\x14\v\x02PT\x05\x18\r\x02Q" +
-    "T\x056\x1C\x02RT\x05\x1C\x0F\x02SL\x03\x02\x02\x02SM\x03\x02\x02\x02S" +
-    "N\x03\x02\x02\x02SO\x03\x02\x02\x02SP\x03\x02\x02\x02SQ\x03\x02\x02\x02" +
-    "SR\x03\x02\x02\x02T\x07\x03\x02\x02\x02UW\x05\x10\t\x02VU\x03\x02\x02" +
-    "\x02VW\x03\x02\x02\x02WX\x03\x02\x02\x02XY\x07\x14\x02\x02YZ\x07\x16\x02" +
-    "\x02Z[\x07\x18\x02\x02[^\x05,\x17\x02\\_\x050\x19\x02]_\x05.\x18\x02^" +
-    "\\\x03\x02\x02\x02^]\x03\x02\x02\x02^_\x03\x02\x02\x02_\t\x03\x02\x02" +
-    "\x02`b\x05\x10\t\x02a`\x03\x02\x02\x02ab\x03\x02\x02\x02bc\x03\x02\x02" +
-    "\x02cd\x07\x19\x02\x02de\x07\x1A\x02\x02ef\x07\x1B\x02\x02fi\x05,\x17" +
-    "\x02gj\x050\x19\x02hj\x05.\x18\x02ig\x03\x02\x02\x02ih\x03\x02\x02\x02" +
-    "ij\x03\x02\x02\x02j\v\x03\x02\x02\x02kl\x07\x19\x02\x02lm\x05\x0E\b\x02" +
-    "mn\x07\x15\x02\x02no\x07\x18\x02\x02op\x05,\x17\x02pq\x07\x1B\x02\x02" +
-    "qr\x07,\x02\x02r\r\x03\x02\x02\x02st\x07\x05\x02\x02ty\x07,\x02\x02uv" +
-    "\x07\x06\x02\x02vx\x07,\x02\x02wu\x03\x02\x02\x02x{\x03\x02\x02\x02yw" +
-    "\x03\x02\x02\x02yz\x03\x02\x02\x02z|\x03\x02\x02\x02{y\x03\x02\x02\x02" +
-    "|}\x07\x07\x02\x02}\x0F\x03\x02\x02\x02~\x7F\x07\x1C\x02\x02\x7F\x80\x07" +
-    ",\x02\x02\x80\x81\x07\x1D\x02\x02\x81\x11\x03\x02\x02\x02\x82\x83\x07" +
-    "\x1C\x02\x02\x83\x84\x07,\x02\x02\x84\x85\x07\x18\x02\x02\x85\x13\x03" +
-    "\x02\x02\x02\x86\x87\x07(\x02\x02\x87\x91\x07,\x02\x02\x88\x89\x07\x17" +
-    "\x02\x02\x89\x8E\x05\x16\f\x02\x8A\x8B\x07\x06\x02\x02\x8B\x8D\x05\x16" +
-    "\f\x02\x8C\x8A\x03\x02\x02\x02\x8D\x90\x03\x02\x02\x02\x8E\x8C\x03\x02" +
-    "\x02\x02\x8E\x8F\x03\x02\x02\x02\x8F\x92\x03\x02\x02\x02\x90\x8E\x03\x02" +
-    "\x02\x02\x91\x88\x03\x02\x02\x02\x91\x92\x03\x02\x02\x02\x92\x96\x03\x02" +
-    "\x02\x02\x93\x95\x05\x1A\x0E\x02\x94\x93\x03\x02\x02\x02\x95\x98\x03\x02" +
-    "\x02\x02\x96\x94\x03\x02\x02\x02\x96\x97\x03\x02\x02\x02\x97\x15\x03\x02" +
-    "\x02\x02\x98\x96\x03\x02\x02\x02\x99\x9A\x05\x0E\b\x02\x9A\x9B\x07\x15" +
-    "\x02\x02\x9B\x9C\x07\x18\x02\x02\x9C\x9D\x05,\x17\x02\x9D\x17\x03\x02" +
-    "\x02\x02\x9E\x9F\x07)\x02\x02\x9F\xA3\x07,\x02\x02\xA0\xA2\x05\x1A\x0E" +
-    "\x02\xA1\xA0\x03\x02\x02\x02\xA2\xA5\x03\x02\x02\x02\xA3\xA1\x03\x02\x02" +
-    "\x02\xA3\xA4\x03\x02\x02\x02\xA4\x19\x03\x02\x02\x02\xA5\xA3\x03\x02\x02" +
-    "\x02\xA6\xAF\x056\x1C\x02\xA7\xAF\x05\x1C\x0F\x02\xA8\xAF\x05\x1E\x10" +
-    "\x02\xA9\xAF\x05 \x11\x02\xAA\xAF\x05\"\x12\x02\xAB\xAF\x05$\x13\x02\xAC" +
-    "\xAF\x05(\x15\x02\xAD\xAF\x05&\x14\x02\xAE\xA6\x03\x02\x02\x02\xAE\xA7" +
-    "\x03\x02\x02\x02\xAE\xA8\x03\x02\x02\x02\xAE\xA9\x03\x02\x02\x02\xAE\xAA" +
-    "\x03\x02\x02\x02\xAE\xAB\x03\x02\x02\x02\xAE\xAC\x03\x02\x02\x02\xAE\xAD" +
-    "\x03\x02\x02\x02\xAF\x1B\x03\x02\x02\x02\xB0\xB1\x07\x1C\x02\x02\xB1\xB2" +
-    "\x05.\x18\x02\xB2\xB3\x07\x1D\x02\x02\xB3\xB4\x05*\x16\x02\xB4\x1D\x03" +
-    "\x02\x02\x02\xB5\xB6\x07\b\x02\x02\xB6\xB7\x05*\x16\x02\xB7\xBD\x05\x1A" +
-    "\x0E\x02\xB8\xB9\x07\t\x02\x02\xB9\xBA\x07\b\x02\x02\xBA\xBC\x05\x1A\x0E" +
-    "\x02\xBB\xB8\x03\x02\x02\x02\xBC\xBF\x03\x02\x02\x02\xBD\xBB\x03\x02\x02" +
-    "\x02\xBD\xBE\x03\x02\x02\x02\xBE\xC2\x03\x02\x02\x02\xBF\xBD\x03\x02\x02" +
-    "\x02\xC0\xC1\x07\t\x02\x02\xC1\xC3\x05\x1A\x0E\x02\xC2\xC0\x03\x02\x02" +
-    "\x02\xC2\xC3\x03\x02\x02\x02\xC3\x1F\x03\x02\x02\x02\xC4\xC5\x07\n\x02" +
-    "\x02\xC5\xC6\x05*\x16\x02\xC6\xC7\x05\x1A\x0E\x02\xC7!\x03\x02\x02\x02" +
-    "\xC8\xC9\x07\v\x02\x02\xC9\xCA\x07\x18\x02\x02\xCA\xCB\x05*\x16\x02\xCB" +
-    "\xCC\x07\x1B\x02\x02\xCC\xCD\x05*\x16\x02\xCD#\x03\x02\x02\x02\xCE\xCF" +
-    "\x07\f\x02\x02\xCF\xD0\x05*\x16\x02\xD0%\x03\x02\x02\x02\xD1\xD2\x07\r" +
-    "\x02\x02\xD2\'\x03\x02\x02\x02\xD3\xD5\x05\x12\n\x02\xD4\xD3\x03\x02\x02" +
-    "\x02\xD4\xD5\x03\x02\x02\x02\xD5\xD6\x03\x02\x02\x02\xD6\xDA\x07\'\x02" +
-    "\x02\xD7\xD9\x07,\x02\x02\xD8\xD7\x03\x02\x02\x02\xD9\xDC\x03\x02\x02" +
-    "\x02\xDA\xD8\x03\x02\x02\x02\xDA\xDB\x03\x02\x02\x02\xDB\xDD\x03\x02\x02" +
-    "\x02\xDC\xDA\x03\x02\x02\x02\xDD\xDE\x050\x19\x02\xDE)\x03\x02\x02\x02" +
-    "\xDF\xE0\b\x16\x01\x02\xE0\xE9\x052\x1A\x02\xE1\xE9\x056\x1C\x02\xE2\xE9" +
-    "\x05:\x1E\x02\xE3\xE9\x05.\x18\x02\xE4\xE9\x050\x19\x02\xE5\xE9\x07.\x02" +
-    "\x02\xE6\xE9\x07*\x02\x02\xE7\xE9\x07-\x02\x02\xE8\xDF\x03\x02\x02\x02" +
-    "\xE8\xE1\x03\x02\x02\x02\xE8\xE2\x03\x02\x02\x02\xE8\xE3\x03\x02\x02\x02" +
-    "\xE8\xE4\x03\x02\x02\x02\xE8\xE5\x03\x02\x02\x02\xE8\xE6\x03\x02\x02\x02" +
-    "\xE8\xE7\x03\x02\x02\x02\xE9\u0109\x03\x02\x02\x02\xEA\xEB\f\x12\x02\x02" +
-    "\xEB\xEC\x07 \x02\x02\xEC\xED\x07\"\x02\x02\xED\u0108\x05*\x16\x13\xEE" +
-    "\xEF\f\x11\x02\x02\xEF\xF0\x07!\x02\x02\xF0\xF1\x07\"\x02\x02\xF1\u0108" +
-    "\x05*\x16\x12\xF2\xF3\f\x10\x02\x02\xF3\xF4\x07\x1E\x02\x02\xF4\xF5\x07" +
-    "\x1B\x02\x02\xF5\u0108\x05*\x16\x11\xF6\xF7\f\x0F\x02\x02\xF7\xF8\x07" +
-    "\x1F\x02\x02\xF8\xF9\x07\"\x02\x02\xF9\u0108\x05*\x16\x10\xFA\xFB\f\x0E" +
-    "\x02\x02\xFB\xFC\x07#\x02\x02\xFC\u0108\x05*\x16\x0F\xFD\xFE\f\r\x02\x02" +
-    "\xFE\xFF\x07$\x02\x02\xFF\u0108\x05*\x16\x0E\u0100\u0101\f\f\x02\x02\u0101" +
-    "\u0102\x07%\x02\x02\u0102\u0108\x05*\x16\r\u0103\u0104\f\v\x02\x02\u0104" +
-    "\u0105\x07%\x02\x02\u0105\u0106\x07&\x02\x02\u0106\u0108\x05*\x16\f\u0107" +
-    "\xEA\x03\x02\x02\x02\u0107\xEE\x03\x02\x02\x02\u0107\xF2\x03\x02\x02\x02" +
-    "\u0107\xF6\x03\x02\x02\x02\u0107\xFA\x03\x02\x02\x02\u0107\xFD\x03\x02" +
-    "\x02\x02\u0107\u0100\x03\x02\x02\x02\u0107\u0103\x03\x02\x02\x02\u0108" +
-    "\u010B\x03\x02\x02\x02\u0109\u0107\x03\x02\x02\x02\u0109\u010A\x03\x02" +
-    "\x02\x02\u010A+\x03\x02\x02\x02\u010B\u0109\x03\x02\x02\x02\u010C\u010D" +
-    "\x07,\x02\x02\u010D-\x03\x02\x02\x02\u010E\u0113\x07,\x02\x02\u010F\u0110" +
-    "\x07\x0E\x02\x02\u0110\u0112\x07,\x02\x02\u0111\u010F\x03\x02\x02\x02" +
-    "\u0112\u0115\x03\x02\x02\x02\u0113\u0111\x03\x02\x02\x02\u0113\u0114\x03" +
-    "\x02\x02\x02\u0114/\x03\x02\x02\x02\u0115\u0113\x03\x02\x02\x02\u0116" +
-    "\u0117\x07\x0F\x02\x02\u0117\u011C\x054\x1B\x02\u0118\u0119\x07\x06\x02" +
-    "\x02\u0119\u011B\x054\x1B\x02\u011A\u0118\x03\x02\x02\x02\u011B\u011E" +
-    "\x03\x02\x02\x02\u011C\u011A\x03\x02\x02\x02\u011C\u011D\x03\x02\x02\x02" +
-    "\u011D\u011F\x03\x02\x02\x02\u011E\u011C\x03\x02\x02\x02\u011F\u0120\x07" +
-    "\x10\x02\x02\u01201\x03\x02\x02\x02\u0121\u0123\x07,\x02\x02\u0122\u0121" +
-    "\x03\x02\x02\x02\u0122\u0123\x03\x02\x02\x02\u0123\u0124\x03\x02\x02\x02" +
-    "\u0124\u0125\x07\x05\x02\x02\u0125\u012A\x05*\x16\x02\u0126\u0127\x07" +
-    "\x06\x02\x02\u0127\u0129\x05*\x16\x02\u0128\u0126\x03\x02\x02\x02\u0129" +
-    "\u012C\x03\x02\x02\x02\u012A\u0128\x03\x02\x02\x02\u012A\u012B\x03\x02" +
-    "\x02\x02\u012B\u012D\x03\x02\x02\x02\u012C\u012A\x03\x02\x02\x02\u012D" +
-    "\u012E\x07\x07\x02\x02\u012E3\x03\x02\x02\x02\u012F\u0134\x07,\x02\x02" +
-    "\u0130\u0131\x07\x11\x02\x02\u0131\u0133\x05*\x16\x02\u0132\u0130\x03" +
-    "\x02\x02\x02\u0133\u0136\x03\x02\x02\x02\u0134\u0132\x03\x02\x02\x02\u0134" +
-    "\u0135\x03\x02\x02\x02\u01355\x03\x02\x02\x02\u0136\u0134\x03\x02\x02" +
-    "\x02\u0137\u0138\x05.\x18\x02\u0138\u013C\x07\x03\x02\x02\u0139\u013B" +
-    "\x058\x1D\x02\u013A\u0139\x03\x02\x02\x02\u013B\u013E\x03\x02\x02\x02" +
-    "\u013C\u013A\x03\x02\x02\x02\u013C\u013D\x03\x02\x02\x02\u013D\u013F\x03" +
-    "\x02\x02\x02\u013E\u013C\x03\x02\x02\x02\u013F\u0140\x07\x04\x02\x02\u0140" +
-    "7\x03\x02\x02\x02\u0141\u0146\x05*\x16\x02\u0142\u0143\x07\x06\x02\x02" +
-    "\u0143\u0145\x05*\x16\x02\u0144\u0142\x03\x02\x02\x02\u0145\u0148\x03" +
-    "\x02\x02\x02\u0146\u0144\x03\x02\x02\x02\u0146\u0147\x03\x02\x02\x02\u0147" +
-    "9\x03\x02\x02\x02\u0148\u0146\x03\x02\x02\x02\u0149\u014A\x07*\x02\x02" +
-    "\u014A\u014B\x07\x0E\x02\x02\u014B\u014C\x056\x1C\x02\u014C;\x03\x02\x02" +
-    "\x02\u014D\u014E\x07\x12\x02\x02\u014E\u014F\x07,\x02\x02\u014F=\x03\x02" +
-    "\x02\x02\x1D@ISV^aiy\x8E\x91\x96\xA3\xAE\xBD\xC2\xD4\xDA\xE8\u0107\u0109" +
-    "\u0113\u011C\u0122\u012A\u0134\u013C\u0146";
+    "\x1D\t\x1D\x04\x1E\t\x1E\x04\x1F\t\x1F\x04 \t \x03\x02\x03\x02\x05\x02" +
+    "C\n\x02\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x07\x03J\n\x03\f\x03\x0E" +
+    "\x03M\v\x03\x03\x04\x03\x04\x03\x04\x03\x04\x03\x04\x03\x04\x03\x04\x05" +
+    "\x04V\n\x04\x03\x05\x05\x05Y\n\x05\x03\x05\x03\x05\x03\x05\x03\x05\x03" +
+    "\x05\x03\x05\x05\x05a\n\x05\x03\x06\x05\x06d\n\x06\x03\x06\x03\x06\x03" +
+    "\x06\x03\x06\x03\x06\x03\x06\x05\x06l\n\x06\x03\x07\x03\x07\x03\x07\x03" +
+    "\x07\x03\x07\x03\x07\x03\x07\x03\x07\x03\b\x03\b\x03\b\x03\b\x07\bz\n" +
+    "\b\f\b\x0E\b}\v\b\x03\b\x03\b\x03\t\x03\t\x03\t\x03\t\x03\n\x03\n\x03" +
+    "\n\x03\n\x03\v\x03\v\x03\v\x03\v\x03\v\x03\v\x07\v\x8F\n\v\f\v\x0E\v\x92" +
+    "\v\v\x05\v\x94\n\v\x03\v\x07\v\x97\n\v\f\v\x0E\v\x9A\v\v\x03\f\x03\f\x03" +
+    "\f\x03\f\x03\f\x03\r\x03\r\x03\r\x07\r\xA4\n\r\f\r\x0E\r\xA7\v\r\x03\x0E" +
+    "\x03\x0E\x03\x0E\x03\x0E\x03\x0E\x03\x0E\x03\x0E\x03\x0E\x05\x0E\xB1\n" +
+    "\x0E\x03\x0F\x03\x0F\x03\x0F\x03\x0F\x03\x0F\x03\x10\x03\x10\x03\x10\x06" +
+    "\x10\xBB\n\x10\r\x10\x0E\x10\xBC\x03\x10\x07\x10\xC0\n\x10\f\x10\x0E\x10" +
+    "\xC3\v\x10\x03\x10\x05\x10\xC6\n\x10\x03\x10\x03\x10\x03\x11\x03\x11\x03" +
+    "\x11\x03\x11\x06\x11\xCE\n\x11\r\x11\x0E\x11\xCF\x03\x12\x03\x12\x06\x12" +
+    "\xD4\n\x12\r\x12\x0E\x12\xD5\x03\x13\x03\x13\x03\x13\x06\x13\xDB\n\x13" +
+    "\r\x13\x0E\x13\xDC\x03\x13\x03\x13\x03\x14\x03\x14\x03\x14\x03\x14\x03" +
+    "\x14\x03\x14\x03\x14\x03\x14\x03\x15\x03\x15\x03\x15\x03\x16\x05\x16\xED" +
+    "\n\x16\x03\x16\x03\x16\x07\x16\xF1\n\x16\f\x16\x0E\x16\xF4\v\x16\x03\x16" +
+    "\x03\x16\x03\x17\x03\x17\x03\x17\x03\x17\x03\x17\x03\x17\x03\x17\x03\x17" +
+    "\x03\x17\x05\x17\u0101\n\x17\x03\x17\x03\x17\x03\x17\x03\x17\x03\x17\x03" +
+    "\x17\x03\x17\x03\x17\x03\x17\x03\x17\x03\x17\x03\x17\x03\x17\x03\x17\x03" +
+    "\x17\x03\x17\x03\x17\x03\x17\x03\x17\x03\x17\x03\x17\x03\x17\x03\x17\x03" +
+    "\x17\x03\x17\x03\x17\x03\x17\x03\x17\x03\x17\x07\x17\u0120\n\x17\f\x17" +
+    "\x0E\x17\u0123\v\x17\x03\x18\x03\x18\x03\x19\x03\x19\x03\x19\x07\x19\u012A" +
+    "\n\x19\f\x19\x0E\x19\u012D\v\x19\x03\x1A\x03\x1A\x03\x1A\x03\x1A\x07\x1A" +
+    "\u0133\n\x1A\f\x1A\x0E\x1A\u0136\v\x1A\x03\x1A\x03\x1A\x03\x1B\x05\x1B" +
+    "\u013B\n\x1B\x03\x1B\x03\x1B\x03\x1B\x03\x1B\x07\x1B\u0141\n\x1B\f\x1B" +
+    "\x0E\x1B\u0144\v\x1B\x03\x1B\x03\x1B\x03\x1C\x03\x1C\x03\x1C\x07\x1C\u014B" +
+    "\n\x1C\f\x1C\x0E\x1C\u014E\v\x1C\x03\x1D\x03\x1D\x03\x1D\x07\x1D\u0153" +
+    "\n\x1D\f\x1D\x0E\x1D\u0156\v\x1D\x03\x1D\x03\x1D\x03\x1E\x03\x1E\x03\x1E" +
+    "\x07\x1E\u015D\n\x1E\f\x1E\x0E\x1E\u0160\v\x1E\x03\x1F\x03\x1F\x03\x1F" +
+    "\x03\x1F\x03 \x03 \x03 \x03 \x02\x02\x03,!\x02\x02\x04\x02\x06\x02\b\x02" +
+    "\n\x02\f\x02\x0E\x02\x10\x02\x12\x02\x14\x02\x16\x02\x18\x02\x1A\x02\x1C" +
+    "\x02\x1E\x02 \x02\"\x02$\x02&\x02(\x02*\x02,\x02.\x020\x022\x024\x026" +
+    "\x028\x02:\x02<\x02>\x02\x02\x02\u0181\x02B\x03\x02\x02\x02\x04D\x03\x02" +
+    "\x02\x02\x06U\x03\x02\x02\x02\bX\x03\x02\x02\x02\nc\x03\x02\x02\x02\f" +
+    "m\x03\x02\x02\x02\x0Eu\x03\x02\x02\x02\x10\x80\x03\x02\x02\x02\x12\x84" +
+    "\x03\x02\x02\x02\x14\x88\x03\x02\x02\x02\x16\x9B\x03\x02\x02\x02\x18\xA0" +
+    "\x03\x02\x02\x02\x1A\xB0\x03\x02\x02\x02\x1C\xB2\x03\x02\x02\x02\x1E\xB7" +
+    "\x03\x02\x02\x02 \xC9\x03\x02\x02\x02\"\xD1\x03\x02\x02\x02$\xD7\x03\x02" +
+    "\x02\x02&\xE0\x03\x02\x02\x02(\xE8\x03\x02\x02\x02*\xEC\x03\x02\x02\x02" +
+    ",\u0100\x03\x02\x02\x02.\u0124\x03\x02\x02\x020\u0126\x03\x02\x02\x02" +
+    "2\u012E\x03\x02\x02\x024\u013A\x03\x02\x02\x026\u0147\x03\x02\x02\x02" +
+    "8\u014F\x03\x02\x02\x02:\u0159\x03\x02\x02\x02<\u0161\x03\x02\x02\x02" +
+    ">\u0165\x03\x02\x02\x02@C\x05\x04\x03\x02AC\x07\x02\x02\x03B@\x03\x02" +
+    "\x02\x02BA\x03\x02\x02\x02C\x03\x03\x02\x02\x02DE\x07\x10\x02\x02EF\x07" +
+    "\x03\x02\x02FG\x07-\x02\x02GK\x07\x04\x02\x02HJ\x05\x06\x04\x02IH\x03" +
+    "\x02\x02\x02JM\x03\x02\x02\x02KI\x03\x02\x02\x02KL\x03\x02\x02\x02L\x05" +
+    "\x03\x02\x02\x02MK\x03\x02\x02\x02NV\x05\b\x05\x02OV\x05\n\x06\x02PV\x05" +
+    "\f\x07\x02QV\x05\x14\v\x02RV\x05\x18\r\x02SV\x058\x1D\x02TV\x05\x1C\x0F" +
+    "\x02UN\x03\x02\x02\x02UO\x03\x02\x02\x02UP\x03\x02\x02\x02UQ\x03\x02\x02" +
+    "\x02UR\x03\x02\x02\x02US\x03\x02\x02\x02UT\x03\x02\x02\x02V\x07\x03\x02" +
+    "\x02\x02WY\x05\x10\t\x02XW\x03\x02\x02\x02XY\x03\x02\x02\x02YZ\x03\x02" +
+    "\x02\x02Z[\x07\x11\x02\x02[\\\x07\x13\x02\x02\\]\x07\x15\x02\x02]`\x05" +
+    ".\x18\x02^a\x052\x1A\x02_a\x050\x19\x02`^\x03\x02\x02\x02`_\x03\x02\x02" +
+    "\x02`a\x03\x02\x02\x02a\t\x03\x02\x02\x02bd\x05\x10\t\x02cb\x03\x02\x02" +
+    "\x02cd\x03\x02\x02\x02de\x03\x02\x02\x02ef\x07\x16\x02\x02fg\x07\x1B\x02" +
+    "\x02gh\x07\x1C\x02\x02hk\x05.\x18\x02il\x052\x1A\x02jl\x050\x19\x02ki" +
+    "\x03\x02\x02\x02kj\x03\x02\x02\x02kl\x03\x02\x02\x02l\v\x03\x02\x02\x02" +
+    "mn\x07\x16\x02\x02no\x05\x0E\b\x02op\x07\x12\x02\x02pq\x07\x15\x02\x02" +
+    "qr\x05.\x18\x02rs\x07\x1C\x02\x02st\x07-\x02\x02t\r\x03\x02\x02\x02uv" +
+    "\x07\x05\x02\x02v{\x07-\x02\x02wx\x07\x06\x02\x02xz\x07-\x02\x02yw\x03" +
+    "\x02\x02\x02z}\x03\x02\x02\x02{y\x03\x02\x02\x02{|\x03\x02\x02\x02|~\x03" +
+    "\x02\x02\x02}{\x03\x02\x02\x02~\x7F\x07\x07\x02\x02\x7F\x0F\x03\x02\x02" +
+    "\x02\x80\x81\x07\x1D\x02\x02\x81\x82\x07-\x02\x02\x82\x83\x07\x1E\x02" +
+    "\x02\x83\x11\x03\x02\x02\x02\x84\x85\x07\x1D\x02\x02\x85\x86\x07-\x02" +
+    "\x02\x86\x87\x07\x15\x02\x02\x87\x13\x03\x02\x02\x02\x88\x89\x07)\x02" +
+    "\x02\x89\x93\x07-\x02\x02\x8A\x8B\x07\x14\x02\x02\x8B\x90\x05\x16\f\x02" +
+    "\x8C\x8D\x07\x06\x02\x02\x8D\x8F\x05\x16\f\x02\x8E\x8C\x03\x02\x02\x02" +
+    "\x8F\x92\x03\x02\x02\x02\x90\x8E\x03\x02\x02\x02\x90\x91\x03\x02\x02\x02" +
+    "\x91\x94\x03\x02\x02\x02\x92\x90\x03\x02\x02\x02\x93\x8A\x03\x02\x02\x02" +
+    "\x93\x94\x03\x02\x02\x02\x94\x98\x03\x02\x02\x02\x95\x97\x05\x1A\x0E\x02" +
+    "\x96\x95\x03\x02\x02\x02\x97\x9A\x03\x02\x02\x02\x98\x96\x03\x02\x02\x02" +
+    "\x98\x99\x03\x02\x02\x02\x99\x15\x03\x02\x02\x02\x9A\x98\x03\x02\x02\x02" +
+    "\x9B\x9C\x05\x0E\b\x02\x9C\x9D\x07\x12\x02\x02\x9D\x9E\x07\x15\x02\x02" +
+    "\x9E\x9F\x05.\x18\x02\x9F\x17\x03\x02\x02\x02\xA0\xA1\x07*\x02\x02\xA1" +
+    "\xA5\x07-\x02\x02\xA2\xA4\x05\x1A\x0E\x02\xA3\xA2\x03\x02\x02\x02\xA4" +
+    "\xA7\x03\x02\x02\x02\xA5\xA3\x03\x02\x02\x02\xA5\xA6\x03\x02\x02\x02\xA6" +
+    "\x19\x03\x02\x02\x02\xA7\xA5\x03\x02\x02\x02\xA8\xB1\x058\x1D\x02\xA9" +
+    "\xB1\x05\x1C\x0F\x02\xAA\xB1\x05\x1E\x10\x02\xAB\xB1\x05$\x13\x02\xAC" +
+    "\xB1\x05&\x14\x02\xAD\xB1\x05(\x15\x02\xAE\xB1\x05*\x16\x02\xAF\xB1\x07" +
+    "\x19\x02\x02\xB0\xA8\x03\x02\x02\x02\xB0\xA9\x03\x02\x02\x02\xB0\xAA\x03" +
+    "\x02\x02\x02\xB0\xAB\x03\x02\x02\x02\xB0\xAC\x03\x02\x02\x02\xB0\xAD\x03" +
+    "\x02\x02\x02\xB0\xAE\x03\x02\x02\x02\xB0\xAF\x03\x02\x02\x02\xB1\x1B\x03" +
+    "\x02\x02\x02\xB2\xB3\x07\x1D\x02\x02\xB3\xB4\x050\x19\x02\xB4\xB5\x07" +
+    "\x1E\x02\x02\xB5\xB6\x05,\x17\x02\xB6\x1D\x03\x02\x02\x02\xB7\xB8\x07" +
+    "\x17\x02\x02\xB8\xBA\x05,\x17\x02\xB9\xBB\x05\x1A\x0E\x02\xBA\xB9\x03" +
+    "\x02\x02\x02\xBB\xBC\x03\x02\x02\x02\xBC\xBA\x03\x02\x02\x02\xBC\xBD\x03" +
+    "\x02\x02\x02\xBD\xC1\x03\x02\x02\x02\xBE\xC0\x05 \x11\x02\xBF\xBE\x03" +
+    "\x02\x02\x02\xC0\xC3\x03\x02\x02\x02\xC1\xBF\x03\x02\x02\x02\xC1\xC2\x03" +
+    "\x02\x02\x02\xC2\xC5\x03\x02\x02\x02\xC3\xC1\x03\x02\x02\x02\xC4\xC6\x05" +
+    "\"\x12\x02\xC5\xC4\x03\x02\x02\x02\xC5\xC6\x03\x02\x02\x02\xC6\xC7\x03" +
+    "\x02\x02\x02\xC7\xC8\x07\x1A\x02\x02\xC8\x1F\x03\x02\x02\x02\xC9\xCA\x07" +
+    "\x18\x02\x02\xCA\xCB\x07\x17\x02\x02\xCB\xCD\x05,\x17\x02\xCC\xCE\x05" +
+    "\x1A\x0E\x02\xCD\xCC\x03\x02\x02\x02\xCE\xCF\x03\x02\x02\x02\xCF\xCD\x03" +
+    "\x02\x02\x02\xCF\xD0\x03\x02\x02\x02\xD0!\x03\x02\x02\x02\xD1\xD3\x07" +
+    "\x18\x02\x02\xD2\xD4\x05\x1A\x0E\x02\xD3\xD2\x03\x02\x02\x02\xD4\xD5\x03" +
+    "\x02\x02\x02\xD5\xD3\x03\x02\x02\x02\xD5\xD6\x03\x02\x02\x02\xD6#\x03" +
+    "\x02\x02\x02\xD7\xD8\x07\b\x02\x02\xD8\xDA\x05,\x17\x02\xD9\xDB\x05\x1A" +
+    "\x0E\x02\xDA\xD9\x03\x02\x02\x02\xDB\xDC\x03\x02\x02\x02\xDC\xDA\x03\x02" +
+    "\x02\x02\xDC\xDD\x03\x02\x02\x02\xDD\xDE\x03\x02\x02\x02\xDE\xDF\x07\x1A" +
+    "\x02\x02\xDF%\x03\x02\x02\x02\xE0\xE1\x07\t\x02\x02\xE1\xE2\x07\x15\x02" +
+    "\x02\xE2\xE3\x05,\x17\x02\xE3\xE4\x07\x1C\x02\x02\xE4\xE5\x05,\x17\x02" +
+    "\xE5\xE6\x05\x1A\x0E\x02\xE6\xE7\x07\x1A\x02\x02\xE7\'\x03\x02\x02\x02" +
+    "\xE8\xE9\x07\n\x02\x02\xE9\xEA\x05,\x17\x02\xEA)\x03\x02\x02\x02\xEB\xED" +
+    "\x05\x12\n\x02\xEC\xEB\x03\x02\x02\x02\xEC\xED\x03\x02\x02\x02\xED\xEE" +
+    "\x03\x02\x02\x02\xEE\xF2\x07(\x02\x02\xEF\xF1\x07-\x02\x02\xF0\xEF\x03" +
+    "\x02\x02\x02\xF1\xF4\x03\x02\x02\x02\xF2\xF0\x03\x02\x02\x02\xF2\xF3\x03" +
+    "\x02\x02\x02\xF3\xF5\x03\x02\x02\x02\xF4\xF2\x03\x02\x02\x02\xF5\xF6\x05" +
+    "2\x1A\x02\xF6+\x03\x02\x02\x02\xF7\xF8\b\x17\x01\x02\xF8\u0101\x054\x1B" +
+    "\x02\xF9\u0101\x058\x1D\x02\xFA\u0101\x05<\x1F\x02\xFB\u0101\x050\x19" +
+    "\x02\xFC\u0101\x052\x1A\x02\xFD\u0101\x07/\x02\x02\xFE\u0101\x07+\x02" +
+    "\x02\xFF\u0101\x07.\x02\x02\u0100\xF7\x03\x02\x02\x02\u0100\xF9\x03\x02" +
+    "\x02\x02\u0100\xFA\x03\x02\x02\x02\u0100\xFB\x03\x02\x02\x02\u0100\xFC" +
+    "\x03\x02\x02\x02\u0100\xFD\x03\x02\x02\x02\u0100\xFE\x03\x02\x02\x02\u0100" +
+    "\xFF\x03\x02\x02\x02\u0101\u0121\x03\x02\x02\x02\u0102\u0103\f\x12\x02" +
+    "\x02\u0103\u0104\x07!\x02\x02\u0104\u0105\x07#\x02\x02\u0105\u0120\x05" +
+    ",\x17\x13\u0106\u0107\f\x11\x02\x02\u0107\u0108\x07\"\x02\x02\u0108\u0109" +
+    "\x07#\x02\x02\u0109\u0120\x05,\x17\x12\u010A\u010B\f\x10\x02\x02\u010B" +
+    "\u010C\x07\x1F\x02\x02\u010C\u010D\x07\x1C\x02\x02\u010D\u0120\x05,\x17" +
+    "\x11\u010E\u010F\f\x0F\x02\x02\u010F\u0110\x07 \x02\x02\u0110\u0111\x07" +
+    "#\x02\x02\u0111\u0120\x05,\x17\x10\u0112\u0113\f\x0E\x02\x02\u0113\u0114" +
+    "\x07$\x02\x02\u0114\u0120\x05,\x17\x0F\u0115\u0116\f\r\x02\x02\u0116\u0117" +
+    "\x07%\x02\x02\u0117\u0120\x05,\x17\x0E\u0118\u0119\f\f\x02\x02\u0119\u011A" +
+    "\x07&\x02\x02\u011A\u0120\x05,\x17\r\u011B\u011C\f\v\x02\x02\u011C\u011D" +
+    "\x07&\x02\x02\u011D\u011E\x07\'\x02\x02\u011E\u0120\x05,\x17\f\u011F\u0102" +
+    "\x03\x02\x02\x02\u011F\u0106\x03\x02\x02\x02\u011F\u010A\x03\x02\x02\x02" +
+    "\u011F\u010E\x03\x02\x02\x02\u011F\u0112\x03\x02\x02\x02\u011F\u0115\x03" +
+    "\x02\x02\x02\u011F\u0118\x03\x02\x02\x02\u011F\u011B\x03\x02\x02\x02\u0120" +
+    "\u0123\x03\x02\x02\x02\u0121\u011F\x03\x02\x02\x02\u0121\u0122\x03\x02" +
+    "\x02\x02\u0122-\x03\x02\x02\x02\u0123\u0121\x03\x02\x02\x02\u0124\u0125" +
+    "\x07-\x02\x02\u0125/\x03\x02\x02\x02\u0126\u012B\x07-\x02\x02\u0127\u0128" +
+    "\x07\v\x02\x02\u0128\u012A\x07-\x02\x02\u0129\u0127\x03\x02\x02\x02\u012A" +
+    "\u012D\x03\x02\x02\x02\u012B\u0129\x03\x02\x02\x02\u012B\u012C\x03\x02" +
+    "\x02\x02\u012C1\x03\x02\x02\x02\u012D\u012B\x03\x02\x02\x02\u012E\u012F" +
+    "\x07\f\x02\x02\u012F\u0134\x056\x1C\x02\u0130\u0131\x07\x06\x02\x02\u0131" +
+    "\u0133\x056\x1C\x02\u0132\u0130\x03\x02\x02\x02\u0133\u0136\x03\x02\x02" +
+    "\x02\u0134\u0132\x03\x02\x02\x02\u0134\u0135\x03\x02\x02\x02\u0135\u0137" +
+    "\x03\x02\x02\x02\u0136\u0134\x03\x02\x02\x02\u0137\u0138\x07\r\x02\x02" +
+    "\u01383\x03\x02\x02\x02\u0139\u013B\x07-\x02\x02\u013A\u0139\x03\x02\x02" +
+    "\x02\u013A\u013B\x03\x02\x02\x02\u013B\u013C\x03\x02\x02\x02\u013C\u013D" +
+    "\x07\x05\x02\x02\u013D\u0142\x05,\x17\x02\u013E\u013F\x07\x06\x02\x02" +
+    "\u013F\u0141\x05,\x17\x02\u0140\u013E\x03\x02\x02\x02\u0141\u0144\x03" +
+    "\x02\x02\x02\u0142\u0140\x03\x02\x02\x02\u0142\u0143\x03\x02\x02\x02\u0143" +
+    "\u0145\x03\x02\x02\x02\u0144\u0142\x03\x02\x02\x02\u0145\u0146\x07\x07" +
+    "\x02\x02\u01465\x03\x02\x02\x02\u0147\u014C\x07-\x02\x02\u0148\u0149\x07" +
+    "\x0E\x02\x02\u0149\u014B\x05,\x17\x02\u014A\u0148\x03\x02\x02\x02\u014B" +
+    "\u014E\x03\x02\x02\x02\u014C\u014A\x03\x02\x02\x02\u014C\u014D\x03\x02" +
+    "\x02\x02\u014D7\x03\x02\x02\x02\u014E\u014C\x03\x02\x02\x02\u014F\u0150" +
+    "\x050\x19\x02\u0150\u0154\x07\x03\x02\x02\u0151\u0153\x05:\x1E\x02\u0152" +
+    "\u0151\x03\x02\x02\x02\u0153\u0156\x03\x02\x02\x02\u0154\u0152\x03\x02" +
+    "\x02\x02\u0154\u0155\x03\x02\x02\x02\u0155\u0157\x03\x02\x02\x02\u0156" +
+    "\u0154\x03\x02\x02\x02\u0157\u0158\x07\x04\x02\x02\u01589\x03\x02\x02" +
+    "\x02\u0159\u015E\x05,\x17\x02\u015A\u015B\x07\x06\x02\x02\u015B\u015D" +
+    "\x05,\x17\x02\u015C\u015A\x03\x02\x02\x02\u015D\u0160\x03\x02\x02\x02" +
+    "\u015E\u015C\x03\x02\x02\x02\u015E\u015F\x03\x02\x02\x02\u015F;\x03\x02" +
+    "\x02\x02\u0160\u015E\x03\x02\x02\x02\u0161\u0162\x07+\x02\x02\u0162\u0163" +
+    "\x07\v\x02\x02\u0163\u0164\x058\x1D\x02\u0164=\x03\x02\x02\x02\u0165\u0166" +
+    "\x07\x0F\x02\x02\u0166\u0167\x07-\x02\x02\u0167?\x03\x02\x02\x02!BKUX" +
+    "`ck{\x90\x93\x98\xA5\xB0\xBC\xC1\xC5\xCF\xD5\xDC\xEC\xF2\u0100\u011F\u0121" +
+    "\u012B\u0134\u013A\u0142\u014C\u0154\u015E";
 __decorate([
     Decorators_2.Override,
     Decorators_1.NotNull
@@ -1856,6 +1958,12 @@ __decorate([
 ], RASPParser.prototype, "r_if", null);
 __decorate([
     RuleVersion_1.RuleVersion(0)
+], RASPParser.prototype, "r_if_elseif", null);
+__decorate([
+    RuleVersion_1.RuleVersion(0)
+], RASPParser.prototype, "r_if_else", null);
+__decorate([
+    RuleVersion_1.RuleVersion(0)
 ], RASPParser.prototype, "r_while", null);
 __decorate([
     RuleVersion_1.RuleVersion(0)
@@ -1863,9 +1971,6 @@ __decorate([
 __decorate([
     RuleVersion_1.RuleVersion(0)
 ], RASPParser.prototype, "print", null);
-__decorate([
-    RuleVersion_1.RuleVersion(0)
-], RASPParser.prototype, "end", null);
 __decorate([
     RuleVersion_1.RuleVersion(0)
 ], RASPParser.prototype, "sendQuery", null);
@@ -2448,9 +2553,7 @@ class StatementContext extends ParserRuleContext_1.ParserRuleContext {
     sendQuery() {
         return this.tryGetRuleContext(0, SendQueryContext);
     }
-    end() {
-        return this.tryGetRuleContext(0, EndContext);
-    }
+    EXIT() { return this.tryGetToken(RASPParser.EXIT, 0); }
     get ruleIndex() { return RASPParser.RULE_statement; }
     enterRule(listener) {
         if (listener.enterStatement)
@@ -2484,9 +2587,11 @@ class AssignmentContext extends ParserRuleContext_1.ParserRuleContext {
     constructor(parent, invokingState) {
         super(parent, invokingState);
     }
+    SET() { return this.getToken(RASPParser.SET, 0); }
     variable() {
         return this.getRuleContext(0, VariableContext);
     }
+    AS() { return this.getToken(RASPParser.AS, 0); }
     expr() {
         return this.getRuleContext(0, ExprContext);
     }
@@ -2523,9 +2628,11 @@ class R_ifContext extends ParserRuleContext_1.ParserRuleContext {
     constructor(parent, invokingState) {
         super(parent, invokingState);
     }
+    IF() { return this.getToken(RASPParser.IF, 0); }
     expr() {
         return this.getRuleContext(0, ExprContext);
     }
+    END() { return this.getToken(RASPParser.END, 0); }
     statement(i) {
         if (i === undefined) {
             return this.getRuleContexts(StatementContext);
@@ -2533,6 +2640,17 @@ class R_ifContext extends ParserRuleContext_1.ParserRuleContext {
         else {
             return this.getRuleContext(i, StatementContext);
         }
+    }
+    r_if_elseif(i) {
+        if (i === undefined) {
+            return this.getRuleContexts(R_if_elseifContext);
+        }
+        else {
+            return this.getRuleContext(i, R_if_elseifContext);
+        }
+    }
+    r_if_else() {
+        return this.tryGetRuleContext(0, R_if_elseContext);
     }
     get ruleIndex() { return RASPParser.RULE_r_if; }
     enterRule(listener) {
@@ -2563,6 +2681,94 @@ __decorate([
     Decorators_2.Override
 ], R_ifContext.prototype, "accept", null);
 exports.R_ifContext = R_ifContext;
+class R_if_elseifContext extends ParserRuleContext_1.ParserRuleContext {
+    constructor(parent, invokingState) {
+        super(parent, invokingState);
+    }
+    ELSE() { return this.getToken(RASPParser.ELSE, 0); }
+    IF() { return this.getToken(RASPParser.IF, 0); }
+    expr() {
+        return this.getRuleContext(0, ExprContext);
+    }
+    statement(i) {
+        if (i === undefined) {
+            return this.getRuleContexts(StatementContext);
+        }
+        else {
+            return this.getRuleContext(i, StatementContext);
+        }
+    }
+    get ruleIndex() { return RASPParser.RULE_r_if_elseif; }
+    enterRule(listener) {
+        if (listener.enterR_if_elseif)
+            listener.enterR_if_elseif(this);
+    }
+    exitRule(listener) {
+        if (listener.exitR_if_elseif)
+            listener.exitR_if_elseif(this);
+    }
+    accept(visitor) {
+        if (visitor.visitR_if_elseif)
+            return visitor.visitR_if_elseif(this);
+        else
+            return visitor.visitChildren(this);
+    }
+}
+__decorate([
+    Decorators_2.Override
+], R_if_elseifContext.prototype, "ruleIndex", null);
+__decorate([
+    Decorators_2.Override
+], R_if_elseifContext.prototype, "enterRule", null);
+__decorate([
+    Decorators_2.Override
+], R_if_elseifContext.prototype, "exitRule", null);
+__decorate([
+    Decorators_2.Override
+], R_if_elseifContext.prototype, "accept", null);
+exports.R_if_elseifContext = R_if_elseifContext;
+class R_if_elseContext extends ParserRuleContext_1.ParserRuleContext {
+    constructor(parent, invokingState) {
+        super(parent, invokingState);
+    }
+    ELSE() { return this.getToken(RASPParser.ELSE, 0); }
+    statement(i) {
+        if (i === undefined) {
+            return this.getRuleContexts(StatementContext);
+        }
+        else {
+            return this.getRuleContext(i, StatementContext);
+        }
+    }
+    get ruleIndex() { return RASPParser.RULE_r_if_else; }
+    enterRule(listener) {
+        if (listener.enterR_if_else)
+            listener.enterR_if_else(this);
+    }
+    exitRule(listener) {
+        if (listener.exitR_if_else)
+            listener.exitR_if_else(this);
+    }
+    accept(visitor) {
+        if (visitor.visitR_if_else)
+            return visitor.visitR_if_else(this);
+        else
+            return visitor.visitChildren(this);
+    }
+}
+__decorate([
+    Decorators_2.Override
+], R_if_elseContext.prototype, "ruleIndex", null);
+__decorate([
+    Decorators_2.Override
+], R_if_elseContext.prototype, "enterRule", null);
+__decorate([
+    Decorators_2.Override
+], R_if_elseContext.prototype, "exitRule", null);
+__decorate([
+    Decorators_2.Override
+], R_if_elseContext.prototype, "accept", null);
+exports.R_if_elseContext = R_if_elseContext;
 class R_whileContext extends ParserRuleContext_1.ParserRuleContext {
     constructor(parent, invokingState) {
         super(parent, invokingState);
@@ -2570,8 +2776,14 @@ class R_whileContext extends ParserRuleContext_1.ParserRuleContext {
     expr() {
         return this.getRuleContext(0, ExprContext);
     }
-    statement() {
-        return this.getRuleContext(0, StatementContext);
+    END() { return this.getToken(RASPParser.END, 0); }
+    statement(i) {
+        if (i === undefined) {
+            return this.getRuleContexts(StatementContext);
+        }
+        else {
+            return this.getRuleContext(i, StatementContext);
+        }
     }
     get ruleIndex() { return RASPParser.RULE_r_while; }
     enterRule(listener) {
@@ -2614,6 +2826,10 @@ class LoopContext extends ParserRuleContext_1.ParserRuleContext {
             return this.getRuleContext(i, ExprContext);
         }
     }
+    statement() {
+        return this.getRuleContext(0, StatementContext);
+    }
+    END() { return this.getToken(RASPParser.END, 0); }
     get ruleIndex() { return RASPParser.RULE_loop; }
     enterRule(listener) {
         if (listener.enterLoop)
@@ -2679,39 +2895,6 @@ __decorate([
     Decorators_2.Override
 ], PrintContext.prototype, "accept", null);
 exports.PrintContext = PrintContext;
-class EndContext extends ParserRuleContext_1.ParserRuleContext {
-    constructor(parent, invokingState) {
-        super(parent, invokingState);
-    }
-    get ruleIndex() { return RASPParser.RULE_end; }
-    enterRule(listener) {
-        if (listener.enterEnd)
-            listener.enterEnd(this);
-    }
-    exitRule(listener) {
-        if (listener.exitEnd)
-            listener.exitEnd(this);
-    }
-    accept(visitor) {
-        if (visitor.visitEnd)
-            return visitor.visitEnd(this);
-        else
-            return visitor.visitChildren(this);
-    }
-}
-__decorate([
-    Decorators_2.Override
-], EndContext.prototype, "ruleIndex", null);
-__decorate([
-    Decorators_2.Override
-], EndContext.prototype, "enterRule", null);
-__decorate([
-    Decorators_2.Override
-], EndContext.prototype, "exitRule", null);
-__decorate([
-    Decorators_2.Override
-], EndContext.prototype, "accept", null);
-exports.EndContext = EndContext;
 class SendQueryContext extends ParserRuleContext_1.ParserRuleContext {
     constructor(parent, invokingState) {
         super(parent, invokingState);

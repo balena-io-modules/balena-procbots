@@ -7,16 +7,15 @@ import { ExtRASPListener } from '../parser';
 
 export class AssignmentStatementGenerator implements AssignmentStatement {
 	public type: StatementOp.Assign = StatementOp.Assign;
+	public parent: Statement | undefined;
 	public name: string;
 	public value: Expression;
 	
 	public static enterAssignment(ctx: AssignmentContext, bot: BotDetails): void {
 		// New Assignment
-		if (bot.currentEventRegistration) {
-			throw new Error('There is already a event registration being constructed, error');
-		}
 		bot.currentStatement = {
-			type: StatementOp.Assign
+			type: StatementOp.Assign,
+			parent: bot.currentStatement
 		};
 	}
 
@@ -31,26 +30,28 @@ export class AssignmentStatementGenerator implements AssignmentStatement {
 			const assignment = <AssignmentStatement>bot.currentStatement;
 			assignment.name = variable.name;
 			assignment.value = variable.value;
-			DebugExpression(bot.currentExpression);
-		}
-		if (bot.currentListenerMethod) {
-			// We'd set context to the listener method.
-			if (!bot.currentListenerMethod.statements) {
-				bot.currentListenerMethod.statements = [];
+			//DebugExpression(bot.currentExpression);
+			if (bot.currentListenerMethod) {
+				const parent = bot.currentStatement.parent;
+				if (parent && parent.assignChild) {
+					parent.assignChild(bot.currentStatement);
+					bot.currentStatement = parent;
+				} else {
+					// We'd set context to the listener method.
+					if (!bot.currentListenerMethod.statements) {
+						bot.currentListenerMethod.statements = [];
+					}
+					bot.currentListenerMethod.statements.push(bot.currentStatement);
+					bot.currentStatement = undefined;
+				}
+			} else {
+				if (!bot.assignments) {
+					bot.assignments = [];
+				}
+				bot.assignments.push(bot.currentStatement);
 			}
-			assignmentContext = bot.currentListenerMethod.statements;
-		} else {
-			if (!bot.assignments) {
-				bot.assignments = [];
-			}
-			assignmentContext = bot.assignments;
+			bot.currentExpression = undefined;
 		}
-		// Do assignment here
-		if (bot.currentStatement) {
-			assignmentContext.push(bot.currentStatement);
-		}
-		bot.currentStatement = undefined;
-		bot.currentExpression = undefined;
 	}
 }
 

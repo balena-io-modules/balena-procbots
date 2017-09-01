@@ -26,16 +26,19 @@ bot(FortuneBot)
         set data as { owner: serviceEvent.repository.owner.login, repo: serviceEvent.repository.name,
             number: serviceEvent.issue.number }
 
-        set lastComment as 123 added to some.thing subtracted by 12
-
-/*
         //set comments from query githubEmitter { method: githubEmitter.issues.getComments, data }
-        set comments from query { method: issues.getComments, data }
+        set comments from query { method: issues.getComments, data: stuff }
 
         if comments.length is 0
             print 'There were no comments to read'
-            end
+            exit
+        else if comments.length is 1
+            print 'This is an else clause'
+        else
+            print 'This is something else'
+        end
 
+/*
         set lastComment as comments[comments.length subtracted by 1]
 
         if lastComment.body.matches('fortune me, baby!'.lowered()) is true

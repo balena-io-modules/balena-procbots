@@ -46,16 +46,38 @@ export interface ListenerMethod {
 
 export const enum StatementOp {
 	Assign = 0,
+	Query = 1,
+	If = 2,
 }
 
 export interface Statement {
 	type: StatementOp;
+	parent: Statement | undefined;
+
+	assignChild?(statement: Statement): void;
 }
 
 export interface AssignmentStatement extends Statement {
 	type: StatementOp.Assign;
 	name: string;
 	value: Expression;
+}
+
+export interface SendQueryStatement extends Statement {
+	type: StatementOp.Query;
+	variableName: string | undefined;
+	value: ObjectExpression;
+}
+
+export interface IfClause {
+	expr: Expression;
+	statement: Statement;
+}
+
+export interface IfStatement extends Statement {
+	type: StatementOp.If;
+	ifs: IfClause[]; // Operates in order, implied 'else if'
+	else?: Statement; // If none of the above work, this statement is executed
 }
 
 // Expressions
