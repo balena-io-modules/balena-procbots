@@ -84,4 +84,4 @@ Whilst this is a [resin.io](http://resin.io) project, we welcome any contributio
 
 ## NotifyBot
 
-* [NotifyBot HowTo](https://resin-io-modules.github.io/resin-procbots/media/NotifyBot/notifybot.md)
+* [NotifyBot HowTo](https://github.com/resin-io-modules/resin-procbots/blob/master/docs/media/NotifyBot/notifybot.md)
