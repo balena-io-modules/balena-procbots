@@ -51,7 +51,7 @@ Most Client Bots will require secure keys or tokens to operate. These should be 
 
 As the latter changes radically between deployment solutions, this allows the ProcBot framework itself to stay agnostic.
 
-### Buildling
+### Building
 
 Building tasks are implemented in [`gulp`](http://gulpjs.com/), and these tasks are defined in the `gulpfile.js` file.
 
