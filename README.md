@@ -72,7 +72,7 @@ Whilst this is a [resin.io](http://resin.io) project, we welcome any contributio
 
 ## VersionBot
 
-* [VersionBot HowTo](https://resin-io-modules.github.io/resin-procbots/media/VersionBot/versionbot.md)
+* [VersionBot HowTo](https://github.com/resin-io-modules/resin-procbots/blob/master/docs/media/VersionBot/versionbot.md)
 
 ## SyncBot
 
