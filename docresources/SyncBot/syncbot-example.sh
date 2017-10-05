@@ -60,5 +60,13 @@ export MESSAGE_TRANSLATOR_PRIVACY_INDICATORS="{
 }"
 export MESSAGE_TRANSLATOR_MESSAGES_OF_THE_DAY="[\"resin.io\"]"
 export MESSAGE_TRANSLATOR_IMG_BASE_URL="https://resin.io/icons/logo.svg"
+export SYNCBOT_ERROR_UNDOCUMENTED="No fixes currently documented."
+export SYNCBOT_ERROR_SOLUTIONS="{
+    \"discourse\": {
+        \"^403\": { \"description\": \"permissions error\", \"fixes\": [
+            \"You should check that your username and token are correct.\"
+        ] }
+    }
+}"
 
 npm start

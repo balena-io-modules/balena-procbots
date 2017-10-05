@@ -380,3 +380,28 @@ e.g `https://resin.io/icons/logo.svg`
 This is a url used to form the domain part of an invisible link encoding of metadata
 
 e.g. `http://resin.io`
+
+
+#### SYNCBOT_ERROR_SOLUTIONS
+
+This is a JSON encoded object of error patterns, a user friendly description, and possible fixes.
+
+e.g.
+```json
+{
+  "discourse": {
+    "^403": { "description": "a problem with your permissions.", "fixes": [
+      "You should check that your username and token are correct."
+    ] },
+    "^500": { "description": "a problem with the discourse servers.", "fixes": [
+      "You should try again in a few minutes."
+    ] }
+  }
+}
+```
+
+#### SYNCBOT_ERROR_UNDOCUMENTED
+
+This is a text string to use when the error translator cannot find any details.
+
+e.g. `No fixes currently documented.`

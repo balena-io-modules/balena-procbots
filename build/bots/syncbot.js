@@ -14,7 +14,7 @@ class SyncBot extends procbot_1.ProcBot {
                 from.flow === data.source.flow &&
                 !_.includes(['system', to.service], data.details.genesis)) {
                 const text = data.details.text;
-                logger.log(logger_1.LogLevel.INFO, `---> Heard '${text}' on ${from.service}.`);
+                logger.log(logger_1.LogLevel.INFO, `---> Heard '${text.split(/[\r\n]/)[0]}' on ${from.service}.`);
                 return SyncBot.readConnectedThread(to, messenger, data)
                     .then((threadDetails) => {
                     const threadId = _.get(threadDetails, 'response.thread', false);
@@ -23,6 +23,9 @@ class SyncBot extends procbot_1.ProcBot {
                             service: to.service, flow: to.flow, thread: threadId,
                         }, messenger, data)
                             .then((emitResponse) => {
+                            if (emitResponse.err) {
+                                return emitResponse;
+                            }
                             return {
                                 response: {
                                     thread: threadId,
@@ -33,6 +36,17 @@ class SyncBot extends procbot_1.ProcBot {
                     }
                     return SyncBot.createThreadAndConnect(to, messenger, data);
                 })
+                    .then((response) => {
+                    if (response.err) {
+                        logger.log(logger_1.LogLevel.WARN, JSON.stringify({ message: response.err.message, data }));
+                        return SyncBot.createErrorComment(to, messenger, data, response.err)
+                            .return(response);
+                    }
+                    else {
+                        logger.log(logger_1.LogLevel.INFO, `---> Emitted '${text.split(/[\r\n]/)[0]}' to ${to.service}.`);
+                    }
+                    return response;
+                })
                     .then((emitResponse) => {
                     const threadId = _.get(emitResponse, 'response.thread', false);
                     if (threadId && data.details.tags) {
@@ -40,16 +54,59 @@ class SyncBot extends procbot_1.ProcBot {
                             service: to.service,
                             flow: to.flow,
                             thread: threadId,
-                        }, messenger, data);
+                        }, messenger, data)
+                            .return();
                     }
-                    return emitResponse;
-                })
-                    .then(() => {
-                    logger.log(logger_1.LogLevel.INFO, `---> Emitted '${text}' to ${to.service}.`);
                 });
             }
             return Promise.resolve();
         };
+    }
+    static createErrorComment(to, messenger, data, error) {
+        const solution = SyncBot.getErrorSolution(to.service, error.message);
+        const fixes = solution.fixes.length > 0 ?
+            ` * ${solution.fixes.join('\r\n * ')}` :
+            process.env.SYNCBOT_ERROR_UNDOCUMENTED;
+        const echoData = {
+            details: {
+                genesis: to.service,
+                handle: process.env.SYNCBOT_NAME,
+                hidden: true,
+                internal: true,
+                tags: data.details.tags,
+                text: `${to.service} reports \`${solution.description}\`.\r\n${fixes}\r\n`,
+                title: data.details.title,
+            },
+            source: {
+                message: 'duff',
+                thread: 'duff',
+                service: to.service,
+                username: process.env.SYNCBOT_NAME,
+                flow: to.flow,
+            },
+        };
+        return SyncBot.createComment(data.source, messenger, echoData);
+    }
+    static getErrorSolution(service, message) {
+        try {
+            const solutionMatrix = JSON.parse(process.env.SYNCBOT_ERROR_SOLUTIONS);
+            const solutionIdeas = _.get(solutionMatrix, service, {});
+            const filteredSolutions = _.filter(solutionIdeas, (_value, pattern) => {
+                return new RegExp(pattern).test(message);
+            });
+            if (filteredSolutions.length > 0) {
+                return filteredSolutions[0];
+            }
+            else {
+                return {
+                    description: message,
+                    fixes: [],
+                };
+            }
+        }
+        catch (error) {
+            throw new Error('SYNCBOT_ERROR_SOLUTIONS not a valid JSON object of service => { message => resolution }.');
+        }
     }
     static updateTags(to, messenger, data) {
         const updateTags = {

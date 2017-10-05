@@ -105,6 +105,9 @@ export class MessengerService extends ServiceScaffold<string> implements Service
 		})
 		// Translates any response from the sub-service emitter, before passing it on up.
 		.then((response: ServiceEmitResponse) => {
+			if (response.err) {
+				return response;
+			}
 			return this.translators[data.target.service].responseIntoMessageResponse(data, response.response);
 		});
 	}

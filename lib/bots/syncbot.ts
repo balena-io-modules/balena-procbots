@@ -21,7 +21,8 @@ import { MessengerService } from '../services/messenger';
 import {
 	BasicMessageInformation, CreateThreadResponse, FlowDefinition,
 	MessageListener, MessengerAction, MessengerEmitResponse,
-	MessengerEvent, ThreadDefinition, TransmitInformation,
+	MessengerEvent, SolutionIdea, SolutionIdeas,
+	ThreadDefinition, TransmitInformation,
 } from '../services/messenger-types';
 import { createDataHub, DataHub } from '../services/messenger/datahubs/datahub';
 import { ServiceType } from '../services/service-types';
@@ -55,7 +56,7 @@ export class SyncBot extends ProcBot {
 			) {
 				// Log that we received this event.
 				const text = data.details.text;
-				logger.log(LogLevel.INFO, `---> Heard '${text}' on ${from.service}.`);
+				logger.log(LogLevel.INFO, `---> Heard '${text.split(/[\r\n]/)[0]}' on ${from.service}.`);
 				// Find details of any connections stored in the originating thread.
 				return SyncBot.readConnectedThread(to, messenger, data)
 				// Then comment on or create a thread
@@ -69,6 +70,9 @@ export class SyncBot extends ProcBot {
 						}, messenger, data)
 						// Pass through details of the thread updated
 						.then((emitResponse) => {
+							if (emitResponse.err) {
+								return emitResponse;
+							}
 							return {
 								response: {
 									thread: threadId,
@@ -80,6 +84,18 @@ export class SyncBot extends ProcBot {
 					// Create a thread if the quest for connections didn't find any
 					return SyncBot.createThreadAndConnect(to, messenger, data);
 				})
+				// Then report that we have passed the message on
+				.then((response: MessengerEmitResponse) => {
+					if (response.err) {
+						logger.log(LogLevel.WARN, JSON.stringify({message: response.err.message, data}));
+						return SyncBot.createErrorComment(to, messenger, data, response.err)
+						// Ignore the response from the messenger, SyncBot only cares that it's happened.
+						.return(response);
+					} else {
+						logger.log(LogLevel.INFO, `---> Emitted '${text.split(/[\r\n]/)[0]}' to ${to.service}.`);
+					}
+					return response;
+				})
 				// Then update the tags on the thread
 				.then((emitResponse: MessengerEmitResponse) => {
 					// If the process this far resolved with a response
@@ -90,18 +106,77 @@ export class SyncBot extends ProcBot {
 							service: to.service,
 							flow: to.flow,
 							thread: threadId,
-						}, messenger, data);
+						}, messenger, data)
+						// The upstream expectations are for a promise that resolves to void when complete.
+						.return();
 					}
-					return emitResponse;
-				})
-				// Then report that we have passed the message on
-				.then(() => {
-					logger.log(LogLevel.INFO, `---> Emitted '${text}' to ${to.service}.`);
 				});
 			}
 			// The event received doesn't match the profile being routed, so nothing is the correct action.
 			return Promise.resolve();
 		};
+	}
+
+	/**
+	 * Promise to post to the thread details of the error, and any likely fixes.
+	 * @param to         The location we attempted to synchronise the data to.
+	 * @param messenger  Service to use to communicate this message.
+	 * @param data       The payload we attempted to synchronise.
+	 * @param error      The error from the service.
+	 * @returns          Promise that resolves to the response from creating the message.
+	 */
+	private static createErrorComment(
+		to: FlowDefinition, messenger: MessengerService, data: BasicMessageInformation, error: Error
+	): Promise<MessengerEmitResponse> {
+		const solution = SyncBot.getErrorSolution(to.service, error.message);
+		const fixes = solution.fixes.length > 0 ?
+			` * ${solution.fixes.join('\r\n * ')}` :
+			process.env.SYNCBOT_ERROR_UNDOCUMENTED;
+		const echoData: BasicMessageInformation = {
+			details: {
+				genesis: to.service,
+				handle: process.env.SYNCBOT_NAME,
+				hidden: true,
+				internal: true,
+				tags: data.details.tags,
+				text: `${to.service} reports \`${solution.description}\`.\r\n${fixes}\r\n`,
+				title: data.details.title,
+			},
+			source: {
+				message: 'duff',
+				thread: 'duff',
+				service: to.service,
+				username: process.env.SYNCBOT_NAME,
+				flow: to.flow,
+			},
+		};
+		return SyncBot.createComment(data.source, messenger, echoData);
+	}
+
+	/**
+	 * Find, from the environment, a possible solution to the provided error message.
+	 * @param service  Name of the service reporting the error.
+	 * @param message  Message that the service reported.
+	 * @returns        A suggested fix to the error.
+	 */
+	private static getErrorSolution(service: string, message: string): SolutionIdea {
+		try {
+			const solutionMatrix = JSON.parse(process.env.SYNCBOT_ERROR_SOLUTIONS);
+			const solutionIdeas: SolutionIdeas = _.get(solutionMatrix, service, {});
+			const filteredSolutions = _.filter(solutionIdeas, (_value: any, pattern: string) => {
+				return new RegExp(pattern).test(message);
+			});
+			if (filteredSolutions.length > 0) {
+				return filteredSolutions[0];
+			} else {
+				return {
+					description: message,
+					fixes: [],
+				};
+			}
+		} catch (error) {
+			throw new Error('SYNCBOT_ERROR_SOLUTIONS not a valid JSON object of service => { message => resolution }.');
+		}
 	}
 
 	/**

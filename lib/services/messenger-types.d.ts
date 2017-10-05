@@ -173,3 +173,16 @@ export interface MessengerEvent extends ServiceScaffoldEvent {
 	/** A massaged presentation of the data, using message types. */
 	cookedEvent: BasicMessageInformation;
 }
+
+export interface SolutionIdea {
+	description: string;
+	fixes: string[];
+}
+
+export interface SolutionIdeas {
+	[pattern: string]: SolutionIdea;
+}
+
+export interface SolutionMatrix {
+	[service: string]: SolutionIdeas;
+}
