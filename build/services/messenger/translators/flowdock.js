@@ -55,7 +55,7 @@ class FlowdockTranslator extends translator_scaffold_1.TranslatorScaffold {
     }
     static convertReadConnectionResponse(message, response) {
         if (response.length > 0) {
-            const idFinder = new RegExp(`Connects to \\[${message.source.service} thread ([\\w\\d-+\\/=]+)]`, 'i');
+            const idFinder = new RegExp(`\\[${message.source.service} thread ([\\w\\d-+\\/=]+)]`, 'i');
             return Promise.resolve({
                 thread: response[0].content.match(idFinder)[1],
             });
@@ -125,7 +125,7 @@ class FlowdockTranslator extends translator_scaffold_1.TranslatorScaffold {
         return Promise.resolve({ method: ['get'], payload: {
                 path: `/flows/${orgId}/${message.target.flow}/threads/${threadId}/messages`,
                 payload: {
-                    search: `Connects to [${message.source.service} thread`,
+                    search: `[${message.source.service} thread`,
                 },
             } });
     }
