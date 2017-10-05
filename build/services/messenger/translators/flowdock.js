@@ -75,7 +75,7 @@ class FlowdockTranslator extends translator_scaffold_1.TranslatorScaffold {
                 payload: {
                     content: FlowdockTranslator.createFormattedText(message.details.text, message.details.title, translator_scaffold_1.TranslatorScaffold.stringifyMetadata(message, 'emoji')),
                     event: 'message',
-                    external_user_name: message.details.internal ? undefined : message.details.handle.substring(0, 16),
+                    external_user_name: message.details.internal ? undefined : message.details.handle,
                 },
             } });
     }
@@ -89,7 +89,7 @@ class FlowdockTranslator extends translator_scaffold_1.TranslatorScaffold {
                 payload: {
                     content: FlowdockTranslator.createFormattedText(message.details.text, undefined, translator_scaffold_1.TranslatorScaffold.stringifyMetadata(message, 'emoji')),
                     event: 'message',
-                    external_user_name: message.details.internal ? undefined : message.details.handle.substring(0, 16),
+                    external_user_name: message.details.internal ? undefined : message.details.handle,
                 }
             } });
     }

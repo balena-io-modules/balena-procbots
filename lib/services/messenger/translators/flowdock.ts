@@ -150,7 +150,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 					message.details.text, message.details.title, TranslatorScaffold.stringifyMetadata(message, 'emoji')
 				),
 				event: 'message',
-				external_user_name: message.details.internal ? undefined : message.details.handle.substring(0, 16),
+				external_user_name: message.details.internal ? undefined : message.details.handle,
 			},
 		}});
 	}
@@ -177,7 +177,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 					message.details.text, undefined, TranslatorScaffold.stringifyMetadata(message, 'emoji')
 				),
 				event: 'message',
-				external_user_name: message.details.internal ? undefined : message.details.handle.substring(0, 16),
+				external_user_name: message.details.internal ? undefined : message.details.handle,
 			}
 		}});
 	}

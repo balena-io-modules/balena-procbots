@@ -30,25 +30,46 @@ class FrontTranslator extends translator_scaffold_1.TranslatorScaffold {
         this.emitConverters[0] =
             _.partial(FrontTranslator.createThreadIntoEmit, this.connectionDetails);
     }
-    static extractAuthorDetails(message) {
+    static fetchAuthorName(connectionDetails, message) {
         if (message.author) {
-            return {
-                username: message.author.username.replace('_', '-'),
-                internal: !message.is_inbound,
-            };
+            return Promise.resolve(message.author.username.replace('_', '-'));
         }
         for (const recipient of message.recipients) {
             if (recipient.role === 'from') {
-                return {
-                    username: recipient.handle.replace('_', '-'),
-                    internal: !message.is_inbound,
-                };
+                const contactUrl = recipient._links.related.contact;
+                if (contactUrl) {
+                    return FrontTranslator.fetchContactName(connectionDetails, contactUrl);
+                }
+                return Promise.resolve(recipient.handle.replace('_', '-'));
             }
         }
-        return {
-            username: 'Unknown',
-            internal: false,
-        };
+        return Promise.resolve('Unknown Author');
+    }
+    static fetchContactName(connectionDetails, contactUrl) {
+        return request({
+            headers: {
+                authorization: `Bearer ${connectionDetails.token}`,
+            },
+            json: true,
+            method: 'GET',
+            url: contactUrl,
+        })
+            .then((contact) => {
+            return contact.name || contact.handles[0].handle;
+        });
+    }
+    static fetchSubject(connectionDetails, conversation) {
+        if (conversation.subject) {
+            return Promise.resolve(conversation.subject);
+        }
+        const contactUrl = conversation.recipient._links.related.contact;
+        if (contactUrl) {
+            return FrontTranslator.fetchContactName(connectionDetails, contactUrl)
+                .then((name) => {
+                return `Conversation with ${name}`;
+            });
+        }
+        return Promise.resolve(`Conversation ID ${conversation.id}`);
     }
     static fetchUserId(token, username) {
         return request({
@@ -186,6 +207,20 @@ class FrontTranslator extends translator_scaffold_1.TranslatorScaffold {
                 url: `https://api2.frontapp.com/events/${event.rawEvent.id}`,
             }),
         })
+            .then((firstPhase) => {
+            return Promise.props({
+                subject: FrontTranslator.fetchSubject(this.connectionDetails, firstPhase.event.conversation),
+                author: FrontTranslator.fetchAuthorName(this.connectionDetails, firstPhase.event.target.data),
+            })
+                .then((secondPhase) => {
+                return {
+                    inboxes: firstPhase.inboxes,
+                    event: firstPhase.event,
+                    subject: secondPhase.subject,
+                    author: secondPhase.author,
+                };
+            });
+        })
             .then((details) => {
             const message = details.event.target.data;
             const metadataFormat = details.event.type === 'comment' ? 'human' : 'logo';
@@ -193,16 +228,15 @@ class FrontTranslator extends translator_scaffold_1.TranslatorScaffold {
             const tags = _.map(details.event.conversation.tags, (tag) => {
                 return tag.name;
             });
-            const authorDetails = FrontTranslator.extractAuthorDetails(message);
             const cookedEvent = {
                 details: {
                     genesis: metadata.genesis || event.source,
-                    handle: authorDetails.username,
+                    handle: details.author,
                     hidden: _.includes(['comment', 'mention'], details.event.type),
-                    internal: authorDetails.internal,
+                    internal: (message.author !== null) && /^tea_/.test(message.author.id),
                     tags,
                     text: message.text || metadata.content,
-                    title: details.event.conversation.subject,
+                    title: details.subject,
                 },
                 source: {
                     service: event.source,
@@ -210,7 +244,7 @@ class FrontTranslator extends translator_scaffold_1.TranslatorScaffold {
                     flow: details.inboxes._results[0].id,
                     thread: details.event.conversation.id,
                     url: `https://app.frontapp.com/open/${details.event.conversation.id}`,
-                    username: authorDetails.username,
+                    username: details.author,
                 },
             };
             return {
