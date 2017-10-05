@@ -12,7 +12,7 @@ class SyncBot extends procbot_1.ProcBot {
             const data = event.cookedEvent;
             if (from.service === data.source.service &&
                 from.flow === data.source.flow &&
-                !_.includes(['system', to.service], data.details.genesis)) {
+                to.service !== data.details.genesis) {
                 const text = data.details.text;
                 logger.log(logger_1.LogLevel.INFO, `---> Heard '${text.split(/[\r\n]/)[0]}' on ${from.service}.`);
                 return SyncBot.readConnectedThread(to, messenger, data)
@@ -193,7 +193,7 @@ class SyncBot extends procbot_1.ProcBot {
                 const genericConnect = {
                     action: 1,
                     details: {
-                        genesis: 'system',
+                        genesis: 'duff',
                         handle: process.env.SYNCBOT_NAME,
                         hidden: true,
                         internal: true,
@@ -205,7 +205,7 @@ class SyncBot extends procbot_1.ProcBot {
                         message: 'duff',
                         thread: 'duff',
                         flow: 'duff',
-                        service: 'system',
+                        service: 'duff',
                         username: 'duff',
                     },
                     target: {
@@ -223,6 +223,8 @@ class SyncBot extends procbot_1.ProcBot {
                     thread: data.source.thread,
                 };
                 updateOriginating.details.text += `[${createThread.target.service} thread ${response.thread}](${response.url})`;
+                updateOriginating.details.genesis = createThread.target.service;
+                updateOriginating.source.service = createThread.target.service;
                 const updateCreated = _.cloneDeep(genericConnect);
                 updateCreated.target = {
                     flow: createThread.target.flow,
@@ -231,6 +233,8 @@ class SyncBot extends procbot_1.ProcBot {
                     thread: response.thread,
                 };
                 updateCreated.details.text += `[${data.source.service} thread ${data.source.thread}](${data.source.url})`;
+                updateCreated.details.genesis = data.source.service;
+                updateCreated.source.service = data.source.service;
                 return Promise.all([
                     messenger.sendData({ contexts: { messenger: updateOriginating }, source: 'syncbot' }),
                     messenger.sendData({ contexts: { messenger: updateCreated }, source: 'syncbot' }),
