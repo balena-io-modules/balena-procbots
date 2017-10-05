@@ -76,7 +76,7 @@ Whilst this is a [resin.io](http://resin.io) project, we welcome any contributio
 
 ## SyncBot
 
-* [SyncBot getting started for users.](https://resin-io-modules.github.io/resin-procbots/media/SyncBot/syncbot-readme.md)
+* [SyncBot getting started for users.](https://github.com/resin-io-modules/resin-procbots/blob/master/docs/media/SyncBot/syncbot-readme.md)
 
 ## KeyframeBot
 
