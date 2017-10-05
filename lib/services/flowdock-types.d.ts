@@ -15,45 +15,76 @@ limitations under the License.
 */
 
 import { Session } from 'flowdock';
-import { MessengerEmitContext } from './messenger-types';
-import { ServiceAPIHandle } from './service-types';
+import { EmitData, EmitInstructions } from './messenger-types';
+import { ServiceScaffoldConstructor, ServiceScaffoldEvent } from './service-scaffold-types';
+import { ServiceAPIHandle, ServiceEmitContext }  from './service-types';
 
-/** A payload template for posting to the main stream of a room */
-export interface FlowdockMessagePayload {
+/** Common data requirements that text based payloads share. */
+export interface FlowdockTextPayload {
 	content: string;
+}
+
+/** Data required when creating a message. */
+export interface FlowdockMessagePayload extends FlowdockTextPayload {
 	event: string;
 	external_user_name?: string;
-	tags?: string[];
 	thread_id?: string;
 	flow?: string;
 }
 
-/** A payload template for posting to the integration panel of a room */
-export interface FlowdockInboxPayload {
-	content: string;
+/** Data required when posting to an Inbox. */
+export interface FlowdockInboxPayload extends FlowdockTextPayload {
 	from_address: string;
 	source: string;
 	subject: string;
+	tags?: string[];
 	roomId: string;
 }
 
-/** A payload template, rather sparse but feel free to expand, for updating messages. */
-export interface FlowdockMessageUpdatePayload {
-	tags?: string[];
+/** Data required when performing a search. */
+export interface FlowdockSearchPayload {
+	search: string;
 }
 
-/** A template for emitting data to flowdock */
-export interface FlowdockEmitContext extends MessengerEmitContext {
-	endpoint: {
-		method: string;
-		token: string;
-		url: string;
-	};
-	meta?: {
-		flow: string;
-		org: string;
-	};
-	payload: FlowdockInboxPayload | FlowdockMessagePayload | FlowdockMessageUpdatePayload;
+/** Data required when updating tags. */
+export interface FlowdockTagsPayload {
+	tags: string[];
+}
+
+/** The union of all the payloads that may be emitted to Flowdock. */
+export type FlowdockPayload =
+	FlowdockMessagePayload | FlowdockInboxPayload | FlowdockSearchPayload | FlowdockTagsPayload | undefined
+;
+
+/** The Flowdock API SDK handle type. */
+export interface FlowdockHandle extends ServiceAPIHandle {
+	flowdock: Session;
+}
+
+/** The responses that the Discourse SDK may return. */
+export type FlowdockResponse = any;
+
+/** Payload object that is passed to the emitter, which it then bundles for the SDK. */
+export interface FlowdockEmitData extends EmitData {
+	path: string;
+	payload?: FlowdockPayload;
+}
+
+/** A more specific form of emit instructions which are used to route to an SDK method and provide a payload. */
+export interface FlowdockEmitInstructions extends EmitInstructions {
+	payload: FlowdockEmitData;
+}
+
+/** A typing around the pattern that Flowdock expects provided callback methods to conform to. */
+type Callback = (error: Error, response: FlowdockResponse) => void;
+
+/** A typing around the pattern that the Flowdock SDK emit method use. */
+export type FlowdockEmitMethod = (path: string, payload: FlowdockPayload, callback: Callback) => void;
+
+/** Flowdock specific subtype of the context for emission. */
+export interface FlowdockEmitContext extends ServiceEmitContext {
+	data: FlowdockEmitData;
+	method: FlowdockEmitMethod;
 }
 
 /** A message template, rather sparse and ripe for expansion */
@@ -62,13 +93,20 @@ export interface FlowdockMessage {
 	[key: string]: string;
 }
 
-/** The Flowdock API SDK handle type. */
-export interface FlowdockHandle extends ServiceAPIHandle {
-	flowdock: Session;
-}
-
-/** The details required to build a Flowdock session */
-export interface FlowdockConstructor {
+/** Details required to initialise the service. */
+export interface FlowdockConstructor extends ServiceScaffoldConstructor {
 	organization: string;
 	token: string;
+}
+
+/**
+ * A flowdock specific form of the events that service scaffold creates.
+ * Since many of Flowdock's raw events miss out the flow they happen in...
+ * we're going to insist they get passed through from elsewhere (such as the
+ * registration for example).
+ */
+export interface FlowdockEvent extends ServiceScaffoldEvent {
+	cookedData: {
+		flow: string;
+	};
 }

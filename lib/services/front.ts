@@ -19,35 +19,40 @@ import { Front } from 'front-sdk';
 import * as path from 'path';
 
 import {
-	FrontConnectionDetails, FrontEmitContext,
-	FrontEvent, FrontHandle, FrontResponse,
+	FrontConstructor, FrontEmitContext,
+	FrontHandle, FrontListenerConstructor, FrontResponse,
 } from './front-types';
-import { ServiceEmitter, ServiceListener } from './service-types';
-import { ServiceUtilities } from './service-utilities';
+import { ServiceScaffold } from './service-scaffold';
+import { ServiceScaffoldEvent } from './service-scaffold-types';
+import { ServiceEmitter, ServiceListener, ServiceType } from './service-types';
 
-export class FrontService extends ServiceUtilities<string> implements ServiceListener, ServiceEmitter {
+/**
+ * A service for interacting with the Front API via the Front SDK
+ */
+export class FrontService extends ServiceScaffold<string> implements ServiceListener, ServiceEmitter {
 	private static _serviceName = path.basename(__filename.split('.')[0]);
 
 	/** Underlying SDK object that we route requests to */
 	private session: Front;
 
-	constructor(data: FrontConnectionDetails, listen: boolean) {
-		super();
+	constructor(data: FrontConstructor | FrontListenerConstructor) {
+		super(data);
 		this.session = new Front(data.token);
-		if (listen) {
-			// This swallows webhook events.  When operating on an entire inbox we use its webhook rule, but a webhook
-			// channel still requires somewhere to send its webhooks to.
-			this.expressApp.post('/front-dev-null', (_formData, response) => {
+		if (data.type === ServiceType.Listener) {
+			const listenerData = <FrontListenerConstructor>data;
+			// This swallows webhook events.  When operating on an entire inbox we use its webhook rule,
+			// but a webhook still requires somewhere to send its webhooks to.
+			this.registerHandler('front-dev-null', (_formData, response) => {
 				response.sendStatus(200);
 			});
 			// Create an endpoint for this listener and enqueue events
-			this.expressApp.post(`/${FrontService._serviceName}/`, (formData, response) => {
+			this.registerHandler(listenerData.path || FrontService._serviceName, (formData, response) => {
 				this.queueData({
 					context: formData.body.conversation.id,
-					event: formData.body.type,
 					cookedEvent: {},
 					rawEvent: formData.body,
 					source: FrontService._serviceName,
+					type: formData.body.type,
 				});
 				response.sendStatus(200);
 			});
@@ -55,8 +60,10 @@ export class FrontService extends ServiceUtilities<string> implements ServiceLis
 	}
 
 	/**
-	 * Return a method that will: emit RequestData to the service, resolving to ResponseData
+	 * Actually emit the data to the SDK.
+	 * Extracting the context will have been done by the serviceScaffold.
 	 * @param context  Context to be emitted
+	 * @returns        Promise that resolves to the SDK response
 	 */
 	protected emitData(context: FrontEmitContext): Promise<FrontResponse> {
 		return context.method(context.data);
@@ -65,7 +72,7 @@ export class FrontService extends ServiceUtilities<string> implements ServiceLis
 	/**
 		* Verify the event before enqueueing.  For now uses the naive approach of returning true.
 		*/
-	protected verify(_data: FrontEvent): boolean {
+	protected verify(_data: ServiceScaffoldEvent): boolean {
 		// #204: This to be properly implemented.
 		return true;
 	}
@@ -93,14 +100,14 @@ export class FrontService extends ServiceUtilities<string> implements ServiceLis
  * Build this class, typed and activated as a listener.
  * @returns  Service Listener object, awakened and ready to go.
  */
-export function createServiceListener(data: FrontConnectionDetails): ServiceListener {
-	return new FrontService(data, true);
+export function createServiceListener(data: FrontListenerConstructor): ServiceListener {
+	return new FrontService(data);
 }
 
 /**
  * Build this class, typed as an emitter.
  * @returns  Service Emitter object, ready for your events.
  */
-export function createServiceEmitter(data: FrontConnectionDetails): ServiceEmitter {
-	return new FrontService(data, false);
+export function createServiceEmitter(data: FrontConstructor): ServiceEmitter {
+	return new FrontService(data);
 }

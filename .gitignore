@@ -38,5 +38,9 @@ _dev_notes
 *.swp
 
 # IDE Files
-/ProcBots.iml
+*.iml
 .idea
+.vscode
+
+# package-lock
+package-lock.json

@@ -1,26 +1,13 @@
 import { ProcBot } from '../framework/procbot';
 export declare class SyncBot extends ProcBot {
-    private static extractTokens(event);
-    private messengers;
-    private hub;
+    private static makeRouter(from, to, messenger, logger);
+    private static updateTags(to, messenger, data);
+    private static createComment(to, messenger, data);
+    private static readConnectedThread(to, messenger, data);
+    private static createThreadAndConnect(to, messenger, data);
+    private static makeDataHubs();
+    private static makeMessenger();
+    private static makeMappings();
     constructor(name?: string);
-    private register(from, to);
-    private createRouter(from, to);
-    private handleError(error, event);
-    private getMessageService(key, data?);
-    private getDataHub(key, data?);
-    private createConnection(event, type);
-    private createComment(event);
-    private updateTags(event);
-    private logSuccess(event);
-    private logError(error, event);
-    private useHubOrGeneric(event, type);
-    private useConfiguredOrProvided(event, type);
-    private useConfigured(event, type);
-    private useProvided(event, type);
-    private useGeneric(event, type);
-    private useSystem(event, type);
-    private useConnected(event, type);
-    private useHub(event, type);
 }
 export declare function createBot(): SyncBot;

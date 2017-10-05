@@ -15,356 +15,137 @@
  */
 
 import * as Promise from 'bluebird';
-import * as bodyParser from 'body-parser';
-import * as express from 'express';
-import TypedError = require('typed-error');
 import * as _ from 'lodash';
-import { Worker } from '../framework/worker';
-import { WorkerClient } from '../framework/worker-client';
+import * as path from 'path';
+
+import { LogLevel } from '../utils/logger';
 import {
-	Logger,
-	LogLevel,
-} from '../utils/logger';
-import {
-	InterimContext,
-	MessengerEmitResponse,
-	MessengerEvent, MessengerIds,
-	MessengerWorkerEvent, Metadata,
-	PublicityIndicator,
-	ReceiptContext, TransmitContext,
+	EmitInstructions, MessengerConstructor,
+	MessengerResponse, TranslatorDictionary, TransmitInformation,
 } from './messenger-types';
+import { createTranslator } from './messenger/translators/translator';
+import { ServiceScaffold } from './service-scaffold';
+import { ServiceScaffoldEvent } from './service-scaffold-types';
 import {
-	ServiceAPIHandle,
-	ServiceEmitContext,
-	ServiceEmitRequest,
-	ServiceEmitter,
-	ServiceListener,
-	ServiceRegistration,
+	ServiceEmitRequest, ServiceEmitResponse, ServiceEmitter,
+	ServiceListener, ServiceRegistration, ServiceType,
 } from './service-types';
 
-export abstract class Messenger extends WorkerClient<string|null> implements ServiceListener, ServiceEmitter {
-	/**
-	 * Make a handle context, using a receipt context and some extra information.
-	 * @param event  Event to be converted.
-	 * @param to     Destination for the handle context.
-	 * @param toIds  Pre-populate the toIds, if desired.
-	 * @returns      Newly created context for handling a message.
-	 */
-	public static initInterimContext(event: ReceiptContext, to: string, toIds: MessengerIds = {}): InterimContext {
-		return {
-			// Details from the ReceiptContext
-			action: event.action,
-			first: event.first,
-			genesis: event.genesis,
-			hidden: event.hidden,
-			source: event.source,
-			sourceIds: event.sourceIds,
-			tags: event.tags,
-			text: event.text,
-			title: event.title,
-			// Details from the arguments
-			to,
-			toIds,
-		};
-	}
+/**
+ * A service aggregator class that combines the interactions of several compatible
+ * services and translates interactions with them into a communal object structure.
+ */
+export class MessengerService extends ServiceScaffold<string> implements ServiceListener, ServiceEmitter {
+	private static _serviceName = path.basename(__filename.split('.')[0]);
+	private translators: TranslatorDictionary;
 
-	/** A place to put output for debug and reference. */
-	protected static logger = new Logger();
+	constructor(data: MessengerConstructor) {
+		super(data);
+		// Our super might have built a genuine express instance out of a port number
+		data.server = this.expressApp;
 
-	/**
-	 * Retrieve from the environment array of strings to use as indicators of visibility
-	 * @returns  Object of arrays of indicators, shown and hidden.
-	 */
-	protected static getIndicatorArrays(): { 'shown': PublicityIndicator, 'hidden': PublicityIndicator } {
-		let shown;
-		let hidden;
-		try {
-			// Retrieve publicity indicators from the environment
-			shown = JSON.parse(process.env.MESSAGE_CONVERTER_PUBLICITY_INDICATORS_OBJECT);
-			hidden = JSON.parse(process.env.MESSAGE_CONVERTER_PRIVACY_INDICATORS_OBJECT);
-		} catch (error) {
-			throw new Error('Message converter environment variables not set correctly, indicators not json');
-		}
-		if (shown.length === 0 || hidden.length === 0) {
-			throw new Error('Message converter environment variables not set correctly, indicators zero length');
-		}
-		return { hidden, shown };
-	}
+		// This loop creates a set of translators for each sub-service this instance interacts with.
+		this.translators = {};
+		_.forEach(data.subServices, (subConnectionDetails, subServiceName) => {
+			this.logger.log(LogLevel.INFO, `---> Constructing '${subServiceName}' translator.`);
+			this.translators[subServiceName] = createTranslator(subServiceName, subConnectionDetails, data.dataHubs);
+		});
 
-	/**
-	 * Encode the metadata of an event into a string to embed in the message.
-	 * @param data    Event to gather details from.
-	 * @param format  Format of the metadata encoding.
-	 * @returns       Text with data embedded.
-	 */
-	protected static stringifyMetadata(data: TransmitContext, format: string): string {
-		const indicators = Messenger.getIndicatorArrays();
-		// Build the content with the indicator and genesis at the front
-		switch (format.toLowerCase()) {
-			case 'human':
-				return `\n(${data.hidden ? indicators.hidden.word : indicators.shown.word} from ${data.source})`;
-			case 'emoji':
-				return `\n[${data.hidden ? indicators.hidden.emoji : indicators.shown.emoji}](${data.source})`;
-			case 'img':
-				const baseUrl = process.env.MESSAGE_CONVERTER_IMG_BASE_URL;
-				const hidden = data.hidden ? indicators.hidden.word : indicators.shown.word;
-				const querystring = `?hidden=${hidden}&source=${encodeURI(data.source)}`;
-				return `\n<img src="${baseUrl}${querystring}" height="18" />`;
-			default:
-				throw new Error(`${format} format not recognised`);
+		// This branch creates listeners for every sub-service, if relevant.
+		if (data.type === ServiceType.Listener) {
+			_.forEach(data.subServices, (subConnectionDetails, subServiceName) => {
+				this.logger.log(LogLevel.INFO, `---> Constructing '${subServiceName}' listener.`);
+				const subTranslator = this.translators[subServiceName];
+				subTranslator.mergeGenericDetails(subConnectionDetails, data);
+				const subListener = require(`./${subServiceName}`).createServiceListener(subConnectionDetails);
+				// This causes listeners to pass on any events they hear.
+				subListener.registerEvent({
+					events: subTranslator.getAllEventTypes(),
+					listenerMethod: (_registration: ServiceRegistration, event: ServiceScaffoldEvent): Promise<void> => {
+						// This translates and enqueues any events that match a registered interest.
+						if (_.includes(this.eventsRegistered, subTranslator.eventIntoMessageType(event))) {
+							return subTranslator.eventIntoMessage(event)
+							.then(this.queueData);
+						}
+						return Promise.resolve();
+					},
+					name: `${subServiceName}=>${this.serviceName}`,
+				});
+			});
 		}
 	}
 
 	/**
-	 * Given a basic string this will extract a more rich context for the event, if embedded.
-	 * @param message  Basic string that may contain metadata.
-	 * @param format   Format of the metadata encoding.
-	 * @returns        Object of content, genesis and hidden.
+	 * Emit a payload to the endpoint defined, resolving when done.
+	 * @param data  details of the call and associated data
+	 * @returns     A promise that resolves to the response
 	 */
-	protected static extractMetadata(message: string, format: string): Metadata {
-		const indicators = Messenger.getIndicatorArrays();
-		const wordCapture = `(${indicators.hidden.word}|${indicators.shown.word})`;
-		const beginsLine = `(?:^|\\r|\\n)(?:\\s*)`;
-		switch (format.toLowerCase()) {
-			case 'human':
-				const parensRegex = new RegExp(`${beginsLine}\\(${wordCapture} from (\\w*)\\)`, 'i');
-				return Messenger.metadataByRegex(message, parensRegex);
-			case 'emoji':
-				const emojiCapture = `(${indicators.hidden.emoji}|${indicators.shown.emoji})`;
-				const emojiRegex = new RegExp(`${beginsLine}\\[${emojiCapture}\\]\\((\\w*)\\)`, 'i');
-				return Messenger.metadataByRegex(message, emojiRegex);
-			case 'img':
-				const baseUrl = _.escapeRegExp(process.env.MESSAGE_CONVERTER_IMG_BASE_URL);
-				const querystring = `\\?hidden=${wordCapture}&source=(\\w*)`;
-				const imgRegex = new RegExp(`${beginsLine}<img src="${baseUrl}${querystring}" height="18" \/>`, 'i');
-				return Messenger.metadataByRegex(message, imgRegex);
-			case 'char':
-				const charCapture = `(${indicators.hidden.char}|${indicators.shown.char})`;
-				const charRegex = new RegExp(`${beginsLine}${charCapture}`, 'i');
-				return Messenger.metadataByRegex(message, charRegex);
-			default:
-				throw new Error(`${format} format not recognised`);
-		}
-	}
-
-	/**
-	 * A daily rotating message from a configured list.
-	 * @returns String of the message for today.
-	 */
-	protected static messageOfTheDay(): string {
-		try {
-			const messages = JSON.parse(process.env.MESSAGE_CONVERTER_MESSAGES_OF_THE_DAY);
-			const daysSinceDatum = Math.floor(new Date().getTime() / 86400000);
-			return messages[daysSinceDatum % messages.length];
-		} catch (error) {
-			throw new Error('Message converter environment variables not set correctly, motd not json');
-		}
-	}
-
-	/**
-	 * A singleton express instance for all web-hook based message services to share.
-	 * @type {Express}.
-	 */
-	private static _expressApp: express.Express;
-
-	/**
-	 * Generic handler for stock metadata regex, must match the syntax of:
-	 * first match is the indicator of visibility, second match is message source, remove the whole match for content.
-	 * @param message String to evaluate into metadata.
-	 * @param regex   Criteria for extraction.
-	 * @returns       Object of the metadata, decoded.
-	 */
-	private static metadataByRegex(message: string, regex: RegExp): Metadata {
-		const indicators = Messenger.getIndicatorArrays();
-		const metadata = message.match(regex);
-		if (metadata) {
-			return {
-				content: message.replace(regex, '').trim(),
-				genesis: metadata[2] || null,
-				hidden: !_.includes(_.values(indicators.shown), metadata[1]),
+	protected emitData(data: TransmitInformation): Promise<MessengerResponse> {
+		// Find details of how to connect and what to emit from the translators
+		return Promise.props({
+			connection: this.translators[data.target.service].messageIntoEmitterConstructor(data),
+			emit: this.translators[data.target.service].messageIntoEmitDetails(data),
+		})
+		.then((details: { connection: object, emit: EmitInstructions } ) => {
+			// Instantiates a one-shot emitter, because requests might have changing credentials.
+			const emitter = require(`./${data.target.service}`).createServiceEmitter(details.connection);
+			// This converts a method path, represented as an array of strings, eg ['comment', 'create']
+			// into a method from a possibly nested SDK object, eg Front.comment.create
+			const sdk = emitter.apiHandle[data.target.service];
+			let method = sdk;
+			_.forEach(details.emit.method, (nodeName) => {
+				method = method[nodeName];
+			});
+			// Bundles the response and sends it on its way.
+			const request: ServiceEmitRequest = {
+				contexts: { [emitter.serviceName]: { method: method.bind(sdk), data: details.emit.payload } },
+				source: this.serviceName,
 			};
-		}
-		return {
-			content: message,
-			genesis: null,
-			hidden: true,
-		};
-	}
-
-	/**
-	 * Create or retrieve the singleton express app.
-	 * @returns  Singleton express server app.
-	 */
-	protected static get expressApp(): express.Express {
-		if (!Messenger._expressApp) {
-			// Either MESSAGE_SERVICE_PORT from environment or PORT from Heroku environment
-			const port = process.env.MESSAGE_SERVICE_PORT || process.env.PORT;
-			if (!port) {
-				throw new Error('No inbound port specified for express server');
-			}
-			// Create and log an express instance
-			Messenger._expressApp = express();
-			Messenger._expressApp.use(bodyParser.json());
-			Messenger._expressApp.listen(port);
-			Messenger.logger.log(LogLevel.INFO, `---> Started MessageService shared web server on port '${port}'`);
-		}
-		return Messenger._expressApp;
-	}
-
-	/**
-	 * Promise to find the comment history of a particular thread.
-	 * @param thread  ID of the thread to search.
-	 * @param room    ID of the room in which the thread resides.
-	 * @param filter  Criteria to match.
-	 * @param search  Optional, some words which may be used to shortlist the results.
-	 */
-	public abstract fetchNotes: (thread: string, room: string, filter: RegExp, search?: string) => Promise<string[]>;
-
-	/**
-	 * Promise to turn the data enqueued into a generic message format.
-	 * @param data  Raw data from the enqueue, remembering this is as dumb and quick as possible.
-	 * @returns     A promise that resolves to the generic form of the event.
-	 */
-	public abstract makeGeneric: (data: MessengerEvent) => Promise<ReceiptContext>;
-
-	/**
-	 * Promise to turn a generic message format into a form suitable for emitting to create a message.
-	 * @param data  Generic message format to encode.
-	 * @returns     A promise that resolves to an emit context, which is as dumb as possible.
-	 */
-	public abstract makeSpecific: (data: TransmitContext) => Promise<ServiceEmitContext>;
-
-	/**
-	 * Promise to turn a generic message format into a form suitable for emitting to update tags.
-	 * @param data  Generic message format to encode.
-	 * @returns     A promise that resolves to an emit context, which is as dumb as possible.
-	 */
-	public abstract makeTagUpdate: (data: TransmitContext) => Promise<ServiceEmitContext>;
-
-	/** Awaken this class as a listener. */
-	protected abstract activateMessageListener: () => void;
-
-	/**
-	 * Deliver the payload to the service. Sourcing the relevant context has already been performed.
-	 * @param data  The object to be delivered to the service.
-	 * @returns     Response from the service endpoint.
-	 */
-	protected abstract sendPayload: (data: ServiceEmitContext) => Promise<MessengerEmitResponse>;
-
-	/** A boolean flag for if this object has been activated as a listener. */
-	private listening: boolean = false;
-	/** An object of arrays storing events by trigger and their actions. */
-	private _eventListeners: { [event: string]: ServiceRegistration[] } = {};
-
-	/**
-	 * Build this service, specifying whether to awaken as a listener.
-	 * @param listener  Whether to start listening during construction.
-	 */
-	constructor(listener: boolean) {
-		super();
-		if (listener) {
-			// Allow the sub-constructor to set up sessions, etc, before listening
-			process.nextTick(this.listen);
-		}
-	}
-
-	/** Start the object listening if it isn't already. */
-	public listen = () => {
-		// Ensure the code in the child object gets executed a maximum of once
-		if (!this.listening) {
-			this.listening = true;
-			this.activateMessageListener();
-			Messenger.logger.log(LogLevel.INFO, `---> Started '${this.serviceName}' listener`);
-		}
-	}
-
-	/**
-	 * Store an event of interest, so that the method gets triggered appropriately.
-	 * @param registration  Registration object with event trigger and other details.
-	 */
-	public registerEvent(registration: ServiceRegistration): void {
-		// Store each event registration in an object of arrays.
-		for (const event of registration.events) {
-			if (!this._eventListeners[event]) {
-				this._eventListeners[event] = [];
-			}
-			this._eventListeners[event].push(registration);
-		}
-	}
-
-	/**
-	 * Emit data to the service.
-	 * @param data  Service Emit Request to send, if relevant.
-	 * @returns     Details of the successful transmission from the service.
-	 */
-	public sendData(data: ServiceEmitRequest): Promise<MessengerEmitResponse> {
-		// Check that the data has specifies a task for our emitter, before passing it on
-		if (data.contexts[this.serviceName]) {
-			return this.sendPayload(data.contexts[this.serviceName]);
-		}
-		// If this data has no task for us then no-op is the correct resolution
-		return Promise.resolve({
-			err: new TypedError(`No ${this.serviceName} context`),
-			source: this.serviceName,
+			return emitter.sendData(request);
+		})
+		// Translates any response from the sub-service emitter, before passing it on up.
+		.then((response: ServiceEmitResponse) => {
+			return this.translators[data.target.service].responseIntoMessageResponse(data, response.response);
 		});
 	}
 
-	 /**
-	 * Queue an event ready for running in a child.
-	 * @param data  The WorkerEvent to add to the queue for processing.
+	/**
+	 * Verify the event before enqueueing.
+	 * @returns  true, this trusts that the sub-listener will have performed it's own verification.
 	 */
-	public queueEvent(data: MessengerWorkerEvent) {
-		// This type guards a simple pass-through
-		super.queueEvent(data);
+	protected verify(): boolean {
+		return true;
 	}
 
 	/**
-	 * Turns the generic, messenger, name for an event into a specific trigger name for this class.
-	 * @param eventType  Name of the event to translate, eg 'message'.
-	 * @returns          This class's equivalent, eg 'post'.
+	 * The name of this service, as required by the framework.
+	 * @returns  'messenger' string.
 	 */
-	public abstract translateEventName(eventType: string): string;
-
-	/**
-	 * Pass an event to registered listenerMethods.
-	 * @param event  Enqueued event from the listener.
-	 * @returns      Promise that resolves once the event is handled.
-	 */
-	protected handleEvent = (event: MessengerEvent): Promise<void> => {
-		// Retrieve and execute all the listener methods, squashing their responses
-		const listeners = this._eventListeners[event.cookedEvent.type] || [];
-		return Promise.map(listeners, (listener) => {
-			return listener.listenerMethod(listener, event);
-		}).return();
+	get serviceName(): string {
+		return MessengerService._serviceName;
 	}
 
 	/**
-	 * Get a Worker object for the provided event, threaded by context.
-	 * @param event  Event as enqueued by the listener.
-	 * @returns      Worker for the context associated.
+	 * Retrieve the SDK API handle, if any.
+	 * @returns  void
 	 */
-	protected getWorker = (event: MessengerWorkerEvent): Worker<string|null> => {
-		// Attempt to retrieve an active worker for the context
-		const context = event.data.cookedEvent.context;
-		const retrieved = this.workers.get(context);
-		if (retrieved) {
-			return retrieved;
-		}
-		// Create and store a worker for the context
-		const created = new Worker<string>(context, this.removeWorker);
-		this.workers.set(context, created);
-		return created;
+	get apiHandle(): void {
+		return;
 	}
+}
 
-	/**
-	 * Get the service name, as required by the framework.
-	 * @return  Name of the service.
-	 */
-	abstract get serviceName(): string
+/**
+ * Build this class, typed and activated as a listener.
+ * @returns  Service Listener object, awakened and ready to go.
+ */
+export function createServiceListener(data: MessengerConstructor): ServiceListener {
+	return new MessengerService(data);
+}
 
-	/**
-	 * Retrieve the SDK API instance handle for the service, should one exist.
-	 * @return  Service SDK API handle or void.
-	 */
-	abstract get apiHandle(): ServiceAPIHandle | void;
+/**
+ * Build this class, typed as an emitter.
+ * @returns  Service Emitter object, ready for your events.
+ */
+export function createServiceEmitter(data: MessengerConstructor): ServiceEmitter {
+	return new MessengerService(data);
 }
