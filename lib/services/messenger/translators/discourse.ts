@@ -29,7 +29,7 @@ import { ServiceScaffoldEvent } from '../../service-scaffold-types';
 import { ServiceType } from '../../service-types';
 import { DataHub } from '../datahubs/datahub';
 import { Translator, TranslatorError } from './translator';
-import { TranslatorScaffold } from './translator-scaffold';
+import { MetadataEncoding, TranslatorScaffold } from './translator-scaffold';
 import { EmitConverters, ResponseConverters, TranslatorErrorCode } from './translator-types';
 
 /**
@@ -56,7 +56,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 			path: '/posts',
 			body: {
 				category: message.target.flow,
-				raw: `${message.details.text}\n\n---\n${TranslatorScaffold.stringifyMetadata(message, 'logo')}`,
+				raw: `${TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenMD)}${message.details.text}`,
 				title,
 				unlist_topic: 'false',
 			},
@@ -81,7 +81,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 			htmlVerb: 'POST',
 			path: '/posts',
 			body: {
-				raw: `${message.details.text}\n\n---\n${TranslatorScaffold.stringifyMetadata(message, 'logo')}`,
+				raw: `${TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenMD)}${message.details.text}`,
 				topic_id: thread,
 				whisper: message.details.hidden ? 'true' : 'false',
 			}
@@ -262,7 +262,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 		})
 		.then((details: {post: any, topic: any}) => {
 			// Calculate metadata and resolve
-			const metadata = TranslatorScaffold.extractMetadata(details.post.raw, 'logo');
+			const metadata = TranslatorScaffold.extractMetadata(details.post.raw, MetadataEncoding.HiddenMD);
 			// Generic has `-` at the end, Discourse has `_` at the beginning
 			const convertedUsername = /^_/.test(details.post.username)
 				? `${details.post.username.replace(/^_/, '')}-`

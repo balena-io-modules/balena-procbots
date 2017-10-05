@@ -29,8 +29,6 @@ export interface TranslatorMetadata {
 
 /** Options for encoding privacy information in metadata */
 export interface PublicityIndicator {
-	/** Which emoji to use, if desired, to indicate particular publicity state */
-	emoji: string;
 	/** Which word to use, if desired, to indicate particular publicity state */
 	word: string;
 	/** Which character to use, if desired, to indicate particular publicity state */

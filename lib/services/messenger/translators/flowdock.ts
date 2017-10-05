@@ -29,7 +29,7 @@ import {
 import { ServiceType } from '../../service-types';
 import { DataHub } from '../datahubs/datahub';
 import { Translator, TranslatorError } from './translator';
-import { TranslatorScaffold } from './translator-scaffold';
+import { MetadataEncoding, TranslatorScaffold } from './translator-scaffold';
 import { EmitConverters, ResponseConverters, TranslatorErrorCode } from './translator-types';
 
 /**
@@ -39,22 +39,24 @@ import { EmitConverters, ResponseConverters, TranslatorErrorCode } from './trans
 export class FlowdockTranslator extends TranslatorScaffold implements Translator {
 	/**
 	 * Internal function to create a formatted and length limited text block for a message.
-	 * @param body    Body of the message, this part may be snipped
-	 * @param header  Header, if any, to put at the top of the message.
-	 * @param footer  Footer, if any, to put at the bottom of the message.
-	 * @returns       Markdown formatted text block within Flowdock's character limit.
+	 * @param body      Body of the message, this part may be snipped
+	 * @param header    Header, if any, to put at the top of the message.
+	 * @param metadata  Metadata string, if any, to inject at the beginning of the content.
+	 * @param footer    Footer, if any, to put at the bottom of the message.
+	 * @returns         Markdown formatted text block within Flowdock's character limit.
 	 */
-	private static createFormattedText(body: string, header?: string, footer?: string): string {
+	private static createFormattedText(body: string, header?: string, metadata?: string, footer?: string): string {
 		const lengthLimit = 8096;
 		const first = header ? `${header}\n--\n` : '';
+		const inject = metadata ? metadata : '';
 		const last = footer ? `\n${footer}` : '';
-		if ((first.length + body.length + last.length) < lengthLimit) {
-			return `${first}${body}${last}`;
+		if ((first.length + inject.length + body.length + last.length) < lengthLimit) {
+			return `${first}${inject}${body}${last}`;
 		}
 		const snipProvisional = '\n\n`... about xx% shown.`';
-		const snipped = body.substr(0, lengthLimit - first.length - snipProvisional.length - last.length);
-		const snip = snipProvisional.replace('xx', Math.floor((100*snipped.length)/body.length).toString(10));
-		return `${first}${snipped}${snip}${last}`;
+		const snipped = body.substr(0, lengthLimit - first.length - inject.length - snipProvisional.length - last.length);
+		const snipText = snipProvisional.replace('xx', Math.floor((100*snipped.length)/body.length).toString(10));
+		return `${first}${inject}${snipped}${snipText}${last}`;
 	}
 
 	/**
@@ -147,7 +149,9 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 			payload: {
 				// The concatenated string, of various data nuggets, to emit.
 				content: FlowdockTranslator.createFormattedText(
-					message.details.text, message.details.title, TranslatorScaffold.stringifyMetadata(message, 'emoji')
+					message.details.text,
+					message.details.title,
+					TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenMD)
 				),
 				event: 'message',
 				external_user_name: message.details.internal ? undefined : message.details.handle,
@@ -174,7 +178,9 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 			path: `/flows/${orgId}/${message.target.flow}/threads/${threadId}/messages`,
 			payload: {
 				content: FlowdockTranslator.createFormattedText(
-					message.details.text, undefined, TranslatorScaffold.stringifyMetadata(message, 'emoji')
+					message.details.text,
+					undefined,
+					TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenMD)
 				),
 				event: 'message',
 				external_user_name: message.details.internal ? undefined : message.details.handle,
@@ -293,9 +299,9 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 	 */
 	public eventIntoMessage(event: FlowdockEvent): Promise<MessengerEvent> {
 		// Calculate metadata and use whichever matched, i.e. has a shorter content because it extracted metadata.
-		const emojiMetadata = TranslatorScaffold.extractMetadata(event.rawEvent.content, 'emoji');
-		const charMetadata = TranslatorScaffold.extractMetadata(event.rawEvent.content, 'char');
-		const metadata = emojiMetadata.content.length < charMetadata.content.length ? emojiMetadata : charMetadata;
+		const MDMetadata = TranslatorScaffold.extractMetadata(event.rawEvent.content, MetadataEncoding.HiddenMD);
+		const charMetadata = TranslatorScaffold.extractMetadata(event.rawEvent.content, MetadataEncoding.Character);
+		const metadata = MDMetadata.content.length < charMetadata.content.length ? MDMetadata : charMetadata;
 		// Pull some details out of the event.
 		const titleSplitter = /^(.*)\n--\n((?:\r|\n|.)*)$/;
 		const titleAndText = metadata.content.match(titleSplitter);
