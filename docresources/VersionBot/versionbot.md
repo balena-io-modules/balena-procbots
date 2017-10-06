@@ -73,6 +73,8 @@ Download the key and then create a Base64 string from it. It will be required la
 * `VERSIONBOT_NAME`: The name shown in commits and merges for PRs by the Integration.
 * `VERSIONBOT_EMAIL`: Email address for the bot, (can be an empty string).
 
+By default `VersionBot` will listen on port 4567, but this can be overriden using the `VERSIONBOT_LISTEN_PORT` environment variable.
+
 You'll need to fill these fields out in `.vscode/launch.json` before debugging (if you're running this on the CLI, set envvars accordingly). If you're running on Resin, these must be set as Application envvars.
 
 Ask Heds how this works if unsure.
