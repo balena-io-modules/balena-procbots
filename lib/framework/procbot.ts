@@ -62,7 +62,7 @@ export class ProcBot {
 	 * @returns Promise containing a string denoting the absolute path.
 	 */
 	public getNodeBinPath(): Promise<string> {
-		return ExecuteCommand(BuildCommand('npm', [ 'bin' ])) as Promise<string>;
+		return ExecuteCommand(BuildCommand('npm', [ 'bin' ])).then(_.trimEnd);
 	}
 
 	/**

@@ -74,11 +74,11 @@ export function BuildCommand(command: string, args?: string[], options?: Command
  *                instead.
  * @throws        An error containing a message from the failed command's `stderr` output.
  */
-export function ExecuteCommand(command: Command): Promise<{}> {
+export function ExecuteCommand(command: Command): Promise<string> {
 	let tries = _.get(command, 'options.retries', 0) + 1;
 	let delay = _.get(command, 'options.delay', 1000);
-	const callCommand = (): Promise<{}> => {
-		return new Promise((resolve, reject) => {
+	const callCommand = (): Promise<string> => {
+		return new Promise<string>((resolve, reject) => {
 			const child = spawn(command.command, command.args, command.options);
 			let stdout: string;
 			let stderr: string;
