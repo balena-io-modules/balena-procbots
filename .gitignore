@@ -44,3 +44,6 @@ _dev_notes
 
 # package-lock
 package-lock.json
+
+# build files
+build
