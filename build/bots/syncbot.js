@@ -141,7 +141,7 @@ class SyncBot extends procbot_1.ProcBot {
                         hidden: true,
                         internal: true,
                         tags: data.details.tags,
-                        text: 'Connects to ',
+                        text: 'This is mirrored in ',
                         title: data.details.title,
                     },
                     source: {

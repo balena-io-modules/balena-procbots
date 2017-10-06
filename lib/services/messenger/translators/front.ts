@@ -270,7 +270,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 		message: TransmitInformation, response: FrontResponse
 	): Promise<IdentifyThreadResponse> {
 		// Filter the response down to actually matching items
-		const idFinder = new RegExp(`Connects to \\[${message.source.service} thread ([\\w\\d-+\\/=]+)`);
+		const idFinder = new RegExp(`\\[${message.source.service} thread ([\\w\\d-+\\/=]+)`);
 		const matches = _.filter(
 			(response as ConversationComments)._results,
 			(comment) => {

@@ -106,7 +106,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 			htmlVerb: 'GET',
 			path: '/search/query',
 			qs: {
-				term: `Connects to [${message.source.service} thread`,
+				term: `[${message.source.service} thread`,
 				'search_context[type]': 'topic',
 				'search_context[id]': thread,
 			}
@@ -185,7 +185,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 	private static convertReadConnectionResponse(
 		message: TransmitInformation, response: DiscourseResponse
 	): Promise<IdentifyThreadResponse> {
-		const idFinder = new RegExp(`Connects to ${message.source.service} thread ([\\w\\d-+\\/=]+)`, 'i');
+		const idFinder = new RegExp(`${message.source.service} thread ([\\w\\d-+\\/=]+)`, 'i');
 		if (response.posts.length > 0) {
 			return Promise.resolve({
 				thread: response.posts[0].blurb.match(idFinder)[1],

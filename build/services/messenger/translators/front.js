@@ -148,7 +148,7 @@ class FrontTranslator extends translator_scaffold_1.TranslatorScaffold {
         return Promise.resolve({ method: ['conversation', 'listComments'], payload: readConnectionData });
     }
     static convertReadConnectionResponse(message, response) {
-        const idFinder = new RegExp(`Connects to \\[${message.source.service} thread ([\\w\\d-+\\/=]+)`);
+        const idFinder = new RegExp(`\\[${message.source.service} thread ([\\w\\d-+\\/=]+)`);
         const matches = _.filter(response._results, (comment) => {
             return idFinder.test(comment.body);
         });

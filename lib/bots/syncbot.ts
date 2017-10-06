@@ -255,7 +255,7 @@ export class SyncBot extends ProcBot {
 						hidden: true,
 						internal: true,
 						tags: data.details.tags,
-						text: 'Connects to ', // will be appended
+						text: 'This is mirrored in ', // will be appended
 						title: data.details.title,
 					},
 					// this message is being created from nothing.
@@ -284,7 +284,7 @@ export class SyncBot extends ProcBot {
 					username: process.env.SYNCBOT_NAME,
 					thread: data.source.thread,
 				};
-				// This connects to the thread detailed in the response from creating.
+				// This comments on the original thread about the new thread.
 				updateOriginating.details.text += `[${createThread.target.service} thread ${response.thread}](${response.url})`;
 
 				// Clone and mutate the generic payload for emitting to the created thread.
@@ -296,7 +296,7 @@ export class SyncBot extends ProcBot {
 					username: process.env.SYNCBOT_NAME,
 					thread: response.thread,
 				};
-				// This connects to the thread that this process sourced from.
+				// This comments on the new thread about the original thread..
 				updateCreated.details.text += `[${data.source.service} thread ${data.source.thread}](${data.source.url})`;
 
 				// Request that the payloads created just above be sent.
