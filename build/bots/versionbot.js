@@ -683,7 +683,7 @@ class VersionBot extends procbot_1.ProcBot {
                 type: 0
             },
             path: '/webhooks',
-            port: 4567,
+            port: process.env.VERSIONBOT_LISTEN_PORT || 4567,
             type: 0,
             webhookSecret: webhook
         });
@@ -1201,10 +1201,17 @@ class VersionBot extends procbot_1.ProcBot {
 }
 exports.VersionBot = VersionBot;
 function createBot() {
-    if (!(process.env.VERSIONBOT_NAME && process.env.VERSIONBOT_EMAIL && process.env.VERSIONBOT_INTEGRATION_ID &&
-        process.env.VERSIONBOT_PEM && process.env.VERSIONBOT_WEBHOOK_SECRET && process.env.VERSIONBOT_USER)) {
-        throw new Error(`'VERSIONBOT_NAME', 'VERSIONBOT_EMAIL', 'VERSIONBOT_INTEGRATION_ID', 'VERSIONBOT_PEM', ` +
-            `'VERSIONBOT_WEBHOOK_SECRET' environment variables need setting`);
+    const requiredEnvVars = [
+        'VERSIONBOT_NAME',
+        'VERSIONBOT_EMAIL',
+        'VERSIONBOT_INTEGRATION_ID',
+        'VERSIONBOT_PEM',
+        'VERSIONBOT_WEBHOOK_SECRET',
+        'VERSIONBOT_USER',
+    ];
+    const missingEnvVars = requiredEnvVars.filter((variable) => !process.env[variable]);
+    if (missingEnvVars.length) {
+        throw new Error(`${missingEnvVars.map(v => `'${v}'`).join(', ')} environment variables need setting`);
     }
     return new VersionBot(process.env.VERSIONBOT_INTEGRATION_ID, process.env.VERSIONBOT_NAME, process.env.VERSIONBOT_EMAIL, process.env.VERSIONBOT_PEM, process.env.VERSIONBOT_WEBHOOK_SECRET);
 }
