@@ -96,8 +96,14 @@ export function ExecuteCommand(command: Command): Promise<{}> {
 				stderr += data.toString();
 			});
 			// If there's any stderr output, we send that instead of stdout.
-			child.addListener('close', () => resolve(stderr ? stderr : stdout));
-			child.addListener('error', (err: Error) => reject(err));
+			child.addListener('close', (code) => {
+				if(code !== 0) {
+					reject(new Error(stderr))
+				} else {
+					resolve(stdout)
+				}
+			});
+			child.addListener('error', reject);
 		}).catch((err: Error) => {
 			// Keep trying until we exhaust retries.
 			tries--;

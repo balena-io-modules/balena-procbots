@@ -1204,13 +1204,7 @@ export class VersionBot extends ProcBot {
 			// If so, we use that rather than the built-in default.
 			return fsFileExists(`${versionData.fullPath}/versionist.conf.js`)
 			.return(true)
-			.catch((err: FSError) => {
-				if (err.code !== 'ENOENT') {
-					throw err;
-				}
-
-				return false;
-			});
+			.catchReturn({ code: 'ENOENT' }, false);
 		}).catch(() => {
 			// Sanitise the error so we send something cleaner up.
 			throw new Error(`Cloning of branch ${versionData.branchName} in ${versionData.repoFullName} failed`);
@@ -1227,7 +1221,9 @@ export class VersionBot extends ProcBot {
 				}
 			}).then(() => {
 				return Promise.mapSeries([
-					BuildCommand(versionistCommand, versionistArgs, { cwd: `${versionData.fullPath}` }),
+					BuildCommand(versionistCommand, versionistArgs, { cwd: `${versionData.fullPath}` }).catch((err) => {
+						throw new Error(`Versionist failed: ${err.message}`)
+					}),
 					BuildCommand('git', ['status', '-s'], { cwd: `${versionData.fullPath}` })
 				], ExecuteCommand);
 			});
