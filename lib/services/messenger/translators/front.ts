@@ -326,7 +326,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	}
 
 	protected eventEquivalencies = {
-		message: ['comment', 'out_reply', 'inbound'],
+		message: ['comment', 'out_reply', 'inbound', 'mention'],
 	};
 	protected emitConverters: EmitConverters = {
 		[MessengerAction.ReadConnection]: FrontTranslator.readConnectionIntoEmit,
@@ -385,7 +385,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 				details: {
 					genesis: metadata.genesis || event.source,
 					handle: authorDetails.username,
-					hidden: details.event.type === 'comment',
+					hidden: _.includes(['comment', 'mention'], details.event.type),
 					internal: authorDetails.internal,
 					tags,
 					text: message.text || metadata.content,

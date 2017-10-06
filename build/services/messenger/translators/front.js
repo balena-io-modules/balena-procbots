@@ -10,7 +10,7 @@ class FrontTranslator extends translator_scaffold_1.TranslatorScaffold {
     constructor(data) {
         super();
         this.eventEquivalencies = {
-            message: ['comment', 'out_reply', 'inbound'],
+            message: ['comment', 'out_reply', 'inbound', 'mention'],
         };
         this.emitConverters = {
             [2]: FrontTranslator.readConnectionIntoEmit,
@@ -198,7 +198,7 @@ class FrontTranslator extends translator_scaffold_1.TranslatorScaffold {
                 details: {
                     genesis: metadata.genesis || event.source,
                     handle: authorDetails.username,
-                    hidden: details.event.type === 'comment',
+                    hidden: _.includes(['comment', 'mention'], details.event.type),
                     internal: authorDetails.internal,
                     tags,
                     text: message.text || metadata.content,
