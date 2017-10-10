@@ -6,11 +6,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## v3.11.7 - 2017-10-09
 
-* Ensure that when merged to master, images are tagged and pushed with new version to Docker hub. #285 [Heds Simons]
+* ProcBots: Ensure that when merged to master, images are tagged and pushed with new version to Docker hub. #285 [Heds Simons]
 
 ## v3.11.6 - 2017-10-06
 
-* Handle spawned process errors as errors, which allows us to report versionist errors more nicely. #268 [Pagan Gazzard]
+* VersionBot: Handle spawned process errors as errors, which allows us to report versionist errors more nicely. #268 [Pagan Gazzard]
 
 ## v3.11.5 - 2017-10-06
 
@@ -18,19 +18,19 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## v3.11.4 - 2017-10-06
 
-* Reword the connecting messages #278 [Andrew Lucas]
+* SyncBot: Reword the connecting messages #278 [Andrew Lucas]
 
 ## v3.11.3 - 2017-10-06
 
-* Fix 404 on NotifyBot How-To link in README.md #273 [Lucian Buzzo]
+* NotifyBot: Fix 404 on NotifyBot How-To link in README.md #273 [Lucian Buzzo]
 
 ## v3.11.2 - 2017-10-06
 
-* Link to formatted KeyframeBot How-To #272 [Lucian Buzzo]
+* KeyframeBot: Link to formatted KeyframeBot How-To #272 [Lucian Buzzo]
 
 ## v3.11.1 - 2017-10-05
 
-* Link to formatted syncbot readme #271 [Lucian Buzzo]
+* SyncBot: Link to formatted syncbot readme #271 [Lucian Buzzo]
 
 ## v3.11.0 - 2017-10-05
 

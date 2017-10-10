@@ -36,8 +36,15 @@ function ExecuteCommand(command) {
                 }
                 stderr += data.toString();
             });
-            child.addListener('close', () => resolve(stderr ? stderr : stdout));
-            child.addListener('error', (err) => reject(err));
+            child.addListener('close', (code) => {
+                if (code !== 0) {
+                    reject(new Error(stderr));
+                }
+                else {
+                    resolve(stdout);
+                }
+            });
+            child.addListener('error', reject);
         }).catch((err) => {
             tries--;
             if (tries > 0) {

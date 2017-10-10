@@ -97,10 +97,10 @@ export function ExecuteCommand(command: Command): Promise<{}> {
 			});
 			// If there's any stderr output, we send that instead of stdout.
 			child.addListener('close', (code) => {
-				if(code !== 0) {
-					reject(new Error(stderr))
+				if (code !== 0) {
+					reject(new Error(stderr));
 				} else {
-					resolve(stdout)
+					resolve(stdout);
 				}
 			});
 			child.addListener('error', reject);
