@@ -26,8 +26,8 @@ class NotifyBotError extends TypedError {
     }
 }
 const NotifyBotPort = 8399;
-const IssueRefRE = new RegExp('(?:close[sd]?|fix(?:e[sd]{1})?|resolve[sd]?):?|' +
-    'connect(?:(?:s|ed)?\\s+(?:to)?:?|s-to:)\\s+(#[0-9]+)', 'gi');
+const IssueRefRE = new RegExp('(?:(?:close[sd]?|fix(?:e[sd]{1})?|resolve[sd]?|connect(?:(?:s|ed)?\\s+(?:to)?)):?|' +
+    'connects-to:)\\s+(#[0-9]+)', 'gi');
 const HqRE = /hq:\s+https:\/\/github.com\/resin-io\/hq\/issues\/([0-9]+)/gi;
 const KeyframeFile = 'keyframe.yml';
 const ChangelogFile = 'CHANGELOG.md';
