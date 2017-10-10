@@ -123,14 +123,6 @@ interface VersionBotError {
 	repo: string;
 }
 
-/** Interface for reporting an error from Node's FS module. */
-interface FSError {
-	/** Error code. */
-	code: string;
-	/** Error message. */
-	message: string;
-}
-
 /** Relative (from root) filepath to the VersionBot configuration file in a repository. */
 const RepositoryFilePath = 'repository.yml';
 /** Message sent to required reviewers should they not have been added on a review. */
@@ -1221,11 +1213,11 @@ export class VersionBot extends ProcBot {
 				}
 			}).then(() => {
 				return Promise.mapSeries([
-					BuildCommand(versionistCommand, versionistArgs, { cwd: `${versionData.fullPath}` }).catch((err) => {
-						throw new Error(`Versionist failed: ${err.message}`)
-					}),
+					BuildCommand(versionistCommand, versionistArgs, { cwd: `${versionData.fullPath}` }),
 					BuildCommand('git', ['status', '-s'], { cwd: `${versionData.fullPath}` })
-				], ExecuteCommand);
+				], ExecuteCommand).catch((err) => {
+					throw new Error(`Versionist failed: ${err.message}`);
+				});
 			});
 		}).get(1).then((status: string) => {
 			const moddedFiles: string[] = [];

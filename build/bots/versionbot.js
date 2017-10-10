@@ -764,12 +764,7 @@ class VersionBot extends procbot_1.ProcBot {
         ], environment_1.ExecuteCommand).then(() => {
             return fsFileExists(`${versionData.fullPath}/versionist.conf.js`)
                 .return(true)
-                .catch((err) => {
-                if (err.code !== 'ENOENT') {
-                    throw err;
-                }
-                return false;
-            });
+                .catchReturn({ code: 'ENOENT' }, false);
         }).catch(() => {
             throw new Error(`Cloning of branch ${versionData.branchName} in ${versionData.repoFullName} failed`);
         }).then((exists) => {
@@ -786,7 +781,9 @@ class VersionBot extends procbot_1.ProcBot {
                 return Promise.mapSeries([
                     environment_1.BuildCommand(versionistCommand, versionistArgs, { cwd: `${versionData.fullPath}` }),
                     environment_1.BuildCommand('git', ['status', '-s'], { cwd: `${versionData.fullPath}` })
-                ], environment_1.ExecuteCommand);
+                ], environment_1.ExecuteCommand).catch((err) => {
+                    throw new Error(`Versionist failed: ${err.message}`);
+                });
             });
         }).get(1).then((status) => {
             const moddedFiles = [];
