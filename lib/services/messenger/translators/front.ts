@@ -40,29 +40,68 @@ import { EmitConverters, ResponseConverters, TranslatorErrorCode } from './trans
  */
 export class FrontTranslator extends TranslatorScaffold implements Translator {
 	/**
-	 * Find the author from the various places Front squirrels it away.
-	 * @param message  Event to analyse.
-	 * @returns        username or handle from Front.
+	 * Promises to find the name of the person who authored a comment.
+	 * @param connectionDetails  Details required to connect to the Front instance.
+	 * @param message            Details of the message we care about.
+	 * @returns                  Promise that resolves to the name of the author.
 	 */
-	private static extractAuthorDetails(message: Message): { username: string, internal: boolean } {
+	private static fetchAuthorName(connectionDetails: FrontConstructor, message: Message): Promise<string> {
 		if (message.author) {
-			return {
-				username: message.author.username.replace('_', '-'),
-				internal: !message.is_inbound,
-			};
+			return Promise.resolve(message.author.username.replace('_', '-'));
 		}
 		for (const recipient of message.recipients) {
 			if (recipient.role === 'from') {
-				return {
-					username: recipient.handle.replace('_', '-'),
-					internal: !message.is_inbound,
-				};
+				const contactUrl = recipient._links.related.contact;
+				if (contactUrl) {
+					return FrontTranslator.fetchContactName(connectionDetails, contactUrl);
+				}
+				return Promise.resolve(recipient.handle.replace('_', '-'));
 			}
 		}
-		return {
-			username: 'Unknown',
-			internal: false,
-		};
+		return Promise.resolve('Unknown Author');
+	}
+
+	/**
+	 * Promises to fetch the name from a provided contact (ctc_blah) url.
+	 * @param connectionDetails  Details required to connect to the Front instance.
+	 * @param contactUrl         Url of the contact to fetch.
+	 * @returns                  Promise that resolves to the name of the contact.
+	 */
+	private static fetchContactName(connectionDetails: FrontConstructor, contactUrl: string): Promise<string> {
+		// https://github.com/resin-io-modules/resin-procbots/issues/200
+		return request({
+			headers: {
+				authorization: `Bearer ${connectionDetails.token}`,
+			},
+			json: true,
+			method: 'GET',
+			url: contactUrl,
+		})
+		.then((contact) => {
+			return contact.name;
+		});
+	}
+
+	/**
+	 * Promises to fetch the subject of a conversation
+	 * @param connectionDetails  Details required to connect to the Front instance.
+	 * @param conversation       Details of the conversation we care about.
+	 * @returns                  Promise that resolves to the subject line of the conversation.
+	 */
+	private static fetchSubject(
+		connectionDetails: FrontConstructor, conversation: Conversation
+	): Promise<string> {
+		if (conversation.subject) {
+			return Promise.resolve(conversation.subject);
+		}
+		const contactUrl = conversation.recipient._links.related.contact;
+		if (contactUrl) {
+			return FrontTranslator.fetchContactName(connectionDetails, contactUrl)
+			.then((name: string) => {
+				return `Conversation with ${name}`;
+			});
+		}
+		return Promise.resolve(`Conversation ID ${conversation.id}`);
 	}
 
 	/**
@@ -371,7 +410,21 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 				url: `https://api2.frontapp.com/events/${event.rawEvent.id}`,
 			}),
 		})
-		.then((details: { inboxes: ConversationInboxes, event: any }) => {
+		.then((firstPhase: { inboxes: ConversationInboxes, event: any}) => {
+			return Promise.props({
+				subject: FrontTranslator.fetchSubject(this.connectionDetails, firstPhase.event.conversation),
+				author: FrontTranslator.fetchAuthorName(this.connectionDetails, firstPhase.event.target.data),
+			})
+			.then((secondPhase: { subject: string, author: string }) => {
+				return {
+					inboxes: firstPhase.inboxes,
+					event: firstPhase.event,
+					subject: secondPhase.subject,
+					author: secondPhase.author,
+				};
+			});
+		})
+		.then((details: { inboxes: ConversationInboxes, event: any, subject: string, author: string }) => {
 			// Extract some details from the event.
 			const message = details.event.target.data;
 			const metadataFormat = details.event.type === 'comment' ? 'human' : 'logo';
@@ -379,17 +432,16 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 			const tags = _.map(details.event.conversation.tags, (tag: {name: string}) => {
 				return tag.name;
 			});
-			const authorDetails = FrontTranslator.extractAuthorDetails(message);
 			// Bundle it in service scaffold form and resolve.
 			const cookedEvent: BasicMessageInformation = {
 				details: {
 					genesis: metadata.genesis || event.source,
-					handle: authorDetails.username,
+					handle: details.author,
 					hidden: _.includes(['comment', 'mention'], details.event.type),
-					internal: authorDetails.internal,
+					internal: (message.author !== null) && /^tea_/.test(message.author.id),
 					tags,
 					text: message.text || metadata.content,
-					title: details.event.conversation.subject,
+					title: details.subject,
 				},
 				source: {
 					service: event.source,
@@ -397,7 +449,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 					flow: details.inboxes._results[0].id,
 					thread: details.event.conversation.id,
 					url: `https://app.frontapp.com/open/${details.event.conversation.id}`,
-					username: authorDetails.username,
+					username: details.author,
 				},
 			};
 			return {

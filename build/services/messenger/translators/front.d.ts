@@ -6,7 +6,9 @@ import { Translator } from './translator';
 import { TranslatorScaffold } from './translator-scaffold';
 import { EmitConverters, ResponseConverters } from './translator-types';
 export declare class FrontTranslator extends TranslatorScaffold implements Translator {
-    private static extractAuthorDetails(message);
+    private static fetchAuthorName(connectionDetails, message);
+    private static fetchContactName(connectionDetails, contactUrl);
+    private static fetchSubject(connectionDetails, conversation);
     private static fetchUserId(token, username);
     private static findConversation;
     private static updateTagsIntoEmit(message);
