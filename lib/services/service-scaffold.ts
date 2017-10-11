@@ -123,9 +123,12 @@ export abstract class ServiceScaffold<T> extends WorkerClient<T> implements Serv
 			});
 		}
 
-		// Emit the payload, massaging the Promise style result into a ProcBot style result.
+		// Emit the payload, massaging the Promise or ProcBot style result into a ProcBot style result.
 		return this.emitData(context)
 		.then((response: any) => {
+			if (response.source) {
+				return response;
+			}
 			return {
 				response,
 				source: this.serviceName,

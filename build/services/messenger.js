@@ -54,6 +54,9 @@ class MessengerService extends service_scaffold_1.ServiceScaffold {
             return emitter.sendData(request);
         })
             .then((response) => {
+            if (response.err) {
+                return response;
+            }
             return this.translators[data.target.service].responseIntoMessageResponse(data, response.response);
         });
     }
