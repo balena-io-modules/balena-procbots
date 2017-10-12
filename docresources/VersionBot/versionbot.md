@@ -72,6 +72,7 @@ Download the key and then create a Base64 string from it. It will be required la
 * `VERSIONBOT_PEM`: The Base64 encoded private key generated on Integration creation.
 * `VERSIONBOT_NAME`: The name shown in commits and merges for PRs by the Integration.
 * `VERSIONBOT_EMAIL`: Email address for the bot, (can be an empty string).
+* `VERSIONBOT_USER`: Can be an empty string.
 
 By default `VersionBot` will listen on port 4567, but this can be overriden using the `VERSIONBOT_LISTEN_PORT` environment variable.
 

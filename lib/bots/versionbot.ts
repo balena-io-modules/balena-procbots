@@ -1972,10 +1972,19 @@ export class VersionBot extends ProcBot {
  * Creates a new instance of the VersionBot client.
  */
 export function createBot(): VersionBot {
-	if (!(process.env.VERSIONBOT_NAME && process.env.VERSIONBOT_EMAIL && process.env.VERSIONBOT_INTEGRATION_ID &&
-	process.env.VERSIONBOT_PEM && process.env.VERSIONBOT_WEBHOOK_SECRET && process.env.VERSIONBOT_USER)) {
-		throw new Error(`'VERSIONBOT_NAME', 'VERSIONBOT_EMAIL', 'VERSIONBOT_INTEGRATION_ID', 'VERSIONBOT_PEM', ` +
-			`'VERSIONBOT_WEBHOOK_SECRET' environment variables need setting`);
+	const requiredEnvVars = [
+		'VERSIONBOT_NAME',
+		'VERSIONBOT_EMAIL',
+		'VERSIONBOT_INTEGRATION_ID',
+		'VERSIONBOT_PEM',
+		'VERSIONBOT_WEBHOOK_SECRET',
+		'VERSIONBOT_USER',
+	];
+
+	const missingEnvVars = requiredEnvVars.filter((variable) => !process.env[variable]);
+
+	if (missingEnvVars.length) {
+		throw new Error(`${missingEnvVars.map(v => `'${v}'`).join(', ')} environment variables need setting`);
 	}
 
 	return new VersionBot(process.env.VERSIONBOT_INTEGRATION_ID, process.env.VERSIONBOT_NAME,
