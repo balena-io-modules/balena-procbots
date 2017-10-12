@@ -10,4 +10,4 @@ export interface Command {
     options: CommandOptions;
 }
 export declare function BuildCommand(command: string, args?: string[], options?: CommandOptions): Command;
-export declare function ExecuteCommand(command: Command): Promise<{}>;
+export declare function ExecuteCommand(command: Command): Promise<string>;

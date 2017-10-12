@@ -15,7 +15,7 @@ class ProcBot {
         this._botname = name;
     }
     getNodeBinPath() {
-        return environment_1.ExecuteCommand(environment_1.BuildCommand('npm', ['bin']));
+        return environment_1.ExecuteCommand(environment_1.BuildCommand('npm', ['bin'])).then(_.trimEnd);
     }
     processConfiguration(configFile) {
         const config = yaml.safeLoad(configFile);
