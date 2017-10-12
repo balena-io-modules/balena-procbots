@@ -52,7 +52,7 @@ export class SyncBot extends ProcBot {
 			if (
 				from.service === data.source.service &&
 				from.flow === data.source.flow &&
-				!_.includes(['system', to.service], data.details.genesis)
+				to.service !== data.details.genesis
 			) {
 				// Log that we received this event.
 				const text = data.details.text;
@@ -323,9 +323,9 @@ export class SyncBot extends ProcBot {
 				const genericConnect: TransmitInformation = {
 					// #251 This could be .CreateConnection, and translated
 					action: MessengerAction.CreateMessage,
-					// A message object from the 'system'.
+					// A message that advertises the connected thread.
 					details: {
-						genesis: 'system',
+						genesis: 'duff', // will be replaced
 						handle: process.env.SYNCBOT_NAME,
 						hidden: true,
 						internal: true,
@@ -338,7 +338,7 @@ export class SyncBot extends ProcBot {
 						message: 'duff',
 						thread: 'duff',
 						flow: 'duff',
-						service: 'system',
+						service: 'duff', // will be replaced
 						username: 'duff',
 					},
 					target: {
@@ -361,6 +361,8 @@ export class SyncBot extends ProcBot {
 				};
 				// This comments on the original thread about the new thread.
 				updateOriginating.details.text += `[${createThread.target.service} thread ${response.thread}](${response.url})`;
+				updateOriginating.details.genesis = createThread.target.service;
+				updateOriginating.source.service = createThread.target.service;
 
 				// Clone and mutate the generic payload for emitting to the created thread.
 				const updateCreated = _.cloneDeep(genericConnect);
@@ -373,6 +375,8 @@ export class SyncBot extends ProcBot {
 				};
 				// This comments on the new thread about the original thread..
 				updateCreated.details.text += `[${data.source.service} thread ${data.source.thread}](${data.source.url})`;
+				updateCreated.details.genesis = data.source.service;
+				updateCreated.source.service = data.source.service;
 
 				// Request that the payloads created just above be sent.
 				return Promise.all([
