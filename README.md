@@ -68,20 +68,20 @@ Whilst this is a [resin.io](http://resin.io) project, we welcome any contributio
 
 ## Architecture
 
-[The full architecture documentation.](https://resin-io-modules.github.io/resin-procbots/media/Architecture/procbot-architecture.md)
+[The full architecture documentation.](https://github.com/resin-io-modules/resin-procbots/blob/master/docresources/Architecture/procbot-architecture.md)
 
 ## VersionBot
 
-* [VersionBot HowTo](https://github.com/resin-io-modules/resin-procbots/blob/master/docs/media/VersionBot/versionbot.md)
+* [VersionBot HowTo](https://github.com/resin-io-modules/resin-procbots/blob/master/docresources/VersionBot/versionbot.md)
 
 ## SyncBot
 
-* [SyncBot getting started for users.](https://github.com/resin-io-modules/resin-procbots/blob/master/docs/media/SyncBot/syncbot-readme.md)
+* [SyncBot getting started for users.](https://github.com/resin-io-modules/resin-procbots/blob/master/docresources/SyncBot/syncbot-readme.md)
 
 ## KeyframeBot
 
-* [KeyframeBot HowTo](https://github.com/resin-io-modules/resin-procbots/blob/master/docs/media/KeyframeBot/keyframebot.md)
+* [KeyframeBot HowTo](https://github.com/resin-io-modules/resin-procbots/blob/master/docresources/KeyframeBot/keyframebot.md)
 
 ## NotifyBot
 
-* [NotifyBot HowTo](https://github.com/resin-io-modules/resin-procbots/blob/master/docs/media/NotifyBot/notifybot.md)
+* [NotifyBot HowTo](https://github.com/resin-io-modules/resin-procbots/blob/master/docresources/NotifyBot/notifybot.md)
