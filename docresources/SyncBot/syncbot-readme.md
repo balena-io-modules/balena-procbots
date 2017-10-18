@@ -310,8 +310,20 @@ listens to.
 e.g.
 ```json
 {
-  "blah": {
+  "flowdock": {
     "organization": "blah",
+    "token": "blah"
+  },
+  "front": {
+    "secret": "blah",
+    "token": "blah",
+    "channelPerInbox": {
+      "blah": "blah"
+    }
+  },
+  "discourse": {
+    "instance": "blah",
+    "username": "blah",
     "token": "blah"
   }
 }

@@ -23,6 +23,7 @@ export SYNCBOT_LISTENER_CONSTRUCTORS="{
         \"token\": \"blah\"
     },
     \"front\": {
+        \"secret\": \"blah\",
         \"token\": \"blah\",
         \"channelPerInbox\": {
             \"blah\": \"blah\"

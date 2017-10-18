@@ -15,9 +15,10 @@
  */
 
 import * as Promise from 'bluebird';
-import { Front } from 'front-sdk';
+import { Event, Front } from 'front-sdk';
 import * as path from 'path';
 
+import { LogLevel } from '../utils/logger';
 import {
 	FrontConstructor, FrontEmitContext,
 	FrontHandle, FrontListenerConstructor, FrontResponse,
@@ -37,27 +38,34 @@ export class FrontService extends ServiceScaffold<string> implements ServiceList
 
 	constructor(data: FrontConstructor | FrontListenerConstructor) {
 		super(data);
-		this.session = new Front(data.token);
 		if (data.type === ServiceType.Listener) {
 			const listenerData = <FrontListenerConstructor>data;
-			// This swallows webhook events.  When operating on an entire inbox we use its webhook rule,
-			// but a webhook still requires somewhere to send its webhooks to.
+			this.session = new Front(listenerData.token, listenerData.secret);
+			// This swallows webhook events associated with a channel.
+			// When operating on an entire inbox we use its webhook rule,
+			// but a channel still requires somewhere to send its webhooks to.
 			this.registerHandler('front-dev-null', (_formData, response) => {
 				response.sendStatus(200);
 			});
-			// Create an endpoint for this listener, parse and enqueue events ...
-			// ... remembering that serviceScaffold catches and logs errors.
-			this.registerHandler(listenerData.path || FrontService._serviceName, (formData, response) => {
-				const parsedEvent = JSON.parse(formData.body);
-				this.queueData({
-					context: parsedEvent.conversation.id,
-					cookedEvent: parsedEvent,
-					rawEvent: formData.body,
-					source: FrontService._serviceName,
-					type: parsedEvent.type,
-				});
-				response.sendStatus(200);
+			this.session.registerEvents({
+				hookPath: `/${listenerData.path || FrontService._serviceName}`,
+				server: this.expressApp,
+			}, (error: Error | null, event?: Event) => {
+				if (!error && event) {
+					this.queueData({
+						context: event.conversation.id,
+						cookedEvent: {},
+						rawEvent: event,
+						source: FrontService._serviceName,
+						type: event.type,
+					});
+				}
+				if (error) {
+					this.logger.log(LogLevel.WARN, error.message);
+				}
 			});
+		} else {
+			this.session = new Front(data.token);
 		}
 	}
 
@@ -72,10 +80,10 @@ export class FrontService extends ServiceScaffold<string> implements ServiceList
 	}
 
 	/**
-		* Verify the event before enqueueing.  For now uses the naive approach of returning true.
-		*/
+	 * Verify the event before enqueueing. Trusts the SDK to perform verification.
+	 */
 	protected verify(_data: ServiceScaffoldEvent): boolean {
-		// #204: This to be properly implemented.
+		// The Front SDK verifies events as it receives them.
 		return true;
 	}
 
