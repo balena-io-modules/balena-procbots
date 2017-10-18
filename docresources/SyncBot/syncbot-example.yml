@@ -1,0 +1,81 @@
+---
+# `global` variables are available to all components. For example:
+#  global:
+#    - name: GLOBAL_ONE
+#      value: "Available to all"
+global:
+
+# Create variables here with the name of your component and the values of the
+# variables then need. For example:
+# my-component:
+#   - name: VARIABLE_ONE
+#     value: "Variable Value"
+#   - name: VARIABLE_TWO
+#     value: 1234
+syncbot:
+  - name: PROCBOT_BOTS_TO_LOAD
+    value: 'syncbot'
+  - name: SYNCBOT_PORT
+    value: '<TODO_port_number_here>'
+  - name: SYNCBOT_NAME
+    value: 'syncbot'
+  - name: SYNCBOT_DATAHUB_CONSTRUCTORS
+    value: '{
+      "simple": {
+        "syncbot_discourse_token": "<TODO_discourse_token_here>",
+        "syncbot_discourse_username": "syncbot",
+        "generic_flowdock_token": "<TODO_flowdock_token_here>"
+      },
+      "flowdock": {
+        "organization": "rulemotion",
+        "token": "<TODO_flowdock_token_here>"
+      }
+    }'
+  - name: SYNCBOT_MAPPINGS
+    value: '<TODO, exactly the same as previous>'
+  - name: SYNCBOT_LISTENER_CONSTRUCTORS
+    value: '{
+      "flowdock": {
+        "organization": "rulemotion",
+        "token": "<TODO_flowdock_token_here>"
+      },
+      "front": {
+        "token": "<TODO_front_token_here>",
+        "channelPerInbox": <TODO object of inb_blah to cha_blah here. Exactly the same object structure as previous SYNCBOT_FRONT_CONSTRUCTOR_OBJECT.inbox_channels>
+        }
+      },
+      "discourse": {
+        "instance": "forums.resin.io",
+        "username": "syncbot",
+        "token": "<TODO_discourse_token_here>"
+      }
+    }'
+  - name: MESSAGE_TRANSLATOR_PRIVACY_INDICATORS
+    value: '{
+      "hidden": {
+        "word": "whisper",
+        "char": "~"
+      },
+      "shown": {
+        "word": "comment",
+        "char": "%"
+      }
+    }'
+  - name: MESSAGE_TRANSLATOR_ANCHOR_BASE_URL
+    value: 'http://resin.io'
+  - name: SYNCBOT_ERROR_UNDOCUMENTED
+    value: 'No fixes currently documented. (cc @sqweelygig)'
+  - name: SYNCBOT_ERROR_SOLUTIONS
+    value: '{
+      "discourse": {
+        "^403": {
+          "description": "permissions error",
+          "fixes": [
+            "Your username on all services should be a derivative of your GitHub username, try `Hubot suggest usernames for …`.",
+            "You should have a Discourse API token, the Ops team provide these.",
+            "You should provide SyncBot with your Discourse API token in the 1-1 flowdock chat.  This should be in the format `My discourse token is ...`.  Note that at the moment you should not expect a confirmation.",
+            "If you’ve done all that, and Discourse is still complaining, then ping sqweelygig."
+          ]
+        }
+      }
+    }'
