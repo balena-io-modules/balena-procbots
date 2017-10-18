@@ -27,6 +27,10 @@ import {
 	ResponseConverters, TranslatorErrorCode, TranslatorMetadata,
 } from './translator-types';
 
+export enum MetadataEncoding {
+	HiddenHTML, HiddenMD, Character,
+}
+
 /**
  * Class to help build a translator to convert between messenger standard forms
  * and service specific forms.
@@ -38,19 +42,16 @@ export abstract class TranslatorScaffold implements Translator {
 	 * @param format  Optional, markdown or plaintext, defaults to markdown.
 	 * @returns       Text with data embedded.
 	 */
-	protected static stringifyMetadata(data: BasicMessageInformation, format: string): string {
+	protected static stringifyMetadata(data: BasicMessageInformation, format: MetadataEncoding): string {
 		const indicators = data.details.hidden ?
 			TranslatorScaffold.getIndicatorArrays().hidden :
 			TranslatorScaffold.getIndicatorArrays().shown;
+		const queryString = `?hidden=${indicators.word}&source=${data.source.service}`;
 		switch (format) {
-			case 'human':
-				return `(${indicators.word} from ${data.source.service})`;
-			case 'emoji':
-				return `[${indicators.emoji}](${data.source.service})`;
-			case 'logo':
-				const baseUrl = process.env.MESSAGE_TRANSLATOR_IMG_BASE_URL;
-				const queryString = `?hidden=${indicators.word}&source=${data.source.service}`;
-				return `<img src="${baseUrl}${queryString}" height="18" \/> ${TranslatorScaffold.messageOfTheDay()}`;
+			case MetadataEncoding.HiddenHTML:
+				return `<a href="${process.env.MESSAGE_TRANSLATOR_ANCHOR_BASE_URL}${queryString}"></a>`;
+			case MetadataEncoding.HiddenMD:
+				return `[](${process.env.MESSAGE_TRANSLATOR_ANCHOR_BASE_URL}${queryString}) `;
 			default:
 				throw new Error(`${format} format not recognised`);
 		}
@@ -62,28 +63,22 @@ export abstract class TranslatorScaffold implements Translator {
 	 * @param format   Format of the metadata encoding.
 	 * @returns        Object of content, genesis and hidden.
 	 */
-	protected static extractMetadata(message: string, format: string): TranslatorMetadata {
+	protected static extractMetadata(message: string, format: MetadataEncoding): TranslatorMetadata {
 		const indicators = TranslatorScaffold.getIndicatorArrays();
 		const wordCapture = `(${indicators.hidden.word}|${indicators.shown.word})`;
-		const beginsLine = '(?:^|\\r|\\n)(?:\\s*)';
-		const endsLine = '(?:\\s*)(?:$|\\r|\\n)';
-		switch (format.toLowerCase()) {
-			case 'char':
-				const charCapture = `(${_.escapeRegExp(indicators.hidden.char)}|${_.escapeRegExp(indicators.shown.char)})`;
-				const charRegex = new RegExp(`${beginsLine}${charCapture}`);
+		const querystring = `\\?hidden=${wordCapture}&source=(\\w*)`;
+		const baseUrl = _.escapeRegExp(process.env.MESSAGE_TRANSLATOR_ANCHOR_BASE_URL);
+		switch (format) {
+			case MetadataEncoding.Character:
+				const charCapture = `^(${_.escapeRegExp(indicators.hidden.char)}|${_.escapeRegExp(indicators.shown.char)})`;
+				const charRegex = new RegExp(`^${charCapture}`, 'im');
 				return TranslatorScaffold.metadataByRegex(message, charRegex);
-			case 'human':
-				const parensRegex = new RegExp(`${beginsLine}\\(${wordCapture} from (\\w*)\\)${endsLine}`, 'i');
-				return TranslatorScaffold.metadataByRegex(message, parensRegex);
-			case 'emoji':
-				const emojiCapture = `(${indicators.hidden.emoji}|${indicators.shown.emoji})`;
-				const emojiRegex = new RegExp(`${beginsLine}\\[?${emojiCapture}\\]?\\(?(\\w*)\\)?`, 'i');
-				return TranslatorScaffold.metadataByRegex(message, emojiRegex);
-			case 'logo':
-				const baseUrl = _.escapeRegExp(process.env.MESSAGE_TRANSLATOR_IMG_BASE_URL);
-				const query = `\\?hidden=${wordCapture}&source=(\\w*)`;
-				const imgRegex = new RegExp(`<img src="${baseUrl}${query}" height="18" \/>(?:.*)${endsLine}`, 'i');
-				return TranslatorScaffold.metadataByRegex(message, imgRegex);
+			case MetadataEncoding.HiddenHTML:
+				const hiddenHTMLRegex = new RegExp(`^<a href="${baseUrl}${querystring}"[^>]*></a>`, 'im');
+				return TranslatorScaffold.metadataByRegex(message, hiddenHTMLRegex);
+			case MetadataEncoding.HiddenMD:
+				const hiddenMDRegex = new RegExp(`^\\[\\]\\(${baseUrl}${querystring}\\) `, 'im');
+				return TranslatorScaffold.metadataByRegex(message, hiddenMDRegex);
 			default:
 				throw new Error(`${format} format not recognised`);
 		}
@@ -113,17 +108,6 @@ export abstract class TranslatorScaffold implements Translator {
 		};
 	}
 
-	/** Return a string, based on the day, from the configured MOTD array */
-	private static messageOfTheDay(): string {
-		try {
-			const messages = JSON.parse(process.env.MESSAGE_TRANSLATOR_MESSAGES_OF_THE_DAY);
-			const daysSinceDatum = Math.floor(new Date().getTime() / 86400000);
-			return messages[daysSinceDatum % messages.length];
-		} catch (error) {
-			throw new Error('MESSAGE_TRANSLATOR_MESSAGES_OF_THE_DAY not set correctly, motd not json.');
-		}
-	}
-
 	/**
 	 * Retrieve from the environment array of strings to use as indicators of visibility.
 	 * @returns  Object of arrays of indicators, shown and hidden.
@@ -137,8 +121,8 @@ export abstract class TranslatorScaffold implements Translator {
 			throw new Error('MESSAGE_TRANSLATOR_PRIVACY_INDICATORS not JSON.');
 		}
 		if (
-			indicators.shown.emoji && indicators.shown.char && indicators.shown.word &&
-			indicators.hidden.emoji && indicators.hidden.char && indicators.hidden.word
+			indicators.shown.char && indicators.shown.word &&
+			indicators.hidden.char && indicators.hidden.word
 		) {
 			return indicators;
 		}

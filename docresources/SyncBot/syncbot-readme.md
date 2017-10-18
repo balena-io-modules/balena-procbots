@@ -346,34 +346,15 @@ e.g.
 ```json
 {
   "hidden": {
-      "emoji":"💭",
       "word":"whisper",
       "char":"~"
   },
   "shown": {
-      "emoji":"💬",
       "word":"comment",
       "char":"%"
   }
 }
 ```
-
-#### MESSAGE_TRANSLATOR_MESSAGES_OF_THE_DAY
-
-This is a JSON encoded array of strings that may be used as footer information
-
-e.g. 
-```json
-[
-  "resin.io"
-]
-```
-
-#### MESSAGE_TRANSLATOR_IMG_BASE_URL
-
-This is a string that may be used to hide metadata in a footer
-
-e.g `https://resin.io/icons/logo.svg`
 
 #### MESSAGE_TRANSLATOR_ANCHOR_BASE_URL
 

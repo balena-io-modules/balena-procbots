@@ -31,7 +31,7 @@ import {
 import { ServiceScaffoldEvent } from '../../service-scaffold-types';
 import { ServiceType } from '../../service-types';
 import { Translator, TranslatorError } from './translator';
-import { TranslatorScaffold } from './translator-scaffold';
+import { MetadataEncoding, TranslatorScaffold } from './translator-scaffold';
 import { EmitConverters, ResponseConverters, TranslatorErrorCode } from './translator-types';
 
 /**
@@ -221,7 +221,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 			// Bundle for the session.
 			const createThreadData: MessageRequest.Send = {
 				author_id: userId,
-				body: `${message.details.text}<hr />${TranslatorScaffold.stringifyMetadata(message, 'logo')}`,
+				body: `${message.details.text}<hr />${TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenHTML)}`,
 				channel_id: channelMap[message.target.flow],
 				options: {
 					archive: false,
@@ -255,19 +255,20 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 		.then((userId: string) => {
 			// Bundle a 'comment', which is private, for the session.
 			if (message.details.hidden) {
-				const footer = TranslatorScaffold.stringifyMetadata(message, 'human');
+				const metadataInjection = TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenMD);
 				const createCommentData: CommentRequest.Create = {
 					author_id: userId,
-					body: `${message.details.text}\n${footer}`,
+					body: `${metadataInjection}${message.details.text}`,
 					conversation_id: threadId,
+					subject: message.details.title,
 				};
 				return {method: ['comment', 'create'], payload: createCommentData };
 			}
 			// Bundle a 'reply', which is public, for the session.
-			const footer = TranslatorScaffold.stringifyMetadata(message, 'logo');
+			const metadataInjection = TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenHTML);
 			const createMessageData: MessageRequest.Reply = {
 				author_id: userId,
-				body: `${message.details.text}<hr />${footer}`,
+				body: `${metadataInjection}${message.details.text}`,
 				conversation_id: threadId,
 				options: {
 					archive: false,
@@ -427,7 +428,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 		.then((details: { inboxes: ConversationInboxes, event: any, subject: string, author: string }) => {
 			// Extract some details from the event.
 			const message = details.event.target.data;
-			const metadataFormat = details.event.type === 'comment' ? 'human' : 'logo';
+			const metadataFormat = details.event.type === 'comment' ? MetadataEncoding.HiddenMD : MetadataEncoding.HiddenHTML;
 			const metadata = TranslatorScaffold.extractMetadata(message.body, metadataFormat);
 			const tags = _.map(details.event.conversation.tags, (tag: {name: string}) => {
 				return tag.name;
@@ -438,6 +439,8 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 					genesis: metadata.genesis || event.source,
 					handle: details.author,
 					hidden: _.includes(['comment', 'mention'], details.event.type),
+					// https://github.com/resin-io-modules/resin-procbots/issues/301
+					intercomHack: message.type === 'intercom' ? details.event.conversation.subject !== '' : undefined,
 					internal: (message.author !== null) && /^tea_/.test(message.author.id),
 					tags,
 					text: message.text || metadata.content,

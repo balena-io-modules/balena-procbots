@@ -49,14 +49,19 @@ export class SyncBot extends ProcBot {
 		return (_registration, event: MessengerEvent) => {
 			const data = event.cookedEvent;
 			// Check that the event is one we want to synchronise.
+			logger.log(
+				LogLevel.DEBUG,
+				`---> Considering '${data.details.text}' on ${data.source.service}, from ${from.service} to ${to.service}.`,
+			);
 			if (
 				from.service === data.source.service &&
 				from.flow === data.source.flow &&
-				to.service !== data.details.genesis
+				to.service !== data.details.genesis &&
+				// https://github.com/resin-io-modules/resin-procbots/issues/301
+				!data.details.intercomHack
 			) {
 				// Log that we received this event.
-				const text = data.details.text;
-				logger.log(LogLevel.INFO, `---> Heard '${text.split(/[\r\n]/)[0]}' on ${from.service}.`);
+				logger.log(LogLevel.INFO, `---> Actioning '${data.details.text.split(/[\r\n]/)[0]}' to ${to.service}.`);
 				// Find details of any connections stored in the originating thread.
 				return SyncBot.readConnectedThread(to, messenger, data)
 				// Then comment on or create a thread
@@ -92,7 +97,7 @@ export class SyncBot extends ProcBot {
 						// Ignore the response from the messenger, SyncBot only cares that it's happened.
 						.return(response);
 					} else {
-						logger.log(LogLevel.INFO, `---> Emitted '${text.split(/[\r\n]/)[0]}' to ${to.service}.`);
+						logger.log(LogLevel.INFO, `---> Emitted '${data.details.text.split(/[\r\n]/)[0]}' to ${to.service}.`);
 					}
 					return response;
 				})
