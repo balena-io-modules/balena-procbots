@@ -32,6 +32,7 @@ export SYNCBOT_LISTENER_CONSTRUCTORS="{
     \"discourse\": {
         \"instance\": \"blah\",
         \"username\": \"blah\",
+        \"secret\": \"blah\",
         \"token\": \"blah\"
     }
 }"
