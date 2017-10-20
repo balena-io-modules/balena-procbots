@@ -27,7 +27,6 @@ import {
 	UpdateThreadResponse,
 } from '../../messenger-types';
 import { ServiceType } from '../../service-types';
-import { DataHub } from '../datahubs/datahub';
 import { Translator, TranslatorError } from './translator';
 import { MetadataEncoding, TranslatorScaffold } from './translator-scaffold';
 import { EmitConverters, ResponseConverters, TranslatorErrorCode } from './translator-types';
@@ -154,7 +153,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 					TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenMD)
 				),
 				event: 'message',
-				external_user_name: message.details.internal ? undefined : message.details.handle,
+				external_user_name: message.details.handle,
 			},
 		}});
 	}
@@ -183,7 +182,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 					TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenMD)
 				),
 				event: 'message',
-				external_user_name: message.details.internal ? undefined : message.details.handle,
+				external_user_name: message.details.handle,
 			}
 		}});
 	}
@@ -267,18 +266,18 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 		[MessengerAction.CreateMessage]: FlowdockTranslator.convertUpdateThreadResponse,
 	};
 
-	private hubs: DataHub[];
+	private token: string;
 	private session: Session;
 	private organization: string;
 
-	constructor(data: FlowdockConstructor, hubs: DataHub[]) {
+	constructor(data: FlowdockConstructor) {
 		super();
-		this.hubs = hubs;
 		this.session = new Session(data.token);
 		// The flowdock service both emits and calls back the error
 		// We'll just log the emit to prevent it bubbling
 		this.session.on('error', _.partial(console.log, 'error looking up data from Flowdock.'));
 		this.organization = data.organization;
+		this.token = data.token;
 		// These converters require the injection of a couple of details from `this` instance.
 		this.responseConverters[MessengerAction.CreateThread] =
 			_.partial(FlowdockTranslator.convertCreateThreadResponse, data.organization);
@@ -369,20 +368,14 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 
 	/**
 	 * Promise to provide emitter construction details for a provided message.
-	 * @param message  Message information, used to retrieve username.
-	 * @returns        Promise that resolves to the details required to construct an emitter.
+	 * @param _message  Message information, not used.
+	 * @returns         Promise that resolves to the details required to construct an emitter.
 	 */
-	public messageIntoEmitterConstructor(message: TransmitInformation): Promise<FlowdockConstructor> {
-		const promises: Array<Promise<string>> = _.map(this.hubs, (hub) => {
-			return hub.fetchValue(message.details.internal ? message.target.username : 'generic', 'flowdock', 'token');
-		});
-		return Promise.any(promises)
-		.then((token) => {
-			return {
-				organization: this.organization,
-				token,
-				type: ServiceType.Emitter
-			};
+	public messageIntoEmitterConstructor(_message: TransmitInformation): Promise<FlowdockConstructor> {
+		return Promise.resolve({
+			organization: this.organization,
+			token: this.token,
+			type: ServiceType.Emitter
 		});
 	}
 
@@ -406,9 +399,8 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 /**
  * Builds a translator that will convert Flowdock specific information to and from Messenger format.
  * @param data  Construction details for creating a Flowdock session.
- * @param hubs  A list of places to look for additional information, eg token.
  * @returns     A translator, ready to interpret Flowdock's communications.
  */
-export function createTranslator(data: FlowdockConstructor, hubs: DataHub[]): Translator {
-	return new FlowdockTranslator(data, hubs);
+export function createTranslator(data: FlowdockConstructor): Translator {
+	return new FlowdockTranslator(data);
 }
