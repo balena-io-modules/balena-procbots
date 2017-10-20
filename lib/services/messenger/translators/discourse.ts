@@ -188,7 +188,10 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 		const idFinder = new RegExp(`${message.source.service} thread ([\\w\\d-+\\/=]+)`, 'i');
 		if (response.posts.length > 0) {
 			return Promise.resolve({
-				thread: response.posts[0].blurb.match(idFinder)[1],
+				// Because Discourse assumes that when my POST contains:
+				// hyphen hyphen ("--") then what I mean is en dash ("–")
+				// hyphen hyphen hyphen ("---") then what I mean in em dash ("—")
+				thread: response.posts[0].blurb.replace('–', '--').replace('—', '---').match(idFinder)[1],
 			});
 		}
 		return Promise.reject(new TranslatorError(
