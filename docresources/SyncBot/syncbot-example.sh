@@ -14,7 +14,7 @@ export SYNCBOT_DATAHUB_CONSTRUCTORS="{
     \"simple\": {
         \"blahbot_discourse_token\": \"blah\",
         \"blahbot_discourse_username\": \"blahbot\",
-        \"blahbot_flowdock_token\": \"blah\"
+        \"generic_flowdock_token\": \"blah\"
     },
     \"flowdock\": {
         \"organization\": \"blah\",
