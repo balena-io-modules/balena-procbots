@@ -42,7 +42,6 @@ syncbot:
       "front": {
         "token": "<TODO_front_token_here>",
         "channelPerInbox": <TODO object of inb_blah to cha_blah here. Exactly the same object structure as previous SYNCBOT_FRONT_CONSTRUCTOR_OBJECT.inbox_channels>
-        }
       },
       "discourse": {
         "instance": "forums.resin.io",
