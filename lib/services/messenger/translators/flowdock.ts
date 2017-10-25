@@ -294,9 +294,9 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 	/**
 	 * Promise to convert a provided service specific event into messenger's standard form.
 	 * @param event  Service specific event, straight out of the ServiceListener.
-	 * @returns      Promise that resolves to the standard form of the message.
+	 * @returns      Promise that resolves to an array of message objects in the standard form
 	 */
-	public eventIntoMessage(event: FlowdockEvent): Promise<MessengerEvent> {
+	public eventIntoMessages(event: FlowdockEvent): Promise<MessengerEvent[]> {
 		// Calculate metadata and use whichever matched, i.e. has a shorter content because it extracted metadata.
 		const MDMetadata = TranslatorScaffold.extractMetadata(event.rawEvent.content, MetadataEncoding.HiddenMD);
 		const charMetadata = TranslatorScaffold.extractMetadata(event.rawEvent.content, MetadataEncoding.Character);
@@ -356,13 +356,13 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 		.then((username: string) => {
 			cookedEvent.source.username = username;
 			cookedEvent.details.handle = username;
-			return {
+			return [{
 				context: `${event.source}.${event.cookedEvent.context}`,
 				type: this.eventIntoMessageType(event),
 				cookedEvent,
 				rawEvent: event.rawEvent,
 				source: event.source,
-			};
+			}];
 		});
 	}
 
