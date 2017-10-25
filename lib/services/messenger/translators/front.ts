@@ -22,13 +22,12 @@ import {
 } from 'front-sdk';
 import * as _ from 'lodash';
 import * as request from 'request-promise';
-import { FrontConstructor, FrontEmitInstructions, FrontResponse } from '../../front-types';
+import { FrontConstructor, FrontEmitInstructions, FrontResponse, FrontServiceEvent } from '../../front-types';
 import {
 	BasicMessageInformation, CreateThreadResponse, IdentifyThreadResponse,
 	MessengerAction, MessengerConstructor, MessengerEvent, TransmitInformation,
 	UpdateThreadResponse,
 } from '../../messenger-types';
-import { ServiceScaffoldEvent } from '../../service-scaffold-types';
 import { ServiceType } from '../../service-types';
 import { Translator, TranslatorError } from './translator';
 import { MetadataEncoding, TranslatorScaffold } from './translator-scaffold';
@@ -398,17 +397,17 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	 * @param event  Service specific event, straight out of the ServiceListener.
 	 * @returns      Promise that resolves to an array of message objects in the standard form
 	 */
-	public eventIntoMessages(event: ServiceScaffoldEvent): Promise<MessengerEvent[]> {
+	public eventIntoMessages(event: FrontServiceEvent): Promise<MessengerEvent[]> {
 		// Gather details of all the inboxes and the complete event.
 		return Promise.props({
-			inboxes: this.session.conversation.listInboxes({conversation_id: event.rawEvent.conversation.id}),
+			inboxes: this.session.conversation.listInboxes({conversation_id: event.cookedEvent.conversation.id}),
 			event: request({
 				headers: {
 					authorization: `Bearer ${this.connectionDetails.token}`,
 				},
 				json: true,
 				method: 'GET',
-				url: `https://api2.frontapp.com/events/${event.rawEvent.id}`,
+				url: `https://api2.frontapp.com/events/${event.cookedEvent.id}`,
 			}),
 		})
 		.then((firstPhase: { inboxes: ConversationInboxes, event: any}) => {
@@ -459,7 +458,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 				const recookedEvent = _.cloneDeep(cookedEvent);
 				recookedEvent.source.flow = inbox.id;
 				return {
-					context: `${event.source}.${event.cookedEvent.context}`,
+					context: `${event.source}.${event.context}`,
 					type: this.eventIntoMessageType(event),
 					cookedEvent: recookedEvent,
 					rawEvent: event.rawEvent,

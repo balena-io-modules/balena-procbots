@@ -15,9 +15,9 @@
  */
 
 import * as Promise from 'bluebird';
-import { ConversationComments, Front, RequestData, ResponseData, Status } from 'front-sdk';
+import { ConversationComments, Event, Front, RequestData, ResponseData, Status } from 'front-sdk';
 import { EmitInstructions } from './messenger-types';
-import { ServerDetails, ServiceScaffoldConstructor } from './service-scaffold-types';
+import { ServerDetails, ServiceScaffoldConstructor, ServiceScaffoldEvent } from './service-scaffold-types';
 import { ServiceAPIHandle, ServiceEmitContext, ServiceType } from './service-types';
 
 /** Possible responses from the Front SDK */
@@ -59,4 +59,12 @@ export interface FrontListenerConstructor extends FrontConstructor {
 /** A more specific form of emit instructions which are used to route to an API method and provide a payload. */
 export interface FrontEmitInstructions extends EmitInstructions {
 	payload: RequestData;
+}
+
+/** A more specific ServiceEvent, to provided Front typing. */
+export interface FrontServiceEvent extends ServiceScaffoldEvent {
+	/** The Event object that Front gives. */
+	cookedEvent: Event;
+	/** The raw payload string. */
+	rawEvent: string;
 }

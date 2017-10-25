@@ -84,7 +84,8 @@ export abstract class ServiceScaffold<T> extends WorkerClient<T> implements Serv
 			// Construction details provided a port number, so use that.
 			const port = data.server;
 			this.expressApp = express();
-			this.expressApp.use(bodyParser.json());
+			// This passes to the inheriting class responsibility for understanding the payload structure.
+			this.expressApp.use(bodyParser.text({type: '*/*'}));
 			this.expressApp.listen(port);
 			this.logger.log(LogLevel.INFO, `---> Created Express app on provided port ${port} for '${this.serviceName}'.`);
 		} else if (data.server) {

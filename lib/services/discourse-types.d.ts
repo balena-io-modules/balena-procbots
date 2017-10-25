@@ -19,7 +19,7 @@ import { UrlOptions } from 'request';
 import { RequestPromiseOptions } from 'request-promise';
 import { DiscourseService } from './discourse';
 import { EmitData, EmitInstructions } from './messenger-types';
-import { ServerDetails, ServiceScaffoldConstructor } from './service-scaffold-types';
+import { ServerDetails, ServiceScaffoldConstructor, ServiceScaffoldEvent } from './service-scaffold-types';
 import { ServiceAPIHandle, ServiceEmitContext, ServiceType } from './service-types';
 
 /** Common properties that all Discourse payloads share. */
@@ -101,6 +101,8 @@ export interface DiscourseConstructor extends ServiceScaffoldConstructor {
 export interface DiscourseListenerConstructor extends DiscourseConstructor {
 	/** Endpoint path to listen to. Defaults to the name of the service. */
 	path?: string;
+	/** Shared secret, used to verify event payloads. */
+	secret: string;
 	/** Port number or server instance to listen to. */
 	server: ServerDetails;
 	/** Specifies that this listener must be a listener. */
@@ -114,4 +116,29 @@ export interface DiscourseHandle extends ServiceAPIHandle {
 	 * In the case of Discourse the Service is the SDK.
 	 */
 	discourse: DiscourseService;
+}
+
+/** A more specific ServiceEvent, to provided Discourse typing. */
+export interface DiscourseServiceEvent extends ServiceScaffoldEvent {
+	/** The parsed payload that Discourse gave us. */
+	cookedEvent: DiscourseReceivedEvent;
+	// We keep track of the payload string because Discourse is slightly fruity with it's JSON encoding.
+	// It encodes (at least) <> as their \u... equivalent, and signs that, but JS's JSON built-in uses the <> characters.
+	/** The raw payload string from Discourse. */
+	rawEvent: string;
+	/** The signature from Discourse, used to verify. */
+	signature: string;
+}
+
+// https://github.com/resin-io-modules/resin-procbots/issues/207
+/** For the moment a rather empty union of payloads Discourse might webhook to us. */
+export type DiscourseReceivedEvent = DiscourseReceivedMessage;
+
+// https://github.com/resin-io-modules/resin-procbots/issues/207
+/** For the moment a rather empty object of a message payload from Discourse. */
+export interface DiscourseReceivedMessage {
+	/** ID of the message. */
+	id: string;
+	/** Topic ID of the message. */
+	topic_id: string;
 }
