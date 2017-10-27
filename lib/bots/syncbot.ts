@@ -22,6 +22,7 @@ import {
 	BasicMessageInformation,
 	CreateThreadResponse,
 	FlowDefinition,
+	FlowMapping,
 	MessageListener,
 	MessengerAction,
 	MessengerConnectionDetails,
@@ -41,7 +42,7 @@ interface SyncBotConstructor {
 	SYNCBOT_ALIAS_USERS: string[];
 	SYNCBOT_ERROR_SOLUTIONS: SolutionMatrix;
 	SYNCBOT_ERROR_UNDOCUMENTED: string;
-	SYNCBOT_MAPPINGS: FlowDefinition[][];
+	SYNCBOT_MAPPINGS: FlowMapping[];
 	SYNCBOT_METADATA_CONFIG: MetadataConfiguration;
 	SYNCBOT_PORT: string;
 	SYNCBOT_NAME: string;
@@ -86,6 +87,7 @@ export class SyncBot extends ProcBot {
 	 * @param to                   Definition {service, flow} of the flow being emitted to.
 	 * @param messenger            Service to use to interact with the cloud.
 	 * @param logger               Logger to use to interact with the maintainers.
+	 * @param actions              An array of which actions to sync along this route.
 	 * @param name                 Username that the router should use.
 	 * @param aliases              List of usernames that the router should alias.
 	 * @param solutionMatrix       A matrix of possible solutions to common routing errors.
@@ -97,6 +99,7 @@ export class SyncBot extends ProcBot {
 		to: FlowDefinition,
 		messenger: MessengerService,
 		logger: Logger,
+		actions: MessengerAction[],
 		name: string,
 		aliases: string[] = [],
 		solutionMatrix?: SolutionMatrix,
@@ -123,7 +126,7 @@ export class SyncBot extends ProcBot {
 				!data.details.intercomHack
 			) {
 				// Log that we received this event.
-				logger.log(LogLevel.INFO, `---> Actioning '${firstLine}' to ${toText}.`);
+				logger.log(LogLevel.DEBUG, `---> Actioning '${firstLine}' to ${toText}.`);
 				try {
 					// This allows syncbot to represent specific other accounts.
 					if (_.includes(_.map(aliases, _.toLower), data.details.handle.toLowerCase())) {
@@ -135,12 +138,13 @@ export class SyncBot extends ProcBot {
 				}
 				// Find details of any connections stored in the originating thread.
 				return SyncBot.readConnectedThread(to, messenger, data, name)
-				// Then comment on or create a thread
+				// Then comment on or create a thread, if appropriate.
 				.then((threadDetails: MessengerEmitResponse) => {
 					// If the search resolved with a response.
-					const threadId = _.get(threadDetails, 'response.thread', false);
-					if (threadId) {
-						logger.log(LogLevel.DEBUG, `---> Creating comment '${firstLine}' on ${toText}.`);
+					const threadId = _.get(threadDetails, ['response', 'thread'], false);
+					const flowId = _.get(threadDetails, ['response', 'flow'], true);
+					if (threadId && (flowId === true || flowId === to.flow) && _.includes(actions, MessengerAction.CreateMessage)) {
+						logger.log(LogLevel.INFO, `---> Creating comment '${firstLine}' on ${toText}.`);
 						// Comment on the found thread
 						return SyncBot.createComment({
 							service: to.service, flow: to.flow, thread: threadId,
@@ -158,9 +162,16 @@ export class SyncBot extends ProcBot {
 							};
 						});
 					}
-					logger.log(LogLevel.DEBUG, `---> Creating thread '${firstLine}' on ${toText}.`);
-					// Create a thread if the quest for connections didn't find any
-					return SyncBot.createThreadAndConnect(to, messenger, data, name);
+					if (!threadId && _.includes(actions, MessengerAction.CreateThread)) {
+						logger.log(LogLevel.INFO, `---> Creating thread '${firstLine}' on ${toText}.`);
+						// Create a thread if the quest for connections didn't find any
+						return SyncBot.createThreadAndConnect(to, messenger, data, name);
+					}
+					// Pass on that this has no connected thread
+					return {
+						response: {},
+						source: to.service,
+					};
 				})
 				// Then report that we have passed the message on
 				.then((response: MessengerEmitResponse) => {
@@ -352,7 +363,7 @@ export class SyncBot extends ProcBot {
 					source: {
 						message: 'duff',
 						thread: 'duff', // will be replaced
-						flow: 'duff',
+						flow: 'duff', // will be replaced
 						service: 'duff', // will be replaced
 						username: 'duff',
 					},
@@ -379,6 +390,7 @@ export class SyncBot extends ProcBot {
 				updateOriginating.details.genesis = createThread.target.service;
 				updateOriginating.source.service = createThread.target.service;
 				updateOriginating.source.thread = response.thread;
+				updateOriginating.source.flow = createThread.target.flow;
 
 				// Clone and mutate the generic payload for emitting to the created thread.
 				const updateCreated = _.cloneDeep(genericConnect);
@@ -394,6 +406,7 @@ export class SyncBot extends ProcBot {
 				updateCreated.details.genesis = data.source.service;
 				updateCreated.source.service = data.source.service;
 				updateCreated.source.thread = data.source.thread;
+				updateCreated.source.flow = data.source.flow;
 
 				// Request that the payloads created just above be sent.
 				return Promise.all([
@@ -442,51 +455,60 @@ export class SyncBot extends ProcBot {
 					config.SYNCBOT_LISTENER_CONSTRUCTORS, port, config.SYNCBOT_METADATA_CONFIG
 				);
 				const mappings = config.SYNCBOT_MAPPINGS;
-				// Go around all the mappings defined by the configuration.
+				const edgesMade = {};
 				_.forEach(mappings, (mapping) => {
-					// Keeping track of prior, so we can find each adjacent pair.
-					let priorFlow = null;
-					for (const focusFlow of mapping) {
-						if (priorFlow) {
-							// Register a mirroring from the first of the pair, to the second.
-							messenger.registerEvent({
-								events: ['message'],
-								listenerMethod: SyncBot.makeRouter(
-									priorFlow,
-									focusFlow,
-									messenger,
-									logger,
-									config.SYNCBOT_NAME,
-									config.SYNCBOT_ALIAS_USERS,
-									config.SYNCBOT_ERROR_SOLUTIONS,
-									config.SYNCBOT_ERROR_UNDOCUMENTED,
-								),
-								name: `${priorFlow.service}.${priorFlow.flow}=>${focusFlow.service}.${focusFlow.flow}`,
-							});
-							// Register a mirroring from the second of the pair, to the first.
-							messenger.registerEvent({
-								events: ['message'],
-								listenerMethod: SyncBot.makeRouter(
-									focusFlow,
-									priorFlow,
-									messenger,
-									logger,
-									config.SYNCBOT_NAME,
-									config.SYNCBOT_ALIAS_USERS,
-									config.SYNCBOT_ERROR_SOLUTIONS,
-									config.SYNCBOT_ERROR_UNDOCUMENTED,
-								),
-								name: `${focusFlow.service}.${focusFlow.flow}=>${priorFlow.service}.${priorFlow.flow}`,
-							});
-						}
-						priorFlow = focusFlow;
+					const source = mapping.source;
+					const destination = mapping.destination;
+					// Register a mirroring from the first of the pair, to the second.
+					const router = SyncBot.makeRouter(
+						source,
+						destination,
+						messenger,
+						logger,
+						[MessengerAction.CreateMessage, MessengerAction.CreateThread],
+						config.SYNCBOT_NAME,
+						config.SYNCBOT_ALIAS_USERS,
+						config.SYNCBOT_ERROR_SOLUTIONS,
+						config.SYNCBOT_ERROR_UNDOCUMENTED,
+					);
+					const label = `${source.service}.${source.flow}(all)=>${destination.service}.${destination.flow}`;
+					messenger.registerEvent({
+						events: ['message'],
+						listenerMethod: router,
+						name: label,
+					});
+					const path = [source.service, source.flow, destination.service, destination.flow];
+					_.set(edgesMade, path, true);
+				});
+				_.forEach(mappings, (mapping) => {
+					// Create the reverse links for just messages and tags
+					const source = mapping.destination;
+					const destination = mapping.source;
+					const path = [source.service, source.flow, destination.service, destination.flow];
+					if (!_.get(edgesMade, path, false)) {
+						const router = SyncBot.makeRouter(
+							source,
+							destination,
+							messenger,
+							logger,
+							[MessengerAction.CreateMessage],
+							config.SYNCBOT_NAME,
+							config.SYNCBOT_ALIAS_USERS,
+							config.SYNCBOT_ERROR_SOLUTIONS,
+							config.SYNCBOT_ERROR_UNDOCUMENTED
+						);
+						const label = `${source.service}.${source.flow}(messages)=>${destination.service}.${destination.flow}`;
+						messenger.registerEvent({
+							events: ['message'],
+							listenerMethod: router,
+							name: label,
+						});
 					}
 				});
 			} else {
 				logger.log(LogLevel.WARN, "Couldn't load configuration.");
 			}
 		});
-
 	}
 }
 

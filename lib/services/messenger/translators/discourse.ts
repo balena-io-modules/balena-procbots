@@ -21,12 +21,18 @@ import {
 	DiscourseConstructor,
 	DiscourseEmitInstructions,
 	DiscoursePostSearchResponse,
+	DiscourseReceivedMessage,
 	DiscourseResponse,
 	DiscourseServiceEvent,
 } from '../../discourse-types';
 import {
-	BasicMessageInformation, CreateThreadResponse, IdentifyThreadResponse,
-	MessengerAction, MessengerConstructor, MessengerEvent, TransmitInformation,
+	BasicMessageInformation,
+	CreateThreadResponse,
+	MessengerAction,
+	MessengerConstructor,
+	MessengerEvent,
+	SourceDescription,
+	TransmitInformation,
 	UpdateThreadResponse,
 } from '../../messenger-types';
 import { ServiceType } from '../../service-types';
@@ -75,8 +81,11 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 	 * @param comment  Comment to reverse engineer
 	 * @returns        Best guess as to original comment
 	 */
-	public static reverseEngineerComment(comment: string): string {
-		return comment.replace(/–/g, '--').replace(/—/g, '---').replace(/&amp;/g, '&');
+	public static reverseEngineerComment(comment: DiscourseReceivedMessage): string {
+		// Because Discourse assumes that when my POST contains:
+		// hyphen hyphen ("--") then what I mean is en dash ("–")
+		// hyphen hyphen hyphen ("---") then what I mean in em dash ("—")
+		return comment.cooked.replace(/–/g, '--').replace(/—/g, '---').replace(/&amp;/g, '&');
 	}
 
 	/**
@@ -266,18 +275,14 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 	 */
 	private static convertReadConnectionResponse(
 		metadataConfig: MetadataConfiguration, message: TransmitInformation, response: DiscoursePostSearchResponse
-	): Promise<IdentifyThreadResponse> {
-		return TranslatorScaffold.extractThreadId(
+	): Promise<SourceDescription> {
+		const uncookedComments = _.map(response.posts, DiscourseTranslator.reverseEngineerComment);
+		return Promise.resolve(TranslatorScaffold.extractSource(
 			message.source.service,
-			_.map(response.posts, (comment) => {
-				// Because Discourse assumes that when my POST contains:
-				// hyphen hyphen ("--") then what I mean is en dash ("–")
-				// hyphen hyphen hyphen ("---") then what I mean in em dash ("—")
-				return DiscourseTranslator.reverseEngineerComment(comment.cooked);
-			}),
+			uncookedComments,
 			metadataConfig,
 			MetadataEncoding.HiddenHTML,
-		);
+		));
 	}
 
 	/**

@@ -19,10 +19,10 @@ import * as _ from 'lodash';
 import {
 	BasicMessageInformation,
 	EmitInstructions,
-	IdentifyThreadResponse,
 	MessengerConstructor,
 	MessengerEvent,
 	MessengerResponse,
+	SourceDescription,
 	TransmitInformation,
 } from '../../messenger-types';
 import { ServiceScaffoldConstructor, ServiceScaffoldEvent } from '../../service-scaffold-types';
@@ -53,35 +53,37 @@ export abstract class TranslatorScaffold implements Translator {
 	 * @param config      Configuration that may have been used to encode metadata.
 	 * @param format    Format used to encode the metadata.
 	 */
-	public static extractThreadId(
+	public static extractSource(
 		service: string,
 		messages: string[],
 		config: MetadataConfiguration,
 		format?: MetadataEncoding,
-	): Promise<IdentifyThreadResponse> {
+	): SourceDescription {
 		const idFinder = new RegExp(`${service} thread ([\\w\\d-+\\/=\\_]+)`);
 		const matches = _.compact(_.map(
 			messages,
 			(message) => {
 				if (format) {
 					const metadata = TranslatorScaffold.extractMetadata(message, format, config);
-					if ((metadata.genesis === service) && metadata.thread) {
-						return metadata.thread;
+					if ((metadata.genesis === service) && metadata.thread && metadata.flow) {
+						return {
+							flow: metadata.flow,
+							service: metadata.genesis,
+							thread: metadata.thread,
+						};
 					}
 				}
 				const match = message.match(idFinder);
-				return match && match[1];
+				return match && { thread: match[1] };
 			},
 		));
 		// Let upstream know what we've found.
 		if (matches.length > 0) {
-			return Promise.resolve({
-				thread: matches[0],
-			});
+			return matches[0];
 		}
-		return Promise.reject(new TranslatorError(
+		throw new TranslatorError(
 			TranslatorErrorCode.ValueNotFound, `No connected thread found for ${service}.`
-		));
+		);
 	}
 
 	/**
@@ -94,8 +96,9 @@ export abstract class TranslatorScaffold implements Translator {
 	public static stringifyMetadata(
 		data: BasicMessageInformation, format: MetadataEncoding, config: MetadataConfiguration,
 	): string {
-		const indicatorChoice = data.details.hidden ? config.publicity.hidden : config.publicity.shown;
-		const queryString = `?hidden=${indicatorChoice.word}&source=${data.source.service}&thread=${data.source.thread}`;
+		const pubWord = data.details.hidden ? config.publicity.hidden.word : config.publicity.shown.word;
+		const source = data.source;
+		const queryString = `?hidden=${pubWord}&source=${source.service}&flow=${source.flow}&thread=${source.thread}`;
 		switch (format) {
 			case MetadataEncoding.HiddenHTML:
 				return `<a href="${config.baseUrl}${queryString}"></a>`;
@@ -117,7 +120,7 @@ export abstract class TranslatorScaffold implements Translator {
 		message: string, format: MetadataEncoding, config: MetadataConfiguration,
 	): TranslatorMetadata {
 		const wordCapture = `(${config.publicity.hidden.word}|${config.publicity.shown.word})`;
-		const querystring = `\\?hidden=${wordCapture}&source=(\\w*)&thread=([^"\)]*)`;
+		const querystring = `\\?hidden=${wordCapture}&source=(\\w*)&flow=([^"\\)]*)&thread=([^"\\)]*)`;
 		const baseUrl = _.escapeRegExp(config.baseUrl);
 		const publicity = config.publicity;
 		switch (format) {
@@ -149,13 +152,15 @@ export abstract class TranslatorScaffold implements Translator {
 		if (metadata) {
 			return {
 				content: message.replace(regex, '').trim(),
+				flow: metadata[3] || null,
 				genesis: metadata[2] || null,
 				hidden: !_.includes(_.values(indicators.shown), metadata[1]),
-				thread: metadata[3] || null,
+				thread: metadata[4] || null,
 			};
 		}
 		return {
 			content: message.trim(),
+			flow: null,
 			genesis: null,
 			hidden: true,
 			thread: null,

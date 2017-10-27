@@ -7,19 +7,44 @@ SYNCBOT_ERROR_SOLUTIONS:
       description: "permissions error"
       fixes:
         - "Your username on all services should be a derivative of your GitHub username, try `Hubot suggest usernames`."
-        - "If Discourse is still complaining then ping sqweelygig."
+        - "If Discourse is still complaining then ping (at)sqweelygig."
+    ^5:
+      description: "Problem with their server infrastructure."
+      fixes:
+        - "Try again in a few minutes"
+        - "If it persists put an (at)team, (at)sqweelygig PSA into r/support"
+  front:
+    ^5:
+      description: "Problem with their server infrastructure."
+      fixes:
+        - "Try again in a few minutes"
+        - "If it persists put an (at)team, (at)sqweelygig PSA into r/support"
 SYNCBOT_ERROR_UNDOCUMENTED: 'No fixes currently documented. (@)sqweelygig'
 SYNCBOT_MAPPINGS:
-  - - service: "discourse"
+  - source:
+      service: "discourse"
       flow: "42"
-    - service: "flowdock"
+    destination:
+      service: "flowdock"
       flow: "public-s-community"
-    - service: "front"
+  - source:
+      service: "flowdock"
+      flow: "public-s-community"
+    destination:
+      service: "front"
       flow: "inb_23sp"
-  - - service: "flowdock"
-      flow: "public-s-premium"
-    - service: "front"
+  - source:
+      service: "front"
+      flow: "inb_23sp"
+    destination:
+      service: "flowdock"
+      flow: "public-s-community"
+  - source:
+      service: "front"
       flow: "inb_nla"
+    destination:
+      service: "flowdock"
+      flow: "public-s-premium"
 SYNCBOT_LISTENER_CONSTRUCTORS:
   flowdock:
     organization: "rulemotion"

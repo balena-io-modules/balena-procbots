@@ -24,8 +24,13 @@ import * as _ from 'lodash';
 import * as request from 'request-promise';
 import { FrontConstructor, FrontEmitInstructions, FrontResponse, FrontServiceEvent } from '../../front-types';
 import {
-	BasicMessageInformation, CreateThreadResponse, IdentifyThreadResponse,
-	MessengerAction, MessengerConstructor, MessengerEvent, TransmitInformation,
+	BasicMessageInformation,
+	CreateThreadResponse,
+	MessengerAction,
+	MessengerConstructor,
+	MessengerEvent,
+	SourceDescription,
+	TransmitInformation,
 	UpdateThreadResponse,
 } from '../../messenger-types';
 import { ServiceType } from '../../service-types';
@@ -327,16 +332,14 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	 * @returns             Promise that resolve to the thread details.
 	 */
 	private static convertReadConnectionResponse(
-		metadataConfig: MetadataConfiguration, message: TransmitInformation, response: FrontResponse
-	): Promise<IdentifyThreadResponse> {
-		return TranslatorScaffold.extractThreadId(
+		metadataConfig: MetadataConfiguration, message: TransmitInformation, response: ConversationComments
+	): Promise<SourceDescription> {
+		return Promise.resolve(TranslatorScaffold.extractSource(
 			message.source.service,
-			_.map((response as ConversationComments)._results, (comment) => {
-				return comment.body;
-			}),
+			_.map(response._results, (comment) => { return comment.body; }),
 			metadataConfig,
 			MetadataEncoding.HiddenMD,
-		);
+		));
 	}
 
 	/**
@@ -358,6 +361,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	 * @param _response  The response from the SDK.
 	 * @returns          Promise that resolve to the thread details.
 	 */
+	// https://github.com/resin-io-modules/resin-procbots/issues/347
 	private static convertCreateThreadResponse(
 		session: Front, message: TransmitInformation, _response: FrontResponse
 	): Promise<CreateThreadResponse> {
