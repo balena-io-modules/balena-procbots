@@ -91,6 +91,8 @@ export interface DiscourseConstructor extends ServiceScaffoldConstructor {
 	username: string;
 	/** Base URL of the instance to connect to. */
 	instance: string;
+	/** Protocol to use to connect to the instance. */
+	protocol?: string;
 }
 
 /**

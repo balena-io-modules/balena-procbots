@@ -369,14 +369,14 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 	/**
 	 * Promise to provide emitter construction details for a provided message.
 	 * @param _message  Message information, not used.
-	 * @returns         Promise that resolves to the details required to construct an emitter.
+	 * @returns         The details required to construct an emitter.
 	 */
-	public messageIntoEmitterConstructor(_message: TransmitInformation): Promise<FlowdockConstructor> {
-		return Promise.resolve({
+	public messageIntoEmitterConstructor(_message: TransmitInformation): FlowdockConstructor {
+		return {
 			organization: this.organization,
 			token: this.token,
 			type: ServiceType.Emitter
-		});
+		};
 	}
 
 	/**

@@ -27,7 +27,6 @@ import {
 } from '../../messenger-types';
 import { ServiceScaffoldEvent } from '../../service-scaffold-types';
 import { ServiceType } from '../../service-types';
-import { DataHub } from '../datahubs/datahub';
 import { Translator, TranslatorError } from './translator';
 import { MetadataEncoding, TranslatorScaffold } from './translator-scaffold';
 import { EmitConverters, ResponseConverters, TranslatorErrorCode } from './translator-types';
@@ -115,7 +114,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 					api_key: connectionDetails.token,
 					api_username: connectionDetails.username,
 				},
-				url: `https://${connectionDetails.instance}/users/${username}.json`,
+				url: `${connectionDetails.protocol || 'https'}://${connectionDetails.instance}/users/${username}.json`,
 			}).then((response) => {
 				if (response.user.can_send_private_messages) {
 					// Bundle into a format for the service.
@@ -202,7 +201,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 				api_key: connectionDetails.token,
 				api_username: connectionDetails.username,
 			},
-			url: `https://${connectionDetails.instance}/t/${message.target.thread}`,
+			url: `${connectionDetails.protocol || 'https'}://${connectionDetails.instance}/t/${message.target.thread}`,
 		};
 		return request(getTopic)
 		.then((topicResponse) => {
@@ -220,17 +219,17 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 
 	/**
 	 * Converts a response into a the generic format.
-	 * @param instance  Name of the instance, used to properly populate the URL.
+	 * @param details   Details of the translator's construction, used to properly populate the URL.
 	 * @param _message  Not used, the initial message.
 	 * @param response  The response provided by the service.
 	 * @returns         Promise that resolves to emit instructions.
 	 */
 	private static convertCreateThreadResponse(
-		instance: string, _message: TransmitInformation, response: DiscourseResponse
+		details: DiscourseConstructor, _message: TransmitInformation, response: DiscourseResponse
 	): Promise<CreateThreadResponse> {
 		return Promise.resolve({
 			thread: response.topic_id,
-			url: `https://${instance}/t/${response.topic_id}`
+			url: `${details.protocol || 'https'}://${details.instance}/t/${response.topic_id}`
 		});
 	}
 
@@ -281,18 +280,16 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 		[MessengerAction.UpdateTags]: DiscourseTranslator.convertUpdateThreadResponse,
 		[MessengerAction.CreateMessage]: DiscourseTranslator.convertUpdateThreadResponse,
 	};
-	private hubs: DataHub[];
 	private connectionDetails: DiscourseConstructor;
 
-	constructor(data: DiscourseConstructor, hubs: DataHub[]) {
+	constructor(data: DiscourseConstructor) {
 		super();
-		this.hubs = hubs;
 		this.connectionDetails = data;
 		// These converters require the injection of a couple of details from `this` instance.
 		this.emitConverters[MessengerAction.UpdateTags] = _.partial(DiscourseTranslator.updateTagsIntoEmit, data);
 		this.emitConverters[MessengerAction.CreateMessage] = _.partial(DiscourseTranslator.createMessageIntoEmit, data);
 		this.responseConverters[MessengerAction.CreateThread] =
-			_.partial(DiscourseTranslator.convertCreateThreadResponse, data.instance);
+			_.partial(DiscourseTranslator.convertCreateThreadResponse, data);
 	}
 
 	/**
@@ -310,7 +307,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 				api_username: this.connectionDetails.username,
 			},
 			// appended before execution
-			uri: `https://${this.connectionDetails.instance}`,
+			uri: `${this.connectionDetails.protocol || 'https'}://${this.connectionDetails.instance}`,
 		};
 		// Gather more complete details of the enqueued event
 		const getPost = _.cloneDeep(getGeneric);
@@ -361,24 +358,18 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 	/**
 	 * Promise to provide emitter construction details for a provided message.
 	 * @param message  Message information, used to retrieve username
-	 * @returns        Promise that resolves to the details required to construct an emitter.
+	 * @returns        The details required to construct an emitter.
 	 */
-	public messageIntoEmitterConstructor(message: TransmitInformation): Promise<DiscourseConstructor> {
-		// Go looking through all the data hubs we've been provided for a token.
-		const promises: Array<Promise<string>> = _.map(this.hubs, (hub) => {
-			return hub.fetchValue(message.target.username, 'discourse', 'token');
-		});
+	public messageIntoEmitterConstructor(message: TransmitInformation): DiscourseConstructor {
 		const convertedUsername = DiscourseTranslator.convertUsernameToDiscourse(message.target.username);
-		return Promise.any(promises)
-		.then((token) => {
-			// Pass back details that may be used to connect.
-			return {
-				token,
-				username: convertedUsername,
-				instance: this.connectionDetails.instance,
-				type: ServiceType.Emitter,
-			};
-		});
+		// Pass back details that may be used to connect.
+		return {
+			token: this.connectionDetails.token,
+			username: convertedUsername,
+			instance: this.connectionDetails.instance,
+			protocol: this.connectionDetails.protocol,
+			type: ServiceType.Emitter,
+		};
 	}
 
 	/**
@@ -404,9 +395,8 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 /**
  * Builds a translator that will convert Discourse specific information to and from Messenger format.
  * @param data  Construction details for creating a Discourse session.
- * @param hubs  A list of places to search for extra information, eg token.
  * @returns     A translator, ready to interpret Discourse's communications.
  */
-export function createTranslator(data: DiscourseConstructor, hubs: DataHub[]): Translator {
-	return new DiscourseTranslator(data, hubs);
+export function createTranslator(data: DiscourseConstructor): Translator {
+	return new DiscourseTranslator(data);
 }
