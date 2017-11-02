@@ -49,9 +49,12 @@ export class SyncBot extends ProcBot {
 		return (_registration, event: MessengerEvent) => {
 			const data = event.cookedEvent;
 			// Check that the event is one we want to synchronise.
+			const sourceText = `${data.source.service} (${data.source.flow})`;
+			const fromText = `${from.service} (${from.flow})`;
+			const toText = `${to.service} (${to.flow})`;
 			logger.log(
 				LogLevel.DEBUG,
-				`---> Considering '${data.details.text}' on ${data.source.service}, from ${from.service} to ${to.service}.`,
+				`---> Considering '${data.details.text}' on ${sourceText}, from ${fromText} to ${toText}. ${JSON.stringify(data)}`,
 			);
 			if (
 				from.service === data.source.service &&
