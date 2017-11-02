@@ -53,6 +53,12 @@ export class SyncBot extends ProcBot {
 				LogLevel.DEBUG,
 				`---> Considering '${data.details.text}' on ${data.source.service}, from ${from.service} to ${to.service}.`,
 			);
+			logger.log(LogLevel.DEBUG, `fromFlow: ${from.flow}`);
+			logger.log(LogLevel.DEBUG, `sourceService: ${data.source.service}`);
+			logger.log(LogLevel.DEBUG, `sourceFlow: ${data.source.flow}`);
+			logger.log(LogLevel.DEBUG, `genesis: ${data.details.genesis}`);
+			logger.log(LogLevel.DEBUG, `intercomHack: ${data.details.intercomHack}`);
+
 			if (
 				from.service === data.source.service &&
 				from.flow === data.source.flow &&
