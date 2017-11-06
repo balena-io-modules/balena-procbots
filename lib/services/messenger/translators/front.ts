@@ -396,9 +396,9 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	/**
 	 * Promise to convert a provided service specific event into messenger's standard form.
 	 * @param event  Service specific event, straight out of the ServiceListener.
-	 * @returns      Promise that resolves to the standard form of the message.
+	 * @returns      Promise that resolves to an array of message objects in the standard form
 	 */
-	public eventIntoMessage(event: ServiceScaffoldEvent): Promise<MessengerEvent> {
+	public eventIntoMessages(event: ServiceScaffoldEvent): Promise<MessengerEvent[]> {
 		// Gather details of all the inboxes and the complete event.
 		return Promise.props({
 			inboxes: this.session.conversation.listInboxes({conversation_id: event.rawEvent.conversation.id}),
@@ -449,19 +449,23 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 				source: {
 					service: event.source,
 					message: message.id,
-					flow: details.inboxes._results[0].id,
+					flow: 'duff', // Gets replaced
 					thread: details.event.conversation.id,
 					url: `https://app.frontapp.com/open/${details.event.conversation.id}`,
 					username: details.author,
 				},
 			};
-			return {
-				context: `${event.source}.${event.cookedEvent.context}`,
-				type: this.eventIntoMessageType(event),
-				cookedEvent,
-				rawEvent: event.rawEvent,
-				source: event.source,
-			};
+			return _.map(details.inboxes._results, (inbox) => {
+				const recookedEvent = _.cloneDeep(cookedEvent);
+				recookedEvent.source.flow = inbox.id;
+				return {
+					context: `${event.source}.${event.cookedEvent.context}`,
+					type: this.eventIntoMessageType(event),
+					cookedEvent: recookedEvent,
+					rawEvent: event.rawEvent,
+					source: event.source,
+				};
+			});
 		});
 	}
 

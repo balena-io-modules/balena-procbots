@@ -70,9 +70,9 @@ export interface Translator {
 	/**
 	 * Promise to convert a provided event (in service specific form) into a message (in messenger form).
 	 * @param event  Service specific event, straight out of the ServiceListener.
-	 * @returns      Promise that resolves to the standard form of the message.
+	 * @returns      Promise that resolves to an array of message objects in the standard form
 	 */
-	eventIntoMessage(event: ServiceEvent): Promise<MessengerEvent>;
+	eventIntoMessages(event: ServiceEvent): Promise<MessengerEvent[]>;
 
 	/**
 	 * Promise to provide emitter construction details for a provided message.

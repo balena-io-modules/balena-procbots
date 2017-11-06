@@ -64,8 +64,10 @@ export class MessengerService extends ServiceScaffold<string> implements Service
 					listenerMethod: (_registration: ServiceRegistration, event: ServiceScaffoldEvent): Promise<void> => {
 						// This translates and enqueues any events that match a registered interest.
 						if (_.includes(this.eventsRegistered, subTranslator.eventIntoMessageType(event))) {
-							return subTranslator.eventIntoMessage(event)
-							.then(this.queueData);
+							return subTranslator.eventIntoMessages(event)
+							.then((messages) => {
+								_.forEach(messages, this.queueData);
+							});
 						}
 						return Promise.resolve();
 					},

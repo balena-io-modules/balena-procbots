@@ -240,9 +240,9 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 	/**
 	 * Promise to convert a provided service specific event into messenger's standard form.
 	 * @param event  Service specific event, straight out of the ServiceListener.
-	 * @returns      Promise that resolves to the standard form of the message.
+	 * @returns      Promise that resolves to an array of message objects in the standard form.
 	 */
-	public eventIntoMessage(event: ServiceScaffoldEvent): Promise<MessengerEvent> {
+	public eventIntoMessages(event: ServiceScaffoldEvent): Promise<MessengerEvent[]> {
 		// Encode once the common parts of a request
 		const getGeneric = {
 			json: true,
@@ -293,13 +293,13 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 				},
 			};
 			// Yield the object in a form suitable for service scaffold.
-			return {
+			return [{
 				context: `${event.source}.${event.cookedEvent.context}`,
 				type: this.eventIntoMessageType(event),
 				cookedEvent,
 				rawEvent: event.rawEvent,
 				source: 'messenger',
-			};
+			}];
 		});
 	}
 
