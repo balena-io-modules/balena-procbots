@@ -38,6 +38,32 @@ import { EmitConverters, ResponseConverters, TranslatorErrorCode } from './trans
  */
 export class DiscourseTranslator extends TranslatorScaffold implements Translator {
 	/**
+	 * Converts a provided username, in Discourse format, into a generic username
+	 * @param username  Username to convert
+	 * @returns         Generic equivalent of that username
+	 */
+	public static convertUsernameToGeneric(username: string): string {
+		// Generic has `-` at the end, Discourse has `_` at the beginning
+		return /^_/.test(username)
+			? `${username.replace(/^_/, '')}-`
+			: username
+		;
+	}
+
+	/**
+	 * Converts a provided username, in generic format, into a Discourse username
+	 * @param username  Username to convert
+	 * @returns         Discourse equivalent of that username
+	 */
+	public static convertUsernameToDiscourse(username: string): string {
+		// Generic has `-` at the end, Discourse has `_` at the beginning
+		return /-$/.test(username)
+			? `_${username.replace(/-$/, '')}`
+			: username
+		;
+	}
+
+	/**
 	 * Converts a provided message object into instructions to create a thread.
 	 * @param message  object to analyse.
 	 * @returns        Promise that resolves to emit instructions.
@@ -65,16 +91,48 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 
 	/**
 	 * Converts a provided message object into instructions to create a message.
+	 * @param connectionDetails  Details to use to retrieve the user object.
 	 * @param message  object to analyse.
 	 * @returns        Promise that resolves to emit instructions.
 	 */
-	private static createMessageIntoEmit(message: TransmitInformation): Promise<DiscourseEmitInstructions> {
+	private static createMessageIntoEmit(
+		connectionDetails: DiscourseConstructor, message: TransmitInformation
+	): Promise<DiscourseEmitInstructions> {
 		// Check we have a thread.
 		const thread = message.target.thread;
 		if (!thread) {
 			return Promise.reject(new TranslatorError(
 				TranslatorErrorCode.IncompleteTransmitInformation, 'Cannot create a comment without a thread.'
 			));
+		}
+		if (message.details.hidden) {
+			// Check that the account is allowed to whisper.
+			const username = DiscourseTranslator.convertUsernameToDiscourse(message.target.username);
+			return request({
+				json: true,
+				method: 'GET',
+				qs: {
+					api_key: connectionDetails.token,
+					api_username: connectionDetails.username,
+				},
+				url: `https://${connectionDetails.instance}/users/${username}.json`,
+			}).then((response) => {
+				if (response.user.can_send_private_messages) {
+					// Bundle into a format for the service.
+					return Promise.resolve({ method: ['request'], payload: {
+						htmlVerb: 'POST',
+						path: '/posts',
+						body: {
+							raw: `${TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenMD)}${message.details.text}`,
+							topic_id: thread,
+							whisper: message.details.hidden ? 'true' : 'false',
+						}
+					}});
+				}
+				return Promise.reject(new TranslatorError(
+					TranslatorErrorCode.PermissionsError, 'Whisper requested, but account is not sufficiently privileged.'
+				));
+			});
 		}
 		// Bundle into a format for the service.
 		return Promise.resolve({ method: ['request'], payload: {
@@ -216,7 +274,6 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 	};
 	protected emitConverters: EmitConverters = {
 		[MessengerAction.CreateThread]: DiscourseTranslator.createThreadIntoEmit,
-		[MessengerAction.CreateMessage]: DiscourseTranslator.createMessageIntoEmit,
 		[MessengerAction.ReadConnection]: DiscourseTranslator.readConnectionIntoEmit,
 	};
 	protected responseConverters: ResponseConverters = {
@@ -233,6 +290,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 		this.connectionDetails = data;
 		// These converters require the injection of a couple of details from `this` instance.
 		this.emitConverters[MessengerAction.UpdateTags] = _.partial(DiscourseTranslator.updateTagsIntoEmit, data);
+		this.emitConverters[MessengerAction.CreateMessage] = _.partial(DiscourseTranslator.createMessageIntoEmit, data);
 		this.responseConverters[MessengerAction.CreateThread] =
 			_.partial(DiscourseTranslator.convertCreateThreadResponse, data.instance);
 	}
@@ -267,10 +325,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 			// Calculate metadata and resolve
 			const metadata = TranslatorScaffold.extractMetadata(details.post.raw, MetadataEncoding.HiddenMD);
 			// Generic has `-` at the end, Discourse has `_` at the beginning
-			const convertedUsername = /^_/.test(details.post.username)
-				? `${details.post.username.replace(/^_/, '')}-`
-				: details.post.username
-			;
+			const convertedUsername = DiscourseTranslator.convertUsernameToGeneric(details.post.username);
 			const cookedEvent: BasicMessageInformation = {
 				details: {
 					genesis: metadata.genesis || event.source,
@@ -313,11 +368,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 		const promises: Array<Promise<string>> = _.map(this.hubs, (hub) => {
 			return hub.fetchValue(message.target.username, 'discourse', 'token');
 		});
-		// Generic has `-` at the end, Discourse has `_` at the beginning
-		const convertedUsername = /-$/.test(message.target.username)
-			? `_${message.target.username.replace(/-$/, '')}`
-			: message.target.username
-		;
+		const convertedUsername = DiscourseTranslator.convertUsernameToDiscourse(message.target.username);
 		return Promise.any(promises)
 		.then((token) => {
 			// Pass back details that may be used to connect.

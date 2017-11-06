@@ -57,5 +57,5 @@ export interface ResponseConverters {
 /** An enumerated list of the things that may go wrong with a translation. */
 export const enum TranslatorErrorCode {
 	WebServiceError, IncompleteTransmitInformation, ConfigurationError,
-	ValueNotFound, EmitUnsupported, ResponseUnsupported,
+	ValueNotFound, EmitUnsupported, ResponseUnsupported, PermissionsError,
 }
