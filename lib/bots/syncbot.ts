@@ -24,7 +24,6 @@ import {
 	MessengerEvent, SolutionIdea, SolutionIdeas,
 	ThreadDefinition, TransmitInformation,
 } from '../services/messenger-types';
-import { createDataHub, DataHub } from '../services/messenger/datahubs/datahub';
 import { ServiceType } from '../services/service-types';
 import { Logger, LogLevel } from '../utils/logger';
 
@@ -398,29 +397,6 @@ export class SyncBot extends ProcBot {
 	}
 
 	/**
-	 * Consults the environment for configuration and returns an array of places to seek information.
-	 * @returns  Array of DataHub objects that may be interrogated.
-	 */
-	private static makeDataHubs(): DataHub[] {
-		// Created this as its own function to scope the `let` a little
-		let dataHubArray = [];
-		try {
-			dataHubArray = JSON.parse(process.env.SYNCBOT_DATAHUB_CONSTRUCTORS);
-		} catch (error) {
-			throw new Error('SYNCBOT_DATAHUB_CONSTRUCTORS not a valid JSON array.');
-		}
-
-		const dataHubs = _.map(dataHubArray, (constructor, type: string) => {
-			return createDataHub(type, constructor);
-		});
-
-		if (dataHubs) {
-			return dataHubs;
-		}
-		throw new Error('Could not create dataHubs.');
-	}
-
-	/**
 	 * Consults the environment for configuration to create a service that aggregates many other services.
 	 * @returns  Service that wraps and translates specified sub services.
 	 */
@@ -434,7 +410,6 @@ export class SyncBot extends ProcBot {
 		}
 
 		const messenger = new MessengerService({
-			dataHubs: SyncBot.makeDataHubs(),
 			server: parseInt(process.env.SYNCBOT_PORT, 10),
 			subServices: listenerConstructors,
 			type: ServiceType.Listener,

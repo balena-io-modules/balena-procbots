@@ -21,7 +21,6 @@ import {
 	TransmitInformation
 } from '../../messenger-types';
 import { ServiceEvent } from '../../service-types';
-import { DataHub } from '../datahubs/datahub';
 import { TranslatorErrorCode } from './translator-types';
 
 /**
@@ -77,9 +76,9 @@ export interface Translator {
 	/**
 	 * Promise to provide emitter construction details for a provided message.
 	 * @param message  Message information, used to retrieve username
-	 * @returns        Promise that resolves to the details required to construct an emitter.
+	 * @returns        The details required to construct an emitter.
 	 */
-	messageIntoEmitterConstructor(message: TransmitInformation): Promise<object>;
+	messageIntoEmitterConstructor(message: TransmitInformation): object;
 
 	/**
 	 * Populate the listener constructor with details from the more generic constructor.
@@ -110,9 +109,8 @@ export interface Translator {
  * Retrieves and loads a Translator by name.
  * @param name  The name of the Utils to load.
  * @param data  The constructor object for the createTranslator method.
- * @param hubs  The sources for any extra information required.
  * @return      The newly instantiated Utils.
  */
-export function createTranslator(name: string, data: any, hubs: DataHub[]): Translator {
-	return require(`./${name}`).createTranslator(data, hubs);
+export function createTranslator(name: string, data: any): Translator {
+	return require(`./${name}`).createTranslator(data);
 }

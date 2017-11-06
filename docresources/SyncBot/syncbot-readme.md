@@ -288,26 +288,6 @@ This is the username of the account under which syncbot should operate.
 
 e.g. `syncbot`
 
-#### SYNCBOT_DATAHUB_CONSTRUCTORS
-
-This is a set of constructor objects for locations that translators may use to
-acquire extra information, e.g. tokens for the users.
-
-e.g. 
-```json
-{
-  "simple": {
-    "testbot_discourse_token": "blah",
-    "testbot_discourse_username": "blah",
-    "testbot_flowdock_token": "blah"
-  },
-  "flowdock": {
-    "organization": "blah",
-    "token": "blah"
-  }
-}
-```
-
 #### SYNCBOT_MAPPINGS
 
 This is a nested array of flow definitions that should be kept mirrored.

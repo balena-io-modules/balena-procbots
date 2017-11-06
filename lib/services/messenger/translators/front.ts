@@ -472,13 +472,13 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	/**
 	 * Promise to provide emitter construction details for a provided message.
 	 * @param _message  Message information, not used.
-	 * @returns         Promise that resolves to the details required to construct an emitter.
+	 * @returns         The details required to construct an emitter.
 	 */
-	public messageIntoEmitterConstructor(_message: TransmitInformation): Promise<FrontConstructor> {
-		return Promise.resolve({
+	public messageIntoEmitterConstructor(_message: TransmitInformation): FrontConstructor {
+		return {
 			token: this.connectionDetails.token,
 			type: ServiceType.Emitter,
-		});
+		};
 	}
 
 	/**

@@ -92,7 +92,7 @@ export class DiscourseService extends ServiceScaffold<string> implements Service
 			qsStringifyOptions: {
 				arrayFormat: 'repeat',
 			},
-			url: `https://${this.connectionDetails.instance}${context.data.path}`,
+			url: `${this.connectionDetails.protocol || 'https'}://${this.connectionDetails.instance}${context.data.path}`,
 			method: context.data.htmlVerb,
 		};
 		return context.method(requestOptions);

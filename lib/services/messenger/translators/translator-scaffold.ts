@@ -20,7 +20,7 @@ import {
 	BasicMessageInformation, EmitInstructions, MessengerConstructor, MessengerEvent,
 	MessengerResponse, TransmitInformation,
 } from '../../messenger-types';
-import { ServiceScaffoldEvent } from '../../service-scaffold-types';
+import { ServiceScaffoldConstructor, ServiceScaffoldEvent } from '../../service-scaffold-types';
 import { Translator, TranslatorError } from './translator';
 import {
 	EmitConverters, EventEquivalencies, PublicityIndicator,
@@ -224,9 +224,9 @@ export abstract class TranslatorScaffold implements Translator {
 	/**
 	 * Promise to provide emitter construction details for a provided message.
 	 * @param message  Message information, used to retrieve username
-	 * @returns        Promise that resolves to the details required to construct an emitter.
+	 * @returns        The details required to construct an emitter.
 	 */
-	public abstract messageIntoEmitterConstructor(message: TransmitInformation): Promise<object>
+	public abstract messageIntoEmitterConstructor(message: TransmitInformation): ServiceScaffoldConstructor
 
 	/**
 	 * Populate the listener constructor with details from the more generic constructor.

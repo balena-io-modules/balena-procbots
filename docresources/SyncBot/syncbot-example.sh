@@ -10,17 +10,6 @@ export PROCBOT_BOTS_TO_LOAD="syncbot"
 
 export SYNCBOT_PORT="4567"
 export SYNCBOT_NAME="blahbot"
-export SYNCBOT_DATAHUB_CONSTRUCTORS="{
-    \"simple\": {
-        \"blahbot_discourse_token\": \"blah\",
-        \"blahbot_discourse_username\": \"blahbot\",
-        \"blahbot_flowdock_token\": \"blah\"
-    },
-    \"flowdock\": {
-        \"organization\": \"blah\",
-        \"token\": \"blah\"
-    }
-}"
 export SYNCBOT_MAPPINGS="[
     [
         { \"service\": \"discourse\", \"flow\": \"blah\" },

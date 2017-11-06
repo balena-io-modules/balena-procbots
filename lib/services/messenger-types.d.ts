@@ -15,7 +15,6 @@
  */
 
 import * as Promise from 'bluebird';
-import { DataHub } from './messenger/datahubs/datahub';
 import { Translator } from './messenger/translators/translator';
 import { ServiceScaffoldConstructor, ServiceScaffoldEvent } from './service-scaffold-types';
 import { ServiceEmitResponse, ServiceRegistration } from './service-types';
@@ -165,8 +164,6 @@ export interface MessengerConnectionDetails {
 
 /** The details required to create a messenger. */
 export interface MessengerConstructor extends ServiceScaffoldConstructor {
-	/** An array of DataHubs that will be used to seek user specific information. */
-	dataHubs: DataHub[];
 	/** An object containing definitions of the sub services this wraps. */
 	subServices: MessengerConnectionDetails;
 }
