@@ -191,7 +191,7 @@ export abstract class TranslatorScaffold implements Translator {
 	 * @param event  Event to analyse.
 	 * @returns      Generic name for the event.
 	 */
-	public eventIntoMessageType(event: MessengerEvent): string {
+	public eventIntoMessageType(event: ServiceScaffoldEvent): string {
 		return _.findKey(this.eventEquivalencies, (value: string[]) => {
 			return _.includes(value, event.type);
 		}) || 'Unrecognised event';

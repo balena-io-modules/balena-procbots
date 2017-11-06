@@ -45,14 +45,16 @@ export class FrontService extends ServiceScaffold<string> implements ServiceList
 			this.registerHandler('front-dev-null', (_formData, response) => {
 				response.sendStatus(200);
 			});
-			// Create an endpoint for this listener and enqueue events
+			// Create an endpoint for this listener, parse and enqueue events ...
+			// ... remembering that serviceScaffold catches and logs errors.
 			this.registerHandler(listenerData.path || FrontService._serviceName, (formData, response) => {
+				const parsedEvent = JSON.parse(formData.body);
 				this.queueData({
-					context: formData.body.conversation.id,
-					cookedEvent: {},
+					context: parsedEvent.conversation.id,
+					cookedEvent: parsedEvent,
 					rawEvent: formData.body,
 					source: FrontService._serviceName,
-					type: formData.body.type,
+					type: parsedEvent.type,
 				});
 				response.sendStatus(200);
 			});

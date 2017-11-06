@@ -19,13 +19,13 @@ import * as _ from 'lodash';
 import * as request from 'request-promise';
 import {
 	DiscourseConstructor, DiscourseEmitInstructions, DiscourseResponse,
+	DiscourseServiceEvent,
 } from '../../discourse-types';
 import {
 	BasicMessageInformation, CreateThreadResponse, IdentifyThreadResponse,
 	MessengerAction, MessengerConstructor, MessengerEvent, TransmitInformation,
 	UpdateThreadResponse,
 } from '../../messenger-types';
-import { ServiceScaffoldEvent } from '../../service-scaffold-types';
 import { ServiceType } from '../../service-types';
 import { Translator, TranslatorError } from './translator';
 import { MetadataEncoding, TranslatorScaffold } from './translator-scaffold';
@@ -297,7 +297,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 	 * @param event  Service specific event, straight out of the ServiceListener.
 	 * @returns      Promise that resolves to an array of message objects in the standard form.
 	 */
-	public eventIntoMessages(event: ServiceScaffoldEvent): Promise<MessengerEvent[]> {
+	public eventIntoMessages(event: DiscourseServiceEvent): Promise<MessengerEvent[]> {
 		// Encode once the common parts of a request
 		const getGeneric = {
 			json: true,
@@ -311,9 +311,9 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 		};
 		// Gather more complete details of the enqueued event
 		const getPost = _.cloneDeep(getGeneric);
-		getPost.uri += `/posts/${event.rawEvent.id}`;
+		getPost.uri += `/posts/${event.cookedEvent.id}`;
 		const getTopic = _.cloneDeep(getGeneric);
-		getTopic.uri += `/t/${event.rawEvent.topic_id}`;
+		getTopic.uri += `/t/${event.cookedEvent.topic_id}`;
 		return Promise.props({
 			post: request(getPost),
 			topic: request(getTopic),
@@ -346,7 +346,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 			};
 			// Yield the object in a form suitable for service scaffold.
 			return [{
-				context: `${event.source}.${event.cookedEvent.context}`,
+				context: `${event.source}.${event.context}`,
 				type: this.eventIntoMessageType(event),
 				cookedEvent,
 				rawEvent: event.rawEvent,

@@ -15,6 +15,7 @@
  */
 
 import * as Promise from 'bluebird';
+import * as crypto from 'crypto';
 import * as _ from 'lodash';
 import * as path from 'path';
 import { UrlOptions } from 'request';
@@ -22,10 +23,9 @@ import * as request from 'request-promise';
 import { RequestPromiseOptions } from 'request-promise';
 import {
 	DiscourseConstructor, DiscourseEmitContext, DiscourseHandle,
-	DiscourseListenerConstructor, DiscourseResponse,
+	DiscourseListenerConstructor, DiscourseResponse, DiscourseServiceEvent,
 } from './discourse-types';
 import { ServiceScaffold } from './service-scaffold';
-import { ServiceScaffoldEvent } from './service-scaffold-types';
 import { ServiceEmitter, ServiceListener, ServiceType } from './service-types';
 
 /**
@@ -43,16 +43,19 @@ export class DiscourseService extends ServiceScaffold<string> implements Service
 		this.connectionDetails = data;
 		if (data.type === ServiceType.Listener) {
 			const listenerData = <DiscourseListenerConstructor>data;
-			// Register our enqueue action for when the express instance receives a web-hook
+			// Create an endpoint for this listener, parse and enqueue events ...
+			// ... remembering that serviceScaffold catches and logs errors.
 			this.registerHandler(listenerData.path || DiscourseService._serviceName, (formData, response) => {
+				const parsedEvent = JSON.parse(formData.body).post;
 				// Check this event is new
-				if (!this.postsSynced.has(formData.body.post.id)) {
-					this.postsSynced.add(formData.body.post.id);
-					this.queueData({
-						context: formData.body.post.topic_id,
-						cookedEvent: {},
+				if (!this.postsSynced.has(parsedEvent.id)) {
+					this.postsSynced.add(parsedEvent.id);
+					this.queueData(<DiscourseServiceEvent>{
+						context: parsedEvent.topic_id,
+						cookedEvent: parsedEvent,
+						signature: formData.headers['x-discourse-event-signature'],
 						type: formData.headers['x-discourse-event'],
-						rawEvent: formData.body.post,
+						rawEvent: formData.body,
 						source: DiscourseService._serviceName,
 					});
 					response.sendStatus(200);
@@ -99,11 +102,18 @@ export class DiscourseService extends ServiceScaffold<string> implements Service
 	}
 
 	/**
-		* Verify the event before enqueueing.  For now uses the naive approach of returning true.
-		*/
-	protected verify(_data: ServiceScaffoldEvent): boolean {
-		// #202: This to be properly implemented.
-		return true;
+	 * Verify the event before enqueueing.
+	 */
+	protected verify(data: DiscourseServiceEvent): boolean {
+		try {
+			const listenerDetails = <DiscourseListenerConstructor>this.connectionDetails;
+			const hash = crypto.createHmac('sha256', listenerDetails.secret)
+				.update(data.rawEvent)
+				.digest('hex');
+			return `sha256=${hash}` === data.signature;
+		} catch (error) {
+			return false;
+		}
 	}
 
 	/**
