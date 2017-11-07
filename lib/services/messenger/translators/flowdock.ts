@@ -275,7 +275,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 		this.session = new Session(data.token);
 		// The flowdock service both emits and calls back the error
 		// We'll just log the emit to prevent it bubbling
-		this.session.on('error', _.partial(console.log, 'error looking up data from Flowdock.'));
+		this.session.on('error', _.partial(console.log, 'Error in Flowdock translator.'));
 		this.organization = data.organization;
 		this.token = data.token;
 		// These converters require the injection of a couple of details from `this` instance.
