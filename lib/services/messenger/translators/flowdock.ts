@@ -153,7 +153,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 					TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenMD)
 				),
 				event: 'message',
-				external_user_name: message.details.handle,
+				external_user_name: message.details.handle.replace(/\s/g, '_'),
 			},
 		}});
 	}
@@ -182,7 +182,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 					TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenMD)
 				),
 				event: 'message',
-				external_user_name: message.details.handle,
+				external_user_name: message.details.handle.replace(/\s/g, '_'),
 			}
 		}});
 	}
