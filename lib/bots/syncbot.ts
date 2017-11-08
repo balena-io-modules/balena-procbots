@@ -51,9 +51,11 @@ export class SyncBot extends ProcBot {
 			const sourceText = `${data.source.service} (${data.source.flow})`;
 			const fromText = `${from.service} (${from.flow})`;
 			const toText = `${to.service} (${to.flow})`;
+			// This will find everything before the first thing that is in the set of new line characters
+			const firstLine = data.details.text.split(/[\r\n]/)[0];
 			logger.log(
 				LogLevel.DEBUG,
-				`---> Considering '${data.details.text}' on ${sourceText}, from ${fromText} to ${toText}. ${JSON.stringify(data)}`,
+				`---> Considering '${firstLine}' on ${sourceText}, from ${fromText} to ${toText}. ${JSON.stringify(data)}`,
 			);
 			if (
 				from.service === data.source.service &&
@@ -63,7 +65,7 @@ export class SyncBot extends ProcBot {
 				!data.details.intercomHack
 			) {
 				// Log that we received this event.
-				logger.log(LogLevel.INFO, `---> Actioning '${data.details.text.split(/[\r\n]/)[0]}' to ${to.service}.`);
+				logger.log(LogLevel.INFO, `---> Actioning '${firstLine}' to ${toText}.`);
 				// Find details of any connections stored in the originating thread.
 				return SyncBot.readConnectedThread(to, messenger, data)
 				// Then comment on or create a thread
@@ -71,6 +73,7 @@ export class SyncBot extends ProcBot {
 					// If the search resolved with a response.
 					const threadId = _.get(threadDetails, 'response.thread', false);
 					if (threadId) {
+						logger.log(LogLevel.DEBUG, `---> Creating comment '${firstLine}' on ${toText}.`);
 						// Comment on the found thread
 						return SyncBot.createComment({
 							service: to.service, flow: to.flow, thread: threadId,
@@ -88,18 +91,19 @@ export class SyncBot extends ProcBot {
 							};
 						});
 					}
+					logger.log(LogLevel.DEBUG, `---> Creating thread '${firstLine}' on ${toText}.`);
 					// Create a thread if the quest for connections didn't find any
 					return SyncBot.createThreadAndConnect(to, messenger, data);
 				})
 				// Then report that we have passed the message on
 				.then((response: MessengerEmitResponse) => {
 					if (response.err) {
-						logger.log(LogLevel.WARN, JSON.stringify({message: response.err.message, data}));
+						logger.log(LogLevel.WARN, JSON.stringify({message: response.err.message, data, error: response.err}));
 						return SyncBot.createErrorComment(to, messenger, data, response.err)
 						// Ignore the response from the messenger, SyncBot only cares that it's happened.
 						.return(response);
 					} else {
-						logger.log(LogLevel.INFO, `---> Emitted '${data.details.text.split(/[\r\n]/)[0]}' to ${to.service}.`);
+						logger.log(LogLevel.DEBUG, `---> Emitted '${firstLine}' to ${toText}.`);
 					}
 					return response;
 				})

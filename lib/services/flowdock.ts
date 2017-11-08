@@ -40,7 +40,7 @@ export class FlowdockService extends ServiceScaffold<string> implements ServiceE
 		this.session = new Session(data.token);
 		// The flowdock service both emits and calls back the error
 		// We'll just log the emit to prevent it bubbling
-		this.session.on('error', _.partial(console.log, 'error looking up data from Flowdock.'));
+		this.session.on('error', _.partial(console.log, 'Error in Flowdock service.'));
 		this.org = data.organization;
 		if (data.type === ServiceType.Listener) {
 			// Get a list of known flows from the session
