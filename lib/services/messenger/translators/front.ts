@@ -427,7 +427,8 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 		.then((details: { inboxes: ConversationInboxes, event: any, subject: string, author: string }) => {
 			// Extract some details from the event.
 			const message = details.event.target.data;
-			const metadataFormat = details.event.type === 'comment' ? MetadataEncoding.HiddenMD : MetadataEncoding.HiddenHTML;
+			const hidden = _.includes(['comment', 'mention'], details.event.type);
+			const metadataFormat = hidden ? MetadataEncoding.HiddenMD : MetadataEncoding.HiddenHTML;
 			const metadata = TranslatorScaffold.extractMetadata(message.body, metadataFormat);
 			const tags = _.map(details.event.conversation.tags, (tag: {name: string}) => {
 				return tag.name;
@@ -437,7 +438,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 				details: {
 					genesis: metadata.genesis || event.source,
 					handle: details.author,
-					hidden: _.includes(['comment', 'mention'], details.event.type),
+					hidden,
 					// https://github.com/resin-io-modules/resin-procbots/issues/301
 					intercomHack: message.type === 'intercom' ? details.event.conversation.subject !== '' : undefined,
 					internal: (message.author !== null) && /^tea_/.test(message.author.id),
