@@ -46,7 +46,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	 */
 	private static fetchAuthorName(connectionDetails: FrontConstructor, message: Message): Promise<string> {
 		if (message.author) {
-			return Promise.resolve(message.author.username.replace('_', '-'));
+			return Promise.resolve(message.author.username.replace(/_/g, '-'));
 		}
 		for (const recipient of message.recipients) {
 			if (recipient.role === 'from') {
@@ -54,7 +54,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 				if (contactUrl) {
 					return FrontTranslator.fetchContactName(connectionDetails, contactUrl);
 				}
-				return Promise.resolve(recipient.handle.replace('_', '-'));
+				return Promise.resolve(recipient.handle.replace(/_/g, '-'));
 			}
 		}
 		return Promise.resolve('Unknown Author');
@@ -121,7 +121,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 		})
 		.then((teammates) => {
 			const loweredUsername = username.toLowerCase();
-			const substitutedUsername = loweredUsername.replace('-', '_');
+			const substitutedUsername = loweredUsername.replace(/-/g, '_');
 			const teammate = _.find(teammates._results, (eachTeammate: { username: string, id: string }) => {
 				return eachTeammate.username.toLowerCase() === substitutedUsername;
 			});
