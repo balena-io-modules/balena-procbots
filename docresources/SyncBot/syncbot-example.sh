@@ -54,5 +54,6 @@ export SYNCBOT_ERROR_SOLUTIONS="{
         ] }
     }
 }"
+export SYNCBOT_ALIAS_USERS="[\"hubot\"]"
 
 npm start

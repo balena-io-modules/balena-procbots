@@ -366,3 +366,12 @@ e.g.
 This is a text string to use when the error translator cannot find any details.
 
 e.g. `No fixes currently documented.`
+
+#### SYNCBOT_ALIAS_USERS
+
+This is a list of user accounts that syncbot should represent using its own identity
+
+e.g.
+```json
+["hubot"]
+```

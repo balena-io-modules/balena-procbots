@@ -66,6 +66,17 @@ export class SyncBot extends ProcBot {
 			) {
 				// Log that we received this event.
 				logger.log(LogLevel.INFO, `---> Actioning '${firstLine}' to ${toText}.`);
+				try {
+					// This allows syncbot to represent specific other accounts.
+					const aliasString = process.env.SYNCBOT_ALIAS_USERS;
+					const aliases = aliasString ? _.map(JSON.parse(aliasString), _.toLower) : [];
+					if (_.includes(aliases, data.details.handle.toLowerCase())) {
+						data.details.handle = process.env.SYNCBOT_NAME;
+						data.source.username = process.env.SYNCBOT_NAME;
+					}
+				} catch (error) {
+					logger.log(LogLevel.WARN, 'Misconfiguration in SyncBot aliases.');
+				}
 				// Find details of any connections stored in the originating thread.
 				return SyncBot.readConnectedThread(to, messenger, data)
 				// Then comment on or create a thread
