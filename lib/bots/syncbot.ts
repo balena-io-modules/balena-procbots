@@ -159,7 +159,6 @@ export class SyncBot extends ProcBot {
 				genesis: to.service,
 				handle: process.env.SYNCBOT_NAME,
 				hidden: true,
-				internal: true,
 				tags: data.details.tags,
 				text: `${to.service} reports \`${solution.description}\`.\r\n${fixes}\r\n`,
 				title: data.details.title,
@@ -350,7 +349,6 @@ export class SyncBot extends ProcBot {
 						genesis: 'duff', // will be replaced
 						handle: process.env.SYNCBOT_NAME,
 						hidden: true,
-						internal: true,
 						tags: data.details.tags,
 						text: 'This is mirrored in ', // will be appended
 						title: data.details.title,

@@ -329,7 +329,6 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 					handle: convertedUsername,
 					// post_type 4 seems to correspond to whisper
 					hidden: details.post.post_type === 4,
-					internal: details.post.staff,
 					tags: details.topic.tags,
 					text: metadata.content.trim(),
 					title: details.topic.title,

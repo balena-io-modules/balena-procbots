@@ -320,7 +320,6 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 				genesis: metadata.genesis || event.source,
 				handle: 'duff', // gets replaced
 				hidden: metadata.hidden,
-				internal: !!event.rawEvent.external_user_name,
 				tags: [], // gets replaced
 				text,
 				title: 'duff', // gets replaces

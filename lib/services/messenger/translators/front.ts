@@ -441,7 +441,6 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 					hidden,
 					// https://github.com/resin-io-modules/resin-procbots/issues/301
 					intercomHack: message.type === 'intercom' ? details.event.conversation.subject !== '' : undefined,
-					internal: (message.author !== null) && /^tea_/.test(message.author.id),
 					tags,
 					text: message.text || metadata.content,
 					title: details.subject,
