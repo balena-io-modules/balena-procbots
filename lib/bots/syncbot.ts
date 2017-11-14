@@ -109,7 +109,7 @@ export class SyncBot extends ProcBot {
 				// Then report that we have passed the message on
 				.then((response: MessengerEmitResponse) => {
 					if (response.err) {
-						logger.log(LogLevel.WARN, JSON.stringify({message: response.err.message, data, error: response.err}));
+						logger.log(LogLevel.WARN, JSON.stringify({message: response.err.message, data}));
 						return SyncBot.createErrorComment(to, messenger, data, response.err)
 						// Ignore the response from the messenger, SyncBot only cares that it's happened.
 						.return(response);
