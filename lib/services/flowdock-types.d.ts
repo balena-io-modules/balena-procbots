@@ -41,9 +41,10 @@ export interface FlowdockInboxPayload extends FlowdockTextPayload {
 	roomId: string;
 }
 
-/** Data required when performing a search. */
-export interface FlowdockSearchPayload {
-	search: string;
+/** Data required when retrieving messages. */
+export interface FlowdockListMessagesPayload {
+	limit?: string;
+	search?: string;
 }
 
 /** Data required when updating tags. */
@@ -53,7 +54,7 @@ export interface FlowdockTagsPayload {
 
 /** The union of all the payloads that may be emitted to Flowdock. */
 export type FlowdockPayload =
-	FlowdockMessagePayload | FlowdockInboxPayload | FlowdockSearchPayload | FlowdockTagsPayload | undefined
+	FlowdockMessagePayload | FlowdockInboxPayload | FlowdockListMessagesPayload | FlowdockTagsPayload | undefined
 ;
 
 /** The Flowdock API SDK handle type. */
@@ -61,7 +62,7 @@ export interface FlowdockHandle extends ServiceAPIHandle {
 	flowdock: Session;
 }
 
-/** The responses that the Discourse SDK may return. */
+/** The responses that the Flowdock SDK may return. */
 export type FlowdockResponse = any;
 
 /** Payload object that is passed to the emitter, which it then bundles for the SDK. */

@@ -18,7 +18,10 @@ import * as Promise from 'bluebird';
 import { Session } from 'flowdock';
 import * as _ from 'lodash';
 import {
-	FlowdockConstructor, FlowdockEmitInstructions, FlowdockEvent,
+	FlowdockConstructor,
+	FlowdockEmitInstructions,
+	FlowdockEvent,
+	FlowdockMessage,
 	FlowdockResponse,
 } from '../../flowdock-types';
 import {
@@ -103,17 +106,15 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 	 * @returns         Promise that resolve to the thread details.
 	 */
 	private static convertReadConnectionResponse(
-		message: TransmitInformation, response: FlowdockResponse
+		message: TransmitInformation, response: FlowdockMessage[]
 	): Promise<IdentifyThreadResponse> {
-		if (response.length > 0) {
-			const idFinder = new RegExp(`\\[${message.source.service} thread ([\\w\\d-+\\/=]+)]`, 'i');
-			return Promise.resolve({
-				thread: response[0].content.match(idFinder)[1],
-			});
-		}
-		return Promise.reject(new TranslatorError(
-			TranslatorErrorCode.ValueNotFound, 'No connected thread found by querying Flowdock.'
-		));
+		return TranslatorScaffold.extractThreadId(
+			message.source.service,
+			_.map(response, (comment) => {
+				return comment.content;
+			}),
+			MetadataEncoding.HiddenMD,
+		);
 	}
 
 	/**
@@ -251,7 +252,8 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 		return Promise.resolve({ method: ['get'], payload: {
 			path: `/flows/${orgId}/${message.target.flow}/threads/${threadId}/messages`,
 			payload: {
-				search: `[${message.source.service} thread`,
+				limit: '100', // Default is 30, but there is literally no reason why we wouldn't ask for as many as we can
+				search: `${message.source.service} thread`,
 			},
 		}});
 	}

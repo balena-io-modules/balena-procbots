@@ -17,8 +17,13 @@
 import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import {
-	BasicMessageInformation, EmitInstructions, MessengerConstructor, MessengerEvent,
-	MessengerResponse, TransmitInformation,
+	BasicMessageInformation,
+	EmitInstructions,
+	IdentifyThreadResponse,
+	MessengerConstructor,
+	MessengerEvent,
+	MessengerResponse,
+	TransmitInformation,
 } from '../../messenger-types';
 import { ServiceScaffoldConstructor, ServiceScaffoldEvent } from '../../service-scaffold-types';
 import { Translator, TranslatorError } from './translator';
@@ -37,6 +42,42 @@ export enum MetadataEncoding {
  */
 export abstract class TranslatorScaffold implements Translator {
 	/**
+	 * Extract the thread id for the referenced service from an array of messages.
+	 * @param service   Service of interest.
+	 * @param messages  Message to search.
+	 * @param format    Format used to encode the metadata.
+	 */
+	public static extractThreadId(
+		service: string,
+		messages: string[],
+		format?: MetadataEncoding,
+	): Promise<IdentifyThreadResponse> {
+		const idFinder = new RegExp(`${service} thread ([\\w\\d-+\\/=\\_]+)`);
+		const matches = _.compact(_.map(
+			messages,
+			(message) => {
+				if (format) {
+					const metadata = TranslatorScaffold.extractMetadata(message, format);
+					if ((metadata.genesis === service) && metadata.thread) {
+						return metadata.thread;
+					}
+				}
+				const match = message.match(idFinder);
+				return match && match[1];
+			},
+		));
+		// Let upstream know what we've found.
+		if (matches.length > 0) {
+			return Promise.resolve({
+				thread: matches[0],
+			});
+		}
+		return Promise.reject(new TranslatorError(
+			TranslatorErrorCode.ValueNotFound, `No connected thread found for ${service}.`
+		));
+	}
+
+	/**
 	 * Encode the metadata of an event into a string to embed in the message.
 	 * @param data    Event to gather details from.
 	 * @param format  Optional, markdown or plaintext, defaults to markdown.
@@ -46,7 +87,7 @@ export abstract class TranslatorScaffold implements Translator {
 		const indicators = data.details.hidden ?
 			TranslatorScaffold.getIndicatorArrays().hidden :
 			TranslatorScaffold.getIndicatorArrays().shown;
-		const queryString = `?hidden=${indicators.word}&source=${data.source.service}`;
+		const queryString = `?hidden=${indicators.word}&source=${data.source.service}&thread=${data.source.thread}`;
 		switch (format) {
 			case MetadataEncoding.HiddenHTML:
 				return `<a href="${process.env.MESSAGE_TRANSLATOR_ANCHOR_BASE_URL}${queryString}"></a>`;
@@ -66,7 +107,7 @@ export abstract class TranslatorScaffold implements Translator {
 	protected static extractMetadata(message: string, format: MetadataEncoding): TranslatorMetadata {
 		const indicators = TranslatorScaffold.getIndicatorArrays();
 		const wordCapture = `(${indicators.hidden.word}|${indicators.shown.word})`;
-		const querystring = `\\?hidden=${wordCapture}&source=(\\w*)`;
+		const querystring = `\\?hidden=${wordCapture}&source=(\\w*)&thread=([^"]*)`;
 		const baseUrl = _.escapeRegExp(process.env.MESSAGE_TRANSLATOR_ANCHOR_BASE_URL);
 		switch (format) {
 			case MetadataEncoding.Character:
@@ -74,7 +115,7 @@ export abstract class TranslatorScaffold implements Translator {
 				const charRegex = new RegExp(`^${charCapture}`, 'im');
 				return TranslatorScaffold.metadataByRegex(message, charRegex);
 			case MetadataEncoding.HiddenHTML:
-				const hiddenHTMLRegex = new RegExp(`^<a href="${baseUrl}${querystring}"[^>]*></a>`, 'im');
+				const hiddenHTMLRegex = new RegExp(`^(?:<p>)?<a href="${baseUrl}${querystring}"[^>]*></a>`, 'im');
 				return TranslatorScaffold.metadataByRegex(message, hiddenHTMLRegex);
 			case MetadataEncoding.HiddenMD:
 				const hiddenMDRegex = new RegExp(`^\\[\\]\\(${baseUrl}${querystring}\\) `, 'im');
@@ -99,12 +140,14 @@ export abstract class TranslatorScaffold implements Translator {
 				content: message.replace(regex, '').trim(),
 				genesis: metadata[2] || null,
 				hidden: !_.includes(_.values(indicators.shown), metadata[1]),
+				thread: metadata[3] || null,
 			};
 		}
 		return {
 			content: message.trim(),
 			genesis: null,
 			hidden: true,
+			thread: null,
 		};
 	}
 
