@@ -19,6 +19,9 @@ RUN JOBS=MAX \
 	&& npm cache clean --force \
 	&& rm -rf /tmp/*
 
+# Run test suite
+RUN npm test
+
 # Build the source files
 RUN npm run build
 
