@@ -62,6 +62,12 @@ Building tasks are implemented in [`gulp`](http://gulpjs.com/), and these tasks 
 
 Development itself is agnostic, but currently this repository includes a `.vscode` directory that has configuration for this editor. This has tasks setup, so buliding from within VSCode will automatically run the `gulp` tasks and then launch the ProcBots framework.
 
+### Testing
+
+Testing is done using the [`mocha`](https://mochajs.org/) framework. Tests are containg withing the `tests` directory, which mimics the structure of the `lib` directory. Test files should end with `.spec.ts`.
+
+To run the tests use `npm test`.
+
 ## Contributions
 
 Whilst this is a [resin.io](http://resin.io) project, we welcome any contributions to the ProcBots project, including issue reports, ideas for features, new Client Bots, etc.
