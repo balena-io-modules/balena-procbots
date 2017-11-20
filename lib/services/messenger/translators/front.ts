@@ -398,31 +398,12 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	 * @returns      Promise that resolves to an array of message objects in the standard form
 	 */
 	public eventIntoMessages(event: FrontServiceEvent): Promise<MessengerEvent[]> {
-		// Gather details of all the inboxes and the complete event.
+		const rawEvent: any = event.rawEvent;
 		return Promise.props({
-			inboxes: this.session.conversation.listInboxes({conversation_id: event.cookedEvent.conversation.id}),
-			event: request({
-				headers: {
-					authorization: `Bearer ${this.connectionDetails.token}`,
-				},
-				json: true,
-				method: 'GET',
-				url: `https://api2.frontapp.com/events/${event.cookedEvent.id}`,
-			}),
-		})
-		.then((firstPhase: { inboxes: ConversationInboxes, event: any}) => {
-			return Promise.props({
-				subject: FrontTranslator.fetchSubject(this.connectionDetails, firstPhase.event.conversation),
-				author: FrontTranslator.fetchAuthorName(this.connectionDetails, firstPhase.event.target.data),
-			})
-			.then((secondPhase: { subject: string, author: string }) => {
-				return {
-					inboxes: firstPhase.inboxes,
-					event: firstPhase.event,
-					subject: secondPhase.subject,
-					author: secondPhase.author,
-				};
-			});
+			inboxes: this.session.conversation.listInboxes({conversation_id: rawEvent.conversation.id}),
+			event: rawEvent,
+			subject: FrontTranslator.fetchSubject(this.connectionDetails, rawEvent.conversation),
+			author: FrontTranslator.fetchAuthorName(this.connectionDetails, rawEvent.target.data),
 		})
 		.then((details: { inboxes: ConversationInboxes, event: any, subject: string, author: string }) => {
 			// Extract some details from the event.

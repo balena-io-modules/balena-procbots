@@ -50,6 +50,8 @@ export interface FrontConstructor extends ServiceScaffoldConstructor {
 export interface FrontListenerConstructor extends FrontConstructor {
 	/** Endpoint path to listen to. Defaults to the name of the service. */
 	path?: string;
+	/** Shared secret, used to verify payloads. */
+	secret: string;
 	/** Port number or server instance to listen to. */
 	server: ServerDetails;
 	/** Specifies that this listener must be a listener. */
@@ -64,7 +66,5 @@ export interface FrontEmitInstructions extends EmitInstructions {
 /** A more specific ServiceEvent, to provided Front typing. */
 export interface FrontServiceEvent extends ServiceScaffoldEvent {
 	/** The Event object that Front gives. */
-	cookedEvent: Event;
-	/** The raw payload string. */
-	rawEvent: string;
+	rawEvent: Event;
 }
