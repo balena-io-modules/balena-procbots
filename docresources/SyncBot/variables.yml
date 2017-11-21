@@ -53,7 +53,10 @@ syncbot:
       "front": {
         "secret": "<<INJECT_front_secret>>",
         "token": "<<INJECT_front_token>>",
-        "channelPerInbox": <<TODO object of inb_blah to cha_blah here. Exactly the same object structure as previous SYNCBOT_FRONT_CONSTRUCTOR_OBJECT.inbox_channels>>
+        "channelPerInbox": {
+          "inb_23sp": "cha_20ep",
+          "inb_nla": "cha_20er"
+        }
       },
       "discourse": {
         "instance": "forums.resin.io",
@@ -63,7 +66,32 @@ syncbot:
       }
     }'
   - name: SYNCBOT_MAPPINGS
-    value: '<<TODO, exactly the same as previous>>'
+    value: '[
+      [
+        {
+          "service": "discourse",
+          "flow": "42"
+		    },
+        {
+          "service": "flowdock",
+          "flow": "public-s-community"
+        },
+        {
+          "service": "front",
+          "flow": "inb_23sp"
+        }
+      ],
+      [
+        {
+          "service": "flowdock",
+          "flow": "public-s-premium"
+        },
+        {
+          "service": "front",
+          "flow": "inb_nla"
+        }
+      ]
+    ]'
   - name: SYNCBOT_NAME
     value: 'syncbot'
   - name: SYNCBOT_PORT
