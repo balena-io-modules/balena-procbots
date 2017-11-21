@@ -71,7 +71,7 @@ syncbot:
         {
           "service": "discourse",
           "flow": "42"
-		    },
+        },
         {
           "service": "flowdock",
           "flow": "public-s-community"
