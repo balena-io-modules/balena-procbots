@@ -324,6 +324,7 @@ e.g.
   "discourse": {
     "instance": "blah",
     "username": "blah",
+    "secret": "blah",
     "token": "blah"
   }
 }
