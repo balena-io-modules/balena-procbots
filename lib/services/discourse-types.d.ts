@@ -50,6 +50,7 @@ export interface DiscourseTopicPayload extends DiscourseBasePayload {
 export type DiscoursePayload = DiscoursePostPayload | DiscourseTopicPayload | {};
 
 /** The responses that the Discourse API may return. */
+// https://github.com/resin-io-modules/resin-procbots/issues/207
 export type DiscourseResponse = any;
 
 /** Discourse specific subtype of the context for emission. */
@@ -141,4 +142,14 @@ export interface DiscourseReceivedMessage {
 	id: string;
 	/** Topic ID of the message. */
 	topic_id: string;
+	/** Blurb of the message. */
+	blurb: string;
+	/** Cooked version of the message. */
+	cooked: string;
+}
+
+// https://github.com/resin-io-modules/resin-procbots/issues/207
+/** For the moment a rather empty object of the payload Discourse gives from a search. */
+export interface DiscoursePostSearchResponse {
+	posts: DiscourseReceivedMessage[];
 }

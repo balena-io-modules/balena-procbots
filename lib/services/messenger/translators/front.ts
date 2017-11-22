@@ -220,7 +220,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 			// Bundle for the session.
 			const createThreadData: MessageRequest.Send = {
 				author_id: userId,
-				body: `${message.details.text}<hr />${TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenHTML)}`,
+				body: `${message.details.text}<br />${TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenHTML)}`,
 				channel_id: channelMap[message.target.flow],
 				options: {
 					archive: false,
@@ -308,26 +308,13 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	private static convertReadConnectionResponse(
 		message: TransmitInformation, response: FrontResponse
 	): Promise<IdentifyThreadResponse> {
-		// Filter the response down to actually matching items
-		const idFinder = new RegExp(`\\[${message.source.service} thread ([\\w\\d-+\\/=]+)`);
-		const matches = _.filter(
-			(response as ConversationComments)._results,
-			(comment) => {
-				return idFinder.test(comment.body);
-			}
+		return TranslatorScaffold.extractThreadId(
+			message.source.service,
+			_.map((response as ConversationComments)._results, (comment) => {
+				return comment.body;
+			}),
+			MetadataEncoding.HiddenMD,
 		);
-		// Let upstream know what we've found.
-		if (matches.length > 0) {
-			const thread = matches[matches.length - 1].body.match(idFinder);
-			if (thread) {
-				return Promise.resolve({
-					thread: thread[1],
-				});
-			}
-		}
-		return Promise.reject(new TranslatorError(
-			TranslatorErrorCode.ValueNotFound, 'No connected thread found by querying Front.'
-		));
 	}
 
 	/**

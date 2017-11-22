@@ -24,4 +24,14 @@ describe('lib/services/messenger/translators/discourse.ts', () => {
 			expect(DiscourseTranslator.convertUsernameToDiscourse('test_user')).to.equal('test_user');
 		});
 	});
+
+	describe('DiscourseTranslator.reverseEngineerComment', () => {
+		it('should expand em and en dashes', () => {
+			expect(DiscourseTranslator.reverseEngineerComment('h:- n:– m:—')).to.equal('h:- n:-- m:---');
+		});
+
+		it('should squash ampersands back down', () => {
+			expect(DiscourseTranslator.reverseEngineerComment('bits &amp; bobs')).to.equal('bits & bobs');
+		});
+	});
 });

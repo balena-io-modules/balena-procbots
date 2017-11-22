@@ -308,7 +308,7 @@ export class SyncBot extends ProcBot {
 					// this message is being created from nothing.
 					source: {
 						message: 'duff',
-						thread: 'duff',
+						thread: 'duff', // will be replaced
 						flow: 'duff',
 						service: 'duff', // will be replaced
 						username: 'duff',
@@ -335,6 +335,7 @@ export class SyncBot extends ProcBot {
 				updateOriginating.details.text += `[${createThread.target.service} thread ${response.thread}](${response.url})`;
 				updateOriginating.details.genesis = createThread.target.service;
 				updateOriginating.source.service = createThread.target.service;
+				updateOriginating.source.thread = response.thread;
 
 				// Clone and mutate the generic payload for emitting to the created thread.
 				const updateCreated = _.cloneDeep(genericConnect);
@@ -349,6 +350,7 @@ export class SyncBot extends ProcBot {
 				updateCreated.details.text += `[${data.source.service} thread ${data.source.thread}](${data.source.url})`;
 				updateCreated.details.genesis = data.source.service;
 				updateCreated.source.service = data.source.service;
+				updateCreated.source.thread = data.source.thread;
 
 				// Request that the payloads created just above be sent.
 				return Promise.all([

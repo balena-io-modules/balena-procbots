@@ -25,6 +25,8 @@ export interface TranslatorMetadata {
 	hidden: boolean;
 	/** Message content, without any metadata. */
 	content: string;
+	/** Thread ID that this message was created on. */
+	thread: string | null;
 }
 
 /** Options for encoding privacy information in metadata */

@@ -18,7 +18,10 @@ import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import * as request from 'request-promise';
 import {
-	DiscourseConstructor, DiscourseEmitInstructions, DiscourseResponse,
+	DiscourseConstructor,
+	DiscourseEmitInstructions,
+	DiscoursePostSearchResponse,
+	DiscourseResponse,
 	DiscourseServiceEvent,
 } from '../../discourse-types';
 import {
@@ -60,6 +63,15 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 			? `_${username.replace(/-$/, '')}`
 			: username
 		;
+	}
+
+	/**
+	 * Undoes a few of the decisions that Discourse makes when receiving a POST
+	 * @param comment  Comment to reverse engineer
+	 * @returns        Best guess as to original comment
+	 */
+	public static reverseEngineerComment(comment: string): string {
+		return comment.replace(/–/g, '--').replace(/—/g, '---').replace(/&amp;/g, '&');
 	}
 
 	/**
@@ -163,7 +175,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 			htmlVerb: 'GET',
 			path: '/search/query',
 			qs: {
-				term: `[${message.source.service} thread`,
+				term: `${message.source.service} thread`,
 				'search_context[type]': 'topic',
 				'search_context[id]': thread,
 			}
@@ -240,20 +252,18 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 	 * @returns         Promise that resolves to emit instructions.
 	 */
 	private static convertReadConnectionResponse(
-		message: TransmitInformation, response: DiscourseResponse
+		message: TransmitInformation, response: DiscoursePostSearchResponse
 	): Promise<IdentifyThreadResponse> {
-		const idFinder = new RegExp(`${message.source.service} thread ([\\w\\d-+\\/=]+)`, 'i');
-		if (response.posts.length > 0) {
-			return Promise.resolve({
+		return TranslatorScaffold.extractThreadId(
+			message.source.service,
+			_.map(response.posts, (comment) => {
 				// Because Discourse assumes that when my POST contains:
 				// hyphen hyphen ("--") then what I mean is en dash ("–")
 				// hyphen hyphen hyphen ("---") then what I mean in em dash ("—")
-				thread: response.posts[0].blurb.replace('–', '--').replace('—', '---').match(idFinder)[1],
-			});
-		}
-		return Promise.reject(new TranslatorError(
-			TranslatorErrorCode.ValueNotFound, 'No connected thread found by querying Discourse.'
-		));
+				return DiscourseTranslator.reverseEngineerComment(comment.cooked);
+			}),
+			MetadataEncoding.HiddenHTML,
+		);
 	}
 
 	/**
