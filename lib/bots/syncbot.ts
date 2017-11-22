@@ -15,6 +15,8 @@ limitations under the License.
 */
 
 import * as Promise from 'bluebird';
+import * as fs from 'fs';
+import * as yaml from 'js-yaml';
 import * as _ from 'lodash';
 import { ProcBot } from '../framework/procbot';
 import { MessengerService } from '../services/messenger';
@@ -31,6 +33,15 @@ import { Logger, LogLevel } from '../utils/logger';
  * A bot that mirrors threads across services.
  */
 export class SyncBot extends ProcBot {
+	public static getConfig(key: string): string {
+		if (process.env[`SYNCBOT_${key}`]) {
+			return process.env[`SYNCBOT_${key}`];
+		}
+		const fileContents = fs.readFileSync(`./configs/${process.env.CONFIG_TO_LOAD}.yml`, 'utf8');
+		const varsFromFile = yaml.safeLoad(fileContents);
+		return varsFromFile[`SYNCBOT_${key}`];
+	}
+
 	/**
 	 * Provide a method that:
 	 *  * Encloses details available in advance.
@@ -68,11 +79,11 @@ export class SyncBot extends ProcBot {
 				logger.log(LogLevel.INFO, `---> Actioning '${firstLine}' to ${toText}.`);
 				try {
 					// This allows syncbot to represent specific other accounts.
-					const aliasString = process.env.SYNCBOT_ALIAS_USERS;
+					const aliasString = SyncBot.getConfig('ALIAS_USERS');
 					const aliases = aliasString ? _.map(JSON.parse(aliasString), _.toLower) : [];
 					if (_.includes(aliases, data.details.handle.toLowerCase())) {
-						data.details.handle = process.env.SYNCBOT_NAME;
-						data.source.username = process.env.SYNCBOT_NAME;
+						data.details.handle = SyncBot.getConfig('NAME');
+						data.source.username = SyncBot.getConfig('NAME');
 					}
 				} catch (error) {
 					logger.log(LogLevel.WARN, 'Misconfiguration in SyncBot aliases.');
@@ -137,11 +148,11 @@ export class SyncBot extends ProcBot {
 		const solution = SyncBot.getErrorSolution(to.service, error.message);
 		const fixes = solution.fixes.length > 0 ?
 			` * ${solution.fixes.join('\r\n * ')}` :
-			process.env.SYNCBOT_ERROR_UNDOCUMENTED;
+			SyncBot.getConfig('ERROR_UNDOCUMENTED');
 		const echoData: BasicMessageInformation = {
 			details: {
 				genesis: to.service,
-				handle: process.env.SYNCBOT_NAME,
+				handle: SyncBot.getConfig('NAME'),
 				hidden: true,
 				tags: data.details.tags,
 				text: `${to.service} reports \`${solution.description}\`.\r\n${fixes}\r\n`,
@@ -151,7 +162,7 @@ export class SyncBot extends ProcBot {
 				message: 'duff',
 				thread: 'duff',
 				service: to.service,
-				username: process.env.SYNCBOT_NAME,
+				username: SyncBot.getConfig('NAME'),
 				flow: to.flow,
 			},
 		};
@@ -166,7 +177,7 @@ export class SyncBot extends ProcBot {
 	 */
 	private static getErrorSolution(service: string, message: string): SolutionIdea {
 		try {
-			const solutionMatrix = JSON.parse(process.env.SYNCBOT_ERROR_SOLUTIONS);
+			const solutionMatrix = JSON.parse(SyncBot.getConfig('ERROR_SOLUTIONS'));
 			const solutionIdeas: SolutionIdeas = _.get(solutionMatrix, service, {});
 			const filteredSolutions = _.filter(solutionIdeas, (_value: any, pattern: string) => {
 				return new RegExp(pattern).test(message);
@@ -238,7 +249,7 @@ export class SyncBot extends ProcBot {
 				// The service you wish to find a connection for.
 				service: to.service,
 				thread: 'duff',
-				username: process.env.SYNCBOT_NAME,
+				username: SyncBot.getConfig('NAME'),
 			},
 			// This feels paradoxical because the target of the read request ...
 			// is the place the event came from.
@@ -246,7 +257,7 @@ export class SyncBot extends ProcBot {
 				flow: data.source.flow,
 				service: data.source.service,
 				thread: data.source.thread,
-				username: process.env.SYNCBOT_NAME,
+				username: SyncBot.getConfig('NAME'),
 			},
 		};
 		// Request that the payload created above be sent, which will resolve to the threadId connected.
@@ -299,7 +310,7 @@ export class SyncBot extends ProcBot {
 					// A message that advertises the connected thread.
 					details: {
 						genesis: 'duff', // will be replaced
-						handle: process.env.SYNCBOT_NAME,
+						handle: SyncBot.getConfig('NAME'),
 						hidden: true,
 						tags: data.details.tags,
 						text: 'This is mirrored in ', // will be appended
@@ -317,7 +328,7 @@ export class SyncBot extends ProcBot {
 						flow: 'duff', // will be replaced
 						service: 'duff', // will be replaced
 						// This is happening using SyncBot's credentials.
-						username: process.env.SYNCBOT_NAME,
+						username: SyncBot.getConfig('NAME'),
 						thread: 'duff' // will be replaced
 					}
 				};
@@ -328,7 +339,7 @@ export class SyncBot extends ProcBot {
 				updateOriginating.target = {
 					flow: data.source.flow,
 					service: data.source.service,
-					username: process.env.SYNCBOT_NAME,
+					username: SyncBot.getConfig('NAME'),
 					thread: data.source.thread,
 				};
 				// This comments on the original thread about the new thread.
@@ -342,7 +353,7 @@ export class SyncBot extends ProcBot {
 				updateCreated.target = {
 					flow: createThread.target.flow,
 					service: createThread.target.service,
-					username: process.env.SYNCBOT_NAME,
+					username: SyncBot.getConfig('NAME'),
 					thread: response.thread,
 				};
 				// This comments on the new thread about the original thread..
@@ -369,13 +380,13 @@ export class SyncBot extends ProcBot {
 		// Created this as its own function to scope the `let` a little
 		let listenerConstructors = [];
 		try {
-			listenerConstructors = JSON.parse(process.env.SYNCBOT_LISTENER_CONSTRUCTORS);
+			listenerConstructors = JSON.parse(SyncBot.getConfig('LISTENER_CONSTRUCTORS'));
 		} catch (error) {
 			throw new Error('SYNCBOT_LISTENER_CONSTRUCTORS not a valid JSON array.');
 		}
 
 		const messenger = new MessengerService({
-			server: parseInt(process.env.SYNCBOT_PORT, 10),
+			server: parseInt(SyncBot.getConfig('PORT'), 10),
 			subServices: listenerConstructors,
 			type: ServiceType.Listener,
 		});
@@ -394,7 +405,7 @@ export class SyncBot extends ProcBot {
 		// Created this as its own function so the try/catch stay close together
 		// The alternative would be a let in the super scope.
 		try {
-			return JSON.parse(process.env.SYNCBOT_MAPPINGS);
+			return JSON.parse(SyncBot.getConfig('MAPPINGS'));
 		} catch (error) {
 			throw new Error('SYNCBOT_MAPPINGS not a valid JSON array.');
 		}
@@ -432,5 +443,5 @@ export class SyncBot extends ProcBot {
 }
 
 export function createBot(): SyncBot {
-	return new SyncBot(process.env.SYNCBOT_NAME);
+	return new SyncBot(SyncBot.getConfig('NAME'));
 }

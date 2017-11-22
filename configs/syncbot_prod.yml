@@ -1,0 +1,50 @@
+MESSAGE_TRANSLATOR_ANCHOR_BASE_URL: 'http://resin.io'
+MESSAGE_TRANSLATOR_PRIVACY_INDICATORS: '{
+  "hidden": {
+    "word": "whisper",
+    "char": "~"
+  },
+  "shown": {
+    "word": "comment",
+    "char": "%"
+  }
+}'
+SYNCBOT_ALIAS_USERS: '["hubot"]'
+SYNCBOT_ERROR_SOLUTIONS: '{
+  "discourse": {
+    "^403": {
+      "description": "permissions error",
+      "fixes": [
+        "Your username on all services should be a derivative of your GitHub username, try `Hubot suggest usernames for …`.",
+        "If you’ve done that, and Discourse is still complaining, then ping sqweelygig."
+      ]
+    }
+  }
+}'
+SYNCBOT_ERROR_UNDOCUMENTED: 'No fixes currently documented. (cc @sqweelygig)'
+SYNCBOT_MAPPINGS: '[
+  [
+    {
+      "service": "discourse",
+      "flow": "42"
+    },
+    {
+      "service": "flowdock",
+      "flow": "public-s-community"
+    },
+    {
+      "service": "front",
+      "flow": "inb_23sp"
+    }
+  ],
+  [
+    {
+      "service": "flowdock",
+      "flow": "public-s-premium"
+    },
+    {
+      "service": "front",
+      "flow": "inb_nla"
+    }
+  ]
+]'

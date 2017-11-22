@@ -1,0 +1,28 @@
+MESSAGE_TRANSLATOR_ANCHOR_BASE_URL: 'http://resin.io'
+MESSAGE_TRANSLATOR_PRIVACY_INDICATORS: '{
+	"hidden": {
+		"word": "whisper",
+		"char": "~"
+	},
+	"shown": {
+		"word": "comment",
+		"char": "%"
+	}
+}'
+SYNCBOT_ALIAS_USERS: '["hubot"]'
+SYNCBOT_ERROR_SOLUTIONS: '{
+	"discourse": {
+		"^403": { "description": "permissions error", "fixes": [
+			"You should check that your username and token are correct."
+		] }
+	}
+}'
+SYNCBOT_ERROR_UNDOCUMENTED: 'No fixes currently documented. (at)sqweelygig'
+SYNCBOT_MAPPINGS: '[
+	[],
+	[
+		{ "service": "discourse", "flow": "5" },
+		{ "service": "flowdock", "flow": "testing" },
+		{ "service": "front", "flow": "inb_1yea" }
+	]
+]'
