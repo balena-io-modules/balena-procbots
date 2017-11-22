@@ -34,12 +34,17 @@ import { Logger, LogLevel } from '../utils/logger';
  */
 export class SyncBot extends ProcBot {
 	public static getConfig(key: string): string {
-		if (process.env[`SYNCBOT_${key}`]) {
+		if (process.env[`SYNCBOT_${key}`] !== undefined) {
 			return process.env[`SYNCBOT_${key}`];
 		}
-		const fileContents = fs.readFileSync(`./configs/${process.env.CONFIG_TO_LOAD}.yml`, 'utf8');
-		const varsFromFile = yaml.safeLoad(fileContents);
-		return varsFromFile[`SYNCBOT_${key}`];
+		if (process.env.CONFIG_TO_LOAD) {
+			const fileContents = fs.readFileSync(`./configs/${process.env.CONFIG_TO_LOAD}.yml`, 'utf8');
+			const varsFromFile = yaml.safeLoad(fileContents);
+			if (varsFromFile[`SYNCBOT_${key}`] !== undefined) {
+				return varsFromFile[`SYNCBOT_${key}`];
+			}
+		}
+		throw new Error(`Could not find configuration entry - ${key}.`);
 	}
 
 	/**
