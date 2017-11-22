@@ -83,7 +83,7 @@ export abstract class TranslatorScaffold implements Translator {
 	 * @param format  Optional, markdown or plaintext, defaults to markdown.
 	 * @returns       Text with data embedded.
 	 */
-	protected static stringifyMetadata(data: BasicMessageInformation, format: MetadataEncoding): string {
+	public static stringifyMetadata(data: BasicMessageInformation, format: MetadataEncoding): string {
 		const indicators = data.details.hidden ?
 			TranslatorScaffold.getIndicatorArrays().hidden :
 			TranslatorScaffold.getIndicatorArrays().shown;
@@ -92,7 +92,7 @@ export abstract class TranslatorScaffold implements Translator {
 			case MetadataEncoding.HiddenHTML:
 				return `<a href="${process.env.MESSAGE_TRANSLATOR_ANCHOR_BASE_URL}${queryString}"></a>`;
 			case MetadataEncoding.HiddenMD:
-				return `[](${process.env.MESSAGE_TRANSLATOR_ANCHOR_BASE_URL}${queryString}) `;
+				return `[](${process.env.MESSAGE_TRANSLATOR_ANCHOR_BASE_URL}${queryString})`;
 			default:
 				throw new Error(`${format} format not recognised`);
 		}
@@ -104,7 +104,7 @@ export abstract class TranslatorScaffold implements Translator {
 	 * @param format   Format of the metadata encoding.
 	 * @returns        Object of content, genesis and hidden.
 	 */
-	protected static extractMetadata(message: string, format: MetadataEncoding): TranslatorMetadata {
+	public static extractMetadata(message: string, format: MetadataEncoding): TranslatorMetadata {
 		const indicators = TranslatorScaffold.getIndicatorArrays();
 		const wordCapture = `(${indicators.hidden.word}|${indicators.shown.word})`;
 		const querystring = `\\?hidden=${wordCapture}&source=(\\w*)&thread=([^"]*)`;
@@ -115,10 +115,10 @@ export abstract class TranslatorScaffold implements Translator {
 				const charRegex = new RegExp(`^${charCapture}`, 'im');
 				return TranslatorScaffold.metadataByRegex(message, charRegex);
 			case MetadataEncoding.HiddenHTML:
-				const hiddenHTMLRegex = new RegExp(`^(?:<p>)?<a href="${baseUrl}${querystring}"[^>]*></a>`, 'im');
+				const hiddenHTMLRegex = new RegExp(`<a href="${baseUrl}${querystring}"[^>]*></a>$`, 'i');
 				return TranslatorScaffold.metadataByRegex(message, hiddenHTMLRegex);
 			case MetadataEncoding.HiddenMD:
-				const hiddenMDRegex = new RegExp(`^\\[\\]\\(${baseUrl}${querystring}\\) `, 'im');
+				const hiddenMDRegex = new RegExp(`\\[\\]\\(${baseUrl}${querystring}\\)$`, 'i');
 				return TranslatorScaffold.metadataByRegex(message, hiddenMDRegex);
 			default:
 				throw new Error(`${format} format not recognised`);
@@ -132,7 +132,7 @@ export abstract class TranslatorScaffold implements Translator {
 	 * @param regex   Criteria for extraction.
 	 * @returns       Object of the metadata, decoded.
 	 */
-	private static metadataByRegex(message: string, regex: RegExp): TranslatorMetadata {
+	public static metadataByRegex(message: string, regex: RegExp): TranslatorMetadata {
 		const indicators = TranslatorScaffold.getIndicatorArrays();
 		const metadata = message.match(regex);
 		if (metadata) {

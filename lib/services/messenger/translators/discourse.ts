@@ -134,7 +134,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 						htmlVerb: 'POST',
 						path: '/posts',
 						body: {
-							raw: `${TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenMD)}${message.details.text}`,
+							raw: `${message.details.text}${TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenMD)}`,
 							topic_id: thread,
 							whisper: message.details.hidden ? 'true' : 'false',
 						}
@@ -150,7 +150,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 			htmlVerb: 'POST',
 			path: '/posts',
 			body: {
-				raw: `${TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenMD)}${message.details.text}`,
+				raw: `${message.details.text}${TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenMD)}`,
 				topic_id: thread,
 				whisper: message.details.hidden ? 'true' : 'false',
 			}
