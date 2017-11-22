@@ -15,6 +15,8 @@
  */
 
 import * as Promise from 'bluebird';
+import * as fs from 'fs';
+import * as yaml from 'js-yaml';
 import * as _ from 'lodash';
 import {
 	BasicMessageInformation, EmitInstructions, MessengerConstructor, MessengerEvent,
@@ -36,6 +38,16 @@ export enum MetadataEncoding {
  * and service specific forms.
  */
 export abstract class TranslatorScaffold implements Translator {
+	public static getConfig(key: string): string {
+		if (process.env[`MESSAGE_TRANSLATOR_${key}`]) {
+			return process.env[`MESSAGE_TRANSLATOR_${key}`];
+		}
+		const filePath = `./configs/${process.env.CONFIG_TO_LOAD}.yml`;
+		const fileContents = fs.readFileSync(filePath, 'utf8');
+		const varsFromFile = yaml.safeLoad(fileContents);
+		return varsFromFile[`MESSAGE_TRANSLATOR_${key}`];
+	}
+
 	/**
 	 * Encode the metadata of an event into a string to embed in the message.
 	 * @param data    Event to gather details from.
@@ -47,11 +59,12 @@ export abstract class TranslatorScaffold implements Translator {
 			TranslatorScaffold.getIndicatorArrays().hidden :
 			TranslatorScaffold.getIndicatorArrays().shown;
 		const queryString = `?hidden=${indicators.word}&source=${data.source.service}`;
+		const baseURL = TranslatorScaffold.getConfig('ANCHOR_BASE_URL');
 		switch (format) {
 			case MetadataEncoding.HiddenHTML:
-				return `<a href="${process.env.MESSAGE_TRANSLATOR_ANCHOR_BASE_URL}${queryString}"></a>`;
+				return `<a href="${baseURL}${queryString}"></a>`;
 			case MetadataEncoding.HiddenMD:
-				return `[](${process.env.MESSAGE_TRANSLATOR_ANCHOR_BASE_URL}${queryString}) `;
+				return `[](${baseURL}${queryString}) `;
 			default:
 				throw new Error(`${format} format not recognised`);
 		}
@@ -67,7 +80,7 @@ export abstract class TranslatorScaffold implements Translator {
 		const indicators = TranslatorScaffold.getIndicatorArrays();
 		const wordCapture = `(${indicators.hidden.word}|${indicators.shown.word})`;
 		const querystring = `\\?hidden=${wordCapture}&source=(\\w*)`;
-		const baseUrl = _.escapeRegExp(process.env.MESSAGE_TRANSLATOR_ANCHOR_BASE_URL);
+		const baseUrl = _.escapeRegExp(TranslatorScaffold.getConfig('ANCHOR_BASE_URL'));
 		switch (format) {
 			case MetadataEncoding.Character:
 				const charCapture = `^(${_.escapeRegExp(indicators.hidden.char)}|${_.escapeRegExp(indicators.shown.char)})`;
@@ -116,7 +129,7 @@ export abstract class TranslatorScaffold implements Translator {
 		let indicators;
 		try {
 			// Retrieve publicity indicators from the environment
-			indicators = JSON.parse(process.env.MESSAGE_TRANSLATOR_PRIVACY_INDICATORS);
+			indicators = JSON.parse(TranslatorScaffold.getConfig('PRIVACY_INDICATORS'));
 		} catch (error) {
 			throw new Error('MESSAGE_TRANSLATOR_PRIVACY_INDICATORS not JSON.');
 		}

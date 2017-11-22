@@ -269,6 +269,15 @@ some sanitised examples of configuration.
 
 ### Environment Variables
 
+These can be provided by a file in `./configs/`, pointed to via `CONFIG_TO_LOAD`
+or simply placed direct into the environment.
+
+#### CONFIG_TO_LOAD
+
+This is a string of the file to load in. Directory and extension will be inserted.
+
+e.g. `test` to load `./configs/test.yml`
+
 #### PROCBOT_BOTS_TO_LOAD
 
 This is a string of the names of the bots that need loading by this deployment
