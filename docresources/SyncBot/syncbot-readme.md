@@ -276,31 +276,51 @@ of ProcBots.
 
 e.g. `syncbot`
 
-#### SYNCBOT_PORT
+#### SYNCBOT_CONFIG_TO_LOAD
 
-This is an integer value for which port the web hooks should listen to.
+This is a string defining a path of a file, that may contain INJECTS, to load as config
 
-e.g. `4567`
+e.g. `configs/syncbot_test.yml`
 
-#### SYNCBOT_NAME
+#### INJECT
 
-This is the username of the account under which syncbot should operate.
+In the config file leaf nodes may be `<<INJECT_BLAH>>` which will translate to the value
+of `BLAH` from the environment
 
-e.g. `syncbot`
+### configs/*.yml
 
-#### SYNCBOT_MAPPINGS
+#### SYNCBOT_ALIAS_USERS
 
-This is a nested array of flow definitions that should be kept mirrored.
+This is a list of user accounts that syncbot should represent using its own identity
 
 e.g.
 ```json
-[
-  [
-    { "service": "blah", "flow": "blah" },
-    { "service": "blah", "flow": "blah" }
-  ]
-]
+["hubot"]
 ```
+
+#### SYNCBOT_ERROR_SOLUTIONS
+
+This is a JSON encoded object of error patterns, a user friendly description, and possible fixes.
+
+e.g.
+```json
+{
+  "discourse": {
+    "^403": { "description": "a problem with your permissions.", "fixes": [
+      "You should check that your username and token are correct."
+    ] },
+    "^500": { "description": "a problem with the discourse servers.", "fixes": [
+      "You should try again in a few minutes."
+    ] }
+  }
+}
+```
+
+#### SYNCBOT_ERROR_UNDOCUMENTED
+
+This is a text string to use when the error translator cannot find any details.
+
+e.g. `No fixes currently documented.`
 
 #### SYNCBOT_LISTENER_CONSTRUCTORS
 
@@ -329,61 +349,49 @@ e.g.
 }
 ```
 
-#### MESSAGE_TRANSLATOR_PRIVACY_INDICATORS
+#### SYNCBOT_MAPPINGS
 
-This is a JSON encoded object of strings that may be used to indicate whether a
-message is private.
+This is a nested array of flow definitions that should be kept mirrored.
+
+e.g.
+```json
+[
+  [
+    { "service": "blah", "flow": "blah" },
+    { "service": "blah", "flow": "blah" }
+  ]
+]
+```
+
+#### SYNCBOT_METADATA_CONFIG
+
+This is a JSON object that specifies how metadata is to be encoded.
 
 e.g.
 ```json
 {
-  "hidden": {
-      "word":"whisper",
-      "char":"~"
-  },
-  "shown": {
-      "word":"comment",
-      "char":"%"
-  }
+    "baseUrl": "https://resin.io",
+    "publicity": {
+        "hidden": {
+            "word":" whisper",
+            "char": "~"
+        },
+        "shown": {
+            "word": "comment",
+            "char": "%"
+        }
+    }
 }
 ```
 
-#### MESSAGE_TRANSLATOR_ANCHOR_BASE_URL
+#### SYNCBOT_NAME
 
-This is a url used to form the domain part of an invisible link encoding of metadata
+This is the username of the account under which syncbot should operate.
 
-e.g. `http://resin.io`
+e.g. `syncbot`
 
+#### SYNCBOT_PORT
 
-#### SYNCBOT_ERROR_SOLUTIONS
+This is an integer value for which port the web hooks should listen to.
 
-This is a JSON encoded object of error patterns, a user friendly description, and possible fixes.
-
-e.g.
-```json
-{
-  "discourse": {
-    "^403": { "description": "a problem with your permissions.", "fixes": [
-      "You should check that your username and token are correct."
-    ] },
-    "^500": { "description": "a problem with the discourse servers.", "fixes": [
-      "You should try again in a few minutes."
-    ] }
-  }
-}
-```
-
-#### SYNCBOT_ERROR_UNDOCUMENTED
-
-This is a text string to use when the error translator cannot find any details.
-
-e.g. `No fixes currently documented.`
-
-#### SYNCBOT_ALIAS_USERS
-
-This is a list of user accounts that syncbot should represent using its own identity
-
-e.g.
-```json
-["hubot"]
-```
+e.g. `4567`

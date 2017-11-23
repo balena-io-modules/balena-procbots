@@ -37,6 +37,16 @@ export interface PublicityIndicator {
 	char: string;
 }
 
+export interface PublicityIndicators {
+	hidden: PublicityIndicator;
+	shown: PublicityIndicator;
+}
+
+export interface MetadataConfiguration {
+	baseUrl: string;
+	publicity: PublicityIndicators;
+}
+
 /** Mapping of generic names for an event into equivalent specific events. */
 export interface EventEquivalencies {
 	/** Each messenger name for an event may have several service specific events. */

@@ -32,7 +32,12 @@ import {
 import { ServiceType } from '../../service-types';
 import { Translator, TranslatorError } from './translator';
 import { MetadataEncoding, TranslatorScaffold } from './translator-scaffold';
-import { EmitConverters, ResponseConverters, TranslatorErrorCode } from './translator-types';
+import {
+	EmitConverters,
+	MetadataConfiguration,
+	ResponseConverters,
+	TranslatorErrorCode,
+} from './translator-types';
 
 /**
  * Class to enable the translating between messenger standard forms and service
@@ -101,18 +106,20 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 
 	/**
 	 * Converts a response into the generic format.
-	 * @param message   The initial message that prompted this action.
-	 * @param response  The response from the SDK.
-	 * @returns         Promise that resolve to the thread details.
+	 * @param metadataConfig  Configuration of how metadata was encoded
+	 * @param message         The initial message that prompted this action.
+	 * @param response        The response from the SDK.
+	 * @returns               Promise that resolve to the thread details.
 	 */
 	private static convertReadConnectionResponse(
-		message: TransmitInformation, response: FlowdockMessage[]
+		metadataConfig: MetadataConfiguration, message: TransmitInformation, response: FlowdockMessage[]
 	): Promise<IdentifyThreadResponse> {
 		return TranslatorScaffold.extractThreadId(
 			message.source.service,
 			_.map(response, (comment) => {
 				return comment.content;
 			}),
+			metadataConfig,
 			MetadataEncoding.HiddenMD,
 		);
 	}
@@ -131,11 +138,16 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 
 	/**
 	 * Converts a provided message object into instructions to create a thread.
-	 * @param orgId    Parameterised ID of the organisation.
-	 * @param message  object to analyse.
-	 * @returns        Promise that resolves to emit instructions.
+	 * @param orgId           Parameterised ID of the organisation.
+	 * @param metadataConfig  Configuration of how to encode metadata
+	 * @param message         object to analyse.
+	 * @returns               Promise that resolves to emit instructions.
 	 */
-	private static createThreadIntoEmit(orgId: string, message: TransmitInformation): Promise<FlowdockEmitInstructions> {
+	private static createThreadIntoEmit(
+		orgId: string,
+		metadataConfig: MetadataConfiguration,
+		message: TransmitInformation
+	): Promise<FlowdockEmitInstructions> {
 		// Check we have a flow.
 		const flowId = message.target.flow;
 		if (!message.details.title) {
@@ -151,7 +163,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 				content: FlowdockTranslator.createFormattedText(
 					message.details.text,
 					message.details.title,
-					TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenMD)
+					TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenMD, metadataConfig)
 				),
 				event: 'message',
 				external_user_name: message.details.handle.replace(/\s/g, '_'),
@@ -161,11 +173,16 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 
 	/**
 	 * Converts a provided message object into instructions to create a message.
-	 * @param orgId    Parameterised ID of the organisation.
-	 * @param message  object to analyse.
-	 * @returns        Promise that resolves to emit instructions.
+	 * @param orgId           Parameterised ID of the organisation.
+	 * @param metadataConfig  Configuration of how to encode metadata.
+	 * @param message         object to analyse.
+	 * @returns               Promise that resolves to emit instructions.
 	 */
-	private static createMessageIntoEmit(orgId: string, message: TransmitInformation): Promise<FlowdockEmitInstructions> {
+	private static createMessageIntoEmit(
+		orgId: string,
+		metadataConfig: MetadataConfiguration,
+		message: TransmitInformation
+	): Promise<FlowdockEmitInstructions> {
 		// Check we have a thread.
 		const threadId = message.target.thread;
 		if (!threadId) {
@@ -180,7 +197,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 				content: FlowdockTranslator.createFormattedText(
 					message.details.text,
 					undefined,
-					TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenMD)
+					TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenMD, metadataConfig)
 				),
 				event: 'message',
 				external_user_name: message.details.handle.replace(/\s/g, '_'),
@@ -263,7 +280,6 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 	};
 	protected emitConverters: EmitConverters = {};
 	protected responseConverters: ResponseConverters = {
-		[MessengerAction.ReadConnection]: FlowdockTranslator.convertReadConnectionResponse,
 		[MessengerAction.UpdateTags]: FlowdockTranslator.convertUpdateThreadResponse,
 		[MessengerAction.CreateMessage]: FlowdockTranslator.convertUpdateThreadResponse,
 	};
@@ -272,8 +288,8 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 	private session: Session;
 	private organization: string;
 
-	constructor(data: FlowdockConstructor) {
-		super();
+	constructor(data: FlowdockConstructor, metadataConfig: MetadataConfiguration) {
+		super(metadataConfig);
 		this.session = new Session(data.token);
 		// The flowdock service both emits and calls back the error
 		// We'll just log the emit to prevent it bubbling
@@ -283,10 +299,12 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 		// These converters require the injection of a couple of details from `this` instance.
 		this.responseConverters[MessengerAction.CreateThread] =
 			_.partial(FlowdockTranslator.convertCreateThreadResponse, data.organization);
+		this.responseConverters[MessengerAction.ReadConnection] =
+			_.partial(FlowdockTranslator.convertReadConnectionResponse, metadataConfig);
 		this.emitConverters[MessengerAction.CreateThread] =
-			_.partial(FlowdockTranslator.createThreadIntoEmit, data.organization);
+			_.partial(FlowdockTranslator.createThreadIntoEmit, data.organization, metadataConfig);
 		this.emitConverters[MessengerAction.CreateMessage] =
-			_.partial(FlowdockTranslator.createMessageIntoEmit, data.organization);
+			_.partial(FlowdockTranslator.createMessageIntoEmit, data.organization, metadataConfig);
 		this.emitConverters[MessengerAction.UpdateTags] =
 			_.partial(FlowdockTranslator.updateTagsIntoEmit, data.organization, this.session);
 		this.emitConverters[MessengerAction.ReadConnection] =
@@ -300,8 +318,12 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 	 */
 	public eventIntoMessages(event: FlowdockEvent): Promise<MessengerEvent[]> {
 		// Calculate metadata and use whichever matched, i.e. has a shorter content because it extracted metadata.
-		const MDMetadata = TranslatorScaffold.extractMetadata(event.rawEvent.content, MetadataEncoding.HiddenMD);
-		const charMetadata = TranslatorScaffold.extractMetadata(event.rawEvent.content, MetadataEncoding.Character);
+		const MDMetadata = TranslatorScaffold.extractMetadata(
+			event.rawEvent.content, MetadataEncoding.HiddenMD, this.metadataConfig
+		);
+		const charMetadata = TranslatorScaffold.extractMetadata(
+			event.rawEvent.content, MetadataEncoding.Character, this.metadataConfig
+		);
 		const metadata = MDMetadata.content.length < charMetadata.content.length ? MDMetadata : charMetadata;
 		// Pull some details out of the event.
 		const titleSplitter = /^(.*)\n--\n((?:\r|\n|.)*)$/;
@@ -399,9 +421,10 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 
 /**
  * Builds a translator that will convert Flowdock specific information to and from Messenger format.
- * @param data  Construction details for creating a Flowdock session.
- * @returns     A translator, ready to interpret Flowdock's communications.
+ * @param data            Construction details for creating a Flowdock session.
+ * @param metadataConfig  Configuration of how to encode metadata.
+ * @returns               A translator, ready to interpret Flowdock's communications.
  */
-export function createTranslator(data: FlowdockConstructor): Translator {
-	return new FlowdockTranslator(data);
+export function createTranslator(data: FlowdockConstructor, metadataConfig: MetadataConfiguration): Translator {
+	return new FlowdockTranslator(data, metadataConfig);
 }

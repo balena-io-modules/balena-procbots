@@ -7,54 +7,14 @@ rm -rf ./build
 gulp build
 
 export PROCBOT_BOTS_TO_LOAD="syncbot"
+export SYNCBOT_CONFIG_TO_LOAD="configs/syncbot_test.yml"
 
+export SYNCBOT_DISCOURSE_SECRET="blah"
+export SYNCBOT_DISCOURSE_TOKEN="blah"
+export SYNCBOT_FLOWDOCK_TOKEN="blah"
+export SYNCBOT_FRONT_SECRET="blah"
+export SYNCBOT_FRONT_TOKEN="blah.blah.blah"
+export SYNCBOT_NAME="syncbot"
 export SYNCBOT_PORT="4567"
-export SYNCBOT_NAME="blahbot"
-export SYNCBOT_MAPPINGS="[
-    [
-        { \"service\": \"discourse\", \"flow\": \"blah\" },
-        { \"service\": \"flowdock\", \"flow\": \"blah\" },
-        { \"service\": \"front\", \"flow\": \"blah\" }
-    ]
-]"
-export SYNCBOT_LISTENER_CONSTRUCTORS="{
-    \"flowdock\": {
-        \"organization\": \"blah\",
-        \"token\": \"blah\"
-    },
-    \"front\": {
-        \"secret\": \"blah\",
-        \"token\": \"blah\",
-        \"channelPerInbox\": {
-            \"blah\": \"blah\"
-        }
-    },
-    \"discourse\": {
-        \"instance\": \"blah\",
-        \"username\": \"blah\",
-        \"token\": \"blah\"
-    }
-}"
-
-export MESSAGE_TRANSLATOR_PRIVACY_INDICATORS="{
-    \"hidden\": {
-        \"word\":\"whisper\",
-        \"char\":\"~\"
-    },
-    \"shown\": {
-        \"word\":\"comment\",
-        \"char\":\"%\"
-    }
-}"
-export MESSAGE_TRANSLATOR_ANCHOR_BASE_URL="https://resin.io"
-export SYNCBOT_ERROR_UNDOCUMENTED="No fixes currently documented."
-export SYNCBOT_ERROR_SOLUTIONS="{
-    \"discourse\": {
-        \"^403\": { \"description\": \"permissions error\", \"fixes\": [
-            \"You should check that your username and token are correct.\"
-        ] }
-    }
-}"
-export SYNCBOT_ALIAS_USERS="[\"hubot\"]"
 
 npm start

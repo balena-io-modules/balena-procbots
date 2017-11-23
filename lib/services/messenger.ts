@@ -48,7 +48,7 @@ export class MessengerService extends ServiceScaffold<string> implements Service
 		this.translators = {};
 		_.forEach(data.subServices, (subConnectionDetails, subServiceName) => {
 			this.logger.log(LogLevel.INFO, `---> Constructing '${subServiceName}' translator.`);
-			this.translators[subServiceName] = createTranslator(subServiceName, subConnectionDetails);
+			this.translators[subServiceName] = createTranslator(subServiceName, subConnectionDetails, data.metadataConfig);
 		});
 
 		// This branch creates listeners for every sub-service, if relevant.

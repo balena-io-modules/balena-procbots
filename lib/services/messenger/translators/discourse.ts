@@ -32,7 +32,12 @@ import {
 import { ServiceType } from '../../service-types';
 import { Translator, TranslatorError } from './translator';
 import { MetadataEncoding, TranslatorScaffold } from './translator-scaffold';
-import { EmitConverters, ResponseConverters, TranslatorErrorCode } from './translator-types';
+import {
+	EmitConverters,
+	MetadataConfiguration,
+	ResponseConverters,
+	TranslatorErrorCode,
+} from './translator-types';
 
 /**
  * Class to enable the translating between messenger standard forms and service
@@ -76,10 +81,13 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 
 	/**
 	 * Converts a provided message object into instructions to create a thread.
-	 * @param message  object to analyse.
-	 * @returns        Promise that resolves to emit instructions.
+	 * @param metadataConfig  Configuration of how to encode metadata
+	 * @param message         object to analyse.
+	 * @returns               Promise that resolves to emit instructions.
 	 */
-	private static createThreadIntoEmit(message: TransmitInformation): Promise<DiscourseEmitInstructions> {
+	private static createThreadIntoEmit(
+		metadataConfig: MetadataConfiguration, message: TransmitInformation
+	): Promise<DiscourseEmitInstructions> {
 		// Check that we have a title.
 		const title = message.details.title;
 		if (!title) {
@@ -88,12 +96,13 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 			));
 		}
 		// Bundle into a format for the service.
+		const metadataString = TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenMD, metadataConfig);
 		return Promise.resolve({ method: ['request'], payload: {
 			htmlVerb: 'POST',
 			path: '/posts',
 			body: {
 				category: message.target.flow,
-				raw: `${TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenMD)}${message.details.text}`,
+				raw: `${message.details.text}${metadataString}`,
 				title,
 				unlist_topic: 'false',
 			},
@@ -103,11 +112,12 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 	/**
 	 * Converts a provided message object into instructions to create a message.
 	 * @param connectionDetails  Details to use to retrieve the user object.
-	 * @param message  object to analyse.
-	 * @returns        Promise that resolves to emit instructions.
+	 * @param metadataConfig     Configuration of how to encode the metadata.
+	 * @param message            object to analyse.
+	 * @returns                  Promise that resolves to emit instructions.
 	 */
 	private static createMessageIntoEmit(
-		connectionDetails: DiscourseConstructor, message: TransmitInformation
+		connectionDetails: DiscourseConstructor, metadataConfig: MetadataConfiguration, message: TransmitInformation
 	): Promise<DiscourseEmitInstructions> {
 		// Check we have a thread.
 		const thread = message.target.thread;
@@ -130,11 +140,12 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 			}).then((response) => {
 				if (response.user.can_send_private_messages) {
 					// Bundle into a format for the service.
+					const metadataString = TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenMD, metadataConfig);
 					return Promise.resolve({ method: ['request'], payload: {
 						htmlVerb: 'POST',
 						path: '/posts',
 						body: {
-							raw: `${message.details.text}${TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenMD)}`,
+							raw: `${message.details.text}${metadataString}`,
 							topic_id: thread,
 							whisper: message.details.hidden ? 'true' : 'false',
 						}
@@ -146,11 +157,12 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 			});
 		}
 		// Bundle into a format for the service.
+		const metadataString = TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenMD, metadataConfig);
 		return Promise.resolve({ method: ['request'], payload: {
 			htmlVerb: 'POST',
 			path: '/posts',
 			body: {
-				raw: `${message.details.text}${TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenMD)}`,
+				raw: `${message.details.text}${metadataString}`,
 				topic_id: thread,
 				whisper: message.details.hidden ? 'true' : 'false',
 			}
@@ -247,12 +259,13 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 
 	/**
 	 * Converts a response into a the generic format.
-	 * @param message  The initial message that triggered this response.
-	 * @param response  The response provided by the service.
-	 * @returns         Promise that resolves to emit instructions.
+	 * @param metadataConfig  Configuration of how the metadata was encoded.
+	 * @param message         The initial message that triggered this response.
+	 * @param response        The response provided by the service.
+	 * @returns               Promise that resolves to emit instructions.
 	 */
 	private static convertReadConnectionResponse(
-		message: TransmitInformation, response: DiscoursePostSearchResponse
+		metadataConfig: MetadataConfiguration, message: TransmitInformation, response: DiscoursePostSearchResponse
 	): Promise<IdentifyThreadResponse> {
 		return TranslatorScaffold.extractThreadId(
 			message.source.service,
@@ -262,6 +275,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 				// hyphen hyphen hyphen ("---") then what I mean in em dash ("—")
 				return DiscourseTranslator.reverseEngineerComment(comment.cooked);
 			}),
+			metadataConfig,
 			MetadataEncoding.HiddenHTML,
 		);
 	}
@@ -282,22 +296,26 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 		message: ['post_created'],
 	};
 	protected emitConverters: EmitConverters = {
-		[MessengerAction.CreateThread]: DiscourseTranslator.createThreadIntoEmit,
 		[MessengerAction.ReadConnection]: DiscourseTranslator.readConnectionIntoEmit,
 	};
 	protected responseConverters: ResponseConverters = {
-		[MessengerAction.ReadConnection]: DiscourseTranslator.convertReadConnectionResponse,
 		[MessengerAction.UpdateTags]: DiscourseTranslator.convertUpdateThreadResponse,
 		[MessengerAction.CreateMessage]: DiscourseTranslator.convertUpdateThreadResponse,
 	};
 	private connectionDetails: DiscourseConstructor;
 
-	constructor(data: DiscourseConstructor) {
-		super();
+	constructor(data: DiscourseConstructor, metadataConfig: MetadataConfiguration) {
+		super(metadataConfig);
 		this.connectionDetails = data;
 		// These converters require the injection of a couple of details from `this` instance.
-		this.emitConverters[MessengerAction.UpdateTags] = _.partial(DiscourseTranslator.updateTagsIntoEmit, data);
-		this.emitConverters[MessengerAction.CreateMessage] = _.partial(DiscourseTranslator.createMessageIntoEmit, data);
+		this.emitConverters[MessengerAction.UpdateTags] =
+			_.partial(DiscourseTranslator.updateTagsIntoEmit, data);
+		this.emitConverters[MessengerAction.CreateThread] =
+			_.partial(DiscourseTranslator.createThreadIntoEmit, metadataConfig);
+		this.emitConverters[MessengerAction.CreateMessage] =
+			_.partial(DiscourseTranslator.createMessageIntoEmit, data, metadataConfig);
+		this.responseConverters[MessengerAction.ReadConnection] =
+			_.partial(DiscourseTranslator.convertReadConnectionResponse, metadataConfig);
 		this.responseConverters[MessengerAction.CreateThread] =
 			_.partial(DiscourseTranslator.convertCreateThreadResponse, data);
 	}
@@ -330,7 +348,9 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 		})
 		.then((details: {post: any, topic: any}) => {
 			// Calculate metadata and resolve
-			const metadata = TranslatorScaffold.extractMetadata(details.post.raw, MetadataEncoding.HiddenMD);
+			const metadata = TranslatorScaffold.extractMetadata(
+				details.post.raw, MetadataEncoding.HiddenMD, this.metadataConfig
+			);
 			// Generic has `-` at the end, Discourse has `_` at the beginning
 			const convertedUsername = DiscourseTranslator.convertUsernameToGeneric(details.post.username);
 			const cookedEvent: BasicMessageInformation = {
@@ -403,9 +423,10 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 
 /**
  * Builds a translator that will convert Discourse specific information to and from Messenger format.
- * @param data  Construction details for creating a Discourse session.
- * @returns     A translator, ready to interpret Discourse's communications.
+ * @param data            Construction details for creating a Discourse session.
+ * @param metadataConfig  Configuration of how to encode metadata
+ * @returns               A translator, ready to interpret Discourse's communications.
  */
-export function createTranslator(data: DiscourseConstructor): Translator {
-	return new DiscourseTranslator(data);
+export function createTranslator(data: DiscourseConstructor, metadataConfig: MetadataConfiguration): Translator {
+	return new DiscourseTranslator(data, metadataConfig);
 }

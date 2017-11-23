@@ -1,0 +1,48 @@
+---
+SYNCBOT_ALIAS_USERS:
+  - "hubot"
+SYNCBOT_ERROR_SOLUTIONS:
+  discourse:
+    ^403:
+      description: "permissions error"
+      fixes:
+        - "Your username on all services should be a derivative of your GitHub username, try `Hubot suggest usernames`."
+        - "If Discourse is still complaining then ping sqweelygig."
+SYNCBOT_ERROR_UNDOCUMENTED: 'No fixes currently documented. (@)sqweelygig'
+SYNCBOT_MAPPINGS:
+  - - service: "discourse"
+      flow: "42"
+    - service: "flowdock"
+      flow: "public-s-community"
+    - service: "front"
+      flow: "inb_23sp"
+  - - service: "flowdock"
+      flow: "public-s-premium"
+    - service: "front"
+      flow: "inb_nla"
+SYNCBOT_LISTENER_CONSTRUCTORS:
+  flowdock:
+    organization: "rulemotion"
+    token: "<<INJECT_SYNCBOT_FLOWDOCK_TOKEN>>"
+  front:
+    secret: "<<INJECT_SYNCBOT_FRONT_SECRET>>"
+    token: "<<INJECT_SYNCBOT_FRONT_TOKEN>>"
+    channelPerInbox:
+      inb_23sp: "cha_20ep"
+      inb_nla: "cha_20er"
+  discourse:
+    instance: "forums.resin.io"
+    username: "syncbot"
+    secret: "<<INJECT_SYNCBOT_DISCOURSE_SECRET>>"
+    token: "<<INJECT_SYNCBOT_DISCOURSE_TOKEN>>"
+SYNCBOT_METADATA_CONFIG:
+  baseUrl: "http://resin.io"
+  publicity:
+    hidden:
+      word: "whisper"
+      char: "~"
+    shown:
+      word: "comment"
+      char: "%"
+SYNCBOT_NAME: "<<INJECT_SYNCBOT_NAME>>"
+SYNCBOT_PORT: "<<INJECT_SYNCBOT_PORT>>"
