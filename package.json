@@ -1,6 +1,6 @@
 {
   "name": "resin-procbots",
-  "version": "3.13.2",
+  "version": "3.13.3",
   "description": "Process robots for automating CI pipelines",
   "homepage": "https://github.com/resin-io-modules/resin-procbots#readme",
   "preferGlobal": true,
@@ -55,7 +55,7 @@
     "ts-node": "^3.3.0",
     "tslint": "^4.5.1",
     "typedoc": "^0.7.1",
-    "typescript": "^2.4.0"
+    "typescript": "~2.4.0"
   },
   "dependencies": {
     "bluebird": "^3.5.0",

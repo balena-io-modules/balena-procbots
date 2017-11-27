@@ -257,7 +257,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 				const metadataInjection = TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenMD);
 				const createCommentData: CommentRequest.Create = {
 					author_id: userId,
-					body: `${metadataInjection}${message.details.text}`,
+					body: `${message.details.text}${metadataInjection}`,
 					conversation_id: threadId,
 					subject: message.details.title,
 				};
@@ -267,7 +267,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 			const metadataInjection = TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenHTML);
 			const createMessageData: MessageRequest.Reply = {
 				author_id: userId,
-				body: `${metadataInjection}${message.details.text}`,
+				body: `${message.details.text}${metadataInjection}`,
 				conversation_id: threadId,
 				options: {
 					archive: false,

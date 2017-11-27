@@ -47,18 +47,18 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 	 * @param footer    Footer, if any, to put at the bottom of the message.
 	 * @returns         Markdown formatted text block within Flowdock's character limit.
 	 */
-	private static createFormattedText(body: string, header?: string, metadata?: string, footer?: string): string {
+	public static createFormattedText(body: string, header?: string, metadata?: string, footer?: string): string {
 		const lengthLimit = 8096;
 		const first = header ? `${header}\n--\n` : '';
 		const inject = metadata ? metadata : '';
 		const last = footer ? `\n${footer}` : '';
 		if ((first.length + inject.length + body.length + last.length) < lengthLimit) {
-			return `${first}${inject}${body}${last}`;
+			return `${first}${body}${last}${inject}`;
 		}
 		const snipProvisional = '\n\n`... about xx% shown.`';
 		const snipped = body.substr(0, lengthLimit - first.length - inject.length - snipProvisional.length - last.length);
 		const snipText = snipProvisional.replace('xx', Math.floor((100*snipped.length)/body.length).toString(10));
-		return `${first}${inject}${snipped}${snipText}${last}`;
+		return `${first}${snipped}${snipText}${last}${inject}`;
 	}
 
 	/**
