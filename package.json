@@ -1,6 +1,6 @@
 {
   "name": "resin-procbots",
-  "version": "3.13.3",
+  "version": "3.14.0",
   "description": "Process robots for automating CI pipelines",
   "homepage": "https://github.com/resin-io-modules/resin-procbots#readme",
   "preferGlobal": true,
@@ -27,7 +27,7 @@
   "scripts": {
     "build": "gulp build",
     "start": "node ./bin/procbots -b ${PROCBOT_BOTS_TO_LOAD}",
-    "test": "mocha -r ts-node/register tests/**/*.spec.ts"
+    "test": "mocha -r ts-node/register tests/**/*.spec.ts tests/**/**/*.spec.ts tests/**/**/**/*.spec.ts"
   },
   "devDependencies": {
     "@types/bluebird-global": "^3.0.1",
@@ -45,6 +45,7 @@
     "@types/request": "^2.0.0",
     "@types/request-promise": "^4.1.36",
     "chai": "^4.1.2",
+    "chai-as-promised": "^7.1.1",
     "gulp": "^3.9.1",
     "gulp-sourcemaps": "^2.4.1",
     "gulp-tslint": "^7.1.0",
@@ -58,6 +59,7 @@
     "typescript": "~2.4.0"
   },
   "dependencies": {
+    "@types/chai-as-promised": "^7.1.0",
     "bluebird": "^3.5.0",
     "body-parser": "^1.17.1",
     "colors": "^1.1.2",

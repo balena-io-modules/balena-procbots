@@ -28,8 +28,13 @@ import {
 import { ServiceScaffoldConstructor, ServiceScaffoldEvent } from '../../service-scaffold-types';
 import { Translator, TranslatorError } from './translator';
 import {
-	EmitConverters, EventEquivalencies, PublicityIndicator,
-	ResponseConverters, TranslatorErrorCode, TranslatorMetadata,
+	EmitConverters,
+	EventEquivalencies,
+	MetadataConfiguration,
+	PublicityIndicators,
+	ResponseConverters,
+	TranslatorErrorCode,
+	TranslatorMetadata,
 } from './translator-types';
 
 export enum MetadataEncoding {
@@ -45,11 +50,13 @@ export abstract class TranslatorScaffold implements Translator {
 	 * Extract the thread id for the referenced service from an array of messages.
 	 * @param service   Service of interest.
 	 * @param messages  Message to search.
+	 * @param config      Configuration that may have been used to encode metadata.
 	 * @param format    Format used to encode the metadata.
 	 */
 	public static extractThreadId(
 		service: string,
 		messages: string[],
+		config: MetadataConfiguration,
 		format?: MetadataEncoding,
 	): Promise<IdentifyThreadResponse> {
 		const idFinder = new RegExp(`${service} thread ([\\w\\d-+\\/=\\_]+)`);
@@ -57,7 +64,7 @@ export abstract class TranslatorScaffold implements Translator {
 			messages,
 			(message) => {
 				if (format) {
-					const metadata = TranslatorScaffold.extractMetadata(message, format);
+					const metadata = TranslatorScaffold.extractMetadata(message, format, config);
 					if ((metadata.genesis === service) && metadata.thread) {
 						return metadata.thread;
 					}
@@ -81,18 +88,19 @@ export abstract class TranslatorScaffold implements Translator {
 	 * Encode the metadata of an event into a string to embed in the message.
 	 * @param data    Event to gather details from.
 	 * @param format  Optional, markdown or plaintext, defaults to markdown.
+	 * @param config  Configuration that should be used to encode the metadata.
 	 * @returns       Text with data embedded.
 	 */
-	public static stringifyMetadata(data: BasicMessageInformation, format: MetadataEncoding): string {
-		const indicators = data.details.hidden ?
-			TranslatorScaffold.getIndicatorArrays().hidden :
-			TranslatorScaffold.getIndicatorArrays().shown;
-		const queryString = `?hidden=${indicators.word}&source=${data.source.service}&thread=${data.source.thread}`;
+	public static stringifyMetadata(
+		data: BasicMessageInformation, format: MetadataEncoding, config: MetadataConfiguration,
+	): string {
+		const indicatorChoice = data.details.hidden ? config.publicity.hidden : config.publicity.shown;
+		const queryString = `?hidden=${indicatorChoice.word}&source=${data.source.service}&thread=${data.source.thread}`;
 		switch (format) {
 			case MetadataEncoding.HiddenHTML:
-				return `<a href="${process.env.MESSAGE_TRANSLATOR_ANCHOR_BASE_URL}${queryString}"></a>`;
+				return `<a href="${config.baseUrl}${queryString}"></a>`;
 			case MetadataEncoding.HiddenMD:
-				return `[](${process.env.MESSAGE_TRANSLATOR_ANCHOR_BASE_URL}${queryString})`;
+				return `[](${config.baseUrl}${queryString})`;
 			default:
 				throw new Error(`${format} format not recognised`);
 		}
@@ -102,24 +110,27 @@ export abstract class TranslatorScaffold implements Translator {
 	 * Given a basic string this will extract a more rich context for the event, if embedded.
 	 * @param message  Basic string that may contain metadata.
 	 * @param format   Format of the metadata encoding.
+	 * @param config   Configuration that may have used to encode metadata.
 	 * @returns        Object of content, genesis and hidden.
 	 */
-	public static extractMetadata(message: string, format: MetadataEncoding): TranslatorMetadata {
-		const indicators = TranslatorScaffold.getIndicatorArrays();
-		const wordCapture = `(${indicators.hidden.word}|${indicators.shown.word})`;
-		const querystring = `\\?hidden=${wordCapture}&source=(\\w*)&thread=([^"]*)`;
-		const baseUrl = _.escapeRegExp(process.env.MESSAGE_TRANSLATOR_ANCHOR_BASE_URL);
+	public static extractMetadata(
+		message: string, format: MetadataEncoding, config: MetadataConfiguration,
+	): TranslatorMetadata {
+		const wordCapture = `(${config.publicity.hidden.word}|${config.publicity.shown.word})`;
+		const querystring = `\\?hidden=${wordCapture}&source=(\\w*)&thread=([^"\)]*)`;
+		const baseUrl = _.escapeRegExp(config.baseUrl);
+		const publicity = config.publicity;
 		switch (format) {
 			case MetadataEncoding.Character:
-				const charCapture = `^(${_.escapeRegExp(indicators.hidden.char)}|${_.escapeRegExp(indicators.shown.char)})`;
+				const charCapture = `^(${_.escapeRegExp(publicity.hidden.char)}|${_.escapeRegExp(publicity.shown.char)})`;
 				const charRegex = new RegExp(`^${charCapture}`, 'im');
-				return TranslatorScaffold.metadataByRegex(message, charRegex);
+				return TranslatorScaffold.metadataByRegex(message, charRegex, publicity);
 			case MetadataEncoding.HiddenHTML:
 				const hiddenHTMLRegex = new RegExp(`<a href="${baseUrl}${querystring}"[^>]*></a>$`, 'i');
-				return TranslatorScaffold.metadataByRegex(message, hiddenHTMLRegex);
+				return TranslatorScaffold.metadataByRegex(message, hiddenHTMLRegex, publicity);
 			case MetadataEncoding.HiddenMD:
 				const hiddenMDRegex = new RegExp(`\\[\\]\\(${baseUrl}${querystring}\\)$`, 'i');
-				return TranslatorScaffold.metadataByRegex(message, hiddenMDRegex);
+				return TranslatorScaffold.metadataByRegex(message, hiddenMDRegex, publicity);
 			default:
 				throw new Error(`${format} format not recognised`);
 		}
@@ -128,12 +139,12 @@ export abstract class TranslatorScaffold implements Translator {
 	/**
 	 * Generic handler for stock metadata regex, must match the syntax of:
 	 * first match is the indicator of visibility, second match is message source, remove the whole match for content.
-	 * @param message String to evaluate into metadata.
-	 * @param regex   Criteria for extraction.
-	 * @returns       Object of the metadata, decoded.
+	 * @param message     String to evaluate into metadata.
+	 * @param regex       Criteria for extraction.
+	 * @param indicators  Strings that may have been used to indicate privacy.
+	 * @returns           Object of the metadata, decoded.
 	 */
-	public static metadataByRegex(message: string, regex: RegExp): TranslatorMetadata {
-		const indicators = TranslatorScaffold.getIndicatorArrays();
+	public static metadataByRegex(message: string, regex: RegExp, indicators: PublicityIndicators): TranslatorMetadata {
 		const metadata = message.match(regex);
 		if (metadata) {
 			return {
@@ -149,27 +160,6 @@ export abstract class TranslatorScaffold implements Translator {
 			hidden: true,
 			thread: null,
 		};
-	}
-
-	/**
-	 * Retrieve from the environment array of strings to use as indicators of visibility.
-	 * @returns  Object of arrays of indicators, shown and hidden.
-	 */
-	private static getIndicatorArrays(): { 'shown': PublicityIndicator, 'hidden': PublicityIndicator } {
-		let indicators;
-		try {
-			// Retrieve publicity indicators from the environment
-			indicators = JSON.parse(process.env.MESSAGE_TRANSLATOR_PRIVACY_INDICATORS);
-		} catch (error) {
-			throw new Error('MESSAGE_TRANSLATOR_PRIVACY_INDICATORS not JSON.');
-		}
-		if (
-			indicators.shown.char && indicators.shown.word &&
-			indicators.hidden.char && indicators.hidden.word
-		) {
-			return indicators;
-		}
-		throw new Error('MESSAGE_TRANSLATOR_PRIVACY_INDICATORS not set correctly.');
 	}
 
 	/**
@@ -189,6 +179,12 @@ export abstract class TranslatorScaffold implements Translator {
 	 * between specific and generic formats.
 	 */
 	protected abstract responseConverters: ResponseConverters;
+
+	protected metadataConfig: MetadataConfiguration;
+
+	constructor(metadataConfig: MetadataConfiguration) {
+		this.metadataConfig = metadataConfig;
+	}
 
 	/**
 	 * Convert the provided message into details that may be passed to the emitter.

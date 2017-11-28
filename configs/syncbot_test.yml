@@ -1,0 +1,44 @@
+---
+SYNCBOT_ALIAS_USERS:
+  - "hubot"
+SYNCBOT_ERROR_SOLUTIONS:
+  discourse:
+    ^403:
+      description: "permissions error"
+      fixes:
+        - "You should check that your username and token are correct."
+SYNCBOT_ERROR_UNDOCUMENTED: 'No fixes currently documented. (at)sqweelygig'
+SYNCBOT_LISTENER_CONSTRUCTORS:
+  flowdock:
+    organization: "rulemotion"
+    token: "<<INJECT_SYNCBOT_FLOWDOCK_TOKEN>>"
+  front:
+    secret: "<<INJECT_SYNCBOT_FRONT_SECRET>>"
+    token: "<<INJECT_SYNCBOT_FRONT_TOKEN>>"
+    channelPerInbox:
+      inb_1yea: "cha_1vc0"
+      inb_3n6y: "cha_3gb6"
+  discourse:
+    protocol: "http"
+    instance: "localhost"
+    username: "testbot"
+    secret: "<<INJECT_SYNCBOT_DISCOURSE_SECRET>>"
+    token: "<<INJECT_SYNCBOT_DISCOURSE_TOKEN>>"
+SYNCBOT_MAPPINGS:
+  - - service: "discourse"
+      flow: "5"
+    - service: "flowdock"
+      flow: "testing"
+    - service: "front"
+      flow: "inb_1yea"
+SYNCBOT_METADATA_CONFIG:
+  baseUrl: "http://resin.io"
+  publicity:
+    hidden:
+      word: "whisper"
+      char: "~"
+    shown:
+      word: "comment"
+      char: "%"
+SYNCBOT_NAME: "<<INJECT_SYNCBOT_NAME>>"
+SYNCBOT_PORT: "<<INJECT_SYNCBOT_PORT>>"

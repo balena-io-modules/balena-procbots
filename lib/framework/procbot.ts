@@ -44,6 +44,45 @@ interface ServiceMap<T> {
  * * Retrieve configuration file from either the local FS or a ServiceEmitter
  */
 export class ProcBot {
+	/**
+	 * A method that recursively dives down a nested structure,
+	 * replacing values flagged <<INJECT_BLAH>> with values from process.env
+	 * @param value  Nested structure to deep dive
+	 * @returns      Identical structure with matching leaf elements replaced
+	 */
+	public static injectEnvironmentVariables(value: any): any {
+		if (_.isArray(value)) {
+			return _.map(value, ProcBot.injectEnvironmentVariables);
+		}
+		if (_.isObject(value)) {
+			return _.mapValues(value, ProcBot.injectEnvironmentVariables);
+		}
+		if (_.isString(value)) {
+			return ProcBot.stringInjector(value);
+		}
+		return value;
+	}
+
+	/**
+	 * A method to inject values from env vars if required
+	 * @param raw  String to translate, use <<INJECT_BLAH>> to retrieve BLAH
+	 * @returns      Environment variable or original string
+	 */
+	private static stringInjector(raw: string): string {
+		let cooked = raw;
+		let match = /<<INJECT_(.*?)>>/g.exec(cooked);
+		while (match) {
+			const key = match[1];
+			if (typeof process.env[key] === 'string') {
+				cooked = cooked.replace(match[0], process.env[key]);
+			} else {
+				throw new Error(`${key} expected in environment variables, but not found.`);
+			}
+			match = /<<INJECT_(.*?)>>/g.exec(cooked);
+		}
+		return cooked;
+	}
+
 	/** The Client Bot name. */
 	protected _botname: string;
 	/** A logging instance for logging internal messages. */

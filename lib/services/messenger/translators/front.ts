@@ -31,7 +31,12 @@ import {
 import { ServiceType } from '../../service-types';
 import { Translator, TranslatorError } from './translator';
 import { MetadataEncoding, TranslatorScaffold } from './translator-scaffold';
-import { EmitConverters, ResponseConverters, TranslatorErrorCode } from './translator-types';
+import {
+	EmitConverters,
+	MetadataConfiguration,
+	ResponseConverters,
+	TranslatorErrorCode,
+} from './translator-types';
 
 /**
  * Class to enable the translating between messenger standard forms and service
@@ -193,11 +198,12 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	/**
 	 * Converts a provided message object into instructions to create a thread.
 	 * @param connectionDetails  Details of the connection to find things like channels to use.
+	 * @param metadataConfig     Configuration to use to encode metadata
 	 * @param message            object to analyse.
 	 * @returns                  Promise that resolves to emit instructions.
 	 */
 	private static createThreadIntoEmit(
-		connectionDetails: FrontConstructor, message: TransmitInformation
+		connectionDetails: FrontConstructor, metadataConfig: MetadataConfiguration, message: TransmitInformation
 	): Promise<FrontEmitInstructions> {
 		// Check we have a title.
 		if (!message.details.title) {
@@ -218,9 +224,14 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 		return FrontTranslator.fetchUserId(connectionDetails.token, message.target.username)
 		.then((userId) => {
 			// Bundle for the session.
+			const metadataString = TranslatorScaffold.stringifyMetadata(
+				message,
+				MetadataEncoding.HiddenHTML,
+				metadataConfig,
+			);
 			const createThreadData: MessageRequest.Send = {
 				author_id: userId,
-				body: `${message.details.text}<br />${TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenHTML)}`,
+				body: `${message.details.text}<br />${metadataString}`,
 				channel_id: channelMap[message.target.flow],
 				options: {
 					archive: false,
@@ -236,11 +247,12 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	/**
 	 * Converts a provided message object into instructions to create a message.
 	 * @param connectionDetails  Details of the connection to find things user ID.
+	 * @param metadataConfig     Configuration to use to encode metadata
 	 * @param message            object to analyse.
 	 * @returns                  Promise that resolves to emit instructions.
 	 */
 	private static createMessageIntoEmit(
-		connectionDetails: FrontConstructor, message: TransmitInformation
+		connectionDetails: FrontConstructor, metadataConfig: MetadataConfiguration, message: TransmitInformation
 	): Promise<FrontEmitInstructions> {
 		// Check we have a thread.
 		const threadId = message.target.thread;
@@ -254,7 +266,11 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 		.then((userId: string) => {
 			// Bundle a 'comment', which is private, for the session.
 			if (message.details.hidden) {
-				const metadataInjection = TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenMD);
+				const metadataInjection = TranslatorScaffold.stringifyMetadata(
+					message,
+					MetadataEncoding.HiddenMD,
+					metadataConfig,
+				);
 				const createCommentData: CommentRequest.Create = {
 					author_id: userId,
 					body: `${message.details.text}${metadataInjection}`,
@@ -264,7 +280,11 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 				return {method: ['comment', 'create'], payload: createCommentData };
 			}
 			// Bundle a 'reply', which is public, for the session.
-			const metadataInjection = TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenHTML);
+			const metadataInjection = TranslatorScaffold.stringifyMetadata(
+				message,
+				MetadataEncoding.HiddenHTML,
+				metadataConfig,
+			);
 			const createMessageData: MessageRequest.Reply = {
 				author_id: userId,
 				body: `${message.details.text}${metadataInjection}`,
@@ -301,18 +321,20 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 
 	/**
 	 * Converts a response into the generic format.
-	 * @param message   The initial message that prompted this action.
-	 * @param response  The response from the SDK.
-	 * @returns         Promise that resolve to the thread details.
+	 * @param metadataConfig  Configuration that may have been used to encode metadata.
+	 * @param message       The initial message that prompted this action.
+	 * @param response      The response from the SDK.
+	 * @returns             Promise that resolve to the thread details.
 	 */
 	private static convertReadConnectionResponse(
-		message: TransmitInformation, response: FrontResponse
+		metadataConfig: MetadataConfiguration, message: TransmitInformation, response: FrontResponse
 	): Promise<IdentifyThreadResponse> {
 		return TranslatorScaffold.extractThreadId(
 			message.source.service,
 			_.map((response as ConversationComments)._results, (comment) => {
 				return comment.body;
 			}),
+			metadataConfig,
 			MetadataEncoding.HiddenMD,
 		);
 	}
@@ -361,22 +383,23 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	protected responseConverters: ResponseConverters = {
 		[MessengerAction.UpdateTags]: FrontTranslator.convertUpdateThreadResponse,
 		[MessengerAction.CreateMessage]: FrontTranslator.convertUpdateThreadResponse,
-		[MessengerAction.ReadConnection]: FrontTranslator.convertReadConnectionResponse,
 	};
 
 	private session: Front;
 	private connectionDetails: FrontConstructor;
 
-	constructor(data: FrontConstructor) {
-		super();
+	constructor(data: FrontConstructor, metadataConfig: MetadataConfiguration) {
+		super(metadataConfig);
 		this.connectionDetails = data;
 		this.session = new Front(data.token);
 		this.responseConverters[MessengerAction.CreateThread] =
 			_.partial(FrontTranslator.convertCreateThreadResponse, this.session);
+		this.responseConverters[MessengerAction.ReadConnection] =
+			_.partial(FrontTranslator.convertReadConnectionResponse, this.metadataConfig);
 		this.emitConverters[MessengerAction.CreateMessage] =
-			_.partial(FrontTranslator.createMessageIntoEmit, this.connectionDetails);
+			_.partial(FrontTranslator.createMessageIntoEmit, this.connectionDetails, metadataConfig);
 		this.emitConverters[MessengerAction.CreateThread] =
-			_.partial(FrontTranslator.createThreadIntoEmit, this.connectionDetails);
+			_.partial(FrontTranslator.createThreadIntoEmit, this.connectionDetails, metadataConfig);
 	}
 
 	/**
@@ -397,7 +420,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 			const message = details.event.target.data;
 			const hidden = _.includes(['comment', 'mention'], details.event.type);
 			const metadataFormat = hidden ? MetadataEncoding.HiddenMD : MetadataEncoding.HiddenHTML;
-			const metadata = TranslatorScaffold.extractMetadata(message.body, metadataFormat);
+			const metadata = TranslatorScaffold.extractMetadata(message.body, metadataFormat, this.metadataConfig);
 			const tags = _.map(details.event.conversation.tags, (tag: {name: string}) => {
 				return tag.name;
 			});
@@ -471,9 +494,10 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 
 /**
  * Builds a translator that will convert Front specific information to and from Messenger format.
- * @param data  Construction details for creating a Front session.
- * @returns     A translator, ready to interpret Front's babbling
+ * @param data            Construction details for creating a Front session.
+ * @param metadataConfig  Configuration of how the translator should encode metadata
+ * @returns               A translator, ready to interpret Front's babbling
  */
-export function createTranslator(data: FrontConstructor): Translator {
-	return new FrontTranslator(data);
+export function createTranslator(data: FrontConstructor, metadataConfig: MetadataConfiguration): Translator {
+	return new FrontTranslator(data, metadataConfig);
 }

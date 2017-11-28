@@ -17,11 +17,17 @@
 import TypedError = require('typed-error');
 import * as Promise from 'bluebird';
 import {
-	EmitInstructions, MessengerConstructor, MessengerEvent, MessengerResponse,
-	TransmitInformation
+	EmitInstructions,
+	MessengerConstructor,
+	MessengerEvent,
+	MessengerResponse,
+	TransmitInformation,
 } from '../../messenger-types';
 import { ServiceEvent } from '../../service-types';
-import { TranslatorErrorCode } from './translator-types';
+import {
+	MetadataConfiguration,
+	TranslatorErrorCode,
+} from './translator-types';
 
 /**
  * A TypedError that encapsulates some details specific to Translators.
@@ -107,10 +113,11 @@ export interface Translator {
 
 /**
  * Retrieves and loads a Translator by name.
- * @param name  The name of the Utils to load.
- * @param data  The constructor object for the createTranslator method.
- * @return      The newly instantiated Utils.
+ * @param name            The name of the Utils to load.
+ * @param data            The constructor object for the createTranslator method.
+ * @param metadataConfig  Configuration of how the translator should encode metadata.
+ * @return                The newly instantiated Utils.
  */
-export function createTranslator(name: string, data: any): Translator {
-	return require(`./${name}`).createTranslator(data);
+export function createTranslator(name: string, data: any, metadataConfig: MetadataConfiguration): Translator {
+	return require(`./${name}`).createTranslator(data, metadataConfig);
 }

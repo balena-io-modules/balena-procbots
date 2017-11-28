@@ -19,30 +19,88 @@ import * as _ from 'lodash';
 import { ProcBot } from '../framework/procbot';
 import { MessengerService } from '../services/messenger';
 import {
-	BasicMessageInformation, CreateThreadResponse, FlowDefinition,
-	MessageListener, MessengerAction, MessengerEmitResponse,
-	MessengerEvent, SolutionIdea, SolutionIdeas,
-	ThreadDefinition, TransmitInformation,
+	BasicMessageInformation,
+	CreateThreadResponse,
+	FlowDefinition,
+	MessageListener,
+	MessengerAction,
+	MessengerConnectionDetails,
+	MessengerEmitResponse,
+	MessengerEvent,
+	SolutionIdea,
+	SolutionIdeas,
+	SolutionMatrix,
+	ThreadDefinition,
+	TransmitInformation,
 } from '../services/messenger-types';
+import { MetadataConfiguration } from '../services/messenger/translators/translator-types';
 import { ServiceType } from '../services/service-types';
 import { Logger, LogLevel } from '../utils/logger';
+
+interface SyncBotConstructor {
+	SYNCBOT_ALIAS_USERS: string[];
+	SYNCBOT_ERROR_SOLUTIONS: SolutionMatrix;
+	SYNCBOT_ERROR_UNDOCUMENTED: string;
+	SYNCBOT_MAPPINGS: FlowDefinition[][];
+	SYNCBOT_METADATA_CONFIG: MetadataConfiguration;
+	SYNCBOT_PORT: string;
+	SYNCBOT_NAME: string;
+	SYNCBOT_LISTENER_CONSTRUCTORS: MessengerConnectionDetails;
+}
 
 /**
  * A bot that mirrors threads across services.
  */
 export class SyncBot extends ProcBot {
 	/**
+	 * Find, from the environment, a possible solution to the provided error message.
+	 * @param service         Name of the service reporting the error.
+	 * @param message         Message that the service reported.
+	 * @param solutionMatrix  Possible solutions
+	 * @returns               A suggested fix to the error.
+	 */
+	public static getErrorSolution(service: string, message: string, solutionMatrix: SolutionMatrix): SolutionIdea {
+		try {
+			const solutionIdeas: SolutionIdeas = _.get(solutionMatrix, service, {});
+			const filteredSolutions = _.filter(solutionIdeas, (_value: any, pattern: string) => {
+				return new RegExp(pattern).test(message);
+			});
+			if (filteredSolutions.length > 0) {
+				return filteredSolutions[0];
+			} else {
+				return {
+					description: message,
+					fixes: [],
+				};
+			}
+		} catch (error) {
+			throw new Error('SYNCBOT_ERROR_SOLUTIONS not a valid JSON object of service => { message => resolution }.');
+		}
+	}
+
+	/**
 	 * Provide a method that:
 	 *  * Encloses details available in advance.
 	 *  * Reacts to details provided by each event.
-	 * @param from       Definition, {service, flow}, of the flow being listened to.
-	 * @param to         Definition {service, flow} of the flow being emitted to.
-	 * @param messenger  Service to use to interact with the cloud.
-	 * @param logger     Logger to use to interact with the maintainers.
-	 * @returns          Function that processes events from the messenger.
+	 * @param from                 Definition, {service, flow}, of the flow being listened to.
+	 * @param to                   Definition {service, flow} of the flow being emitted to.
+	 * @param messenger            Service to use to interact with the cloud.
+	 * @param logger               Logger to use to interact with the maintainers.
+	 * @param name                 Username that the router should use.
+	 * @param aliases              List of usernames that the router should alias.
+	 * @param solutionMatrix       A matrix of possible solutions to common routing errors.
+	 * @param genericErrorMessage  An error message that should be used by default.
+	 * @returns                    Function that processes events from the messenger.
 	 */
 	private static makeRouter(
-		from: FlowDefinition, to: FlowDefinition, messenger: MessengerService, logger: Logger
+		from: FlowDefinition,
+		to: FlowDefinition,
+		messenger: MessengerService,
+		logger: Logger,
+		name: string,
+		aliases: string[] = [],
+		solutionMatrix?: SolutionMatrix,
+		genericErrorMessage?: string,
 	): MessageListener {
 		// This method returns a method that in turn processes events.
 		return (_registration, event: MessengerEvent) => {
@@ -68,17 +126,15 @@ export class SyncBot extends ProcBot {
 				logger.log(LogLevel.INFO, `---> Actioning '${firstLine}' to ${toText}.`);
 				try {
 					// This allows syncbot to represent specific other accounts.
-					const aliasString = process.env.SYNCBOT_ALIAS_USERS;
-					const aliases = aliasString ? _.map(JSON.parse(aliasString), _.toLower) : [];
-					if (_.includes(aliases, data.details.handle.toLowerCase())) {
-						data.details.handle = process.env.SYNCBOT_NAME;
-						data.source.username = process.env.SYNCBOT_NAME;
+					if (_.includes(_.map(aliases, _.toLower), data.details.handle.toLowerCase())) {
+						data.details.handle = name;
+						data.source.username = name;
 					}
 				} catch (error) {
 					logger.log(LogLevel.WARN, 'Misconfiguration in SyncBot aliases.');
 				}
 				// Find details of any connections stored in the originating thread.
-				return SyncBot.readConnectedThread(to, messenger, data)
+				return SyncBot.readConnectedThread(to, messenger, data, name)
 				// Then comment on or create a thread
 				.then((threadDetails: MessengerEmitResponse) => {
 					// If the search resolved with a response.
@@ -104,13 +160,15 @@ export class SyncBot extends ProcBot {
 					}
 					logger.log(LogLevel.DEBUG, `---> Creating thread '${firstLine}' on ${toText}.`);
 					// Create a thread if the quest for connections didn't find any
-					return SyncBot.createThreadAndConnect(to, messenger, data);
+					return SyncBot.createThreadAndConnect(to, messenger, data, name);
 				})
 				// Then report that we have passed the message on
 				.then((response: MessengerEmitResponse) => {
 					if (response.err) {
 						logger.log(LogLevel.WARN, JSON.stringify({message: response.err.message, data}));
-						return SyncBot.createErrorComment(to, messenger, data, response.err)
+						return SyncBot.createErrorComment(
+							to, messenger, data, response.err, name, solutionMatrix, genericErrorMessage
+						)
 						// Ignore the response from the messenger, SyncBot only cares that it's happened.
 						.return();
 					} else {
@@ -129,19 +187,28 @@ export class SyncBot extends ProcBot {
 	 * @param messenger  Service to use to communicate this message.
 	 * @param data       The payload we attempted to synchronise.
 	 * @param error      The error from the service.
+	 * @param name       Handle to use for error reporting.
+	 * @param matrix     A matrix of possible solutions
+	 * @param generic    Optional, a generic error message.
 	 * @returns          Promise that resolves to the response from creating the message.
 	 */
 	private static createErrorComment(
-		to: FlowDefinition, messenger: MessengerService, data: BasicMessageInformation, error: Error
+		to: FlowDefinition,
+		messenger: MessengerService,
+		data: BasicMessageInformation,
+		error: Error,
+		name: string,
+		matrix: SolutionMatrix = {},
+		generic?: string,
 	): Promise<MessengerEmitResponse> {
-		const solution = SyncBot.getErrorSolution(to.service, error.message);
+		const solution = SyncBot.getErrorSolution(to.service, error.message, matrix);
 		const fixes = solution.fixes.length > 0 ?
 			` * ${solution.fixes.join('\r\n * ')}` :
-			process.env.SYNCBOT_ERROR_UNDOCUMENTED;
+			generic || 'No fixes documented.';
 		const echoData: BasicMessageInformation = {
 			details: {
 				genesis: to.service,
-				handle: process.env.SYNCBOT_NAME,
+				handle: name,
 				hidden: true,
 				tags: data.details.tags,
 				text: `${to.service} reports \`${solution.description}\`.\r\n${fixes}\r\n`,
@@ -151,37 +218,11 @@ export class SyncBot extends ProcBot {
 				message: 'duff',
 				thread: 'duff',
 				service: to.service,
-				username: process.env.SYNCBOT_NAME,
+				username: name,
 				flow: to.flow,
 			},
 		};
 		return SyncBot.createComment(data.source, messenger, echoData);
-	}
-
-	/**
-	 * Find, from the environment, a possible solution to the provided error message.
-	 * @param service  Name of the service reporting the error.
-	 * @param message  Message that the service reported.
-	 * @returns        A suggested fix to the error.
-	 */
-	private static getErrorSolution(service: string, message: string): SolutionIdea {
-		try {
-			const solutionMatrix = JSON.parse(process.env.SYNCBOT_ERROR_SOLUTIONS);
-			const solutionIdeas: SolutionIdeas = _.get(solutionMatrix, service, {});
-			const filteredSolutions = _.filter(solutionIdeas, (_value: any, pattern: string) => {
-				return new RegExp(pattern).test(message);
-			});
-			if (filteredSolutions.length > 0) {
-				return filteredSolutions[0];
-			} else {
-				return {
-					description: message,
-					fixes: [],
-				};
-			}
-		} catch (error) {
-			throw new Error('SYNCBOT_ERROR_SOLUTIONS not a valid JSON object of service => { message => resolution }.');
-		}
 	}
 
 	/**
@@ -216,14 +257,15 @@ export class SyncBot extends ProcBot {
 	}
 
 	/**
-	 * Pass to the messenger a request to create a comment.
+	 * Pass to the messenger a request to find a connected thread.
 	 * @param  to         Definition {service, flow, thread} of the thread being emitted to.
 	 * @param  messenger  Service to use to interact with the cloud.
 	 * @param  data       Event that is being processed.
+	 * @param username    Username under which to request the data.
 	 * @returns           Promise to create the comment and respond with the threadId updated.
 	 */
 	private static readConnectedThread(
-		to: FlowDefinition, messenger: MessengerService, data: BasicMessageInformation
+		to: FlowDefinition, messenger: MessengerService, data: BasicMessageInformation, username: string,
 	): Promise<MessengerEmitResponse> {
 		// Bundle a read connection request, it's a bit weird compared to others in this file.
 		// I've typed this here to split the union type earlier, and make error reports more useful.
@@ -238,7 +280,7 @@ export class SyncBot extends ProcBot {
 				// The service you wish to find a connection for.
 				service: to.service,
 				thread: 'duff',
-				username: process.env.SYNCBOT_NAME,
+				username,
 			},
 			// This feels paradoxical because the target of the read request ...
 			// is the place the event came from.
@@ -246,7 +288,7 @@ export class SyncBot extends ProcBot {
 				flow: data.source.flow,
 				service: data.source.service,
 				thread: data.source.thread,
-				username: process.env.SYNCBOT_NAME,
+				username,
 			},
 		};
 		// Request that the payload created above be sent, which will resolve to the threadId connected.
@@ -263,10 +305,11 @@ export class SyncBot extends ProcBot {
 	 * @param  to         Definition {service, flow} of the flow being emitted to.
 	 * @param  messenger  Service to use to interact with the cloud.
 	 * @param  data       Event that is being processed.
+	 * @param name        Username under which to create the connection message.
 	 * @returns           Promise to create the thread and respond with the threadId.
 	 */
 	private static createThreadAndConnect(
-		to: FlowDefinition, messenger: MessengerService, data: BasicMessageInformation
+		to: FlowDefinition, messenger: MessengerService, data: BasicMessageInformation, name: string,
 	): Promise<MessengerEmitResponse> {
 		// Bundle a thread creation request.
 		// I've typed this here to split the union type earlier, and make error reports more useful.
@@ -299,7 +342,7 @@ export class SyncBot extends ProcBot {
 					// A message that advertises the connected thread.
 					details: {
 						genesis: 'duff', // will be replaced
-						handle: process.env.SYNCBOT_NAME,
+						handle: name,
 						hidden: true,
 						tags: data.details.tags,
 						text: 'This is mirrored in ', // will be appended
@@ -317,7 +360,7 @@ export class SyncBot extends ProcBot {
 						flow: 'duff', // will be replaced
 						service: 'duff', // will be replaced
 						// This is happening using SyncBot's credentials.
-						username: process.env.SYNCBOT_NAME,
+						username: name,
 						thread: 'duff' // will be replaced
 					}
 				};
@@ -328,7 +371,7 @@ export class SyncBot extends ProcBot {
 				updateOriginating.target = {
 					flow: data.source.flow,
 					service: data.source.service,
-					username: process.env.SYNCBOT_NAME,
+					username: name,
 					thread: data.source.thread,
 				};
 				// This comments on the original thread about the new thread.
@@ -343,7 +386,7 @@ export class SyncBot extends ProcBot {
 				updateCreated.target = {
 					flow: createThread.target.flow,
 					service: createThread.target.service,
-					username: process.env.SYNCBOT_NAME,
+					username: name,
 					thread: response.thread,
 				};
 				// This comments on the new thread about the original thread..
@@ -367,17 +410,13 @@ export class SyncBot extends ProcBot {
 	 * Consults the environment for configuration to create a service that aggregates many other services.
 	 * @returns  Service that wraps and translates specified sub services.
 	 */
-	private static makeMessenger(): MessengerService {
+	private static makeMessenger(
+		listenerConstructors: MessengerConnectionDetails, port: number, metadataConfig: MetadataConfiguration
+	): MessengerService {
 		// Created this as its own function to scope the `let` a little
-		let listenerConstructors = [];
-		try {
-			listenerConstructors = JSON.parse(process.env.SYNCBOT_LISTENER_CONSTRUCTORS);
-		} catch (error) {
-			throw new Error('SYNCBOT_LISTENER_CONSTRUCTORS not a valid JSON array.');
-		}
-
 		const messenger = new MessengerService({
-			server: parseInt(process.env.SYNCBOT_PORT, 10),
+			metadataConfig,
+			server: port,
 			subServices: listenerConstructors,
 			type: ServiceType.Listener,
 		});
@@ -388,51 +427,69 @@ export class SyncBot extends ProcBot {
 		throw new Error('Could not create Messenger.');
 	}
 
-	/**
-	 * Consults the environment to find the equivalencies between flows.
-	 * @returns  Nested array, each top level array is an array of mirrored flows.
-	 */
-	private static makeMappings(): FlowDefinition[][] {
-		// Created this as its own function so the try/catch stay close together
-		// The alternative would be a let in the super scope.
-		try {
-			return JSON.parse(process.env.SYNCBOT_MAPPINGS);
-		} catch (error) {
-			throw new Error('SYNCBOT_MAPPINGS not a valid JSON array.');
-		}
-	}
-
 	constructor(name = 'SyncBot') {
 		super(name);
 		const logger = new Logger();
-		const messenger = SyncBot.makeMessenger();
 
-		// Go around all the mappings defined by the configuration.
-		const mappings = SyncBot.makeMappings();
-		for (const mapping of mappings) {
-			// Keeping track of prior, so we can find each adjacent pair.
-			let priorFlow = null;
-			for (const focusFlow of mapping) {
-				if (priorFlow) {
-					// Register a mirroring from the first of the pair, to the second.
-					messenger.registerEvent({
-						events: ['message'],
-						listenerMethod: SyncBot.makeRouter(priorFlow, focusFlow, messenger, logger),
-						name: `${priorFlow.service}.${priorFlow.flow}=>${focusFlow.service}.${focusFlow.flow}`,
-					});
-					// Register a mirroring from the second of the pair, to the first.
-					messenger.registerEvent({
-						events: ['message'],
-						listenerMethod: SyncBot.makeRouter(focusFlow, priorFlow, messenger, logger),
-						name: `${focusFlow.service}.${focusFlow.flow}=>${priorFlow.service}.${priorFlow.flow}`,
-					});
-				}
-				priorFlow = focusFlow;
+		super.retrieveConfiguration({
+			emitter: 'string',
+			location: process.env.SYNCBOT_CONFIG_TO_LOAD,
+		}).then((rawConfig) => {
+			if (rawConfig) {
+				const config = ProcBot.injectEnvironmentVariables(rawConfig) as SyncBotConstructor;
+				const port = parseInt(config.SYNCBOT_PORT, 10);
+				const messenger = SyncBot.makeMessenger(
+					config.SYNCBOT_LISTENER_CONSTRUCTORS, port, config.SYNCBOT_METADATA_CONFIG
+				);
+				const mappings = config.SYNCBOT_MAPPINGS;
+				// Go around all the mappings defined by the configuration.
+				_.forEach(mappings, (mapping) => {
+					// Keeping track of prior, so we can find each adjacent pair.
+					let priorFlow = null;
+					for (const focusFlow of mapping) {
+						if (priorFlow) {
+							// Register a mirroring from the first of the pair, to the second.
+							messenger.registerEvent({
+								events: ['message'],
+								listenerMethod: SyncBot.makeRouter(
+									priorFlow,
+									focusFlow,
+									messenger,
+									logger,
+									config.SYNCBOT_NAME,
+									config.SYNCBOT_ALIAS_USERS,
+									config.SYNCBOT_ERROR_SOLUTIONS,
+									config.SYNCBOT_ERROR_UNDOCUMENTED,
+								),
+								name: `${priorFlow.service}.${priorFlow.flow}=>${focusFlow.service}.${focusFlow.flow}`,
+							});
+							// Register a mirroring from the second of the pair, to the first.
+							messenger.registerEvent({
+								events: ['message'],
+								listenerMethod: SyncBot.makeRouter(
+									focusFlow,
+									priorFlow,
+									messenger,
+									logger,
+									config.SYNCBOT_NAME,
+									config.SYNCBOT_ALIAS_USERS,
+									config.SYNCBOT_ERROR_SOLUTIONS,
+									config.SYNCBOT_ERROR_UNDOCUMENTED,
+								),
+								name: `${focusFlow.service}.${focusFlow.flow}=>${priorFlow.service}.${priorFlow.flow}`,
+							});
+						}
+						priorFlow = focusFlow;
+					}
+				});
+			} else {
+				logger.log(LogLevel.WARN, "Couldn't load configuration.");
 			}
-		}
+		});
+
 	}
 }
 
 export function createBot(): SyncBot {
-	return new SyncBot(process.env.SYNCBOT_NAME);
+	return new SyncBot();
 }
