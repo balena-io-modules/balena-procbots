@@ -127,13 +127,17 @@ export interface CreateThreadResponse {
 }
 
 /** Defines that when we ask about connected threads we expect a threadId back. */
-export interface IdentifyThreadResponse {
+export interface SourceDescription {
+	/** The flow ID of the thread found. */
+	flow?: string;
 	/** The ID of the thread found. */
 	thread: string;
+	/** The service of the thread found. */
+	service?: string;
 }
 
 /** The possible response objects from a messenger emit request. */
-export type MessengerResponse = UpdateThreadResponse | IdentifyThreadResponse | CreateThreadResponse;
+export type MessengerResponse = UpdateThreadResponse | SourceDescription | CreateThreadResponse;
 
 /** Defines that when a Message event resolves it does so using the more specific types. */
 export interface MessengerEmitResponse extends ServiceEmitResponse {
@@ -186,4 +190,9 @@ export interface SolutionIdeas {
 
 export interface SolutionMatrix {
 	[service: string]: SolutionIdeas;
+}
+
+export interface FlowMapping {
+	source: FlowDefinition;
+	destination: FlowDefinition;
 }

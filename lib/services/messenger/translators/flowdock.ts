@@ -25,8 +25,13 @@ import {
 	FlowdockResponse,
 } from '../../flowdock-types';
 import {
-	BasicMessageInformation, CreateThreadResponse, IdentifyThreadResponse,
-	MessengerAction, MessengerConstructor, MessengerEvent, TransmitInformation,
+	BasicMessageInformation,
+	CreateThreadResponse,
+	MessengerAction,
+	MessengerConstructor,
+	MessengerEvent,
+	SourceDescription,
+	TransmitInformation,
 	UpdateThreadResponse,
 } from '../../messenger-types';
 import { ServiceType } from '../../service-types';
@@ -113,15 +118,13 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 	 */
 	private static convertReadConnectionResponse(
 		metadataConfig: MetadataConfiguration, message: TransmitInformation, response: FlowdockMessage[]
-	): Promise<IdentifyThreadResponse> {
-		return TranslatorScaffold.extractThreadId(
+	): Promise<SourceDescription> {
+		return Promise.resolve(TranslatorScaffold.extractSource(
 			message.source.service,
-			_.map(response, (comment) => {
-				return comment.content;
-			}),
+			_.map(response, (comment) => { return comment.content; }),
 			metadataConfig,
 			MetadataEncoding.HiddenMD,
-		);
+		));
 	}
 
 	/**

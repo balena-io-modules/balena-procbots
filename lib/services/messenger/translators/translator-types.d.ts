@@ -19,12 +19,14 @@ import { EmitInstructions, MessengerResponse, TransmitInformation } from '../../
 
 /** The metadata associated with a message that may be embedded in to the payload. */
 export interface TranslatorMetadata {
+	/** Message content, without any metadata. */
+	content: string;
+	/** Flow ID this this message was created on. */
+	flow: string | null;
 	/** The source for this message, to prevent infinite loops. */
 	genesis: string | null;
 	/** Whether this message should be hidden, because some services do not support such natively. */
 	hidden: boolean;
-	/** Message content, without any metadata. */
-	content: string;
 	/** Thread ID that this message was created on. */
 	thread: string | null;
 }

@@ -25,12 +25,30 @@ SYNCBOT_LISTENER_CONSTRUCTORS:
     secret: "<<INJECT_SYNCBOT_DISCOURSE_SECRET>>"
     token: "<<INJECT_SYNCBOT_DISCOURSE_TOKEN>>"
 SYNCBOT_MAPPINGS:
-  - - service: "discourse"
+  - source:
+      service: "discourse"
       flow: "5"
-    - service: "flowdock"
+    destination:
+      service: "flowdock"
       flow: "testing"
-    - service: "front"
+  - source:
+      service: "discourse"
+      flow: "6"
+    destination:
+      service: "flowdock"
+      flow: "testing"
+  - source:
+      service: "flowdock"
+      flow: "testing"
+    destination:
+      service: "front"
       flow: "inb_1yea"
+  - source:
+      service: "front"
+      flow: "inb_1yea"
+    destination:
+      service: "flowdock"
+      flow: "testing"
 SYNCBOT_METADATA_CONFIG:
   baseUrl: "http://resin.io"
   publicity:

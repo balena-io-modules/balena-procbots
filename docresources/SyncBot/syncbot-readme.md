@@ -351,15 +351,29 @@ e.g.
 
 #### SYNCBOT_MAPPINGS
 
-This is a nested array of flow definitions that should be kept mirrored.
+This is a list of the edges that define a directed graph of flows, along which threads should be synchronised.
+Messages within each thread are synchronised bidirectionally.
+Creation of a thread is synchronised directionally.
 
 e.g.
 ```json
 [
-  [
-    { "service": "blah", "flow": "blah" },
-    { "service": "blah", "flow": "blah" }
-  ]
+  {
+    "source": { "service": "discourse", "flow": "blah" },
+    "destination": { "service": "flowdock", "flow": "blah" }
+  },
+  {
+    "source": { "service": "flowdock", "flow": "blah" },
+    "destination": { "service": "discourse", "flow": "blah" }
+  },
+  {
+    "source": { "service": "front", "flow": "blah" },
+    "destination": { "service": "flowdock", "flow": "blah" }
+  },
+  {
+    "source": { "service": "flowdock", "flow": "blah" },
+    "destination": { "service": "front", "flow": "blah" }
+  }
 ]
 ```
 

@@ -27,11 +27,23 @@ describe('lib/services/messenger/translators/discourse.ts', () => {
 
 	describe('DiscourseTranslator.reverseEngineerComment', () => {
 		it('should expand em and en dashes', () => {
-			expect(DiscourseTranslator.reverseEngineerComment('h:- n:– m:—')).to.equal('h:- n:-- m:---');
+			const messageWithDashes = {
+				id: 'duff',
+				topic_id: 'duff',
+				blurb: 'duff',
+				cooked: 'h:- n:– m:—',
+			};
+			expect(DiscourseTranslator.reverseEngineerComment(messageWithDashes)).to.equal('h:- n:-- m:---');
 		});
 
 		it('should squash ampersands back down', () => {
-			expect(DiscourseTranslator.reverseEngineerComment('bits &amp; bobs')).to.equal('bits & bobs');
+			const messageWithAmp = {
+				id: 'duff',
+				topic_id: 'duff',
+				blurb: 'duff',
+				cooked: 'bits &amp; bobs',
+			};
+			expect(DiscourseTranslator.reverseEngineerComment(messageWithAmp)).to.equal('bits & bobs');
 		});
 	});
 });
