@@ -49,6 +49,24 @@ import {
  */
 export class FrontTranslator extends TranslatorScaffold implements Translator {
 	/**
+	 * Converts a provided username, in service specific format, into a generic username
+	 * @param username  Username to convert
+	 * @returns         Generic equivalent of that username
+	 */
+	public static convertUsernameToGeneric(username: string): string {
+		return username.replace(/_/g, '-');
+	}
+
+	/**
+	 * Converts a provided username, in generic format, into a service specific username
+	 * @param username  Username to convert
+	 * @returns         Discourse equivalent of that username
+	 */
+	public static convertUsernameToFront(username: string): string {
+		return username.replace(/-/g, '_');
+	}
+
+	/**
 	 * Promises to find the name of the person who authored a comment.
 	 * @param connectionDetails  Details required to connect to the Front instance.
 	 * @param message            Details of the message we care about.
@@ -56,7 +74,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	 */
 	private static fetchAuthorName(connectionDetails: FrontConstructor, message: Message): Promise<string> {
 		if (message.author) {
-			return Promise.resolve(message.author.username.replace(/_/g, '-'));
+			return Promise.resolve(FrontTranslator.convertUsernameToGeneric(message.author.username));
 		}
 		for (const recipient of message.recipients) {
 			if (recipient.role === 'from') {
@@ -64,7 +82,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 				if (contactUrl) {
 					return FrontTranslator.fetchContactName(connectionDetails, contactUrl);
 				}
-				return Promise.resolve(recipient.handle.replace(/_/g, '-'));
+				return Promise.resolve(FrontTranslator.convertUsernameToGeneric(recipient.handle));
 			}
 		}
 		return Promise.resolve('Unknown Author');
@@ -131,7 +149,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 		})
 		.then((teammates) => {
 			const loweredUsername = username.toLowerCase();
-			const substitutedUsername = loweredUsername.replace(/-/g, '_');
+			const substitutedUsername = FrontTranslator.convertUsernameToFront(loweredUsername);
 			const teammate = _.find(teammates._results, (eachTeammate: { username: string, id: string }) => {
 				return eachTeammate.username.toLowerCase() === substitutedUsername;
 			});
@@ -234,9 +252,11 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 				MetadataEncoding.HiddenHTML,
 				metadataConfig,
 			);
+			const converter = FrontTranslator.convertUsernameToFront;
+			const messageString = TranslatorScaffold.convertPings(message.details.text, converter);
 			const createThreadData: MessageRequest.Send = {
 				author_id: userId,
-				body: `${message.details.text}<br />${metadataString}`,
+				body: `${messageString}<br />${metadataString}`,
 				channel_id: channelMap[message.target.flow],
 				options: {
 					archive: false,
@@ -276,9 +296,11 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 					MetadataEncoding.HiddenMD,
 					metadataConfig,
 				);
+				const converter = FrontTranslator.convertUsernameToFront;
+				const messageString = TranslatorScaffold.convertPings(message.details.text, converter);
 				const createCommentData: CommentRequest.Create = {
 					author_id: userId,
-					body: `${message.details.text}${metadataInjection}`,
+					body: `${messageString}${metadataInjection}`,
 					conversation_id: threadId,
 					subject: message.details.title,
 				};
@@ -290,9 +312,11 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 				MetadataEncoding.HiddenHTML,
 				metadataConfig,
 			);
+			const converter = FrontTranslator.convertUsernameToFront;
+			const messageString = TranslatorScaffold.convertPings(message.details.text, converter);
 			const createMessageData: MessageRequest.Reply = {
 				author_id: userId,
-				body: `${message.details.text}${metadataInjection}`,
+				body: `${messageString}${metadataInjection}`,
 				conversation_id: threadId,
 				options: {
 					archive: false,
@@ -437,7 +461,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 					// https://github.com/resin-io-modules/resin-procbots/issues/301
 					intercomHack: message.type === 'intercom' ? details.event.conversation.subject !== '' : undefined,
 					tags,
-					text: message.text || metadata.content,
+					text: TranslatorScaffold.convertPings(message.text || metadata.content, FrontTranslator.convertUsernameToGeneric),
 					title: details.subject,
 				},
 				source: {

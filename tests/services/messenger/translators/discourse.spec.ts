@@ -1,9 +1,78 @@
 /// <reference types="mocha" />
 import { expect } from 'chai';
+import * as _ from 'lodash';
 
 import { DiscourseTranslator } from '../../../../lib/services/messenger/translators/discourse';
 
 describe('lib/services/messenger/translators/discourse.ts', () => {
+
+	describe('DiscourseTranslator.bundleMessage', () => {
+		const simpleMessage = {
+			details: {
+				genesis: 'a',
+				handle: 'b',
+				hidden: false,
+				tags: [],
+				text: 'cde @test',
+				title: 'f',
+			},
+			source: {
+				message: 'g',
+				thread: 'h',
+				service: 'i',
+				username: 'j',
+				flow: 'k',
+			},
+		};
+		const metadataConfig = {
+			baseUrl: 'http://e.com',
+			publicity: {
+				hidden: {
+					word: 'whisper',
+					char: '~',
+				},
+				shown: {
+					word: 'comment',
+					char: '%',
+				},
+			},
+		};
+		const thread = 'l';
+
+		it('should convert a simple message object into emit instructions', async () => {
+			const emit = await DiscourseTranslator.bundleMessage(simpleMessage, thread, metadataConfig);
+			expect(emit).to.deep.equal({
+				method: ['request'],
+				payload: {
+					htmlVerb: 'POST',
+					path: '/posts',
+					body: {
+						raw: 'cde @test[](http://e.com?hidden=comment&source=i&flow=k&thread=h)',
+						topic_id: 'l',
+						whisper: 'false',
+					},
+				},
+			});
+		});
+
+		it('should convert a message with a funny username into emit instructions', async () => {
+			const complexMessage = _.cloneDeep(simpleMessage);
+			complexMessage.details.text = 'cde @test-';
+			const emit = await DiscourseTranslator.bundleMessage(complexMessage, thread, metadataConfig);
+			expect(emit).to.deep.equal({
+				method: ['request'],
+				payload: {
+					htmlVerb: 'POST',
+					path: '/posts',
+					body: {
+						raw: 'cde @_test[](http://e.com?hidden=comment&source=i&flow=k&thread=h)',
+						topic_id: 'l',
+						whisper: 'false',
+					},
+				},
+			});
+		});
+	});
 
 	describe('DiscourseTranslator.convertUsernameToGeneric', () => {
 		it('should remove a leading underscore from a string and add a hyphen to the end', () => {

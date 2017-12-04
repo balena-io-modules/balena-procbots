@@ -349,7 +349,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 				hidden: metadata.hidden,
 				tags: [], // gets replaced
 				text,
-				title: 'duff', // gets replaces
+				title: 'duff', // gets replaced
 			},
 			source: {
 				service: event.source,
