@@ -385,7 +385,6 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	 * @param _response  The response from the SDK.
 	 * @returns          Promise that resolve to the thread details.
 	 */
-	// https://github.com/resin-io-modules/resin-procbots/issues/347
 	private static convertCreateThreadResponse(
 		session: Front, message: TransmitInformation, _response: FrontResponse
 	): Promise<CreateThreadResponse> {
