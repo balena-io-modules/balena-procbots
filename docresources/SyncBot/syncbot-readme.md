@@ -11,22 +11,7 @@ A little Bot, using the ProcBot framework, that links communication services
     * Your Github username, with underscores instead of hyphens, should work fine in Discourse.
     * Your Github username, with a trailing hyphen becoming a leading underscore, should work fine in Front.
     * `Hubot, suggest username` will suggest options based on your Flowdock handle, or a provided string.
-* Get your discourse details
-  * Attempt the following:
-    * Sign-in to forums.resin.io
-    * Go to your preferences page (top right profile picture > cog icon)
-    * Go to your admin page (top right spanner labelled admin)
-    * Under permissions generate an API key
-  * If you cannot:
-    * Ask a Discourse admin to:
-      * Make you a moderator
-      * Generate an API key for you
-* Give your discourse details to SyncBot
-  * Send the following PM's to the SyncBot account:
-    * `My discourse token is ...`
-  * Do not be surprised by the lack of response
-    * Syncbot searches when required rather than constantly listening
-    * Testing and confirming receipt will be developed
+* Ask a Discourse admin to make you a moderator
 * Test your link
   * [test thread](https://www.flowdock.com/app/rulemotion/user_happiness/threads/XY9ykgPS8EFABsLL57aCXMRxf44)
     this is an unlisted thread which can be used to test your Discourse details
