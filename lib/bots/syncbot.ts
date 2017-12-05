@@ -179,7 +179,7 @@ export class SyncBot extends ProcBot {
 					const threadId = _.get(threadDetails, ['response', 'thread'], false);
 					const flowId = _.get(threadDetails, ['response', 'flow'], true);
 					const routeArchive = _.includes(actions, MessengerAction.ArchiveThread);
-					const toldToArchive = /#archive/gi.test(data.details.text);
+					const toldToArchive = /#archive/i.test(data.details.text);
 					if (threadId && (flowId === true || flowId === to.flow) && data.details.hidden && toldToArchive && routeArchive) {
 						// Pass the instruction to archive to the static method
 						const flow = { service: to.service, flow: to.flow, thread: threadId };
