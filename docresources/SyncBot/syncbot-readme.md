@@ -283,6 +283,15 @@ e.g.
 ["hubot"]
 ```
 
+#### SYNCBOT_ARCHIVE_STRINGS
+
+This is a list of strings that, when whispered, should archive a ticket
+
+e.g.
+```yaml
+- "#teardown"
+```
+
 #### SYNCBOT_ERROR_SOLUTIONS
 
 This is a JSON encoded object of error patterns, a user friendly description, and possible fixes.

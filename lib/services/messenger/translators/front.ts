@@ -67,6 +67,25 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	}
 
 	/**
+	 * Converts a provided message object into instructions to archive the thread.
+	 * @param message  object to analyse.
+	 * @returns        Promise that resolves to emit instructions.
+	 */
+	public static archiveThreadIntoEmit(message: TransmitInformation): Promise<FrontEmitInstructions> {
+		const threadId = message.target.thread;
+		if (!threadId) {
+			return Promise.reject(new TranslatorError(
+				TranslatorErrorCode.IncompleteTransmitInformation, 'Cannot archive a thread without a thread.'
+			));
+		}
+		const archiveThreadData: ConversationRequest.Update = {
+			conversation_id: threadId,
+			status: 'archived',
+		};
+		return Promise.resolve({ method: ['conversation', 'update'], payload: archiveThreadData });
+	}
+
+	/**
 	 * Promises to find the name of the person who authored a comment.
 	 * @param connectionDetails  Details required to connect to the Front instance.
 	 * @param message            Details of the message we care about.
@@ -406,10 +425,12 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	protected emitConverters: EmitConverters = {
 		[MessengerAction.ReadConnection]: FrontTranslator.readConnectionIntoEmit,
 		[MessengerAction.UpdateTags]: FrontTranslator.updateTagsIntoEmit,
+		[MessengerAction.ArchiveThread]: FrontTranslator.archiveThreadIntoEmit,
 	};
 	protected responseConverters: ResponseConverters = {
 		[MessengerAction.UpdateTags]: FrontTranslator.convertUpdateThreadResponse,
 		[MessengerAction.CreateMessage]: FrontTranslator.convertUpdateThreadResponse,
+		[MessengerAction.ArchiveThread]: FrontTranslator.convertUpdateThreadResponse,
 	};
 
 	private session: Front;

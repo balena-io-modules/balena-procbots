@@ -10,7 +10,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## v3.14.6 - 2017-12-11
 
-* Change default error message to actually ping #362 [Andrew Lucas]
+* SyncBot: Change default error message to ping ‘sqweelygig’ #362 [Andrew Lucas]
 
 ## v3.14.5 - 2017-12-07
 
