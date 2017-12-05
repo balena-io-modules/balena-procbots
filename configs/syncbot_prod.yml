@@ -63,11 +63,7 @@ SYNCBOT_LISTENER_CONSTRUCTORS:
 SYNCBOT_METADATA_CONFIG:
   baseUrl: "http://resin.io"
   publicity:
-    hidden:
-      word: "whisper"
-      char: "~"
-    shown:
-      word: "comment"
-      char: "%"
+    hidden: "whisper"
+    shown: "reply"
 SYNCBOT_NAME: "<<INJECT_SYNCBOT_NAME>>"
 SYNCBOT_PORT: "<<INJECT_SYNCBOT_PORT>>"

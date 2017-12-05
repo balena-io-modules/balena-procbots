@@ -27,14 +27,8 @@ describe('lib/services/messenger/translators/discourse.ts', () => {
 		const metadataConfig = {
 			baseUrl: 'http://e.com',
 			publicity: {
-				hidden: {
-					word: 'whisper',
-					char: '~',
-				},
-				shown: {
-					word: 'comment',
-					char: '%',
-				},
+				hidden: 'whisper',
+				shown: 'comment',
 			},
 		};
 		const thread = 'l';

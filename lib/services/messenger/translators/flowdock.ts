@@ -42,6 +42,7 @@ import {
 	MetadataConfiguration,
 	ResponseConverters,
 	TranslatorErrorCode,
+	TranslatorMetadata,
 } from './translator-types';
 
 /**
@@ -50,25 +51,95 @@ import {
  */
 export class FlowdockTranslator extends TranslatorScaffold implements Translator {
 	/**
+	 * Given a basic string this will extract a more rich context for the event, if embedded.
+	 * @param message  Basic string that may contain metadata.
+	 * @param format   Format of the metadata encoding.
+	 * @param config   Configuration that may have used to encode metadata.
+	 * @returns        Object of content, genesis and hidden.
+	 */
+	public static extractMetadata(
+		message: string, format: MetadataEncoding, config: MetadataConfiguration,
+	): TranslatorMetadata {
+		const superFormat = (format === MetadataEncoding.Flowdock) ? MetadataEncoding.HiddenMD : format;
+		const metadata = TranslatorScaffold.extractMetadata(message, superFormat, config);
+		const findHashtag = new RegExp(`(?:^|\\W)#${config.publicity.shown}(?:\\W|$)`, 'i');
+		if (format === MetadataEncoding.Flowdock && metadata.genesis === null) {
+			metadata.hidden = !findHashtag.test(metadata.content);
+		}
+		if (metadata.hidden === false) {
+			metadata.content = metadata.content.replace(findHashtag, '').trim();
+		}
+		return metadata;
+	}
+
+	/**
+	 * Encode the metadata of an event into a string to embed in the message.
+	 * @param data    Event to gather details from.
+	 * @param format  Optional, markdown or plaintext, defaults to markdown.
+	 * @param config  Configuration that should be used to encode the metadata.
+	 * @returns       Text with data embedded.
+	 */
+	public static stringifyMetadata(
+		data: BasicMessageInformation, format: MetadataEncoding, config: MetadataConfiguration,
+	): string {
+		const superFormat = (format === MetadataEncoding.Flowdock) ? MetadataEncoding.HiddenMD : format;
+		return TranslatorScaffold.stringifyMetadata(data, superFormat, config);
+	}
+
+	/**
+	 * Extract the thread id for the referenced service from an array of messages.
+	 * @param service   Service of interest.
+	 * @param messages  Message to search.
+	 * @param config      Configuration that may have been used to encode metadata.
+	 * @param format    Format used to encode the metadata.
+	 */
+	public static extractSource(
+		service: string,
+		messages: string[],
+		config: MetadataConfiguration,
+		format?: MetadataEncoding,
+	): SourceDescription {
+		const superFormat = (format === MetadataEncoding.Flowdock) ? MetadataEncoding.HiddenMD : format;
+		return TranslatorScaffold.extractSource(service, messages, config, superFormat);
+	}
+
+	/**
+	 * Convert an array of tags into a single hashtagged string.
+	 * @param tags  Array of strings to hashtag and join.
+	 * @returns     String of joined hashtags.
+	 */
+	public static makeTagString(tags: string[]): string {
+		const hashAddedTags = _.map(tags, (tag) => {
+			return `#${tag}`;
+		});
+		return hashAddedTags.join(' ');
+	}
+
+	/**
 	 * Internal function to create a formatted and length limited text block for a message.
 	 * @param body      Body of the message, this part may be snipped
 	 * @param header    Header, if any, to put at the top of the message.
 	 * @param metadata  Metadata string, if any, to inject at the beginning of the content.
 	 * @param footer    Footer, if any, to put at the bottom of the message.
+	 * @param tags      Array, or string, of tags to put in the message text.
 	 * @returns         Markdown formatted text block within Flowdock's character limit.
 	 */
-	public static createFormattedText(body: string, header?: string, metadata?: string, footer?: string): string {
+	public static createFormattedText(
+		body: string, header?: string, metadata?: string, footer?: string, tags?: string[]
+	): string {
 		const lengthLimit = 8096;
 		const first = header ? `${header}\n--\n` : '';
+		const tagString = tags ? `${FlowdockTranslator.makeTagString(tags)}\n` : '';
 		const inject = metadata ? metadata : '';
 		const last = footer ? `\n${footer}` : '';
-		if ((first.length + inject.length + body.length + last.length) < lengthLimit) {
-			return `${first}${body}${last}${inject}`;
+		if ((first.length + tagString.length + inject.length + body.length + last.length) < lengthLimit) {
+			return `${first}${tagString}${body}${last}${inject}`;
 		}
 		const snipProvisional = '\n\n`... about xx% shown.`';
-		const snipped = body.substr(0, lengthLimit - first.length - inject.length - snipProvisional.length - last.length);
+		const space = lengthLimit - first.length - tagString.length - inject.length - snipProvisional.length - last.length;
+		const snipped = body.substr(0, space);
 		const snipText = snipProvisional.replace('xx', Math.floor((100*snipped.length)/body.length).toString(10));
-		return `${first}${snipped}${snipText}${last}${inject}`;
+		return `${first}${tagString}${snipped}${snipText}${last}${inject}`;
 	}
 
 	/**
@@ -119,11 +190,11 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 	private static convertReadConnectionResponse(
 		metadataConfig: MetadataConfiguration, message: TransmitInformation, response: FlowdockMessage[]
 	): Promise<SourceDescription> {
-		return Promise.resolve(TranslatorScaffold.extractSource(
+		return Promise.resolve(FlowdockTranslator.extractSource(
 			message.source.service,
 			_.map(response, (comment) => { return comment.content; }),
 			metadataConfig,
-			MetadataEncoding.HiddenMD,
+			MetadataEncoding.Flowdock,
 		));
 	}
 
@@ -166,7 +237,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 				content: FlowdockTranslator.createFormattedText(
 					message.details.text,
 					message.details.title,
-					TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenMD, metadataConfig)
+					FlowdockTranslator.stringifyMetadata(message, MetadataEncoding.Flowdock, metadataConfig)
 				),
 				event: 'message',
 				external_user_name: message.details.handle.replace(/\s/g, '_'),
@@ -200,7 +271,9 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 				content: FlowdockTranslator.createFormattedText(
 					message.details.text,
 					undefined,
-					TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenMD, metadataConfig)
+					FlowdockTranslator.stringifyMetadata(message, MetadataEncoding.Flowdock, metadataConfig),
+					undefined,
+					message.details.hidden ? undefined : [metadataConfig.publicity.shown]
 				),
 				event: 'message',
 				external_user_name: message.details.handle.replace(/\s/g, '_'),
@@ -321,13 +394,9 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 	 */
 	public eventIntoMessages(event: FlowdockEvent): Promise<MessengerEvent[]> {
 		// Calculate metadata and use whichever matched, i.e. has a shorter content because it extracted metadata.
-		const MDMetadata = TranslatorScaffold.extractMetadata(
-			event.rawEvent.content, MetadataEncoding.HiddenMD, this.metadataConfig
+		const metadata = FlowdockTranslator.extractMetadata(
+			event.rawEvent.content, MetadataEncoding.Flowdock, this.metadataConfig
 		);
-		const charMetadata = TranslatorScaffold.extractMetadata(
-			event.rawEvent.content, MetadataEncoding.Character, this.metadataConfig
-		);
-		const metadata = MDMetadata.content.length < charMetadata.content.length ? MDMetadata : charMetadata;
 		// Pull some details out of the event.
 		const titleSplitter = /^(.*)\n--\n((?:\r|\n|.)*)$/;
 		const titleAndText = metadata.content.match(titleSplitter);

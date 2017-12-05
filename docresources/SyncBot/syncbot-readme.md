@@ -371,14 +371,8 @@ e.g.
 {
     "baseUrl": "https://resin.io",
     "publicity": {
-        "hidden": {
-            "word":" whisper",
-            "char": "~"
-        },
-        "shown": {
-            "word": "comment",
-            "char": "%"
-        }
+        "hidden": "whisper",
+        "shown": "reply"
     }
 }
 ```
