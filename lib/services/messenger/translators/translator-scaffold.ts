@@ -87,6 +87,18 @@ export abstract class TranslatorScaffold implements Translator {
 	}
 
 	/**
+	 * Converts the usernames within a message string using a specified converter.
+	 * @param message    String to replace usernames within
+	 * @param converter  Function to use to convert each username
+	 * @returns          String with the usernames converted
+	 */
+	public static convertPings(message: string, converter: (username: string) => string): string {
+		return message.trim().replace(/(?:^|\W)@([\w-_]+)/gi, (fullMatch, capture) => {
+			return fullMatch.replace(capture, converter(capture));
+		});
+	}
+
+	/**
 	 * Encode the metadata of an event into a string to embed in the message.
 	 * @param data    Event to gather details from.
 	 * @param format  Optional, markdown or plaintext, defaults to markdown.

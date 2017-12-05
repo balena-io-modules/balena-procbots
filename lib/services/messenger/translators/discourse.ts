@@ -89,6 +89,30 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 	}
 
 	/**
+	 * Converts provided message details into a Promise of emit instructions
+	 * @param message         Message data to emit
+	 * @param thread          Thread ID to emit to
+	 * @param metadataConfig  Configuration of how to encode the metadata
+	 * @returns               Promise that resolves to the instructions that will emit the message
+	 */
+	public static bundleMessage(
+		message: BasicMessageInformation, thread: string, metadataConfig: MetadataConfiguration
+	): Promise<DiscourseEmitInstructions> {
+		const metadataString = TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenMD, metadataConfig);
+		const converter = DiscourseTranslator.convertUsernameToDiscourse;
+		const messageString = TranslatorScaffold.convertPings(message.details.text, converter);
+		return Promise.resolve({ method: ['request'], payload: {
+			htmlVerb: 'POST',
+			path: '/posts',
+			body: {
+				raw: `${messageString}${metadataString}`,
+				topic_id: thread,
+				whisper: message.details.hidden ? 'true' : 'false',
+			}
+		}});
+	}
+
+	/**
 	 * Converts a provided message object into instructions to create a thread.
 	 * @param metadataConfig  Configuration of how to encode metadata
 	 * @param message         object to analyse.
@@ -106,12 +130,14 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 		}
 		// Bundle into a format for the service.
 		const metadataString = TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenMD, metadataConfig);
+		const converter = DiscourseTranslator.convertUsernameToDiscourse;
+		const messageString = TranslatorScaffold.convertPings(message.details.text, converter);
 		return Promise.resolve({ method: ['request'], payload: {
 			htmlVerb: 'POST',
 			path: '/posts',
 			body: {
 				category: message.target.flow,
-				raw: `${message.details.text}${metadataString}`,
+				raw: `${messageString}${metadataString}`,
 				title,
 				unlist_topic: 'false',
 			},
@@ -148,34 +174,14 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 				url: `${connectionDetails.protocol || 'https'}://${connectionDetails.instance}/users/${username}.json`,
 			}).then((response) => {
 				if (response.user.can_send_private_messages) {
-					// Bundle into a format for the service.
-					const metadataString = TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenMD, metadataConfig);
-					return Promise.resolve({ method: ['request'], payload: {
-						htmlVerb: 'POST',
-						path: '/posts',
-						body: {
-							raw: `${message.details.text}${metadataString}`,
-							topic_id: thread,
-							whisper: message.details.hidden ? 'true' : 'false',
-						}
-					}});
+					return DiscourseTranslator.bundleMessage(message, thread, metadataConfig);
 				}
 				return Promise.reject(new TranslatorError(
 					TranslatorErrorCode.PermissionsError, 'Whisper requested, but account is not sufficiently privileged.'
 				));
 			});
 		}
-		// Bundle into a format for the service.
-		const metadataString = TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenMD, metadataConfig);
-		return Promise.resolve({ method: ['request'], payload: {
-			htmlVerb: 'POST',
-			path: '/posts',
-			body: {
-				raw: `${message.details.text}${metadataString}`,
-				topic_id: thread,
-				whisper: message.details.hidden ? 'true' : 'false',
-			}
-		}});
+		return DiscourseTranslator.bundleMessage(message, thread, metadataConfig);
 	}
 
 	/**
@@ -365,7 +371,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 					// post_type 4 seems to correspond to whisper
 					hidden: details.post.post_type === 4,
 					tags: details.topic.tags,
-					text: metadata.content.trim(),
+					text: TranslatorScaffold.convertPings(metadata.content, DiscourseTranslator.convertUsernameToGeneric),
 					title: details.topic.title,
 				},
 				source: {

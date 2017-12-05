@@ -24,6 +24,26 @@ describe('lib/services/messenger/translators/translator-scaffold.ts', () => {
 		},
 	};
 
+	describe('TranslatorScaffold.convertPings', () => {
+		const converter = (username: string) => { return `**${username}**`; };
+
+		it('should leave messages without usernames alone', () => {
+			expect(TranslatorScaffold.convertPings('test this', converter)).to.equal('test this');
+		});
+
+		it('should convert usernames according to the converter', () => {
+			expect(TranslatorScaffold.convertPings('test @this too', converter)).to.equal('test @**this** too');
+		});
+
+		it('should leave email address domains unconverted', () => {
+			expect(TranslatorScaffold.convertPings('test this@example.com', converter)).to.equal('test this@example.com');
+		});
+
+		it('should convert pings in brackets', () => {
+			expect(TranslatorScaffold.convertPings('test (@this)', converter)).to.equal('test (@**this**)');
+		});
+	});
+
 	describe('TranslatorScaffold.extractSource', () => {
 		it('should find the correct "Connects to" style id from an array of message strings', () => {
 			const threadId = TranslatorScaffold.extractSource(
