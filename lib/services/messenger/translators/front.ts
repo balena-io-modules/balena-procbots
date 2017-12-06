@@ -218,6 +218,11 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 		return Promise.resolve({ method: ['conversation', 'update'], payload: updateTagsData });
 	}
 
+	/**
+	 * Converts a provided message object into instructions to archive the thread.
+	 * @param message  object to analyse.
+	 * @returns        Promise that resolves to emit instructions.
+	 */
 	private static archiveThreadIntoEmit(message: TransmitInformation): Promise<FrontEmitInstructions> {
 		const threadId = message.target.thread;
 		if (!threadId) {
