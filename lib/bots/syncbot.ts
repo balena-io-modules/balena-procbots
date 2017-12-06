@@ -34,7 +34,11 @@ import {
 	ThreadDefinition,
 	TransmitInformation,
 } from '../services/messenger-types';
-import { MetadataConfiguration } from '../services/messenger/translators/translator-types';
+import { TranslatorError } from '../services/messenger/translators/translator';
+import {
+	MetadataConfiguration,
+	TranslatorErrorCode,
+} from '../services/messenger/translators/translator-types';
 import { ServiceType } from '../services/service-types';
 import { Logger, LogLevel } from '../utils/logger';
 
@@ -146,18 +150,15 @@ export class SyncBot extends ProcBot {
 					if (threadId && (flowId === true || flowId === to.flow) && _.includes(actions, MessengerAction.CreateMessage)) {
 						logger.log(LogLevel.INFO, `---> Creating comment '${firstLine}' on ${toText}.`);
 						// Comment on the found thread
-						return SyncBot.createComment({
-							service: to.service, flow: to.flow, thread: threadId,
-						}, messenger, data)
+						const flow = { service: to.service, flow: to.flow, thread: threadId };
+						return SyncBot.processCommand(flow, messenger, data, MessengerAction.CreateMessage)
 						// Pass through details of the thread updated
 						.then((emitResponse) => {
 							if (emitResponse.err) {
 								return emitResponse;
 							}
 							return {
-								response: {
-									thread: threadId,
-								},
+								response: threadDetails.response,
 								source: emitResponse.source,
 							};
 						});
@@ -173,10 +174,37 @@ export class SyncBot extends ProcBot {
 						source: to.service,
 					};
 				})
+				.then((threadDetails: MessengerEmitResponse) => {
+					// Pull some details to calculate whether we should archive
+					const threadId = _.get(threadDetails, ['response', 'thread'], false);
+					const flowId = _.get(threadDetails, ['response', 'flow'], true);
+					const routeArchive = _.includes(actions, MessengerAction.ArchiveThread);
+					const toldToArchive = /#archive/i.test(data.details.text);
+					if (threadId && (flowId === true || flowId === to.flow) && data.details.hidden && toldToArchive && routeArchive) {
+						// Pass the instruction to archive to the static method
+						const flow = { service: to.service, flow: to.flow, thread: threadId };
+						return SyncBot.processCommand(flow, messenger, data, MessengerAction.ArchiveThread)
+						.then((response: MessengerEmitResponse) => {
+							const error = response.err;
+							if (!error) {
+								// If the service performed the action fine then report this
+								logger.log(LogLevel.INFO, `---> Archived thread on ${toText} based on comment '${firstLine}'.`);
+								return threadDetails;
+							} else if (error instanceof TranslatorError && error.code === TranslatorErrorCode.EmitUnsupported) {
+								// If the service does not support the action then do not panic
+								return threadDetails;
+							} else {
+								return response;
+							}
+						});
+					}
+					// The correct action was to do nothing, so pass the details along to the next thing
+					return Promise.resolve(threadDetails);
+				})
 				// Then report that we have passed the message on
 				.then((response: MessengerEmitResponse) => {
 					if (response.err) {
-						logger.log(LogLevel.WARN, JSON.stringify({message: response.err.message, data}));
+						logger.log(LogLevel.WARN, JSON.stringify({message: response.err.message, stack: response.err.stack, data}));
 						return SyncBot.createErrorComment(
 							to, messenger, data, response.err, name, solutionMatrix, genericErrorMessage
 						)
@@ -233,22 +261,22 @@ export class SyncBot extends ProcBot {
 				flow: to.flow,
 			},
 		};
-		return SyncBot.createComment(data.source, messenger, echoData);
+		return SyncBot.processCommand(data.source, messenger, echoData, MessengerAction.CreateMessage);
 	}
 
 	/**
-	 * Pass to the messenger a request to create a comment.
+	 * Pass to the messenger a request to perform a simple command.
 	 * @param  to         Definition {service, flow, thread} of the thread being emitted to.
 	 * @param  messenger  Service to use to interact with the cloud.
 	 * @param  data       Event that is being processed.
+	 * @param action      Action to perform.
 	 * @returns           Promise to create the comment and respond with the threadId updated.
 	 */
-	private static createComment(
-		to: ThreadDefinition, messenger: MessengerService, data: BasicMessageInformation
+	private static processCommand(
+		to: ThreadDefinition, messenger: MessengerService, data: BasicMessageInformation, action: MessengerAction
 	): Promise<MessengerEmitResponse> {
-		// Bundle a comment create request, it's a mixture of the `to` and `data` passed in.
-		const createComment: TransmitInformation = {
-			action: MessengerAction.CreateMessage,
+		const transmit: TransmitInformation = {
+			action,
 			details: data.details,
 			source: data.source,
 			target: {
@@ -261,7 +289,7 @@ export class SyncBot extends ProcBot {
 		// Request that the payload created above be sent.
 		return messenger.sendData({
 			contexts: {
-				messenger: createComment,
+				messenger: transmit,
 			},
 			source: 'syncbot',
 		});
@@ -465,7 +493,7 @@ export class SyncBot extends ProcBot {
 						destination,
 						messenger,
 						logger,
-						[MessengerAction.CreateMessage, MessengerAction.CreateThread],
+						[MessengerAction.CreateMessage, MessengerAction.CreateThread, MessengerAction.ArchiveThread],
 						config.SYNCBOT_NAME,
 						config.SYNCBOT_ALIAS_USERS,
 						config.SYNCBOT_ERROR_SOLUTIONS,
@@ -491,7 +519,7 @@ export class SyncBot extends ProcBot {
 							destination,
 							messenger,
 							logger,
-							[MessengerAction.CreateMessage],
+							[MessengerAction.CreateMessage, MessengerAction.ArchiveThread],
 							config.SYNCBOT_NAME,
 							config.SYNCBOT_ALIAS_USERS,
 							config.SYNCBOT_ERROR_SOLUTIONS,
