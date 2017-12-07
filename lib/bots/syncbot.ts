@@ -180,10 +180,25 @@ export class SyncBot extends ProcBot {
 						return SyncBot.createErrorComment(
 							to, messenger, data, response.err, name, solutionMatrix, genericErrorMessage
 						)
-						// Ignore the response from the messenger, SyncBot only cares that it's happened.
-						.return();
+						.return(response);
 					} else {
 						logger.log(LogLevel.DEBUG, `---> Emitted '${firstLine}' to ${toText}.`);
+					}
+					return response;
+				})
+				.then((response: MessengerEmitResponse) => {
+					// If the process this far resolved with a response
+					const threadId = _.get(response, ['response', 'thread'], false);
+					const flowId = _.get(response, ['response', 'flow'], true);
+					if (threadId && (flowId === true || flowId === to.flow) && _.includes(actions, MessengerAction.UpdateTags)) {
+						// Request that the tags be updated
+						return SyncBot.updateTags({
+							service: to.service,
+							flow: to.flow,
+							thread: threadId,
+						}, messenger, data)
+						// Ignore the actual response from the messenger, SyncBot only cares that it's happened.
+						.return();
 					}
 				});
 			}
@@ -234,6 +249,38 @@ export class SyncBot extends ProcBot {
 			},
 		};
 		return SyncBot.createComment(data.source, messenger, echoData);
+	}
+
+	/**
+	 * Pass to the messenger a request to update the tags.
+	 * @param  to         Definition {service, flow, thread} of the thread being emitted to.
+	 * @param  messenger  Service to use to interact with the cloud.
+	 * @param  data       Event that is being processed.
+	 * @returns           Promise to update the tags and respond with the threadId updated.
+	 */
+	private static updateTags(
+		to: ThreadDefinition, messenger: MessengerService, data: BasicMessageInformation
+	): Promise<MessengerEmitResponse> {
+		// Bundle a tag update request, it's mainly as per the `to` and `data` passed in.
+		const updateTags: TransmitInformation = {
+			action: MessengerAction.UpdateTags,
+			details: data.details,
+			source: data.source,
+			target: {
+				flow: to.flow,
+				service: to.service,
+				thread: to.thread,
+				// Perform this operation as the SyncBot user.
+				username: process.env.SYNCBOT_NAME,
+			},
+		};
+		// Request that the payload created above be sent.
+		return messenger.sendData({
+			contexts: {
+				messenger: updateTags,
+			},
+			source: 'syncbot',
+		});
 	}
 
 	/**
@@ -465,7 +512,7 @@ export class SyncBot extends ProcBot {
 						destination,
 						messenger,
 						logger,
-						[MessengerAction.CreateMessage, MessengerAction.CreateThread],
+						[MessengerAction.CreateMessage, MessengerAction.CreateThread, MessengerAction.UpdateTags],
 						config.SYNCBOT_NAME,
 						config.SYNCBOT_ALIAS_USERS,
 						config.SYNCBOT_ERROR_SOLUTIONS,
@@ -491,7 +538,7 @@ export class SyncBot extends ProcBot {
 							destination,
 							messenger,
 							logger,
-							[MessengerAction.CreateMessage],
+							[MessengerAction.CreateMessage, MessengerAction.UpdateTags],
 							config.SYNCBOT_NAME,
 							config.SYNCBOT_ALIAS_USERS,
 							config.SYNCBOT_ERROR_SOLUTIONS,
