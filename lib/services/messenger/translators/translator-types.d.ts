@@ -31,17 +31,9 @@ export interface TranslatorMetadata {
 	thread: string | null;
 }
 
-/** Options for encoding privacy information in metadata */
-export interface PublicityIndicator {
-	/** Which word to use, if desired, to indicate particular publicity state */
-	word: string;
-	/** Which character to use, if desired, to indicate particular publicity state */
-	char: string;
-}
-
 export interface PublicityIndicators {
-	hidden: PublicityIndicator;
-	shown: PublicityIndicator;
+	hidden: string;
+	shown: string;
 }
 
 export interface MetadataConfiguration {

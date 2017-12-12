@@ -13,14 +13,8 @@ describe('lib/services/messenger/translators/translator-scaffold.ts', () => {
 	const exampleConfig = {
 		baseUrl: 'http://e.com',
 		publicity: {
-			hidden: {
-				word: 'whisper',
-				char: '~',
-			},
-			shown: {
-				word: 'comment',
-				char: '%',
-			},
+			hidden: 'whisper',
+			shown: 'reply',
 		},
 	};
 
@@ -162,7 +156,7 @@ describe('lib/services/messenger/translators/translator-scaffold.ts', () => {
 	describe('TranslatorScaffold.metadataByRegex', () => {
 		it('should find metadata matches in a string based on a provided regex', () => {
 			const extractedMetadata = TranslatorScaffold.metadataByRegex(
-				'blah,comment,e,d,f',
+				'blah,reply,e,d,f',
 				/,(\w*),(\w*),(\w*),(\w*)$/,
 				exampleConfig.publicity,
 			);

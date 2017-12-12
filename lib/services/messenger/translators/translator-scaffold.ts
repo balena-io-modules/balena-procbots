@@ -38,7 +38,7 @@ import {
 } from './translator-types';
 
 export enum MetadataEncoding {
-	HiddenHTML, HiddenMD, Character,
+	HiddenHTML, HiddenMD, Flowdock,
 }
 
 /**
@@ -108,7 +108,7 @@ export abstract class TranslatorScaffold implements Translator {
 	public static stringifyMetadata(
 		data: BasicMessageInformation, format: MetadataEncoding, config: MetadataConfiguration,
 	): string {
-		const pubWord = data.details.hidden ? config.publicity.hidden.word : config.publicity.shown.word;
+		const pubWord = data.details.hidden ? config.publicity.hidden : config.publicity.shown;
 		const source = data.source;
 		const queryString = `?hidden=${pubWord}&source=${source.service}&flow=${source.flow}&thread=${source.thread}`;
 		switch (format) {
@@ -131,15 +131,11 @@ export abstract class TranslatorScaffold implements Translator {
 	public static extractMetadata(
 		message: string, format: MetadataEncoding, config: MetadataConfiguration,
 	): TranslatorMetadata {
-		const wordCapture = `(${config.publicity.hidden.word}|${config.publicity.shown.word})`;
+		const wordCapture = `(${config.publicity.hidden}|${config.publicity.shown})`;
 		const querystring = `\\?hidden=${wordCapture}&source=(\\w*)&flow=([^"\\)]*)&thread=([^"\\)]*)`;
 		const baseUrl = _.escapeRegExp(config.baseUrl);
 		const publicity = config.publicity;
 		switch (format) {
-			case MetadataEncoding.Character:
-				const charCapture = `^(${_.escapeRegExp(publicity.hidden.char)}|${_.escapeRegExp(publicity.shown.char)})`;
-				const charRegex = new RegExp(`^${charCapture}`, 'im');
-				return TranslatorScaffold.metadataByRegex(message, charRegex, publicity);
 			case MetadataEncoding.HiddenHTML:
 				const hiddenHTMLRegex = new RegExp(`<a href="${baseUrl}${querystring}"[^>]*></a>$`, 'i');
 				return TranslatorScaffold.metadataByRegex(message, hiddenHTMLRegex, publicity);
@@ -166,7 +162,7 @@ export abstract class TranslatorScaffold implements Translator {
 				content: message.replace(regex, '').trim(),
 				flow: metadata[3] || null,
 				genesis: metadata[2] || null,
-				hidden: !_.includes(_.values(indicators.shown), metadata[1]),
+				hidden: indicators.shown !== metadata[1],
 				thread: metadata[4] || null,
 			};
 		}
