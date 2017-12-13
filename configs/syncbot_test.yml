@@ -1,6 +1,9 @@
 ---
 SYNCBOT_ALIAS_USERS:
   - "hubot"
+SYNCBOT_ARCHIVE_STRINGS:
+  - "#close"
+  - "#archive"
 SYNCBOT_ERROR_SOLUTIONS:
   discourse:
     ^403:

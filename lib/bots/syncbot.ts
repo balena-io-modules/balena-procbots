@@ -34,7 +34,11 @@ import {
 	ThreadDefinition,
 	TransmitInformation,
 } from '../services/messenger-types';
-import { MetadataConfiguration } from '../services/messenger/translators/translator-types';
+import { TranslatorError } from '../services/messenger/translators/translator';
+import {
+	MetadataConfiguration,
+	TranslatorErrorCode,
+} from '../services/messenger/translators/translator-types';
 import { ServiceType } from '../services/service-types';
 import { Logger, LogLevel } from '../utils/logger';
 
@@ -47,6 +51,7 @@ interface SyncBotConstructor {
 	SYNCBOT_PORT: string;
 	SYNCBOT_NAME: string;
 	SYNCBOT_LISTENER_CONSTRUCTORS: MessengerConnectionDetails;
+	SYNCBOT_ARCHIVE_STRINGS: string[];
 }
 
 /**
@@ -92,6 +97,7 @@ export class SyncBot extends ProcBot {
 	 * @param aliases              List of usernames that the router should alias.
 	 * @param solutionMatrix       A matrix of possible solutions to common routing errors.
 	 * @param genericErrorMessage  An error message that should be used by default.
+	 * @param archiveStrings       An array of strings that instruct the router to archive.
 	 * @returns                    Function that processes events from the messenger.
 	 */
 	private static makeRouter(
@@ -104,6 +110,7 @@ export class SyncBot extends ProcBot {
 		aliases: string[] = [],
 		solutionMatrix?: SolutionMatrix,
 		genericErrorMessage?: string,
+		archiveStrings?: string[],
 	): MessageListener {
 		// This method returns a method that in turn processes events.
 		return (_registration, event: MessengerEvent) => {
@@ -146,18 +153,15 @@ export class SyncBot extends ProcBot {
 					if (threadId && (flowId === true || flowId === to.flow) && _.includes(actions, MessengerAction.CreateMessage)) {
 						logger.log(LogLevel.INFO, `---> Creating comment '${firstLine}' on ${toText}.`);
 						// Comment on the found thread
-						return SyncBot.createComment({
-							service: to.service, flow: to.flow, thread: threadId,
-						}, messenger, data)
+						const flow = { service: to.service, flow: to.flow, thread: threadId };
+						return SyncBot.processCommand(flow, messenger, data, MessengerAction.CreateMessage)
 						// Pass through details of the thread updated
 						.then((emitResponse) => {
 							if (emitResponse.err) {
 								return emitResponse;
 							}
 							return {
-								response: {
-									thread: threadId,
-								},
+								response: threadDetails.response,
 								source: emitResponse.source,
 							};
 						});
@@ -176,7 +180,7 @@ export class SyncBot extends ProcBot {
 				// Then report that we have passed the message on
 				.then((response: MessengerEmitResponse) => {
 					if (response.err) {
-						logger.log(LogLevel.WARN, JSON.stringify({message: response.err.message, data}));
+						logger.log(LogLevel.WARN, JSON.stringify({message: response.err.message, stack: response.err.stack, data}));
 						return SyncBot.createErrorComment(
 							to, messenger, data, response.err, name, solutionMatrix, genericErrorMessage
 						)
@@ -186,20 +190,53 @@ export class SyncBot extends ProcBot {
 					}
 					return response;
 				})
+				// Then update the tags, if relevant
 				.then((response: MessengerEmitResponse) => {
 					// If the process this far resolved with a response
 					const threadId = _.get(response, ['response', 'thread'], false);
 					const flowId = _.get(response, ['response', 'flow'], true);
 					if (threadId && (flowId === true || flowId === to.flow) && _.includes(actions, MessengerAction.UpdateTags)) {
 						// Request that the tags be updated
-						return SyncBot.updateTags({
-							service: to.service,
-							flow: to.flow,
-							thread: threadId,
-						}, messenger, data)
-						// Ignore the actual response from the messenger, SyncBot only cares that it's happened.
-						.return();
+						const flow = { service: to.service, flow: to.flow, thread: threadId };
+						return SyncBot.processCommand(flow, messenger, data, MessengerAction.UpdateTags)
+						.return(response);
 					}
+					// The correct action was to do nothing, so pass the details along to the next thing
+					return response;
+				})
+				// Then archive the thread, if relevant
+				.then((threadDetails: MessengerEmitResponse) => {
+					// Pull some details to calculate whether we should archive
+					const threadId = _.get(threadDetails, ['response', 'thread'], false);
+					const flowId = _.get(threadDetails, ['response', 'flow'], true);
+					const routeArchive = _.includes(actions, MessengerAction.ArchiveThread);
+					const archiveRegex = archiveStrings ? new RegExp(`(${archiveStrings.join('|')})`, 'i') : null;
+					const toldToArchive = archiveRegex && archiveRegex.test(data.details.text);
+					if (threadId && (flowId === true || flowId === to.flow) && data.details.hidden && toldToArchive && routeArchive) {
+						// Pass the instruction to archive to the static method
+						const flow = { service: to.service, flow: to.flow, thread: threadId };
+						return SyncBot.processCommand(flow, messenger, data, MessengerAction.ArchiveThread)
+						.then((response: MessengerEmitResponse) => {
+							const error = response.err;
+							if (!error) {
+								// If the service performed the action fine then report this
+								logger.log(LogLevel.INFO, `---> Archived thread on ${toText} based on comment '${firstLine}'.`);
+								return threadDetails;
+							} else if (error instanceof TranslatorError && error.code === TranslatorErrorCode.EmitUnsupported) {
+								// If the service does not support the action then do not panic
+								return threadDetails;
+							} else {
+								return response;
+							}
+						});
+					}
+					// The correct action was to do nothing, so pass the details along to the next thing
+					return threadDetails;
+				})
+				// We've got no more actions to perform, but ProcBot only expects promise resolution, no actual payload
+				// Explicitly bookending the promise chain enables each .then() above to be developed atomically
+				.then((_threadDetails: MessengerEmitResponse) => {
+					return;
 				});
 			}
 			// The event received doesn't match the profile being routed, so nothing is the correct action.
@@ -248,54 +285,22 @@ export class SyncBot extends ProcBot {
 				flow: to.flow,
 			},
 		};
-		return SyncBot.createComment(data.source, messenger, echoData);
+		return SyncBot.processCommand(data.source, messenger, echoData, MessengerAction.CreateMessage);
 	}
 
 	/**
-	 * Pass to the messenger a request to update the tags.
+	 * Pass to the messenger a request to perform a simple command.
 	 * @param  to         Definition {service, flow, thread} of the thread being emitted to.
 	 * @param  messenger  Service to use to interact with the cloud.
 	 * @param  data       Event that is being processed.
-	 * @returns           Promise to update the tags and respond with the threadId updated.
-	 */
-	private static updateTags(
-		to: ThreadDefinition, messenger: MessengerService, data: BasicMessageInformation
-	): Promise<MessengerEmitResponse> {
-		// Bundle a tag update request, it's mainly as per the `to` and `data` passed in.
-		const updateTags: TransmitInformation = {
-			action: MessengerAction.UpdateTags,
-			details: data.details,
-			source: data.source,
-			target: {
-				flow: to.flow,
-				service: to.service,
-				thread: to.thread,
-				// Perform this operation as the SyncBot user.
-				username: process.env.SYNCBOT_NAME,
-			},
-		};
-		// Request that the payload created above be sent.
-		return messenger.sendData({
-			contexts: {
-				messenger: updateTags,
-			},
-			source: 'syncbot',
-		});
-	}
-
-	/**
-	 * Pass to the messenger a request to create a comment.
-	 * @param  to         Definition {service, flow, thread} of the thread being emitted to.
-	 * @param  messenger  Service to use to interact with the cloud.
-	 * @param  data       Event that is being processed.
+	 * @param action      Action to perform.
 	 * @returns           Promise to create the comment and respond with the threadId updated.
 	 */
-	private static createComment(
-		to: ThreadDefinition, messenger: MessengerService, data: BasicMessageInformation
+	private static processCommand(
+		to: ThreadDefinition, messenger: MessengerService, data: BasicMessageInformation, action: MessengerAction
 	): Promise<MessengerEmitResponse> {
-		// Bundle a comment create request, it's a mixture of the `to` and `data` passed in.
-		const createComment: TransmitInformation = {
-			action: MessengerAction.CreateMessage,
+		const transmit: TransmitInformation = {
+			action,
 			details: data.details,
 			source: data.source,
 			target: {
@@ -308,7 +313,7 @@ export class SyncBot extends ProcBot {
 		// Request that the payload created above be sent.
 		return messenger.sendData({
 			contexts: {
-				messenger: createComment,
+				messenger: transmit,
 			},
 			source: 'syncbot',
 		});
@@ -507,16 +512,23 @@ export class SyncBot extends ProcBot {
 					const source = mapping.source;
 					const destination = mapping.destination;
 					// Register a mirroring from the first of the pair, to the second.
+					const actions = [
+						MessengerAction.CreateMessage,
+						MessengerAction.CreateThread,
+						MessengerAction.ArchiveThread,
+						MessengerAction.UpdateTags,
+					];
 					const router = SyncBot.makeRouter(
 						source,
 						destination,
 						messenger,
 						logger,
-						[MessengerAction.CreateMessage, MessengerAction.CreateThread, MessengerAction.UpdateTags],
+						actions,
 						config.SYNCBOT_NAME,
 						config.SYNCBOT_ALIAS_USERS,
 						config.SYNCBOT_ERROR_SOLUTIONS,
 						config.SYNCBOT_ERROR_UNDOCUMENTED,
+						config.SYNCBOT_ARCHIVE_STRINGS
 					);
 					const label = `${source.service}.${source.flow}(all)=>${destination.service}.${destination.flow}`;
 					messenger.registerEvent({
@@ -538,11 +550,12 @@ export class SyncBot extends ProcBot {
 							destination,
 							messenger,
 							logger,
-							[MessengerAction.CreateMessage, MessengerAction.UpdateTags],
+							[MessengerAction.CreateMessage, MessengerAction.ArchiveThread, MessengerAction.UpdateTags],
 							config.SYNCBOT_NAME,
 							config.SYNCBOT_ALIAS_USERS,
 							config.SYNCBOT_ERROR_SOLUTIONS,
-							config.SYNCBOT_ERROR_UNDOCUMENTED
+							config.SYNCBOT_ERROR_UNDOCUMENTED,
+							config.SYNCBOT_ARCHIVE_STRINGS
 						);
 						const label = `${source.service}.${source.flow}(messages)=>${destination.service}.${destination.flow}`;
 						messenger.registerEvent({
