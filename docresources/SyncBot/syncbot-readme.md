@@ -23,20 +23,14 @@ A little Bot, using the ProcBot framework, that links communication services
 * Flows
   * Forums:Troubleshooting - Flowdock:public/s/community - Front:support/community
   * Flowdock:public/s/premium - Front:support/premium
+* Threads
+  * A new thread in a source flow will become a new linked thread in a destination flow
 * Comments
   * Public comments in linked threads get synchronised
-    * Use a `%` or `💬` at the beginning of a line to indicate the comment is
-      public
+    * Use `#reply` to indicate the comment is public
   * Private comments remain private, but are synchronised
     * Uses discourse's `whisper`
     * Uses front's `comment`
-    * Without syntax, private is assumed
-* Threads
-  * Public threads in linked flows get synchronised
-    * Use a `%` or `💬` at the beginning of a line to indicate the topic is
-      public
-  * Private threads remain private, but are synchronised
-    * Uses discourse's `unlisted`
     * Without syntax, private is assumed
 
 ## What usernames are valid?
