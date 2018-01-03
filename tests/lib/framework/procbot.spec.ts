@@ -64,5 +64,74 @@ describe('lib/framework/procbot.ts', () => {
 			const cookedObject = ProcBot.injectEnvironmentVariables('baz');
 			expect(cookedObject).to.equal('baz');
 		});
+
+		it('should leave out-of-scope values alone', () => {
+			const cookedObject = ProcBot.injectEnvironmentVariables(false);
+			expect(cookedObject).to.equal(false);
+		});
+	});
+
+	describe('ProcBot.determineInjections', () => {
+		process.env.FOO = 'f';
+		process.env.BAR = 'b';
+
+		it('should calculate env vars in strings', () => {
+			const injections = ProcBot.determineInjections('<<INJECT_FOO>>');
+			expect(injections).to.deep.equal({
+				FOO: 'f',
+			});
+		});
+
+		it('should calculate env vars in objects', () => {
+			const injections = ProcBot.determineInjections({
+				a: '<<INJECT_FOO>>',
+			});
+			expect(injections).to.deep.equal({
+				FOO: 'f',
+			});
+		});
+
+		it('should calculate env vars in arrays', () => {
+			const injections = ProcBot.determineInjections([
+				'<<INJECT_FOO>>'
+			]);
+			expect(injections).to.deep.equal({
+				FOO: 'f',
+			});
+		});
+
+		it('should calculate env vars in compound strings', () => {
+			const injections = ProcBot.determineInjections('/<<INJECT_FOO>>|<<INJECT_BAR>>|<<INJECT_FOO>>\\');
+			expect(injections).to.deep.equal({
+				FOO: 'f',
+				BAR: 'b',
+			});
+		});
+
+		it('should calculate env vars in nested structures', () => {
+			const injections = ProcBot.determineInjections({
+				foo: '<<INJECT_FOO>>',
+				fooArray: [
+					'<<INJECT_FOO>>',
+					'<<INJECT_FOO>>',
+				],
+				fooObject: {
+					foo: '<<INJECT_FOO>>',
+				}
+			});
+			expect(injections).to.deep.equal({
+				FOO: 'f',
+			});
+		});
+
+		it('should calculate normal strings as no injections', () => {
+			const injections = ProcBot.determineInjections('baz');
+			expect(injections).to.deep.equal({});
+		});
+
+		it('should calculate out-of-scope values as no injections', () => {
+			const injections = ProcBot.determineInjections(false);
+			expect(injections).to.deep.equal({});
+		});
 	});
 });

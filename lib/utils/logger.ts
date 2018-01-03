@@ -58,6 +58,7 @@ export class Logger {
 	// These can be overriden by specific methods.
 	private _logLevel = _.parseInt(process.env.PROCBOT_LOG_LEVEL) || LogLevel.INFO;
 	private _alertLevel = _.parseInt(process.env.PROCBOT_ALERT_LEVEL) || AlertLevel.ERROR;
+	private _secrets: string[] = [];
 
 	/** Strings prepended to logging output. */
 	private logLevelStrings = [
@@ -105,18 +106,19 @@ export class Logger {
 	}
 
 	/**
+	 * Add a list of strings to the list of strings to redact.
+	 * @param secrets  Secrets to redact from any output.
+	 */
+	public set secrets(secrets: string[]) {
+		this._secrets = _.union(this._secrets, secrets);
+	}
+
+	/**
 	 * Log output.
 	 * @param level    The level that this message is of (INFO, etc.).
 	 * @param message  The actual log message.
-	 * @param secrets  An optional array of strings to redact
 	 */
-	public log(level: number, message: string, secrets?: string[]): void {
-		if (secrets) {
-			const redactFilter = secrets.map((secret) => {
-				return _.escapeRegExp(secret);
-			}).join('|');
-			message = message.replace(new RegExp(redactFilter, 'g'), 'redacted');
-		}
+	public log(level: number, message: string): void {
 		this.output(level, this._logLevel, this.logLevelStrings, message);
 	}
 
@@ -132,6 +134,12 @@ export class Logger {
 	// Generic output method for either type.
 	private output(level: number, classLevel: number, levelStrings: string[], message: string): void {
 		if (level <= classLevel) {
+			if (!_.isEmpty(this._secrets) && this._logLevel < LogLevel.DEBUG) {
+				const redactFilter = this._secrets.map((secret) => {
+					return _.escapeRegExp(secret);
+				}).join('|');
+				message = message.replace(new RegExp(redactFilter, 'g'), 'redacted');
+			}
 			console.log(`${new Date().toISOString()}: ${levelStrings[level]} - ${message}`);
 		}
 	}

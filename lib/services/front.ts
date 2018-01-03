@@ -18,7 +18,7 @@ import * as Promise from 'bluebird';
 import { Event, Front } from 'front-sdk';
 import * as path from 'path';
 
-import { LogLevel } from '../utils/logger';
+import { Logger, LogLevel } from '../utils/logger';
 import {
 	FrontConstructor, FrontEmitContext,
 	FrontHandle, FrontListenerConstructor, FrontResponse,
@@ -36,8 +36,8 @@ export class FrontService extends ServiceScaffold<string> implements ServiceList
 	/** Underlying SDK object that we route requests to */
 	private session: Front;
 
-	constructor(data: FrontConstructor | FrontListenerConstructor) {
-		super(data);
+	constructor(data: FrontConstructor | FrontListenerConstructor, logger: Logger) {
+		super(data, logger);
 		if (data.type === ServiceType.Listener) {
 			const listenerData = <FrontListenerConstructor>data;
 			this.session = new Front(listenerData.token, listenerData.secret);
@@ -110,14 +110,14 @@ export class FrontService extends ServiceScaffold<string> implements ServiceList
  * Build this class, typed and activated as a listener.
  * @returns  Service Listener object, awakened and ready to go.
  */
-export function createServiceListener(data: FrontListenerConstructor): ServiceListener {
-	return new FrontService(data);
+export function createServiceListener(data: FrontListenerConstructor, logger: Logger): ServiceListener {
+	return new FrontService(data, logger);
 }
 
 /**
  * Build this class, typed as an emitter.
  * @returns  Service Emitter object, ready for your events.
  */
-export function createServiceEmitter(data: FrontConstructor): ServiceEmitter {
-	return new FrontService(data);
+export function createServiceEmitter(data: FrontConstructor, logger: Logger): ServiceEmitter {
+	return new FrontService(data, logger);
 }
