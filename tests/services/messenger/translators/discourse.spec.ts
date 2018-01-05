@@ -41,7 +41,7 @@ describe('lib/services/messenger/translators/discourse.ts', () => {
 					htmlVerb: 'POST',
 					path: '/posts',
 					body: {
-						raw: 'cde @test[](http://e.com?hidden=comment&source=i&flow=k&thread=h)',
+						raw: 'cde @test\n\n[](http://e.com?hidden=comment&source=i&flow=k&thread=h)',
 						topic_id: 'l',
 						whisper: 'false',
 					},
@@ -59,7 +59,7 @@ describe('lib/services/messenger/translators/discourse.ts', () => {
 					htmlVerb: 'POST',
 					path: '/posts',
 					body: {
-						raw: 'cde @_test[](http://e.com?hidden=comment&source=i&flow=k&thread=h)',
+						raw: 'cde @_test\n\n[](http://e.com?hidden=comment&source=i&flow=k&thread=h)',
 						topic_id: 'l',
 						whisper: 'false',
 					},
