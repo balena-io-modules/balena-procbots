@@ -71,15 +71,20 @@ export abstract class ServiceScaffold<T> extends WorkerClient<T> implements Serv
 	/** Endpoint listener that may be used to, for example, receive web hooks. */
 	protected expressApp?: express.Express;
 
+	/** The details used to build the service, for debug output */
+	protected constructorObject: ServiceScaffoldConstructor;
+
 	/** A place to put output for debug and reference. */
-	private loggerInstance = new Logger();
+	private loggerInstance: Logger;
 
 	/** Store a list of actions to perform when particular actions happen */
 	private eventListeners: { [event: string]: ServiceRegistration[] } = {};
 
 	// https://github.com/resin-io-modules/resin-procbots/issues/262
-	constructor(data: ServiceScaffoldConstructor) {
+	constructor(data: ServiceScaffoldConstructor, logger: Logger) {
 		super();
+		this.constructorObject = data;
+		this.loggerInstance = logger;
 		if (typeof data.server === 'number') {
 			// Construction details provided a port number, so use that.
 			const port = data.server;
@@ -138,6 +143,8 @@ export abstract class ServiceScaffold<T> extends WorkerClient<T> implements Serv
 		.catch((err: TypedError) => {
 			return {
 				err,
+				request: context,
+				session: this.constructorObject,
 				source: this.serviceName,
 			};
 		});

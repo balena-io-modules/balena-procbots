@@ -18,7 +18,7 @@ import * as Promise from 'bluebird';
 import { Session } from 'flowdock';
 import * as _ from 'lodash';
 import * as path from 'path';
-import { LogLevel } from '../utils/logger';
+import { Logger, LogLevel } from '../utils/logger';
 import {
 	FlowdockConstructor, FlowdockEmitContext,
 	FlowdockHandle, FlowdockResponse
@@ -35,8 +35,8 @@ export class FlowdockService extends ServiceScaffold<string> implements ServiceE
 	private org: string;
 	private postsSynced = new Set<number>();
 
-	constructor(data: FlowdockConstructor) {
-		super(data);
+	constructor(data: FlowdockConstructor, logger: Logger) {
+		super(data, logger);
 		this.session = new Session(data.token);
 		// The flowdock service both emits and calls back the error
 		// We'll just log the emit to prevent it bubbling
@@ -123,14 +123,14 @@ export class FlowdockService extends ServiceScaffold<string> implements ServiceE
  * Build this class, typed and activated as a listener.
  * @returns  Service Listener object, awakened and ready to go.
  */
-export function createServiceListener(data: FlowdockConstructor): ServiceListener {
-	return new FlowdockService(data);
+export function createServiceListener(data: FlowdockConstructor, logger: Logger): ServiceListener {
+	return new FlowdockService(data, logger);
 }
 
 /**
  * Build this class, typed as an emitter.
  * @returns  Service Emitter object, ready for your events.
  */
-export function createServiceEmitter(data: FlowdockConstructor): ServiceEmitter {
-	return new FlowdockService(data);
+export function createServiceEmitter(data: FlowdockConstructor, logger: Logger): ServiceEmitter {
+	return new FlowdockService(data, logger);
 }

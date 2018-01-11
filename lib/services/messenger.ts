@@ -18,7 +18,7 @@ import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import * as path from 'path';
 
-import { LogLevel } from '../utils/logger';
+import { Logger, LogLevel } from '../utils/logger';
 import {
 	EmitInstructions, MessengerConstructor,
 	MessengerResponse, TranslatorDictionary, TransmitInformation,
@@ -39,8 +39,8 @@ export class MessengerService extends ServiceScaffold<string> implements Service
 	private static _serviceName = path.basename(__filename.split('.')[0]);
 	private translators: TranslatorDictionary;
 
-	constructor(data: MessengerConstructor) {
-		super(data);
+	constructor(data: MessengerConstructor, logger: Logger) {
+		super(data, logger);
 		// Our super might have built a genuine express instance out of a port number
 		data.server = this.expressApp;
 
@@ -57,7 +57,7 @@ export class MessengerService extends ServiceScaffold<string> implements Service
 				this.logger.log(LogLevel.INFO, `---> Constructing '${subServiceName}' listener.`);
 				const subTranslator = this.translators[subServiceName];
 				subTranslator.mergeGenericDetails(subConnectionDetails, data);
-				const subListener = require(`./${subServiceName}`).createServiceListener(subConnectionDetails);
+				const subListener = require(`./${subServiceName}`).createServiceListener(subConnectionDetails, this.logger);
 				// This causes listeners to pass on any events they hear.
 				subListener.registerEvent({
 					events: subTranslator.getAllEventTypes(),
@@ -143,14 +143,14 @@ export class MessengerService extends ServiceScaffold<string> implements Service
  * Build this class, typed and activated as a listener.
  * @returns  Service Listener object, awakened and ready to go.
  */
-export function createServiceListener(data: MessengerConstructor): ServiceListener {
-	return new MessengerService(data);
+export function createServiceListener(data: MessengerConstructor, logger: Logger): ServiceListener {
+	return new MessengerService(data, logger);
 }
 
 /**
  * Build this class, typed as an emitter.
  * @returns  Service Emitter object, ready for your events.
  */
-export function createServiceEmitter(data: MessengerConstructor): ServiceEmitter {
-	return new MessengerService(data);
+export function createServiceEmitter(data: MessengerConstructor, logger: Logger): ServiceEmitter {
+	return new MessengerService(data, logger);
 }

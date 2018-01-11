@@ -18,6 +18,7 @@ import * as Promise from 'bluebird';
 import * as FS from 'fs';
 import * as yaml from 'js-yaml';
 import * as _ from 'lodash';
+import { Dictionary } from 'lodash';
 import { ServiceConstructor, ServiceEmitRequest, ServiceEmitter, ServiceFactory,
 	ServiceListener, ServiceType } from '../services/service-types';
 import { BuildCommand, ExecuteCommand } from '../utils/environment';
@@ -58,29 +59,52 @@ export class ProcBot {
 			return _.mapValues(value, ProcBot.injectEnvironmentVariables);
 		}
 		if (_.isString(value)) {
-			return ProcBot.stringInjector(value);
+			return ProcBot.stringInjector(value).cooked;
 		}
 		return value;
+	}
+
+	public static determineInjections(value: any): Dictionary<string> {
+		if (_.isArray(value)) {
+			const accumulator: Dictionary<string> = {};
+			_.forEach(_.map(value, ProcBot.determineInjections), (injections) => {
+				_.merge(accumulator, injections);
+			});
+			return accumulator;
+		}
+		if (_.isObject(value)) {
+			const accumulator: Dictionary<string> = {};
+			_.forEach(_.mapValues(value, ProcBot.determineInjections), (injections) => {
+				_.merge(accumulator, injections);
+			});
+			return accumulator;
+		}
+		if (_.isString(value)) {
+			return ProcBot.stringInjector(value).injections;
+		}
+		return {};
 	}
 
 	/**
 	 * A method to inject values from env vars if required
 	 * @param raw  String to translate, use <<INJECT_BLAH>> to retrieve BLAH
-	 * @returns      Environment variable or original string
+	 * @returns      Object of the cooked string and injections performed
 	 */
-	private static stringInjector(raw: string): string {
+	private static stringInjector(raw: string): { cooked: string, injections: Dictionary<string> } {
+		const injections: Dictionary<string> = {};
 		let cooked = raw;
 		let match = /<<INJECT_(.*?)>>/g.exec(cooked);
 		while (match) {
 			const key = match[1];
 			if (typeof process.env[key] === 'string') {
+				injections[key] = process.env[key];
 				cooked = cooked.replace(match[0], process.env[key]);
 			} else {
 				throw new Error(`${key} expected in environment variables, but not found.`);
 			}
 			match = /<<INJECT_(.*?)>>/g.exec(cooked);
 		}
-		return cooked;
+		return { cooked, injections };
 	}
 
 	/** The Client Bot name. */

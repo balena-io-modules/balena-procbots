@@ -180,7 +180,12 @@ export class SyncBot extends ProcBot {
 				// Then report that we have passed the message on
 				.then((response: MessengerEmitResponse) => {
 					if (response.err) {
-						logger.log(LogLevel.WARN, JSON.stringify({message: response.err.message, stack: response.err.stack, data}));
+						logger.log(LogLevel.WARN, JSON.stringify({
+							// Details of the message and the response
+							data, response,
+							// These are a couple of properties that do not always survive the stringify
+							message: response.err.message, stack: response.err.stack,
+						}));
 						return SyncBot.createErrorComment(
 							to, messenger, data, response.err, name, solutionMatrix, genericErrorMessage
 						)
@@ -476,7 +481,7 @@ export class SyncBot extends ProcBot {
 	 * @returns  Service that wraps and translates specified sub services.
 	 */
 	private static makeMessenger(
-		listenerConstructors: MessengerConnectionDetails, port: number, metadataConfig: MetadataConfiguration
+		listenerConstructors: MessengerConnectionDetails, port: number, metadataConfig: MetadataConfiguration, logger: Logger
 	): MessengerService {
 		// Created this as its own function to scope the `let` a little
 		const messenger = new MessengerService({
@@ -484,7 +489,7 @@ export class SyncBot extends ProcBot {
 			server: port,
 			subServices: listenerConstructors,
 			type: ServiceType.Listener,
-		});
+		}, logger);
 
 		if (messenger) {
 			return messenger;
@@ -494,7 +499,6 @@ export class SyncBot extends ProcBot {
 
 	constructor(name = 'SyncBot') {
 		super(name);
-		const logger = new Logger();
 
 		super.retrieveConfiguration({
 			emitter: 'string',
@@ -502,9 +506,16 @@ export class SyncBot extends ProcBot {
 		}).then((rawConfig) => {
 			if (rawConfig) {
 				const config = ProcBot.injectEnvironmentVariables(rawConfig) as SyncBotConstructor;
+				// Calculate secret to redact, with a couple that are specifically allowed through
+				const secrets = ProcBot.determineInjections(rawConfig);
+				delete secrets.SYNCBOT_PORT;
+				delete secrets.SYNCBOT_NAME;
+				this.logger.secrets = _.values(secrets);
+				this.logger.log(LogLevel.INFO, `---> SyncBot configured to use port '${config.SYNCBOT_PORT}'.`);
+				this.logger.log(LogLevel.INFO, `---> SyncBot configured to use name '${config.SYNCBOT_NAME}'.`);
 				const port = parseInt(config.SYNCBOT_PORT, 10);
 				const messenger = SyncBot.makeMessenger(
-					config.SYNCBOT_LISTENER_CONSTRUCTORS, port, config.SYNCBOT_METADATA_CONFIG
+					config.SYNCBOT_LISTENER_CONSTRUCTORS, port, config.SYNCBOT_METADATA_CONFIG, this.logger
 				);
 				const mappings = config.SYNCBOT_MAPPINGS;
 				const edgesMade = {};
@@ -522,7 +533,7 @@ export class SyncBot extends ProcBot {
 						source,
 						destination,
 						messenger,
-						logger,
+						this.logger,
 						actions,
 						config.SYNCBOT_NAME,
 						config.SYNCBOT_ALIAS_USERS,
@@ -549,7 +560,7 @@ export class SyncBot extends ProcBot {
 							source,
 							destination,
 							messenger,
-							logger,
+							this.logger,
 							[MessengerAction.CreateMessage, MessengerAction.ArchiveThread, MessengerAction.UpdateTags],
 							config.SYNCBOT_NAME,
 							config.SYNCBOT_ALIAS_USERS,
@@ -566,7 +577,7 @@ export class SyncBot extends ProcBot {
 					}
 				});
 			} else {
-				logger.log(LogLevel.WARN, "Couldn't load configuration.");
+				this.logger.log(LogLevel.WARN, "Couldn't load configuration.");
 			}
 		});
 	}

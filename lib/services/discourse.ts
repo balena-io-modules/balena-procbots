@@ -21,6 +21,7 @@ import * as path from 'path';
 import { UrlOptions } from 'request';
 import * as request from 'request-promise';
 import { RequestPromiseOptions } from 'request-promise';
+import { Logger } from '../utils/logger';
 import {
 	DiscourseConstructor, DiscourseEmitContext, DiscourseHandle,
 	DiscourseListenerConstructor, DiscourseResponse, DiscourseServiceEvent,
@@ -37,8 +38,8 @@ export class DiscourseService extends ServiceScaffold<string> implements Service
 	private postsSynced = new Set<number>();
 	private connectionDetails: DiscourseConstructor;
 
-	constructor(data: DiscourseConstructor | DiscourseListenerConstructor) {
-		super(data);
+	constructor(data: DiscourseConstructor | DiscourseListenerConstructor, logger: Logger) {
+		super(data, logger);
 		// #203: Verify connection data
 		this.connectionDetails = data;
 		if (data.type === ServiceType.Listener) {
@@ -139,14 +140,14 @@ export class DiscourseService extends ServiceScaffold<string> implements Service
  * Build this class, typed and activated as a listener.
  * @returns  Service Listener object, awakened and ready to go.
  */
-export function createServiceListener(data: DiscourseListenerConstructor): ServiceListener {
-	return new DiscourseService(data);
+export function createServiceListener(data: DiscourseListenerConstructor, logger: Logger): ServiceListener {
+	return new DiscourseService(data, logger);
 }
 
 /**
  * Build this class, typed as an emitter.
  * @returns  Service Emitter object, ready for your events.
  */
-export function createServiceEmitter(data: DiscourseConstructor): ServiceEmitter {
-	return new DiscourseService(data);
+export function createServiceEmitter(data: DiscourseConstructor, logger: Logger): ServiceEmitter {
+	return new DiscourseService(data, logger);
 }
