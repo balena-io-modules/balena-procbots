@@ -23,6 +23,7 @@ A little Bot, using the ProcBot framework, that links communication services
 * Flows
   * Forums:Troubleshooting - Flowdock:public/s/community - Front:support/community
   * Flowdock:public/s/premium - Front:support/premium
+  * Front:z/leads - Flowdock:r/leads
 * Threads
   * A new thread in a source flow will become a new linked thread in a destination flow
 * Comments
@@ -240,6 +241,30 @@ Flowdock will search the 1-1 history of a user for a phrase that matches "My
 Errors, where possible, are reported in the originating thread as whispers.
 
 ## How would I configure SyncBot?
+
+### Setting up a Front inbox for SyncBot
+
+1) You will need the help of a Front admin to perform these steps
+1) Get the Front API token from Settings > Plugins and API > API
+1) Fire a request similar to the following to acquire a list of inboxes
+	```
+	GET https://api2.frontapp.com/inboxes
+	Accept: application/json
+	Authorization: Bearer a.b.c
+	```
+1) Find the ID of the inbox you care about, should be in the format `inb_abc`.
+1) Create a custom channel for the inbox in Settings > Inboxes > ...inbox... > Add a Channel
+	```
+	Enable undo send = false
+	Auto-assign on reply = false
+	API endpoints outgoing = https://your.syncbot.url/front-dev-null
+	```
+1) Note the channel id, `cha_abc` from incoming url in API Endpoints
+1) Adjust the following values in configs/yml
+	* `SYNCBOT_MAPPINGS`
+		* Add the flow mapping to the array
+	* `SYNCBOT_LISTENER_CONSTRUCTORS.front.channelPerInbox`
+		* Add the map of inbox to channel to the array
 
 ### Example .sh file
 

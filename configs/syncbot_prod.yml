@@ -48,6 +48,12 @@ SYNCBOT_MAPPINGS:
     destination:
       service: "flowdock"
       flow: "public-s-premium"
+  - source:
+      service: "front"
+      flow: "inb_2hvh"
+    destination:
+      service: "flowdock"
+      flow: "r-leads"
 SYNCBOT_LISTENER_CONSTRUCTORS:
   flowdock:
     organization: "rulemotion"
@@ -58,6 +64,7 @@ SYNCBOT_LISTENER_CONSTRUCTORS:
     channelPerInbox:
       inb_23sp: "cha_20ep"
       inb_nla: "cha_20er"
+      inb_2hvh: "cha_5cih"
   discourse:
     instance: "forums.resin.io"
     username: "syncbot"
