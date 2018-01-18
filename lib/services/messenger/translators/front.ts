@@ -83,7 +83,10 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 			conversation_id: threadId,
 			status: 'archived',
 		};
-		return Promise.resolve({ method: ['conversation', 'update'], payload: archiveThreadData });
+		return Promise.resolve({
+			method: ['conversation', 'update'],
+			payload: archiveThreadData
+		});
 	}
 
 	/**
@@ -253,7 +256,10 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 			conversation_id: threadId,
 			tags,
 		};
-		return Promise.resolve({ method: ['conversation', 'update'], payload: updateTagsData });
+		return Promise.resolve({
+			method: ['conversation', 'update'],
+			payload: updateTagsData
+		});
 	}
 
 	/**
@@ -304,7 +310,10 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 				subject: message.details.title,
 				to: [message.details.handle],
 			};
-			return { method: ['message', 'send'], payload: createThreadData };
+			return {
+				method: ['message', 'send'],
+				payload: createThreadData
+			};
 		});
 	}
 
@@ -343,7 +352,10 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 					conversation_id: threadId,
 					subject: message.details.title,
 				};
-				return {method: ['comment', 'create'], payload: createCommentData };
+				return {
+					method: ['comment', 'create'],
+					payload: createCommentData
+				};
 			}
 			// Bundle a 'reply', which is public, for the session.
 			const metadataInjection = TranslatorScaffold.stringifyMetadata(
@@ -364,7 +376,10 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 				subject: message.details.title,
 				type: 'message',
 			};
-			return {method: ['message', 'reply'], payload: createMessageData };
+			return {
+				method: ['message', 'reply'],
+				payload: createMessageData
+			};
 		});
 	}
 
@@ -385,7 +400,10 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 		const readConnectionData: ConversationRequest.ListComments = {
 			conversation_id: threadId,
 		};
-		return Promise.resolve({ method: ['conversation', 'listComments'], payload: readConnectionData });
+		return Promise.resolve({
+			method: ['conversation', 'listComments'],
+			payload: readConnectionData
+		});
 	}
 
 	/**
@@ -480,7 +498,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 				details: {
 					genesis: metadata.genesis || event.source,
 					handle: details.author,
-					hidden,
+					hidden: _.isSet(metadata.hidden) ? metadata.hidden : hidden,
 					// https://github.com/resin-io-modules/resin-procbots/issues/301
 					intercomHack: message.type === 'intercom' ? details.event.conversation.subject !== '' : undefined,
 					tags,
@@ -532,10 +550,9 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	public mergeGenericDetails(
 		connectionDetails: FrontConstructor, genericDetails: MessengerConstructor
 	): FrontConstructor {
-		if (connectionDetails.server === undefined) {
-			connectionDetails.server = genericDetails.server;
+		if (connectionDetails.ingress === undefined) {
+			connectionDetails.ingress = genericDetails.ingress;
 		}
-		connectionDetails.server = connectionDetails.server !== undefined ? connectionDetails.server : genericDetails.server;
 		if (connectionDetails.type === undefined) {
 			connectionDetails.type = genericDetails.type;
 		}

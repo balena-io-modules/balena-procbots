@@ -43,10 +43,10 @@ export const enum ServiceScaffoldErrorCode {
 export type ServerDetails = number | express.Express;
 
 export interface ServiceScaffoldConstructor {
+	/** Port number or server instance to listen to. */
+	ingress?: ServerDetails;
 	/** Endpoint path to listen to. Defaults to the name of the service. */
 	path?: string;
-	/** Port number or server instance to listen to. */
-	server?: ServerDetails;
 	/** Specifies that this listener must be a listener. */
 	type: ServiceType;
 }

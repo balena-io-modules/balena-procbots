@@ -28,6 +28,7 @@ describe('lib/services/messenger/translators/discourse.ts', () => {
 			baseUrl: 'http://e.com',
 			publicity: {
 				hidden: 'whisper',
+				hiddenPreferred: 'murmur',
 				shown: 'comment',
 			},
 		};

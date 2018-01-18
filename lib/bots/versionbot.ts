@@ -282,7 +282,7 @@ export class VersionBot extends ProcBot {
 				type: GithubLogin.App
 			},
 			path: '/webhooks',
-			port: process.env.VERSIONBOT_LISTEN_PORT || 4567,
+			ingress: process.env.VERSIONBOT_LISTEN_PORT || 4567,
 			type: ServiceType.Listener,
 			webhookSecret: webhook
 		});

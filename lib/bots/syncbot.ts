@@ -147,6 +147,14 @@ export class SyncBot extends ProcBot {
 				return SyncBot.readConnectedThread(to, messenger, data, name)
 				// Then comment on or create a thread, if appropriate.
 				.then((threadDetails: MessengerEmitResponse) => {
+					// Cease processing if there's an error and it is not ValueNotFound TranslatorError
+					// Failure to find a thread is fine, this triggers creating a thread
+					if (threadDetails.err && !(
+						(threadDetails.err instanceof TranslatorError) &&
+						(threadDetails.err.code === TranslatorErrorCode.ValueNotFound)
+					)) {
+						return threadDetails;
+					}
 					// If the search resolved with a response.
 					const threadId = _.get(threadDetails, ['response', 'thread'], false);
 					const flowId = _.get(threadDetails, ['response', 'flow'], true);
@@ -178,25 +186,18 @@ export class SyncBot extends ProcBot {
 					};
 				})
 				// Then report that we have passed the message on
-				.then((response: MessengerEmitResponse) => {
-					if (response.err) {
-						logger.log(LogLevel.WARN, JSON.stringify({
-							// Details of the message and the response
-							data, response,
-							// These are a couple of properties that do not always survive the stringify
-							message: response.err.message, stack: response.err.stack,
-						}));
-						return SyncBot.createErrorComment(
-							to, messenger, data, response.err, name, solutionMatrix, genericErrorMessage
-						)
-						.return(response);
-					} else {
-						logger.log(LogLevel.DEBUG, `---> Emitted '${firstLine}' to ${toText}.`);
+				.then((threadDetails: MessengerEmitResponse) => {
+					if (threadDetails.err) {
+						return threadDetails;
 					}
-					return response;
+					logger.log(LogLevel.DEBUG, `---> Emitted '${firstLine}' to ${toText}.`);
+					return threadDetails;
 				})
 				// Then archive the thread, if relevant
 				.then((threadDetails: MessengerEmitResponse) => {
+					if (threadDetails.err) {
+						return threadDetails;
+					}
 					// Pull some details to calculate whether we should archive
 					const threadId = _.get(threadDetails, ['response', 'thread'], false);
 					const flowId = _.get(threadDetails, ['response', 'flow'], true);
@@ -207,8 +208,8 @@ export class SyncBot extends ProcBot {
 						// Pass the instruction to archive to the static method
 						const flow = { service: to.service, flow: to.flow, thread: threadId };
 						return SyncBot.processCommand(flow, messenger, data, MessengerAction.ArchiveThread)
-						.then((response: MessengerEmitResponse) => {
-							const error = response.err;
+						.then((emitResponse: MessengerEmitResponse) => {
+							const error = emitResponse.err;
 							if (!error) {
 								// If the service performed the action fine then report this
 								logger.log(LogLevel.INFO, `---> Archived thread on ${toText} based on comment '${firstLine}'.`);
@@ -217,17 +218,28 @@ export class SyncBot extends ProcBot {
 								// If the service does not support the action then do not panic
 								return threadDetails;
 							} else {
-								return response;
+								return emitResponse;
 							}
 						});
 					}
 					// The correct action was to do nothing, so pass the details along to the next thing
 					return threadDetails;
 				})
-				// We've got no more actions to perform, but ProcBot only expects promise resolution, no actual payload
-				// Explicitly bookending the promise chain enables each .then() above to be developed atomically
-				.then((_threadDetails: MessengerEmitResponse) => {
-					return;
+				// At the end report any errors. ProcBot only expects promise resolution, no actual payload.
+				// This also bookends the promise chain so each .then() above can be developed atomically.
+				.then((threadDetails: MessengerEmitResponse) => {
+					if (threadDetails.err) {
+						logger.log(LogLevel.WARN, JSON.stringify({
+							// Details of the message and the response
+							data, threadDetails,
+							// These are a couple of properties that do not always survive the stringify
+							message: threadDetails.err.message, stack: threadDetails.err.stack,
+						}));
+						return SyncBot.createErrorComment(
+							to, messenger, data, threadDetails.err, name, solutionMatrix, genericErrorMessage
+						)
+						.return();
+					}
 				});
 			}
 			// The event received doesn't match the profile being routed, so nothing is the correct action.
@@ -263,7 +275,7 @@ export class SyncBot extends ProcBot {
 			details: {
 				genesis: to.service,
 				handle: name,
-				hidden: true,
+				hidden: 'preferred',
 				tags: data.details.tags,
 				text: `${to.service} reports \`${solution.description}\`.\r\n${fixes}\r\n`,
 				title: data.details.title,
@@ -397,7 +409,7 @@ export class SyncBot extends ProcBot {
 					details: {
 						genesis: 'duff_SyncBot_createThreadAndConnect_a', // will be replaced
 						handle: name,
-						hidden: true,
+						hidden: 'preferred',
 						tags: data.details.tags,
 						text: 'This is mirrored in ', // will be appended
 						title: data.details.title,
@@ -472,7 +484,7 @@ export class SyncBot extends ProcBot {
 		// Created this as its own function to scope the `let` a little
 		const messenger = new MessengerService({
 			metadataConfig,
-			server: port,
+			ingress: port,
 			subServices: listenerConstructors,
 			type: ServiceType.Listener,
 		}, logger);

@@ -185,7 +185,7 @@ export class KeyframeBot extends ProcBot {
 				type: GithubLogin.App
 			},
 			path: '/keyframehooks',
-			port: GithubPort,
+			ingress: GithubPort,
 			type: 'listener',
 			webhookSecret: webhook
 		});

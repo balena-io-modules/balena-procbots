@@ -45,8 +45,9 @@ export class FrontService extends ServiceScaffold<string> implements ServiceList
 			this.registerHandler('front-dev-null', (_formData, response) => {
 				response.sendStatus(200);
 			});
+			const path = listenerData.path || this.serviceName;
 			this.session.registerEvents({
-				hookPath: `/${listenerData.path || this.serviceName}`,
+				hookPath: `/${path}`,
 				server: this.expressApp,
 			}, (error: Error | null, event?: Event) => {
 				if (!error && event) {
@@ -62,6 +63,10 @@ export class FrontService extends ServiceScaffold<string> implements ServiceList
 					this.logger.log(LogLevel.WARN, error.message);
 				}
 			});
+			this.logger.log(
+				LogLevel.INFO,
+				`---> Added endpoint '/${path}' for '${this.serviceName}'.`
+			);
 		} else {
 			this.session = new Front(data.token);
 		}

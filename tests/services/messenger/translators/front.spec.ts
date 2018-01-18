@@ -5,16 +5,18 @@ import * as Bluebird from 'bluebird';
 import * as FS from 'fs';
 import { MessengerAction, TransmitInformation } from '../../../../lib/services/messenger-types';
 import { FrontTranslator } from '../../../../lib/services/messenger/translators/front';
+import { MetadataConfiguration } from '../../../../lib/services/messenger/translators/translator-types';
 
 const fsReadFile: (filename: string, options?: any) => Bluebird<Buffer | string> = Bluebird.promisify(FS.readFile);
 
 describe('lib/services/messenger/translators/front.ts', () => {
 	describe('FrontTranslator.convertReadConnectionResponse', () => {
 		it('should convert a list of messages into an id', async () => {
-			const config = {
+			const config: MetadataConfiguration = {
 				baseUrl: 'http://resin.io',
 				publicity: {
 					hidden: 'whisper',
+					hiddenPreferred: 'murmur',
 					shown: 'reply',
 				}
 			};

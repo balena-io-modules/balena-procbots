@@ -44,6 +44,8 @@ export interface ReceiptIds extends MessengerBaseIds {
 	thread: string;
 }
 
+export type PrivacyPreference = boolean | 'preferred';
+
 /** The details that all messages shall possess. */
 export interface MessageDetails {
 	/** The originating service that the message synced from */
@@ -51,7 +53,7 @@ export interface MessageDetails {
 	/** The alias relevant to this message, in github form. */
 	handle: string;
 	/** Whether this message should be publicly visible. */
-	hidden: boolean;
+	hidden: PrivacyPreference;
 	// https://github.com/resin-io-modules/resin-procbots/issues/301
 	/** For Intercom messages on Front, whether they had an empty subject line */
 	intercomHack?: boolean;

@@ -254,7 +254,7 @@ export class NotifyBot extends ProcBot {
 				type: GithubLogin.App
 			},
 			path: WebhookPath,
-			port: NotifyBotPort,
+			ingress: NotifyBotPort,
 			type: ServiceType.Listener,
 			webhookSecret: config.githubSecret
 		});

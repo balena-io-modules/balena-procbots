@@ -41,7 +41,7 @@ export class MessengerService extends ServiceScaffold<string> implements Service
 	constructor(data: MessengerConstructor, logger: Logger) {
 		super(data, logger, path.basename(__filename.split('.')[0]));
 		// Our super might have built a genuine express instance out of a port number
-		data.server = this.expressApp;
+		data.ingress = this.expressApp;
 
 		// This loop creates a set of translators for each sub-service this instance interacts with.
 		this.translators = {};
