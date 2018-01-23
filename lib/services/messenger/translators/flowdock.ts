@@ -62,12 +62,14 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 	): TranslatorMetadata {
 		const superFormat = (format === MetadataEncoding.Flowdock) ? MetadataEncoding.HiddenMD : format;
 		const metadata = TranslatorScaffold.extractMetadata(message, superFormat, config);
-		const findHashtag = new RegExp(`(?:^|\\W)#${config.publicity.shown}(?:\\W|$)`, 'i');
+		const findPublic = '^> *';
 		if (format === MetadataEncoding.Flowdock && metadata.genesis === null) {
-			metadata.hidden = !findHashtag.test(metadata.content);
+			// Check for magic syntax if the message originated in Flowdock
+			metadata.hidden = !(new RegExp(findPublic, 'i').test(metadata.content));
 		}
 		if (metadata.hidden === false) {
-			metadata.content = metadata.content.replace(findHashtag, '').trim();
+			// Tidy any magic syntax from public messages
+			metadata.content = metadata.content.replace(new RegExp(findPublic, 'igm'), '').trim();
 		}
 		return metadata;
 	}
@@ -117,29 +119,39 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 
 	/**
 	 * Internal function to create a formatted and length limited text block for a message.
-	 * @param body      Body of the message, this part may be snipped
-	 * @param header    Header, if any, to put at the top of the message.
-	 * @param metadata  Metadata string, if any, to inject at the beginning of the content.
-	 * @param footer    Footer, if any, to put at the bottom of the message.
-	 * @param tags      Array, or string, of tags to put in the message text.
+	 * @param body     Body of the message, this part may end up snipped.
+	 * @param options  Other parts of the message and guides as to formatting.
+	 *                   may contain header, metadata, footer, tags and linePrefix.
 	 * @returns         Markdown formatted text block within Flowdock's character limit.
 	 */
 	public static createFormattedText(
-		body: string, header?: string, metadata?: string, footer?: string, tags?: string[]
+		body: string,
+		options: {
+			header?: string;
+			metadata?: string;
+			footer?: string;
+			tags?: string[];
+			linePrefix?: string;
+			lengthLimit?: number;
+		} = {},
 	): string {
-		const lengthLimit = 8096;
-		const first = header ? `${header}\n--\n` : '';
-		const tagString = tags ? `${FlowdockTranslator.makeTagString(tags)}\n` : '';
-		const inject = metadata ? metadata : '';
-		const last = footer ? `\n${footer}` : '';
-		if ((first.length + tagString.length + inject.length + body.length + last.length) < lengthLimit) {
-			return `${first}${tagString}${body}${last}${inject}`;
+		const lengthLimit = (options && options.lengthLimit) || 8096;
+		const prefix = options.linePrefix || '';
+		const first = options.header ? `${options.header}\n--\n` : '';
+		const second = options.tags ? `${FlowdockTranslator.makeTagString(options.tags)}\n` : '';
+		const prefixedBody = body.replace(/^/gmi, prefix);
+		const penultimate = options.footer ? `\n${options.footer}` : '';
+		const last = options.metadata ? `\n${options.metadata}` : '';
+		const candidate = `${first}${second}${prefixedBody}${penultimate}${last}`;
+		if (candidate.length < lengthLimit) {
+			return candidate;
 		}
-		const snipProvisional = '\n\n`... about xx% shown.`';
-		const space = lengthLimit - first.length - tagString.length - inject.length - snipProvisional.length - last.length;
-		const snipped = body.substr(0, space);
-		const snipText = snipProvisional.replace('xx', Math.floor((100*snipped.length)/body.length).toString(10));
-		return `${first}${tagString}${snipped}${snipText}${last}${inject}`;
+		const snipProvisional = '\n`… about xx% shown.`';
+		const midSpace = lengthLimit - `${first}${second}${snipProvisional}${penultimate}${last}`.length;
+		const snipped = prefixedBody.substr(0, midSpace);
+		const roundedSnip = Math.floor((100*snipped.length)/body.length);
+		const snipText = snipProvisional.replace('xx', roundedSnip.toString(10));
+		return `${first}${second}${snipped}${snipText}${penultimate}${last}`;
 	}
 
 	/**
@@ -234,11 +246,11 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 			path: `/flows/${orgId}/${flowId}/messages`,
 			payload: {
 				// The concatenated string, of various data nuggets, to emit.
-				content: FlowdockTranslator.createFormattedText(
-					message.details.text,
-					message.details.title,
-					FlowdockTranslator.stringifyMetadata(message, MetadataEncoding.Flowdock, metadataConfig)
-				),
+				content: FlowdockTranslator.createFormattedText(message.details.text, {
+					header: message.details.title,
+					metadata: FlowdockTranslator.stringifyMetadata(message, MetadataEncoding.Flowdock, metadataConfig),
+					linePrefix: '>',
+				}),
 				event: 'message',
 				external_user_name: message.details.handle.replace(/\s/g, '_'),
 			},
@@ -268,13 +280,10 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 		return Promise.resolve({ method: ['post'], payload: {
 			path: `/flows/${orgId}/${message.target.flow}/threads/${threadId}/messages`,
 			payload: {
-				content: FlowdockTranslator.createFormattedText(
-					message.details.text,
-					undefined,
-					FlowdockTranslator.stringifyMetadata(message, MetadataEncoding.Flowdock, metadataConfig),
-					undefined,
-					message.details.hidden ? undefined : [metadataConfig.publicity.shown]
-				),
+				content: FlowdockTranslator.createFormattedText(message.details.text, {
+					metadata: FlowdockTranslator.stringifyMetadata(message, MetadataEncoding.Flowdock, metadataConfig),
+					linePrefix: message.details.hidden ? '' : '>',
+				}),
 				event: 'message',
 				external_user_name: message.details.handle.replace(/\s/g, '_'),
 			}
@@ -433,8 +442,10 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 		return FlowdockTranslator.fetchFromSession(this.session, `flows/${org}/${flow}/messages/${firstMessageId}`)
 		.then((firstMessage) => {
 			cookedEvent.details.tags = _.uniq(firstMessage.tags.filter(tagFilter));
-			const findTitle = firstMessage.content.match(titleSplitter);
-			cookedEvent.details.title = findTitle ? findTitle[1].trim() : firstMessage.content;
+			const encoding = MetadataEncoding.Flowdock;
+			const content = FlowdockTranslator.extractMetadata(firstMessage.content, encoding, this.metadataConfig).content;
+			const findTitle = content.match(titleSplitter);
+			cookedEvent.details.title = findTitle ? findTitle[1].trim() : content.trim();
 			return Promise.resolve(undefined);
 		})
 		// Get details of the user nickname.

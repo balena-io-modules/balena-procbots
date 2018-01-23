@@ -319,7 +319,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 				const messageString = TranslatorScaffold.convertPings(message.details.text, converter);
 				const createCommentData: CommentRequest.Create = {
 					author_id: userId,
-					body: `${_.escape(messageString)}${metadataInjection}`,
+					body: `${_.escape(messageString)}\n${metadataInjection}`,
 					conversation_id: threadId,
 					subject: message.details.title,
 				};
@@ -335,7 +335,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 			const messageString = TranslatorScaffold.convertPings(message.details.text, converter);
 			const createMessageData: MessageRequest.Reply = {
 				author_id: userId,
-				body: `${messageString}${metadataInjection}`,
+				body: `${messageString}<br />${metadataInjection}`,
 				conversation_id: threadId,
 				options: {
 					archive: false,

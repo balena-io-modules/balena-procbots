@@ -14,7 +14,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## v3.14.11 - 2018-01-05
 
-* Isolate metadata strings from markdown in the content #376 [Andrew Lucas]
+* SyncBot: Isolate metadata strings from markdown in the content #376 [Andrew Lucas]
 
 ## v3.14.10 - 2017-12-20
 
