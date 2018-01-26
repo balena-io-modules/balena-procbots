@@ -86,6 +86,24 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	}
 
 	/**
+	 * Converts a response into the generic format.
+	 * @param metadataConfig  Configuration that may have been used to encode metadata.
+	 * @param message       The initial message that prompted this action.
+	 * @param response      The response from the SDK.
+	 * @returns             Promise that resolve to the thread details.
+	 */
+	public static convertReadConnectionResponse(
+		metadataConfig: MetadataConfiguration, message: TransmitInformation, response: ConversationComments
+	): Promise<SourceDescription> {
+		return Promise.resolve(TranslatorScaffold.extractSource(
+			message.source.service,
+			_.reverse(_.map(response._results, (comment) => { return comment.body; })),
+			metadataConfig,
+			MetadataEncoding.HiddenMD,
+		));
+	}
+
+	/**
 	 * Promises to find the name of the person who authored a comment.
 	 * @param connectionDetails  Details required to connect to the Front instance.
 	 * @param message            Details of the message we care about.
@@ -369,24 +387,6 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 
 	/**
 	 * Converts a response into the generic format.
-	 * @param metadataConfig  Configuration that may have been used to encode metadata.
-	 * @param message       The initial message that prompted this action.
-	 * @param response      The response from the SDK.
-	 * @returns             Promise that resolve to the thread details.
-	 */
-	private static convertReadConnectionResponse(
-		metadataConfig: MetadataConfiguration, message: TransmitInformation, response: ConversationComments
-	): Promise<SourceDescription> {
-		return Promise.resolve(TranslatorScaffold.extractSource(
-			message.source.service,
-			_.map(response._results, (comment) => { return comment.body; }),
-			metadataConfig,
-			MetadataEncoding.HiddenMD,
-		));
-	}
-
-	/**
-	 * Converts a response into the generic format.
 	 * @param _message   Not used, the initial message that prompted this action.
 	 * @param _response  Not used, the response from the SDK.
 	 * @returns          Promise that resolve to the thread details.
@@ -487,7 +487,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 				source: {
 					service: event.source,
 					message: message.id,
-					flow: 'duff', // Gets replaced
+					flow: 'duff_FrontTranslator_eventIntoMessages_a', // Gets replaced
 					thread: details.event.conversation.id,
 					url: `https://app.frontapp.com/open/${details.event.conversation.id}`,
 					username: details.author,
