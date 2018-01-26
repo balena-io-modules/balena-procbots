@@ -105,7 +105,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 			htmlVerb: 'POST',
 			path: '/posts',
 			body: {
-				raw: `${messageString}${metadataString}`,
+				raw: `${messageString}\n${metadataString}`,
 				topic_id: thread,
 				whisper: message.details.hidden ? 'true' : 'false',
 			}
@@ -137,7 +137,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 			path: '/posts',
 			body: {
 				category: message.target.flow,
-				raw: `${messageString}${metadataString}`,
+				raw: `${messageString}\n${metadataString}`,
 				title,
 				unlist_topic: 'false',
 			},

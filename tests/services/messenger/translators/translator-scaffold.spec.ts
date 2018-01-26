@@ -105,7 +105,7 @@ describe('lib/services/messenger/translators/translator-scaffold.ts', () => {
 				MetadataEncoding.HiddenMD,
 				exampleConfig,
 			);
-			expect(encodedMetadata).to.equal('\n\n[](http://e.com?hidden=whisper&source=g&flow=i&thread=f)');
+			expect(encodedMetadata).to.equal('[](http://e.com?hidden=whisper&source=g&flow=i&thread=f)');
 		});
 
 		it('should encode metadata into an invisible link html string', () => {

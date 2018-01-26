@@ -115,7 +115,7 @@ export abstract class TranslatorScaffold implements Translator {
 			case MetadataEncoding.HiddenHTML:
 				return `<a href="${config.baseUrl}${queryString}"></a>`;
 			case MetadataEncoding.HiddenMD:
-				return `\n\n[](${config.baseUrl}${queryString})`;
+				return `[](${config.baseUrl}${queryString})`;
 			default:
 				throw new Error(`${format} format not recognised`);
 		}
