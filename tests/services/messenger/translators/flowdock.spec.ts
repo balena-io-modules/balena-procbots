@@ -138,6 +138,23 @@ describe('lib/services/messenger/translators/flowdock.ts', () => {
 			expect(extractedMetadata.content).to.equal(expected);
 		});
 
+		it('should return private for a message that has lines before the magic syntax', () => {
+			const message = [
+				'',
+				'>i',
+			].join('\n');
+			const expected = [
+				'>i',
+			].join('\n');
+			const extractedMetadata = FlowdockTranslator.extractMetadata(
+				message,
+				MetadataEncoding.Flowdock,
+				config,
+			);
+			expect(extractedMetadata.hidden).to.equal(true);
+			expect(extractedMetadata.content).to.equal(expected);
+		});
+
 		it('should trust metadata over magic syntax', () => {
 			const extractedMetadata = FlowdockTranslator.extractMetadata(
 				'>h[](http://e.com?hidden=whisper&source=g&flow=j&thread=i)',
