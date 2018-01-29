@@ -65,7 +65,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 		const findPublic = '^> *';
 		if (format === MetadataEncoding.Flowdock && metadata.genesis === null) {
 			// Check for magic syntax if the message originated in Flowdock
-			metadata.hidden = !(new RegExp(findPublic, 'i').test(metadata.content));
+			metadata.hidden = !(new RegExp(findPublic, 'i').test(message));
 		}
 		if (metadata.hidden === false) {
 			// Tidy any magic syntax from public messages
