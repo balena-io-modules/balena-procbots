@@ -336,6 +336,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 			const createMessageData: MessageRequest.Reply = {
 				author_id: userId,
 				body: `${messageString}<br />${metadataInjection}`,
+				channel_id: connectionDetails.channelPerInbox && connectionDetails.channelPerInbox[message.target.flow],
 				conversation_id: threadId,
 				options: {
 					archive: false,
