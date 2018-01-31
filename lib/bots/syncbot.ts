@@ -195,20 +195,6 @@ export class SyncBot extends ProcBot {
 					}
 					return response;
 				})
-				// Then update the tags, if relevant
-				.then((response: MessengerEmitResponse) => {
-					// If the process this far resolved with a response
-					const threadId = _.get(response, ['response', 'thread'], false);
-					const flowId = _.get(response, ['response', 'flow'], true);
-					if (threadId && (flowId === true || flowId === to.flow) && _.includes(actions, MessengerAction.UpdateTags)) {
-						// Request that the tags be updated
-						const flow = { service: to.service, flow: to.flow, thread: threadId };
-						return SyncBot.processCommand(flow, messenger, data, MessengerAction.UpdateTags)
-						.return(response);
-					}
-					// The correct action was to do nothing, so pass the details along to the next thing
-					return response;
-				})
 				// Then archive the thread, if relevant
 				.then((threadDetails: MessengerEmitResponse) => {
 					// Pull some details to calculate whether we should archive
@@ -527,7 +513,6 @@ export class SyncBot extends ProcBot {
 						MessengerAction.CreateMessage,
 						MessengerAction.CreateThread,
 						MessengerAction.ArchiveThread,
-						MessengerAction.UpdateTags,
 					];
 					const router = SyncBot.makeRouter(
 						source,
@@ -551,7 +536,7 @@ export class SyncBot extends ProcBot {
 					_.set(edgesMade, path, true);
 				});
 				_.forEach(mappings, (mapping) => {
-					// Create the reverse links for just messages and tags
+					// Create the reverse links for just messages
 					const source = mapping.destination;
 					const destination = mapping.source;
 					const path = [source.service, source.flow, destination.service, destination.flow];
@@ -561,7 +546,7 @@ export class SyncBot extends ProcBot {
 							destination,
 							messenger,
 							this.logger,
-							[MessengerAction.CreateMessage, MessengerAction.ArchiveThread, MessengerAction.UpdateTags],
+							[MessengerAction.CreateMessage, MessengerAction.ArchiveThread],
 							config.SYNCBOT_NAME,
 							config.SYNCBOT_ALIAS_USERS,
 							config.SYNCBOT_ERROR_SOLUTIONS,
