@@ -1,10 +1,52 @@
 /// <reference types="mocha" />
 import { expect } from 'chai';
 
+import * as Bluebird from 'bluebird';
+import * as FS from 'fs';
 import { MessengerAction, TransmitInformation } from '../../../../lib/services/messenger-types';
 import { FrontTranslator } from '../../../../lib/services/messenger/translators/front';
 
+const fsReadFile: (filename: string, options?: any) => Bluebird<Buffer | string> = Bluebird.promisify(FS.readFile);
+
 describe('lib/services/messenger/translators/front.ts', () => {
+	describe('FrontTranslator.convertReadConnectionResponse', () => {
+		it('should convert a list of messages into an id', async () => {
+			const config = {
+				baseUrl: 'http://resin.io',
+				publicity: {
+					hidden: 'whisper',
+					shown: 'reply',
+				}
+			};
+			const target = {
+				action: 1,
+				source: {
+					service: 'flowdock',
+					username: 'duff',
+					message: 'duff',
+					thread: 'duff',
+					flow: 'duff',
+				},
+				target: {
+					service: 'duff',
+					username: 'duff',
+					flow: 'duff',
+				},
+				details: {
+					genesis: 'duff',
+					handle: 'duff',
+					hidden: false,
+					tags: [],
+					text: 'duff',
+					title: 'duff',
+				}
+			};
+			const messages = await fsReadFile('tests/services/messenger/translators/example-front-thread.json', 'utf8');
+			const messageObject = JSON.parse(messages.toString());
+			const converted = await FrontTranslator.convertReadConnectionResponse(config, target, messageObject);
+			expect(converted.thread).to.equal('rightId');
+		});
+	});
 
 	describe('FrontTranslator.convertUsernameToGeneric', () => {
 		it('should convert a funny username into generic form', () => {

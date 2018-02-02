@@ -247,7 +247,7 @@ export class SyncBot extends ProcBot {
 	 * @returns          Promise that resolves to the response from creating the message.
 	 */
 	private static createErrorComment(
-		to: FlowDefinition,
+		to: FlowDefinition | ThreadDefinition,
 		messenger: MessengerService,
 		data: BasicMessageInformation,
 		error: Error,
@@ -269,8 +269,8 @@ export class SyncBot extends ProcBot {
 				title: data.details.title,
 			},
 			source: {
-				message: 'duff',
-				thread: 'duff',
+				message: 'duff_SyncBot_createErrorComment_a',
+				thread: _.get(to, 'thread', 'duff_SyncBot_createErrorComment_b'),
 				service: to.service,
 				username: name,
 				flow: to.flow,
@@ -327,13 +327,13 @@ export class SyncBot extends ProcBot {
 			action: MessengerAction.ReadConnection,
 			details: data.details,
 			// If credential details are required then consult with the SyncBot user.
-			// Most of `source` doesn't matter, except `service`.
+			// Most of `source` doesn't matter, except `service` and `flow`.
 			source: {
 				flow: to.flow,
-				message: 'duff',
+				message: 'duff_SyncBot_readConnectedThread_a',
 				// The service you wish to find a connection for.
 				service: to.service,
-				thread: 'duff',
+				thread: 'duff_SyncBot_readConnectedThread_b',
 				username,
 			},
 			// This feels paradoxical because the target of the read request ...
@@ -395,7 +395,7 @@ export class SyncBot extends ProcBot {
 					action: MessengerAction.CreateMessage,
 					// A message that advertises the connected thread.
 					details: {
-						genesis: 'duff', // will be replaced
+						genesis: 'duff_SyncBot_createThreadAndConnect_a', // will be replaced
 						handle: name,
 						hidden: true,
 						tags: data.details.tags,
@@ -404,18 +404,18 @@ export class SyncBot extends ProcBot {
 					},
 					// this message is being created from nothing.
 					source: {
-						message: 'duff',
-						thread: 'duff', // will be replaced
-						flow: 'duff', // will be replaced
-						service: 'duff', // will be replaced
-						username: 'duff',
+						message: 'duff_SyncBot_createThreadAndConnect_b',
+						thread: 'duff_SyncBot_createThreadAndConnect_c', // will be replaced
+						flow: 'duff_SyncBot_createThreadAndConnect_d', // will be replaced
+						service: 'duff_SyncBot_createThreadAndConnect_e', // will be replaced
+						username: 'duff_SyncBot_createThreadAndConnect_f',
 					},
 					target: {
-						flow: 'duff', // will be replaced
-						service: 'duff', // will be replaced
+						flow: 'duff_SyncBot_createThreadAndConnect_g', // will be replaced
+						service: 'duff_SyncBot_createThreadAndConnect_h', // will be replaced
 						// This is happening using SyncBot's credentials.
 						username: name,
-						thread: 'duff' // will be replaced
+						thread: 'duff_SyncBot_createThreadAndConnect_i' // will be replaced
 					}
 				};
 

@@ -423,11 +423,11 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 		const cookedEvent: BasicMessageInformation = {
 			details: {
 				genesis: metadata.genesis || event.source,
-				handle: 'duff', // gets replaced
+				handle: 'duff_FlowdockTranslator_eventIntoMessage_a', // gets replaced
 				hidden: metadata.hidden,
 				tags: [], // gets replaced
 				text,
-				title: 'duff', // gets replaced
+				title: 'duff_FlowdockTranslator_eventIntoMessage_b', // gets replaced
 			},
 			source: {
 				service: event.source,
@@ -435,7 +435,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 				flow,
 				thread,
 				url: `https://www.flowdock.com/app/${org}/${flow}/threads/${thread}`,
-				username: 'duff', // gets replaced
+				username: 'duff_FlowdockTranslator_eventIntoMessage_c', // gets replaced
 			},
 		};
 		// Get details of the tags and title from the first message.
