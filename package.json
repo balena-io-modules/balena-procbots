@@ -74,6 +74,7 @@
     "jsonwebtoken": "^7.2.1",
     "keyfctl": "git://github.com/resin-io-modules/keyfctl.git#linter",
     "lodash": "^4.17.2",
+    "marked": "^0.3.12",
     "mkdirp": "^0.5.1",
     "moment": "^2.18.1",
     "node-getopt": "^0.2.3",

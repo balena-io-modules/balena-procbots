@@ -21,6 +21,7 @@ import {
 	Front, Message, MessageRequest,
 } from 'front-sdk';
 import * as _ from 'lodash';
+import * as marked from 'marked';
 import * as request from 'request-promise';
 import { FrontConstructor, FrontEmitInstructions, FrontResponse, FrontServiceEvent } from '../../front-types';
 import {
@@ -353,7 +354,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 			const messageString = TranslatorScaffold.convertPings(message.details.text, converter);
 			const createMessageData: MessageRequest.Reply = {
 				author_id: userId,
-				body: `${messageString}<br />${metadataInjection}`,
+				body: `${marked(messageString.replace(/\n+/g, '\n\n'))}${metadataInjection}`,
 				conversation_id: threadId,
 				options: {
 					archive: false,
