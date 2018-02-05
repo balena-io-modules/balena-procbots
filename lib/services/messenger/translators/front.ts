@@ -300,6 +300,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 					archive: false,
 					tags: message.details.tags,
 				},
+				sender_name: message.target.username,
 				subject: message.details.title,
 				to: [message.details.handle],
 			};
@@ -359,6 +360,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 				options: {
 					archive: false,
 				},
+				sender_name: message.target.username,
 				subject: message.details.title,
 				type: 'message',
 			};
