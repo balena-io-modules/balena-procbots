@@ -222,7 +222,8 @@ export class GithubTranslator extends TranslatorScaffold implements Translator {
 			context: `${event.source}.${thread.id}`,
 			cookedEvent: {
 				details: {
-					genesis: metadata.genesis || event.source,
+					service: metadata.service || event.source,
+					flow: metadata.flow || event.cookedEvent.flow,
 					handle: data.sender.login,
 					hidden: _.isSet(metadata.hidden) ? metadata.hidden : false,
 					tags: thread.labels,

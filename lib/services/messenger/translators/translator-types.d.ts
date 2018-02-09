@@ -24,7 +24,7 @@ export interface TranslatorMetadata {
 	/** Flow ID this this message was created on. */
 	flow: string | null;
 	/** The source for this message, to prevent infinite loops. */
-	genesis: string | null;
+	service: string | null;
 	/** Whether this message should be hidden, because some services do not support such natively. */
 	hidden: PrivacyPreference;
 	/** Thread ID that this message was created on. */

@@ -76,6 +76,13 @@ SYNCBOT_MAPPINGS:
       service: "flowdock"
       flow: "testing"
       alias: "sandbox"
+  - source:
+      service: "flowdock"
+      flow: "testing"
+      alias: "sandbox"
+    destination:
+      service: "flowdock"
+      flow: "testing_hubot"
 SYNCBOT_METADATA_CONFIG:
   baseUrl: "http://resin.io"
   publicity:

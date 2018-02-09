@@ -490,13 +490,15 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 			const hidden = _.includes(['comment', 'mention'], details.event.type);
 			const metadataFormat = hidden ? MetadataEncoding.HiddenMD : MetadataEncoding.HiddenHTML;
 			const metadata = TranslatorScaffold.extractMetadata(message.body, metadataFormat, this.metadataConfig);
+			const duffFlow = 'duff_FrontTranslator_eventIntoMessages_b';
 			const tags = _.map(details.event.conversation.tags, (tag: {name: string}) => {
 				return tag.name;
 			});
 			// Bundle it in service scaffold form and resolve.
 			const cookedEvent: BasicMessageInformation = {
 				details: {
-					genesis: metadata.genesis || event.source,
+					service: metadata.service || event.source,
+					flow: metadata.flow || duffFlow, // Gets replaced
 					handle: details.author,
 					hidden: _.isSet(metadata.hidden) ? metadata.hidden : hidden,
 					// https://github.com/resin-io-modules/resin-procbots/issues/301
@@ -517,6 +519,9 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 			return _.map(details.inboxes._results, (inbox) => {
 				const recookedEvent = _.cloneDeep(cookedEvent);
 				recookedEvent.source.flow = inbox.id;
+				if (recookedEvent.details.flow === duffFlow) {
+					recookedEvent.details.flow = inbox.id;
+				}
 				return {
 					context: `${event.source}.${event.context}`,
 					type: this.eventIntoMessageType(event),

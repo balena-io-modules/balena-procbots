@@ -66,10 +66,10 @@ export abstract class TranslatorScaffold implements Translator {
 			(message) => {
 				if (format) {
 					const metadata = TranslatorScaffold.extractMetadata(message, format, config);
-					if ((metadata.genesis === service) && metadata.thread && metadata.flow) {
+					if ((metadata.service === service) && metadata.thread && metadata.flow) {
 						return {
 							flow: metadata.flow,
-							service: metadata.genesis,
+							service: metadata.service,
 							thread: metadata.thread,
 						};
 					}
@@ -192,7 +192,7 @@ export abstract class TranslatorScaffold implements Translator {
 			return {
 				content: TranslatorScaffold.unixifyNewLines(message.replace(regex, '').trim()),
 				flow: metadata[3] || null,
-				genesis: metadata[2] || null,
+				service: metadata[2] || null,
 				hidden: TranslatorScaffold.findPublicityFromWord(metadata[1], indicators),
 				thread: metadata[4] || null,
 			};
@@ -200,7 +200,7 @@ export abstract class TranslatorScaffold implements Translator {
 		return {
 			content: TranslatorScaffold.unixifyNewLines(message.trim()),
 			flow: null,
-			genesis: null,
+			service: null,
 			hidden: true,
 			thread: null,
 		};
