@@ -1,6 +1,6 @@
 {
   "name": "resin-procbots",
-  "version": "3.14.20",
+  "version": "3.14.21",
   "description": "Process robots for automating CI pipelines",
   "homepage": "https://github.com/resin-io-modules/resin-procbots#readme",
   "preferGlobal": true,
@@ -85,6 +85,6 @@
     "rmdir": "^1.2.0",
     "temp": "^0.8.3",
     "typed-error": "^1.0.1",
-    "versionist": "^2.10.0"
+    "versionist": "^2.12.1"
   }
 }
