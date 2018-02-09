@@ -148,8 +148,6 @@ export interface KeyframeBotConstructor {
 //    * Carry out deploy to the correct environment from the PR
 //    * On succesful deploy, kick VersionBot to merge the PR to `master`
 export class KeyframeBot extends ProcBot {
-	/** Github ServiceListener name. */
-	private githubListenerName: string;
 	/** Github ServiceEmitter. */
 	private githubEmitter: GithubService;
 	/** Github ServiceEmitter name. */
@@ -211,7 +209,6 @@ export class KeyframeBot extends ProcBot {
 			throw new Error("Couldn't create a Github emitter");
 		}
 		this.githubEmitter = <GithubService>ghEmitter;
-		this.githubListenerName = ghListener.serviceName;
 		this.githubEmitterName = ghEmitter.serviceName;
 
 		// Github API handle
