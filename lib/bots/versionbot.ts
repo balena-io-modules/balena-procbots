@@ -73,7 +73,7 @@ interface RepoFileData {
 	/** New version of the component to commit as. */
 	version: string;
 	/** The files to commit. */
-	files: FileMapping[];
+	files: FileMapping[] | EncodedFile[];
 }
 
 /** The ReviewState enumerated type denotes an approved or blocked review. */
@@ -250,8 +250,6 @@ export class VersionBot extends ProcBot {
 		return _.some(labels, { name: labelName });
 	}
 
-	/** Github ServiceListener name. */
-	private githubListenerName: string;
 	/** Github ServiceEmitter name. */
 	private githubEmitterName: string;
 	/** Github App ServiceEmitter. */
@@ -306,7 +304,6 @@ export class VersionBot extends ProcBot {
 		if (!ghEmitter) {
 			throw new Error("Couldn't create a Github emitter");
 		}
-		this.githubListenerName = ghListener.serviceName;
 		this.githubEmitterName = ghEmitter.serviceName;
 		this.githubEmitter = ghEmitter;
 
@@ -1132,8 +1129,9 @@ export class VersionBot extends ProcBot {
 
 			// Read each file and base64 encode it.
 			return Promise.map(versionData.files, (file: string) => {
-				return fsReadFile(`${fullPath}${file}`).call(`toString`, 'base64')
-				.then((encoding: string) => {
+				return fsReadFile(`${fullPath}${file}`)
+				.then((buffer: Buffer) => {
+					const encoding = buffer.toString('base64');
 					let newFile: FileMapping = {
 						file,
 						encoding,
@@ -1196,7 +1194,7 @@ export class VersionBot extends ProcBot {
 			// If so, we use that rather than the built-in default.
 			return fsFileExists(`${versionData.fullPath}/versionist.conf.js`)
 			.return(true)
-			.catchReturn({ code: 'ENOENT' }, false);
+			.catchReturn(false);
 		}).catch(() => {
 			// Sanitise the error so we send something cleaner up.
 			throw new Error(`Cloning of branch ${versionData.branchName} in ${versionData.repoFullName} failed`);
@@ -1219,7 +1217,8 @@ export class VersionBot extends ProcBot {
 					throw new Error(`Versionist failed: ${err.message}`);
 				});
 			});
-		}).get(1).then((status: string) => {
+		}).then((commandResponses: string[]) => {
+			const status = commandResponses[1];
 			const moddedFiles: string[] = [];
 			let changeLines = status.split('\n');
 			let changeLogFound = false;
@@ -1316,8 +1315,8 @@ export class VersionBot extends ProcBot {
 			// We need to save the tree data, we'll be modifying it for updates in a moment.
 
 			// Create a new blob for our files.
-			// Implicit cast.
-			return Promise.map(repoData.files, (file: EncodedFile) => {
+			// Explicit cast, we've transformed our initial list into a full mapping.
+			return Promise.map(repoData.files as EncodedFile[], (file: EncodedFile) => {
 				// Find the relevant entry in the tree.
 				const treeEntry = _.find(treeData.tree, (entry: GithubApiTypes.TreeEntry) => {
 					return entry.path === file.file;
