@@ -252,7 +252,9 @@ export abstract class ServiceScaffold<T> extends WorkerClient<T> implements Serv
 	 * Get the service name, as required by the framework.
 	 * @return  Name of the service.
 	 */
-	abstract get serviceName(): string
+	get serviceName(): string {
+		return this.serviceName;
+	}
 
 	/**
 	 * Retrieve the SDK API instance handle for the service, should one exist.

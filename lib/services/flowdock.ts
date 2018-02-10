@@ -32,7 +32,6 @@ import { ServiceEmitter, ServiceListener, ServiceType } from './service-types';
 export class FlowdockService extends ServiceScaffold<string> implements ServiceEmitter, ServiceListener {
 	private static _serviceName = path.basename(__filename.split('.')[0]);
 	private session: Session;
-	private org: string;
 	private postsSynced = new Set<number>();
 
 	constructor(data: FlowdockConstructor, logger: Logger) {
@@ -41,7 +40,6 @@ export class FlowdockService extends ServiceScaffold<string> implements ServiceE
 		// The flowdock service both emits and calls back the error
 		// We'll just log the emit to prevent it bubbling
 		this.session.on('error', _.partial(console.log, 'Error in Flowdock service.'));
-		this.org = data.organization;
 		if (data.type === ServiceType.Listener) {
 			// Get a list of known flows from the session
 			this.session.flows((error: any, flows: any) => {

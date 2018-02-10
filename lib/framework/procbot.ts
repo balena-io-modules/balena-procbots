@@ -308,7 +308,8 @@ export class ProcBot {
 	private addService(type: ServiceType, name: string, data?: ServiceConstructor):
 	ServiceListener | ServiceEmitter | void {
 		// If there's no handle in the constructor data, the handle is the name.
-		let handle = _.get(data, 'handle', name);
+		// We don't use the default in _.get() as TS doesn't imply the type correctly.
+		let handle = _.get(data, 'handle') || name;
 
 		// Attempt to retrieve the named service.
 		const service = this.getService(name);

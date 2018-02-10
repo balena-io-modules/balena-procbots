@@ -371,7 +371,7 @@ export class VersionBot extends ProcBot {
 	 * @param event          ServiceEvent containing the event information ('status' event)
 	 * @returns              A void Promise once execution has finished.
 	 */
-	protected statusChange = (registration: GithubRegistration, event: ServiceEvent): Promise<void | void[]> => {
+	protected statusChange = (registration: GithubRegistration, event: ServiceEvent): Promise<void> => {
 		// We now use the data from the StatusEvent to mock up a PullRequestEvent with enough
 		// data to carry out the checks.
 		const splitRepo = event.cookedEvent.data.name.split('/');
@@ -462,7 +462,7 @@ export class VersionBot extends ProcBot {
 			});
 		}).map((prEvent: ServiceEvent) => {
 			return this.checkFooterTags(registration, prEvent);
-		});
+		}).return();
 	}
 
 	/**
