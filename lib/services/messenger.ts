@@ -36,11 +36,10 @@ import {
  * services and translates interactions with them into a communal object structure.
  */
 export class MessengerService extends ServiceScaffold<string> implements ServiceListener, ServiceEmitter {
-	private static _serviceName = path.basename(__filename.split('.')[0]);
 	private translators: TranslatorDictionary;
 
 	constructor(data: MessengerConstructor, logger: Logger) {
-		super(data, logger);
+		super(data, logger, path.basename(__filename.split('.')[0]));
 		// Our super might have built a genuine express instance out of a port number
 		data.server = this.expressApp;
 
@@ -120,14 +119,6 @@ export class MessengerService extends ServiceScaffold<string> implements Service
 	 */
 	protected verify(): boolean {
 		return true;
-	}
-
-	/**
-	 * The name of this service, as required by the framework.
-	 * @returns  'messenger' string.
-	 */
-	get serviceName(): string {
-		return MessengerService._serviceName;
 	}
 
 	/**

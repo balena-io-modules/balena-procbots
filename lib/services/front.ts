@@ -31,13 +31,11 @@ import { ServiceEmitter, ServiceListener, ServiceType } from './service-types';
  * A service for interacting with the Front API via the Front SDK
  */
 export class FrontService extends ServiceScaffold<string> implements ServiceListener, ServiceEmitter {
-	private static _serviceName = path.basename(__filename.split('.')[0]);
-
 	/** Underlying SDK object that we route requests to */
 	private session: Front;
 
 	constructor(data: FrontConstructor | FrontListenerConstructor, logger: Logger) {
-		super(data, logger);
+		super(data, logger, path.basename(__filename.split('.')[0]));
 		if (data.type === ServiceType.Listener) {
 			const listenerData = <FrontListenerConstructor>data;
 			this.session = new Front(listenerData.token, listenerData.secret);
@@ -48,7 +46,7 @@ export class FrontService extends ServiceScaffold<string> implements ServiceList
 				response.sendStatus(200);
 			});
 			this.session.registerEvents({
-				hookPath: `/${listenerData.path || FrontService._serviceName}`,
+				hookPath: `/${listenerData.path || this.serviceName}`,
 				server: this.expressApp,
 			}, (error: Error | null, event?: Event) => {
 				if (!error && event) {
@@ -56,7 +54,7 @@ export class FrontService extends ServiceScaffold<string> implements ServiceList
 						context: event.conversation.id,
 						cookedEvent: {},
 						rawEvent: event,
-						source: FrontService._serviceName,
+						source: this.serviceName,
 						type: event.type,
 					});
 				}
@@ -85,14 +83,6 @@ export class FrontService extends ServiceScaffold<string> implements ServiceList
 	protected verify(_data: ServiceScaffoldEvent): boolean {
 		// The Front SDK verifies events as it receives them.
 		return true;
-	}
-
-	/**
-	 * The name of this service, as required by the framework.
-	 * @returns  'front' string.
-	 */
-	get serviceName(): string {
-		return FrontService._serviceName;
 	}
 
 	/**

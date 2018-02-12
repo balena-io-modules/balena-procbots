@@ -74,6 +74,9 @@ export abstract class ServiceScaffold<T> extends WorkerClient<T> implements Serv
 	/** The details used to build the service, for debug output */
 	protected constructorObject: ServiceScaffoldConstructor;
 
+	/** The name of the service, often just the file name */
+	private _serviceName: string;
+
 	/** A place to put output for debug and reference. */
 	private loggerInstance: Logger;
 
@@ -81,10 +84,11 @@ export abstract class ServiceScaffold<T> extends WorkerClient<T> implements Serv
 	private eventListeners: { [event: string]: ServiceRegistration[] } = {};
 
 	// https://github.com/resin-io-modules/resin-procbots/issues/262
-	constructor(data: ServiceScaffoldConstructor, logger: Logger) {
+	constructor(data: ServiceScaffoldConstructor, logger: Logger, serviceName: string) {
 		super();
 		this.constructorObject = data;
 		this.loggerInstance = logger;
+		this._serviceName = serviceName;
 		if (typeof data.server === 'number') {
 			// Construction details provided a port number, so use that.
 			const port = data.server;
@@ -250,7 +254,9 @@ export abstract class ServiceScaffold<T> extends WorkerClient<T> implements Serv
 	 * Get the service name, as required by the framework.
 	 * @return  Name of the service.
 	 */
-	abstract get serviceName(): string;
+	get serviceName(): string {
+		return this._serviceName;
+	}
 
 	/**
 	 * Retrieve the SDK API instance handle for the service, should one exist.

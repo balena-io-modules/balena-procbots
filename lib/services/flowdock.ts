@@ -30,12 +30,11 @@ import { ServiceEmitter, ServiceListener, ServiceType } from './service-types';
  * A service for interacting with Flowdock via their SDK
  */
 export class FlowdockService extends ServiceScaffold<string> implements ServiceEmitter, ServiceListener {
-	private static _serviceName = path.basename(__filename.split('.')[0]);
 	private session: Session;
 	private postsSynced = new Set<number>();
 
 	constructor(data: FlowdockConstructor, logger: Logger) {
-		super(data, logger);
+		super(data, logger, path.basename(__filename.split('.')[0]));
 		this.session = new Session(data.token);
 		// The flowdock service both emits and calls back the error
 		// We'll just log the emit to prevent it bubbling
@@ -62,7 +61,7 @@ export class FlowdockService extends ServiceScaffold<string> implements ServiceE
 							},
 							type: message.event,
 							rawEvent: message,
-							source: FlowdockService._serviceName,
+							source: this.serviceName,
 						});
 					}
 				});
@@ -96,14 +95,6 @@ export class FlowdockService extends ServiceScaffold<string> implements ServiceE
 		*/
 	protected verify(): boolean {
 		return true;
-	}
-
-	/**
-	 * Get the service name, as required by the framework.
-	 * @returns  The specific service name for Flowdock.
-	 */
-	get serviceName(): string {
-		return FlowdockService._serviceName;
 	}
 
 	/**

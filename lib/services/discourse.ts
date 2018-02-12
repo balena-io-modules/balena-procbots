@@ -33,20 +33,19 @@ import { ServiceEmitter, ServiceListener, ServiceType } from './service-types';
  * A ProcBot service for interacting with the Discourse API
  */
 export class DiscourseService extends ServiceScaffold<string> implements ServiceListener, ServiceEmitter {
-	private static _serviceName = path.basename(__filename.split('.')[0]);
 	// There are circumstances in which the discourse web-hook will fire twice for the same post, so track.
 	private postsSynced = new Set<number>();
 	private connectionDetails: DiscourseConstructor;
 
 	constructor(data: DiscourseConstructor | DiscourseListenerConstructor, logger: Logger) {
-		super(data, logger);
+		super(data, logger, path.basename(__filename.split('.')[0]));
 		// #203: Verify connection data
 		this.connectionDetails = data;
 		if (data.type === ServiceType.Listener) {
 			const listenerData = <DiscourseListenerConstructor>data;
 			// Create an endpoint for this listener, parse and enqueue events ...
 			// ... remembering that serviceScaffold catches and logs errors.
-			this.registerHandler(listenerData.path || DiscourseService._serviceName, (formData, response) => {
+			this.registerHandler(listenerData.path || this.serviceName, (formData, response) => {
 				const parsedEvent = JSON.parse(formData.body).post;
 				// Check this event is new
 				if (!this.postsSynced.has(parsedEvent.id)) {
@@ -57,7 +56,7 @@ export class DiscourseService extends ServiceScaffold<string> implements Service
 						signature: formData.headers['x-discourse-event-signature'],
 						type: formData.headers['x-discourse-event'],
 						rawEvent: formData.body,
-						source: DiscourseService._serviceName,
+						source: this.serviceName,
 					});
 					response.sendStatus(200);
 				}
@@ -115,14 +114,6 @@ export class DiscourseService extends ServiceScaffold<string> implements Service
 		} catch (error) {
 			return false;
 		}
-	}
-
-	/**
-	 * Get the service name, as required by the framework.
-	 * @returns  The service name for Discourse.
-	 */
-	get serviceName(): string {
-		return DiscourseService._serviceName;
 	}
 
 	/**
