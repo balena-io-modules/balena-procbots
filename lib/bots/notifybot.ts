@@ -873,7 +873,9 @@ export class NotifyBot extends ProcBot {
 			}).then((conversations: TopicConversations) => {
 				return _.map(conversations._results, 'id');
 			});
-		}).then(_.flatten);
+		}).then((strings: string[][]) => {
+			return _.flatten(strings);
+		});
 	}
 
 	/**
