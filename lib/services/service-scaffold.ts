@@ -96,9 +96,11 @@ export abstract class ServiceScaffold<T> extends WorkerClient<T> implements Serv
 			// This passes to the inheriting class responsibility for understanding the payload structure.
 			this.expressApp.use(bodyParser.text({type: '*/*'}));
 			this.expressApp.listen(port);
+			this.logger.log(LogLevel.INFO, `---> Created Express app on provided port ${port} for '${this.serviceName}'.`);
 		} else if (data.server) {
 			// Construction details provided an express.Express (only value left that's truthy), so use it.
 			this.expressApp = data.server;
+			this.logger.log(LogLevel.INFO, `---> Using provided Express app for '${this.serviceName}'.`);
 		}
 	}
 
