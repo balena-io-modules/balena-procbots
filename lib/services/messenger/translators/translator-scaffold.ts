@@ -22,6 +22,7 @@ import {
 	MessengerConstructor,
 	MessengerEvent,
 	MessengerResponse,
+	PrivacyPreference,
 	SourceDescription,
 	TransmitInformation,
 } from '../../messenger-types';
@@ -98,6 +99,36 @@ export abstract class TranslatorScaffold implements Translator {
 		});
 	}
 
+	public static unixifyNewLines(message: string): string {
+		return message.replace(/\r\n?/, '\n');
+	}
+
+	public static findPublicityWord(hidden: PrivacyPreference, indicators: PublicityIndicators): string {
+		switch (hidden) {
+			case true:
+				return indicators.hidden;
+			case false:
+				return indicators.shown;
+			case 'preferred':
+				return indicators.hiddenPreferred;
+			default:
+				throw new TranslatorError(TranslatorErrorCode.EmitUnsupported, 'Privacy type not supported');
+		}
+	}
+
+	public static findPublicityFromWord(word: string, indicators: PublicityIndicators): PrivacyPreference {
+		switch (word) {
+			case indicators.hidden:
+				return true;
+			case indicators.shown:
+				return false;
+			case indicators.hiddenPreferred:
+				return 'preferred';
+			default:
+				throw new TranslatorError(TranslatorErrorCode.EmitUnsupported, 'Privacy type not supported');
+		}
+	}
+
 	/**
 	 * Encode the metadata of an event into a string to embed in the message.
 	 * @param data    Event to gather details from.
@@ -108,7 +139,7 @@ export abstract class TranslatorScaffold implements Translator {
 	public static stringifyMetadata(
 		data: BasicMessageInformation, format: MetadataEncoding, config: MetadataConfiguration,
 	): string {
-		const pubWord = data.details.hidden ? config.publicity.hidden : config.publicity.shown;
+		const pubWord = TranslatorScaffold.findPublicityWord(data.details.hidden, config.publicity);
 		const source = data.source;
 		const queryString = `?hidden=${pubWord}&source=${source.service}&flow=${source.flow}&thread=${source.thread}`;
 		switch (format) {
@@ -131,7 +162,7 @@ export abstract class TranslatorScaffold implements Translator {
 	public static extractMetadata(
 		message: string, format: MetadataEncoding, config: MetadataConfiguration,
 	): TranslatorMetadata {
-		const wordCapture = `(${config.publicity.hidden}|${config.publicity.shown})`;
+		const wordCapture = `(${_.values(config.publicity).join('|')})`;
 		const querystring = `\\?hidden=${wordCapture}&source=(\\w*)&flow=([^"\\)]*)&thread=([^"\\)]*)`;
 		const baseUrl = _.escapeRegExp(config.baseUrl);
 		const publicity = config.publicity;
@@ -159,15 +190,15 @@ export abstract class TranslatorScaffold implements Translator {
 		const metadata = message.match(regex);
 		if (metadata) {
 			return {
-				content: message.replace(regex, '').trim(),
+				content: TranslatorScaffold.unixifyNewLines(message.replace(regex, '').trim()),
 				flow: metadata[3] || null,
 				genesis: metadata[2] || null,
-				hidden: indicators.shown !== metadata[1],
+				hidden: TranslatorScaffold.findPublicityFromWord(metadata[1], indicators),
 				thread: metadata[4] || null,
 			};
 		}
 		return {
-			content: message.trim(),
+			content: TranslatorScaffold.unixifyNewLines(message.trim()),
 			flow: null,
 			genesis: null,
 			hidden: true,

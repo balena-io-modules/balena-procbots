@@ -100,12 +100,12 @@ export interface DiscourseConstructor extends ServiceScaffoldConstructor {
  * Details required to initialise the Discourse Service as a listener.
  */
 export interface DiscourseListenerConstructor extends DiscourseConstructor {
+	/** Port number or server instance to listen to. */
+	ingress: ServerDetails;
 	/** Endpoint path to listen to. Defaults to the name of the service. */
 	path?: string;
 	/** Shared secret, used to verify event payloads. */
 	secret: string;
-	/** Port number or server instance to listen to. */
-	server: ServerDetails;
 	/** Specifies that this listener must be a listener. */
 	type: ServiceType.Listener;
 }

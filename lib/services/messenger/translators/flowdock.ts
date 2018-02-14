@@ -242,19 +242,25 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 			));
 		}
 		// Bundle for the session
-		return Promise.resolve({method: ['post'], payload: {
-			path: `/flows/${orgId}/${flowId}/messages`,
+		return Promise.resolve({
+			method: ['post'],
 			payload: {
-				// The concatenated string, of various data nuggets, to emit.
-				content: FlowdockTranslator.createFormattedText(message.details.text, {
-					header: message.details.title,
-					metadata: FlowdockTranslator.stringifyMetadata(message, MetadataEncoding.Flowdock, metadataConfig),
-					linePrefix: '>',
-				}),
-				event: 'message',
-				external_user_name: message.details.handle.replace(/\s/g, '_'),
-			},
-		}});
+				path: `/flows/${orgId}/${flowId}/messages`,
+				payload: {
+					// The concatenated string, of various data nuggets, to emit.
+					content: FlowdockTranslator.createFormattedText(
+						message.details.text,
+						{
+							header: message.details.title,
+							metadata: FlowdockTranslator.stringifyMetadata(message, MetadataEncoding.Flowdock, metadataConfig),
+							linePrefix: '>',
+						}
+					),
+					event: 'message',
+					external_user_name: message.details.handle.replace(/\s/g, '_')
+				}
+			}
+		});
 	}
 
 	/**
@@ -277,17 +283,23 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 			));
 		}
 		// Bundle for the session.
-		return Promise.resolve({ method: ['post'], payload: {
-			path: `/flows/${orgId}/${message.target.flow}/threads/${threadId}/messages`,
+		return Promise.resolve({
+			method: ['post'],
 			payload: {
-				content: FlowdockTranslator.createFormattedText(message.details.text, {
-					metadata: FlowdockTranslator.stringifyMetadata(message, MetadataEncoding.Flowdock, metadataConfig),
-					linePrefix: message.details.hidden ? '' : '>',
-				}),
-				event: 'message',
-				external_user_name: message.details.handle.replace(/\s/g, '_'),
+				path: `/flows/${orgId}/${message.target.flow}/threads/${threadId}/messages`,
+				payload: {
+					content: FlowdockTranslator.createFormattedText(
+						message.details.text,
+						{
+							metadata: FlowdockTranslator.stringifyMetadata(message, MetadataEncoding.Flowdock, metadataConfig),
+							linePrefix: message.details.hidden ? '' : '>',
+						}
+					),
+					event: 'message',
+					external_user_name: message.details.handle.replace(/\s/g, '_'),
+				}
 			}
-		}});
+		});
 	}
 
 	/**
@@ -329,10 +341,15 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 				return /^:/.test(tag);
 			});
 			// Bundle for the session.
-			return { method: ['put'], payload: {
-				path: `/flows/${orgId}/${flowId}/messages/${initialMessage.id}`,
-				payload: { tags: _.concat(tags, systemTags) },
-			}};
+			return {
+				method: ['put'],
+				payload: {
+					path: `/flows/${orgId}/${flowId}/messages/${initialMessage.id}`,
+					payload: {
+						tags: _.concat(tags, systemTags)
+					},
+				}
+			};
 		});
 	}
 
@@ -351,13 +368,16 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 			));
 		}
 		// Bundle for the session.
-		return Promise.resolve({ method: ['get'], payload: {
-			path: `/flows/${orgId}/${message.target.flow}/threads/${threadId}/messages`,
+		return Promise.resolve({
+			method: ['get'],
 			payload: {
-				limit: '100', // Default is 30, but there is literally no reason why we wouldn't ask for as many as we can
-				search: `${message.source.service} thread`,
-			},
-		}});
+				path: `/flows/${orgId}/${message.target.flow}/threads/${threadId}/messages`,
+				payload: {
+					limit: '100', // Default is 30, but there is literally no reason why we wouldn't ask for as many as we can
+					search: `${message.source.service} thread`,
+				},
+			}
+		});
 	}
 
 	protected eventEquivalencies = {

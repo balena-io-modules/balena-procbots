@@ -60,7 +60,21 @@ SYNCBOT_MAPPINGS:
     destination:
       service: "flowdock"
       flow: "r-leads"
+  - source:
+      service: "github"
+      flow: "resin-io/hubot-as-mainbot"
+    destination:
+      service: "flowdock"
+      flow: "d-bots"
 SYNCBOT_LISTENER_CONSTRUCTORS:
+  github:
+    client: "syncbot"
+    authentication:
+      appId: "<<INJECT_SYNCBOT_GITHUB_APP_ID>>"
+      pem: "<<INJECT_SYNCBOT_GITHUB_PEM>>"
+      type: 0
+    path: "/github"
+    webhookSecret: "<<INJECT_SYNCBOT_GITHUB_SECRET>>"
   flowdock:
     organization: "rulemotion"
     token: "<<INJECT_SYNCBOT_FLOWDOCK_TOKEN>>"
@@ -80,6 +94,7 @@ SYNCBOT_METADATA_CONFIG:
   baseUrl: "http://resin.io"
   publicity:
     hidden: "whisper"
+    hiddenPreferred: "murmur"
     shown: "reply"
 SYNCBOT_NAME: "<<INJECT_SYNCBOT_NAME>>"
 SYNCBOT_PORT: "<<INJECT_SYNCBOT_PORT>>"

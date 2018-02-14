@@ -89,17 +89,17 @@ export abstract class ServiceScaffold<T> extends WorkerClient<T> implements Serv
 		this.constructorObject = data;
 		this.loggerInstance = logger;
 		this._serviceName = serviceName;
-		if (typeof data.server === 'number') {
+		if (typeof data.ingress === 'number') {
 			// Construction details provided a port number, so use that.
-			const port = data.server;
+			const port = data.ingress;
 			this.expressApp = express();
 			// This passes to the inheriting class responsibility for understanding the payload structure.
 			this.expressApp.use(bodyParser.text({type: '*/*'}));
 			this.expressApp.listen(port);
-			this.logger.log(LogLevel.INFO, `---> Created Express app on provided port ${port} for '${this.serviceName}'.`);
-		} else if (data.server) {
+			this.logger.log(LogLevel.INFO, `---> Created Express app on port ${port} for '${this.serviceName}'.`);
+		} else if (data.ingress) {
 			// Construction details provided an express.Express (only value left that's truthy), so use it.
-			this.expressApp = data.server;
+			this.expressApp = data.ingress;
 			this.logger.log(LogLevel.INFO, `---> Using provided Express app for '${this.serviceName}'.`);
 		}
 	}
@@ -212,6 +212,10 @@ export abstract class ServiceScaffold<T> extends WorkerClient<T> implements Serv
 	protected registerHandler(path: string, handler: RequestHandler): void {
 		if (this.expressApp) {
 			this.expressApp.post(`/${path}/`, handler);
+			this.logger.log(
+				LogLevel.INFO,
+				`---> Added endpoint '/${path}' for '${this.serviceName}'.`
+			);
 		} else {
 			throw new ServiceScaffoldError(
 				ServiceScaffoldErrorCode.NoExpressServer,

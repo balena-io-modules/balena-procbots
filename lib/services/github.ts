@@ -186,18 +186,16 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 			}
 
 			// Standard Express installation.
-			const app = express();
-			app.use(bodyParser.urlencoded({ extended: true }));
-			app.use(bodyParser.json());
+			const app = this.getExpressInstance(listenerConstructor.ingress);
 
 			// Listen for Webhooks on the path specified by the client.
 			app.post(listenerConstructor.path, (req, res) => {
 				const eventType = req.get('x-github-event') || '';
 				const githubSignature = req.get('x-hub-signature') || '';
-				const payload = req.body;
+				const payload = JSON.parse(req.body);
 
 				// Ensure that the sender is authorised and uses our secret.
-				if (!verifyWebhookToken(JSON.stringify(payload), githubSignature)) {
+				if (!verifyWebhookToken(req.body, githubSignature)) {
 					res.sendStatus(401);
 					return;
 				}
@@ -220,11 +218,7 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 				});
 			});
 
-			// Listen on the specified port.
-			app.listen(listenerConstructor.port, () => {
-				this.logger.log(LogLevel.INFO, `---> ${listenerConstructor.client}: Listening Github Service on ` +
-					`':${listenerConstructor.port}${listenerConstructor.path}'`);
-			});
+			this.logger.log(LogLevel.INFO, `---> Added endpoint '${listenerConstructor.path}' for '${this.serviceName}'.`);
 		}
 	}
 
@@ -575,6 +569,21 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 				`-H "Accept: ${this.ghApiAccept}" https://api.github.com/`);
 		});
 	}
+
+	private getExpressInstance(server: number | express.Express): express.Express {
+		if (_.isNumber(server)) {
+			const app = express();
+			app.use(bodyParser.urlencoded({ extended: true }));
+			app.use(bodyParser.text({type: '*/*'}));
+			app.listen(server, () => {
+				this.logger.log(LogLevel.INFO, `---> Created Express app on port ${server} for '${this.serviceName}'.`);
+			});
+			return app;
+		}
+		this.logger.log(LogLevel.INFO, `---> Using provided Express app for '${this.serviceName}'.`);
+		return server;
+	}
+
 }
 
 /**

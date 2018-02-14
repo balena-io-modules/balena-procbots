@@ -8,12 +8,14 @@ import {
 	MetadataEncoding,
 	TranslatorScaffold,
 } from '../../../../lib/services/messenger/translators/translator-scaffold';
+import { MetadataConfiguration } from '../../../../lib/services/messenger/translators/translator-types';
 
 describe('lib/services/messenger/translators/translator-scaffold.ts', () => {
-	const exampleConfig = {
+	const exampleConfig: MetadataConfiguration = {
 		baseUrl: 'http://e.com',
 		publicity: {
 			hidden: 'whisper',
+			hiddenPreferred: 'murmur',
 			shown: 'reply',
 		},
 	};

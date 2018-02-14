@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 import * as Promise from 'bluebird';
-import { EmitInstructions, MessengerResponse, TransmitInformation } from '../../messenger-types';
+import { EmitInstructions, MessengerResponse, PrivacyPreference, TransmitInformation } from '../../messenger-types';
 
 /** The metadata associated with a message that may be embedded in to the payload. */
 export interface TranslatorMetadata {
@@ -26,13 +26,14 @@ export interface TranslatorMetadata {
 	/** The source for this message, to prevent infinite loops. */
 	genesis: string | null;
 	/** Whether this message should be hidden, because some services do not support such natively. */
-	hidden: boolean;
+	hidden: PrivacyPreference;
 	/** Thread ID that this message was created on. */
 	thread: string | null;
 }
 
 export interface PublicityIndicators {
 	hidden: string;
+	hiddenPreferred: string;
 	shown: string;
 }
 

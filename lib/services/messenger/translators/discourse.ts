@@ -57,10 +57,10 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 	 */
 	public static convertUsernameToGeneric(username: string): string {
 		// Generic has `-` at the end, Discourse has `_` at the beginning
-		return /^_/.test(username)
-			? `${username.replace(/^_/, '')}-`
-			: username
-		;
+		if (/^_/.test(username)) {
+			return `${username.replace(/^_/, '')}-`;
+		}
+		return username;
 	}
 
 	/**
@@ -70,10 +70,10 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 	 */
 	public static convertUsernameToDiscourse(username: string): string {
 		// Generic has `-` at the end, Discourse has `_` at the beginning
-		return /-$/.test(username)
-			? `_${username.replace(/-$/, '')}`
-			: username
-		;
+		if (/-$/.test(username)) {
+			return `_${username.replace(/-$/, '')}`;
+		}
+		return username;
 	}
 
 	/**
@@ -101,15 +101,18 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 		const metadataString = TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenMD, metadataConfig);
 		const converter = DiscourseTranslator.convertUsernameToDiscourse;
 		const messageString = TranslatorScaffold.convertPings(message.details.text, converter);
-		return Promise.resolve({ method: ['request'], payload: {
-			htmlVerb: 'POST',
-			path: '/posts',
-			body: {
-				raw: `${messageString}\n${metadataString}`,
-				topic_id: thread,
-				whisper: message.details.hidden ? 'true' : 'false',
+		return Promise.resolve({
+			method: ['request'],
+			payload: {
+				htmlVerb: 'POST',
+				path: '/posts',
+				body: {
+					raw: `${messageString}\n${metadataString}`,
+					topic_id: thread,
+					whisper: message.details.hidden ? 'true' : 'false',
+				}
 			}
-		}});
+		});
 	}
 
 	/**
@@ -132,16 +135,19 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 		const metadataString = TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenMD, metadataConfig);
 		const converter = DiscourseTranslator.convertUsernameToDiscourse;
 		const messageString = TranslatorScaffold.convertPings(message.details.text, converter);
-		return Promise.resolve({ method: ['request'], payload: {
-			htmlVerb: 'POST',
-			path: '/posts',
-			body: {
-				category: message.target.flow,
-				raw: `${messageString}\n${metadataString}`,
-				title,
-				unlist_topic: 'false',
-			},
-		}});
+		return Promise.resolve({
+			method: ['request'],
+			payload: {
+				htmlVerb: 'POST',
+				path: '/posts',
+				body: {
+					category: message.target.flow,
+					raw: `${messageString}\n${metadataString}`,
+					title,
+					unlist_topic: 'false',
+				},
+			}
+		});
 	}
 
 	/**
@@ -198,15 +204,18 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 			));
 		}
 		// Bundle into a format for the service.
-		return Promise.resolve({ method: ['request'], payload: {
-			htmlVerb: 'GET',
-			path: '/search/query',
-			qs: {
-				term: `${message.source.service} thread`,
-				'search_context[type]': 'topic',
-				'search_context[id]': thread,
+		return Promise.resolve({
+			method: ['request'],
+			payload: {
+				htmlVerb: 'GET',
+				path: '/search/query',
+				qs: {
+					term: `${message.source.service} thread`,
+					'search_context[type]': 'topic',
+					'search_context[id]': thread,
+				}
 			}
-		}});
+		});
 	}
 
 	/**
@@ -245,14 +254,17 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 		return request(getTopic)
 		.then((topicResponse) => {
 			// Bundle into a format for the service.
-			return { method: ['request'], payload: {
-				body: {},
-				htmlVerb: 'PUT',
-				qs: {
-					'tags[]': tags,
-				},
-				path: `/t/${topicResponse.slug}/${thread}.json`,
-			}};
+			return {
+				method: ['request'],
+				payload: {
+					body: {},
+					htmlVerb: 'PUT',
+					qs: {
+						'tags[]': tags,
+					},
+					path: `/t/${topicResponse.slug}/${thread}.json`,
+				}
+			};
 		});
 	}
 
@@ -357,7 +369,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 			post: request(getPost),
 			topic: request(getTopic),
 		})
-		.then((details: {post: any, topic: any}) => {
+		.then((details: { post: any, topic: any }) => {
 			// Calculate metadata and resolve
 			const metadata = TranslatorScaffold.extractMetadata(
 				details.post.raw, MetadataEncoding.HiddenMD, this.metadataConfig
@@ -369,7 +381,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 					genesis: metadata.genesis || event.source,
 					handle: convertedUsername,
 					// post_type 4 seems to correspond to whisper
-					hidden: details.post.post_type === 4,
+					hidden: _.isSet(metadata.hidden) ? metadata.hidden : details.post.post_type === 4,
 					tags: details.topic.tags,
 					text: TranslatorScaffold.convertPings(metadata.content, DiscourseTranslator.convertUsernameToGeneric),
 					title: details.topic.title,
@@ -422,8 +434,8 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 	public mergeGenericDetails(
 		connectionDetails: DiscourseConstructor, genericDetails: MessengerConstructor
 	): DiscourseConstructor {
-		if (connectionDetails.server === undefined) {
-			connectionDetails.server = genericDetails.server;
+		if (connectionDetails.ingress === undefined) {
+			connectionDetails.ingress = genericDetails.ingress;
 		}
 		if (connectionDetails.type === undefined) {
 			connectionDetails.type = genericDetails.type;

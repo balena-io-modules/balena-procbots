@@ -117,8 +117,8 @@ export class DiscourseService extends ServiceScaffold<string> implements Service
 	}
 
 	/**
-	 * Retrieve Discourse API SDK handle (currently none).
-	 * @returns void (currently no Discourse SDK API handle).
+	 * Retrieve the SDK API handle for Discourse.
+	 * @returns  The Discourse SDK API handle, current this very class.
 	 */
 	get apiHandle(): DiscourseHandle {
 		return {
