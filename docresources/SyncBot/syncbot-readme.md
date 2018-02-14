@@ -28,7 +28,7 @@ A little Bot, using the ProcBot framework, that links communication services
   * A new thread in a source flow will become a new linked thread in a destination flow
 * Comments
   * Public comments in linked threads get synchronised
-    * Use `#reply` to indicate the comment is public
+    * Flowdock doesn't natively support private/public distinction, so use `>` as the first character to indicate the comment is public
   * Private comments remain private, but are synchronised
     * Uses discourse's `whisper`
     * Uses front's `comment`
