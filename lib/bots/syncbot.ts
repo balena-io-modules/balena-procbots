@@ -177,7 +177,7 @@ export class SyncBot extends ProcBot {
 					if (!threadId && _.includes(actions, MessengerAction.CreateThread)) {
 						logger.log(LogLevel.INFO, `---> Creating thread '${firstLine}' on ${toText}.`);
 						// Create a thread if the quest for connections didn't find any
-						return SyncBot.createThreadAndConnect(to, messenger, data, name);
+						return SyncBot.createThreadAndConnect(to, from, messenger, data, name);
 					}
 					// Pass on that this has no connected thread
 					return {
@@ -369,13 +369,14 @@ export class SyncBot extends ProcBot {
 	/**
 	 * Pass to the messenger requests to create a thread and connect.
 	 * @param  to         Definition {service, flow} of the flow being emitted to.
+	 * @param from        Definition {service, flow} of the flow being emitted from.
 	 * @param  messenger  Service to use to interact with the cloud.
 	 * @param  data       Event that is being processed.
 	 * @param name        Username under which to create the connection message.
 	 * @returns           Promise to create the thread and respond with the threadId.
 	 */
 	private static createThreadAndConnect(
-		to: FlowDefinition, messenger: MessengerService, data: BasicMessageInformation, name: string,
+		to: FlowDefinition, from: FlowDefinition, messenger: MessengerService, data: BasicMessageInformation, name: string,
 	): Promise<MessengerEmitResponse> {
 		// Bundle a thread creation request.
 		// I've typed this here to split the union type earlier, and make error reports more useful.
@@ -441,7 +442,8 @@ export class SyncBot extends ProcBot {
 					thread: data.source.thread,
 				};
 				// This comments on the original thread about the new thread.
-				updateOriginating.details.text += `[${createThread.target.service} thread ${response.thread}](${response.url})`;
+				const targetText = `${createThread.target.service}/${to.alias || to.flow} thread ${response.thread}`;
+				updateOriginating.details.text += `[${targetText}](${response.url})`;
 				updateOriginating.details.genesis = createThread.target.service;
 				updateOriginating.source.service = createThread.target.service;
 				updateOriginating.source.thread = response.thread;
@@ -457,7 +459,8 @@ export class SyncBot extends ProcBot {
 					thread: response.thread,
 				};
 				// This comments on the new thread about the original thread..
-				updateCreated.details.text += `[${data.source.service} thread ${data.source.thread}](${data.source.url})`;
+				const sourceText = `${data.source.service}/${from.alias || from.flow} thread ${data.source.thread}'`;
+				updateCreated.details.text += `[${sourceText}](${data.source.url})`;
 				updateCreated.details.genesis = data.source.service;
 				updateCreated.source.service = data.source.service;
 				updateCreated.source.thread = data.source.thread;

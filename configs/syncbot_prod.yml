@@ -33,39 +33,51 @@ SYNCBOT_MAPPINGS:
   - source:
       service: "discourse"
       flow: "42"
+      alias: "troubleshooting"
     destination:
       service: "flowdock"
       flow: "public-s-community"
+      alias: "forums"
   - source:
       service: "flowdock"
       flow: "public-s-community"
+      alias: "forums"
     destination:
       service: "front"
       flow: "inb_23sp"
+      alias: "forums"
   - source:
       service: "front"
       flow: "inb_23sp"
+      alias: "forums"
     destination:
       service: "flowdock"
       flow: "public-s-community"
+      alias: "forums"
   - source:
       service: "front"
       flow: "inb_nla"
+      alias: "paid"
     destination:
       service: "flowdock"
       flow: "public-s-premium"
+      alias: "premium"
   - source:
       service: "front"
       flow: "inb_2hvh"
+      alias: "leads"
     destination:
       service: "flowdock"
       flow: "r-leads"
+      alias: "leads"
   - source:
       service: "github"
       flow: "resin-io/hubot-as-mainbot"
+      alias: "hubot"
     destination:
       service: "flowdock"
       flow: "d-bots"
+      alias: "bots"
 SYNCBOT_LISTENER_CONSTRUCTORS:
   github:
     client: "syncbot"
