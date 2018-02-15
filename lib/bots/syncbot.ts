@@ -15,8 +15,16 @@ limitations under the License.
 */
 
 import * as Promise from 'bluebird';
+import * as crypto from 'crypto';
 import * as _ from 'lodash';
+import * as os from 'os';
 import { ProcBot } from '../framework/procbot';
+import {
+	ProcBotEnvironmentProperties,
+	ProcBotEnvironmentQuery,
+	ProcessProperty,
+	SystemProperty,
+} from '../framework/procbot-types';
 import { MessengerService } from '../services/messenger';
 import {
 	BasicMessageInformation,
@@ -39,7 +47,10 @@ import {
 	MetadataConfiguration,
 	TranslatorErrorCode,
 } from '../services/messenger/translators/translator-types';
-import { ServiceType } from '../services/service-types';
+import {
+	ServiceRegistration,
+	ServiceType,
+} from '../services/service-types';
 import { Logger, LogLevel } from '../utils/logger';
 
 interface SyncBotConstructor {
@@ -52,6 +63,8 @@ interface SyncBotConstructor {
 	SYNCBOT_NAME: string;
 	SYNCBOT_LISTENER_CONSTRUCTORS: MessengerConnectionDetails;
 	SYNCBOT_ARCHIVE_STRINGS: string[];
+	SYNCBOT_DEVOPS_FLOW: string;
+	SYNCBOT_DEVOPS_USERS: string[];
 }
 
 /**
@@ -82,6 +95,80 @@ export class SyncBot extends ProcBot {
 		} catch (error) {
 			throw new Error('SYNCBOT_ERROR_SOLUTIONS not a valid JSON object of service => { message => resolution }.');
 		}
+	}
+
+	/**
+	 * Digest a message string into a query that can go to the ProcBot library.
+	 * @param message  Message to be broken apart.
+	 * @returns        Object of properties to form an environment query.
+	 */
+	public static messageIntoEnvQuery(
+		message: string
+	): { filter: ProcBotEnvironmentProperties, query: ProcBotEnvironmentQuery } {
+		const filter: ProcBotEnvironmentProperties = {
+			process: [],
+			system: []
+		};
+		const query: ProcBotEnvironmentQuery = {
+			process: [],
+			system: []
+		};
+		// This bundles the whitespace separated parts of the message into details to pass to the ProcBot library
+		const messageParts = message.split(/\s+/g);
+		_.forEach(messageParts, (messagePart) => {
+			if (!/^@/.test(messagePart)) {
+				// Split the part down around '=' and '.'.
+				const filterHalves = messagePart.split(/=/g);
+				const propertyPath = filterHalves[0].split(/\./g);
+				const scope = propertyPath.length === 2 ? propertyPath[0] : 'process';
+				const property = propertyPath.length === 2 ? propertyPath[1] : propertyPath[0];
+				const value = filterHalves.length === 2 ? filterHalves[1] : undefined;
+				// Put each part into either query or filter, based on the existence of '='
+				if (value) {
+					if (scope === 'process') {
+						filter.process.push({
+							property: property as keyof NodeJS.Process,
+							value,
+						});
+					} else if (scope === 'system') {
+						filter.system.push({
+							property: property as keyof typeof os,
+							value,
+						});
+					}
+				} else {
+					if (scope === 'process') {
+						query.process.push(property as keyof NodeJS.Process);
+					} else if (scope === 'system') {
+						query.system.push(property as keyof typeof os);
+					}
+				}
+			}
+		});
+		return { filter, query };
+	}
+
+	/**
+	 * Convert the results from an environment query into a outputabble string.
+	 * @param result  Object direct from the ProcBot library.
+	 * @returns       String suitable for output.
+	 */
+	public static envResultIntoMessage(result: ProcBotEnvironmentProperties): string {
+		const shortResponses: string[] = [];
+		const longResponses: string[] = [];
+		_.forEach(result, (list, scope) => {
+			_.forEach(list, (item: SystemProperty | ProcessProperty) => {
+				if (_.isArray(item.value) || _.isObject(item.value)) {
+					const value = JSON.stringify(item.value, undefined, '  ');
+					longResponses.push(`${scope}.${item.property}=\n\`\`\`json\n${value}\n\`\`\``);
+				} else if (_.isNull(item.value) || _.isUndefined(item.value)) {
+					shortResponses.push(`${scope}.${item.property}?!`);
+				} else {
+					shortResponses.push(`${scope}.${item.property}=${item.value.toString()}`);
+				}
+			});
+		});
+		return `${shortResponses.join('\n')}\n${longResponses.join('\n')}`.trim();
 	}
 
 	/**
@@ -502,6 +589,59 @@ export class SyncBot extends ProcBot {
 		throw new Error('Could not create Messenger.');
 	}
 
+	/**
+	 * Create a function that will, under certain conditions, query the environment
+	 * @param messenger  Service to use for emitting to the user.
+	 * @param botname    Name that the message must begin with before activation.
+	 * @param flow       Flow to check before activatation.
+	 * @param users      List of account name hashes to check before activation.
+	 * @returns          Method that will consume MessengerEvents.
+	 */
+	private static makeEnvironmentQuerier(
+		messenger: MessengerService, botname: string, flow: string, users: string[]
+	): MessageListener {
+		return (_registration: ServiceRegistration, event: MessengerEvent): Promise<void> => {
+			// This pre-check examines the event before letting it anywhere near the process.
+			const beginsWithBotName = new RegExp(`^@${_.escapeRegExp(botname)}`, 'i');
+			const hash = crypto.createHash('sha256').update(event.cookedEvent.source.username).digest('hex');
+			if (
+				// Not a synchronised post.
+				(event.cookedEvent.details.service === event.cookedEvent.source.service) &&
+				(event.cookedEvent.details.flow === event.cookedEvent.source.flow) &&
+				// Addressed to syncbot.
+				(beginsWithBotName.test(event.cookedEvent.details.text)) &&
+				// On devops flow and from a devops user.
+				(event.cookedEvent.source.flow === flow) &&
+				(_.includes(users, hash))
+			) {
+				const environmentQuery = SyncBot.messageIntoEnvQuery(event.cookedEvent.details.text);
+				if (ProcBot.matchEnvironment(environmentQuery.filter)) {
+					const environment = ProcBot.queryEnvironment(environmentQuery.query);
+					const text = SyncBot.envResultIntoMessage(environment);
+					const echoData: BasicMessageInformation = {
+						details: {
+							service: 'process',
+							flow: process.pid.toString(),
+							handle: botname,
+							hidden: true,
+							tags: event.cookedEvent.details.tags,
+							text,
+							title: event.cookedEvent.details.title,
+						},
+						source: event.cookedEvent.source,
+					};
+					return SyncBot.processCommand(
+						event.cookedEvent.source,
+						messenger,
+						echoData,
+						MessengerAction.CreateMessage
+					).return();
+				}
+			}
+			return Promise.resolve();
+		};
+	}
+
 	constructor(name = 'SyncBot') {
 		super(name);
 
@@ -522,6 +662,17 @@ export class SyncBot extends ProcBot {
 				const messenger = SyncBot.makeMessenger(
 					config.SYNCBOT_LISTENER_CONSTRUCTORS, port, config.SYNCBOT_METADATA_CONFIG, this.logger
 				);
+				// Pass received messages through a method that might query the environment.
+				messenger.registerEvent({
+					events: ['message'],
+					listenerMethod: SyncBot.makeEnvironmentQuerier(
+						messenger,
+						config.SYNCBOT_NAME,
+						config.SYNCBOT_DEVOPS_FLOW,
+						config.SYNCBOT_DEVOPS_USERS,
+					),
+					name: 'queryEnvironment',
+				});
 				const mappings = config.SYNCBOT_MAPPINGS;
 				const edgesMade = {};
 				_.forEach(mappings, (mapping) => {
