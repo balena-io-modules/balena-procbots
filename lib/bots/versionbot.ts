@@ -1308,7 +1308,8 @@ export class VersionBot extends ProcBot {
 			data: {
 				owner: repoData.owner,
 				repo: repoData.repo,
-				sha: repoData.branchName
+				sha: repoData.branchName,
+				recursive: true,
 			},
 			method: this.githubApi.gitdata.getTree
 		}).then((treeData: GithubApiTypes.Tree) => {
