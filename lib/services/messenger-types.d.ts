@@ -153,6 +153,8 @@ export interface FlowDefinition {
 	service: string;
 	/** The ID of the flow. */
 	flow: string;
+	/** A name for this flow, if not ID. */
+	alias?: string;
 }
 
 /** The requirements to identify a specific thread from among the services. */

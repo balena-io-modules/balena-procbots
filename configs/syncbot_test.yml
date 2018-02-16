@@ -39,33 +39,43 @@ SYNCBOT_MAPPINGS:
   - source:
       service: "discourse"
       flow: "5"
+      alias: "sandbox"
     destination:
       service: "flowdock"
       flow: "testing"
+      alias: "sandbox"
   - source:
       service: "discourse"
       flow: "6"
+      alias: "second sandbox"
     destination:
       service: "flowdock"
       flow: "testing"
+      alias: "sandbox"
   - source:
       service: "flowdock"
       flow: "testing"
+      alias: "sandbox"
     destination:
       service: "front"
       flow: "inb_1yea"
+      alias: "sandbox"
   - source:
       service: "front"
       flow: "inb_1yea"
+      alias: "sandbox"
     destination:
       service: "flowdock"
       flow: "testing"
+      alias: "sandbox"
   - source:
       service: "github"
       flow: "sqweelygig/syncbot-sandbox"
+      alias: "sandbox"
     destination:
       service: "flowdock"
       flow: "testing"
+      alias: "sandbox"
 SYNCBOT_METADATA_CONFIG:
   baseUrl: "http://resin.io"
   publicity:
