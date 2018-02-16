@@ -128,7 +128,7 @@ export class SyncBot extends ProcBot {
 			if (
 				from.service === data.source.service &&
 				from.flow === data.source.flow &&
-				to.service !== data.details.genesis &&
+				((to.service !== data.details.service) || (to.flow !== data.details.flow)) &&
 				// https://github.com/resin-io-modules/resin-procbots/issues/301
 				!data.details.intercomHack
 			) {
@@ -273,7 +273,8 @@ export class SyncBot extends ProcBot {
 			generic || 'No fixes documented.';
 		const echoData: BasicMessageInformation = {
 			details: {
-				genesis: to.service,
+				service: to.service,
+				flow: to.flow,
 				handle: name,
 				hidden: 'preferred',
 				tags: data.details.tags,
@@ -408,7 +409,8 @@ export class SyncBot extends ProcBot {
 					action: MessengerAction.CreateMessage,
 					// A message that advertises the connected thread.
 					details: {
-						genesis: 'duff_SyncBot_createThreadAndConnect_a', // will be replaced
+						service: 'duff_SyncBot_createThreadAndConnect_a', // will be replaced
+						flow: 'duff_SyncBot_createThreadAndConnect_j', // will be replaced
 						handle: name,
 						hidden: 'preferred',
 						tags: data.details.tags,
@@ -444,7 +446,8 @@ export class SyncBot extends ProcBot {
 				// This comments on the original thread about the new thread.
 				const targetText = `${createThread.target.service}/${to.alias || to.flow} thread ${response.thread}`;
 				updateOriginating.details.text += `[${targetText}](${response.url})`;
-				updateOriginating.details.genesis = createThread.target.service;
+				updateOriginating.details.service = createThread.target.service;
+				updateOriginating.details.flow = createThread.target.flow;
 				updateOriginating.source.service = createThread.target.service;
 				updateOriginating.source.thread = response.thread;
 				updateOriginating.source.flow = createThread.target.flow;
@@ -461,7 +464,8 @@ export class SyncBot extends ProcBot {
 				// This comments on the new thread about the original thread..
 				const sourceText = `${data.source.service}/${from.alias || from.flow} thread ${data.source.thread}'`;
 				updateCreated.details.text += `[${sourceText}](${data.source.url})`;
-				updateCreated.details.genesis = data.source.service;
+				updateCreated.details.service = data.source.service;
+				updateCreated.details.flow = data.source.flow;
 				updateCreated.source.service = data.source.service;
 				updateCreated.source.thread = data.source.thread;
 				updateCreated.source.flow = data.source.flow;

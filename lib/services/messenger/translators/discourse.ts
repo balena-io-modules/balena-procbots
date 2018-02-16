@@ -378,7 +378,8 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 			const convertedUsername = DiscourseTranslator.convertUsernameToGeneric(details.post.username);
 			const cookedEvent: BasicMessageInformation = {
 				details: {
-					genesis: metadata.genesis || event.source,
+					service: metadata.service || event.source,
+					flow: metadata.flow || details.topic.category_id.toString(),
 					handle: convertedUsername,
 					// post_type 4 seems to correspond to whisper
 					hidden: _.isSet(metadata.hidden) ? metadata.hidden : details.post.post_type === 4,

@@ -63,7 +63,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 		const superFormat = (format === MetadataEncoding.Flowdock) ? MetadataEncoding.HiddenMD : format;
 		const metadata = TranslatorScaffold.extractMetadata(message, superFormat, config);
 		const findPublic = '^> *';
-		if (format === MetadataEncoding.Flowdock && metadata.genesis === null) {
+		if ((format === MetadataEncoding.Flowdock) && (metadata.service === null)) {
 			// Check for magic syntax if the message originated in Flowdock
 			metadata.hidden = !(new RegExp(findPublic, 'i').test(message));
 		}
@@ -106,7 +106,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 	}
 
 	/**
-	 * Convert an array of tags into a single hashtagged string.
+	 * Convert an array of tags into a single hash-tagged string.
 	 * @param tags  Array of strings to hashtag and join.
 	 * @returns     String of joined hashtags.
 	 */
@@ -442,7 +442,8 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 		// Start building this in service scaffold form.
 		const cookedEvent: BasicMessageInformation = {
 			details: {
-				genesis: metadata.genesis || event.source,
+				service: metadata.service || event.source,
+				flow: metadata.flow || flow,
 				handle: 'duff_FlowdockTranslator_eventIntoMessage_a', // gets replaced
 				hidden: metadata.hidden,
 				tags: [], // gets replaced

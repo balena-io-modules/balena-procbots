@@ -35,7 +35,8 @@ describe('lib/services/messenger/translators/front.ts', () => {
 					flow: 'duff',
 				},
 				details: {
-					genesis: 'duff',
+					service: 'duff',
+					flow: 'duff',
 					handle: 'duff',
 					hidden: false,
 					tags: [],
@@ -74,7 +75,8 @@ describe('lib/services/messenger/translators/front.ts', () => {
 		const exampleDetails: TransmitInformation = {
 			action: MessengerAction.ArchiveThread,
 			details: {
-				genesis: 'a',
+				service: 'a',
+				flow: 'p',
 				handle: 'b',
 				hidden: false,
 				tags: [],

@@ -49,7 +49,9 @@ export type PrivacyPreference = boolean | 'preferred';
 /** The details that all messages shall possess. */
 export interface MessageDetails {
 	/** The originating service that the message synced from */
-	genesis: string;
+	service: string;
+	/** The originating flow that the message synced from */
+	flow: string;
 	/** The alias relevant to this message, in github form. */
 	handle: string;
 	/** Whether this message should be publicly visible. */

@@ -85,7 +85,8 @@ describe('lib/services/messenger/translators/translator-scaffold.ts', () => {
 	describe('TranslatorScaffold.stringifyMetadata', () => {
 		const exampleMessage = {
 			details: {
-				genesis: 'a',
+				service: 'a',
+				flow: 'j',
 				handle: 'b',
 				hidden: true,
 				tags: [],
@@ -127,7 +128,7 @@ describe('lib/services/messenger/translators/translator-scaffold.ts', () => {
 				MetadataEncoding.HiddenMD,
 				exampleConfig,
 			);
-			expect(extractedMetadata).to.deep.equal({content: 'h', hidden: true, genesis: 'g', flow: 'j', thread: 'i'});
+			expect(extractedMetadata).to.deep.equal({content: 'h', hidden: true, service: 'g', flow: 'j', thread: 'i'});
 		});
 
 		it('should extract metadata from a html-at-end string', () => {
@@ -136,7 +137,7 @@ describe('lib/services/messenger/translators/translator-scaffold.ts', () => {
 				MetadataEncoding.HiddenHTML,
 				exampleConfig,
 			);
-			expect(extractedMetadata).to.deep.equal({content: 'h', hidden: true, genesis: 'g', flow: 'j', thread: 'i'});
+			expect(extractedMetadata).to.deep.equal({content: 'h', hidden: true, service: 'g', flow: 'j', thread: 'i'});
 		});
 
 		it('should not extract metadata from an html-in-qouted-text string', () => {
@@ -148,7 +149,7 @@ describe('lib/services/messenger/translators/translator-scaffold.ts', () => {
 			expect(extractedMetadata).to.deep.equal({
 				content: '<div>Their reply.</div><div>h<a href="http://e.com?hidden=whisper&source=g&flow=j&thread=i"></a></div>',
 				hidden: true,
-				genesis: null,
+				service: null,
 				flow: null,
 				thread: null,
 			});
@@ -162,7 +163,7 @@ describe('lib/services/messenger/translators/translator-scaffold.ts', () => {
 				/,(\w*),(\w*),(\w*),(\w*)$/,
 				exampleConfig.publicity,
 			);
-			expect(extractedMetadata).to.deep.equal({content: 'blah', hidden: false, genesis: 'e', flow: 'd', thread: 'f'});
+			expect(extractedMetadata).to.deep.equal({content: 'blah', hidden: false, service: 'e', flow: 'd', thread: 'f'});
 		});
 	});
 });

@@ -9,7 +9,8 @@ describe('lib/services/messenger/translators/discourse.ts', () => {
 	describe('DiscourseTranslator.bundleMessage', () => {
 		const simpleMessage = {
 			details: {
-				genesis: 'a',
+				service: 'a',
+				flow: 'l',
 				handle: 'b',
 				hidden: false,
 				tags: [],

@@ -110,7 +110,7 @@ describe('lib/services/messenger/translators/flowdock.ts', () => {
 				MetadataEncoding.Flowdock,
 				config,
 			);
-			expect(extractedMetadata).to.deep.equal({content: 'h', hidden: true, genesis: 'g', flow: 'j', thread: 'i'});
+			expect(extractedMetadata).to.deep.equal({content: 'h', hidden: true, service: 'g', flow: 'j', thread: 'i'});
 		});
 
 		it('should return private for a message with no funny business', () => {
@@ -190,7 +190,8 @@ describe('lib/services/messenger/translators/flowdock.ts', () => {
 	describe('FlowdockTranslator.stringifyMetadata', () => {
 		const message = {
 			details: {
-				genesis: 'a',
+				service: 'a',
+				flow: 'j',
 				handle: 'b',
 				hidden: true,
 				tags: [],
