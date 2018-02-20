@@ -36,11 +36,11 @@ SYNCBOT_MAPPINGS:
       alias: "troubleshooting"
     destination:
       service: "flowdock"
-      flow: "public-s-community"
+      flow: "rulemotion/public-s-community"
       alias: "forums"
   - source:
       service: "flowdock"
-      flow: "public-s-community"
+      flow: "rulemotion/public-s-community"
       alias: "forums"
     destination:
       service: "front"
@@ -52,7 +52,7 @@ SYNCBOT_MAPPINGS:
       alias: "forums"
     destination:
       service: "flowdock"
-      flow: "public-s-community"
+      flow: "rulemotion/public-s-community"
       alias: "forums"
   - source:
       service: "front"
@@ -60,7 +60,7 @@ SYNCBOT_MAPPINGS:
       alias: "paid"
     destination:
       service: "flowdock"
-      flow: "public-s-premium"
+      flow: "rulemotion/public-s-premium"
       alias: "premium"
   - source:
       service: "front"
@@ -68,7 +68,7 @@ SYNCBOT_MAPPINGS:
       alias: "leads"
     destination:
       service: "flowdock"
-      flow: "r-leads"
+      flow: "rulemotion/r-leads"
       alias: "leads"
   - source:
       service: "github"
@@ -76,7 +76,7 @@ SYNCBOT_MAPPINGS:
       alias: "hubot"
     destination:
       service: "flowdock"
-      flow: "d-bots"
+      flow: "rulemotion/d-bots"
       alias: "bots"
 SYNCBOT_LISTENER_CONSTRUCTORS:
   github:
@@ -88,7 +88,6 @@ SYNCBOT_LISTENER_CONSTRUCTORS:
     path: "/github"
     webhookSecret: "<<INJECT_SYNCBOT_GITHUB_SECRET>>"
   flowdock:
-    organization: "rulemotion"
     token: "<<INJECT_SYNCBOT_FLOWDOCK_TOKEN>>"
   front:
     secret: "<<INJECT_SYNCBOT_FRONT_SECRET>>"

@@ -13,7 +13,6 @@ SYNCBOT_ERROR_SOLUTIONS:
 SYNCBOT_ERROR_UNDOCUMENTED: 'No fixes currently documented. (at)sqweelygig'
 SYNCBOT_LISTENER_CONSTRUCTORS:
   flowdock:
-    organization: "rulemotion"
     token: "<<INJECT_SYNCBOT_FLOWDOCK_TOKEN>>"
   front:
     secret: "<<INJECT_SYNCBOT_FRONT_SECRET>>"
@@ -42,7 +41,7 @@ SYNCBOT_MAPPINGS:
       alias: "sandbox"
     destination:
       service: "flowdock"
-      flow: "testing"
+      flow: "rulemotion/testing"
       alias: "sandbox"
   - source:
       service: "discourse"
@@ -50,11 +49,11 @@ SYNCBOT_MAPPINGS:
       alias: "second sandbox"
     destination:
       service: "flowdock"
-      flow: "testing"
+      flow: "rulemotion/testing"
       alias: "sandbox"
   - source:
       service: "flowdock"
-      flow: "testing"
+      flow: "rulemotion/testing"
       alias: "sandbox"
     destination:
       service: "front"
@@ -66,7 +65,7 @@ SYNCBOT_MAPPINGS:
       alias: "sandbox"
     destination:
       service: "flowdock"
-      flow: "testing"
+      flow: "rulemotion/testing"
       alias: "sandbox"
   - source:
       service: "github"
@@ -74,15 +73,15 @@ SYNCBOT_MAPPINGS:
       alias: "sandbox"
     destination:
       service: "flowdock"
-      flow: "testing"
+      flow: "rulemotion/testing"
       alias: "sandbox"
   - source:
       service: "flowdock"
-      flow: "testing"
+      flow: "rulemotion/testing"
       alias: "sandbox"
     destination:
       service: "flowdock"
-      flow: "testing_hubot"
+      flow: "rulemotion/testing_hubot"
 SYNCBOT_METADATA_CONFIG:
   baseUrl: "http://resin.io"
   publicity:
