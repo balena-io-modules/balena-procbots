@@ -461,6 +461,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 				tags: [], // gets replaced
 				text: details.message.text,
 				title: 'duff_FlowdockTranslator_eventIntoMessage_b', // gets replaced
+				messageCount: event.rawEvent.thread.internal_comments,
 			},
 			source: {
 				service: details.ids.service,
