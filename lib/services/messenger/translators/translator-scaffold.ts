@@ -60,7 +60,7 @@ export abstract class TranslatorScaffold implements Translator {
 		config: MetadataConfiguration,
 		format?: MetadataEncoding,
 	): SourceDescription {
-		const idFinder = new RegExp(`${service} thread ([\\w\\d-+\\/=\\_]+)`);
+		const idFinder = new RegExp(`${service} ?\\S* thread ([\\w\\d-+\\/=\\_]+)`);
 		const matches = _.compact(_.map(
 			messages,
 			(message) => {

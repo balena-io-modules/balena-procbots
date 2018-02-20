@@ -210,7 +210,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 				htmlVerb: 'GET',
 				path: '/search/query',
 				qs: {
-					term: `${message.source.service} thread`,
+					term: `${message.source.service}`,
 					'search_context[type]': 'topic',
 					'search_context[id]': thread,
 				}
