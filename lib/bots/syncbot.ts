@@ -43,6 +43,7 @@ import {
 	TransmitInformation,
 } from '../services/messenger-types';
 import { TranslatorError } from '../services/messenger/translators/translator';
+import { TranslatorScaffold } from '../services/messenger/translators/translator-scaffold';
 import {
 	MetadataConfiguration,
 	TranslatorErrorCode,
@@ -379,7 +380,18 @@ export class SyncBot extends ProcBot {
 				flow: to.flow,
 			},
 		};
-		return SyncBot.processCommand(data.source, messenger, echoData, MessengerAction.CreateMessage);
+		return SyncBot.processCommand(data.source, messenger, echoData, MessengerAction.ReadErrors)
+		.then((response) => {
+			const needle = TranslatorScaffold.extractWords(echoData.details.text).join(' ');
+			const isMentioned = _.some(response.response, (text) => {
+				return TranslatorScaffold.extractWords(text).join(' ') === needle;
+			});
+			if (isMentioned) {
+				return Promise.resolve({ response: 'Message recently outputted.', source: 'syncbot' });
+			} else {
+				return SyncBot.processCommand(data.source, messenger, echoData, MessengerAction.CreateMessage);
+			}
+		});
 	}
 
 	/**
@@ -576,21 +588,22 @@ export class SyncBot extends ProcBot {
 	 * @returns  Service that wraps and translates specified sub services.
 	 */
 	private static makeMessengers(
-		listenerConstructors: MessengerConnectionDetails, port: number, metadataConfig: MetadataConfiguration, logger: Logger
+		serviceConstructors: MessengerConnectionDetails, port: number, metadataConfig: MetadataConfiguration, logger: Logger
 	): { listener: MessengerService, emitter: MessengerService } {
 		// Created this as its own function to scope the `let` a little
 		const listener = new MessengerService({
 			metadataConfig,
 			ingress: port,
-			subServices: listenerConstructors,
 			serviceName: 'messenger',
+			subServices: serviceConstructors,
 			type: ServiceType.Listener,
 		}, logger);
 
 		const emitter = new MessengerService({
 			metadataConfig,
 			ingress: port,
-			subServices: listenerConstructors,
+			serviceName: 'messenger',
+			subServices: serviceConstructors,
 			type: ServiceType.Emitter,
 		}, logger);
 

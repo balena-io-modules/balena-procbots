@@ -95,7 +95,7 @@ export interface EmitInstructions {
 
 /** The types of event that may be translated for emission. */
 export const enum MessengerAction {
-	CreateThread, CreateMessage, ReadConnection, UpdateTags, ArchiveThread
+	CreateThread, CreateMessage, ReadConnection, UpdateTags, ArchiveThread, ReadErrors,
 }
 
 /** The form that all messages events shall possess, both generally and as received. */

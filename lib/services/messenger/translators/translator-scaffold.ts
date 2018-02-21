@@ -16,6 +16,7 @@
 
 import * as Promise from 'bluebird';
 import * as _ from 'lodash';
+import * as marked from 'marked';
 import {
 	BasicMessageInformation,
 	EmitInstructions,
@@ -85,6 +86,22 @@ export abstract class TranslatorScaffold implements Translator {
 		throw new TranslatorError(
 			TranslatorErrorCode.ValueNotFound, `No connected thread found for ${service}.`
 		);
+	}
+
+	/**
+	 * Extracts the words from a string that is formatted in html or markdown.
+	 * @param message  string to extract words from.
+	 * @returns        array of the words.
+	 */
+	public static extractWords(message: string): string[] {
+		// Nerf it to lower case
+		const lowerCaseString = message.toLowerCase();
+		// Convert any markdown to html
+		const htmlString = marked(lowerCaseString);
+		// Remove any html tags
+		const cleanedString = htmlString.replace(/<[^>]*>/g, ' ');
+		// Break the string down to word sections
+		return cleanedString.match(/\w+/g) || [];
 	}
 
 	/**
