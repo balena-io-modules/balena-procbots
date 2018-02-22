@@ -16,6 +16,7 @@
 
 import * as Promise from 'bluebird';
 import * as _ from 'lodash';
+import * as marked from 'marked';
 import {
 	BasicMessageInformation,
 	EmitInstructions,
@@ -88,6 +89,22 @@ export abstract class TranslatorScaffold implements Translator {
 	}
 
 	/**
+	 * Extracts the words from a string that is formatted in html or markdown.
+	 * @param message  string to extract words from.
+	 * @returns        array of the words.
+	 */
+	public static extractWords(message: string): string[] {
+		// Nerf it to lower case
+		const lowerCaseString = message.toLowerCase();
+		// Convert any markdown to html
+		const htmlString = marked(lowerCaseString);
+		// Remove any html tags
+		const cleanedString = htmlString.replace(/<[^>]*>/g, ' ');
+		// Break the string down to word sections
+		return cleanedString.match(/\w+/g) || [];
+	}
+
+	/**
 	 * Converts the usernames within a message string using a specified converter.
 	 * @param message    String to replace usernames within
 	 * @param converter  Function to use to convert each username
@@ -140,8 +157,10 @@ export abstract class TranslatorScaffold implements Translator {
 		data: BasicMessageInformation, format: MetadataEncoding, config: MetadataConfiguration,
 	): string {
 		const pubWord = TranslatorScaffold.findPublicityWord(data.details.hidden, config.publicity);
-		const source = data.source;
-		const queryString = `?hidden=${pubWord}&source=${source.service}&flow=${source.flow}&thread=${source.thread}`;
+		const service = data.source.service;
+		const flow = data.source.flow;
+		const thread = data.source.thread;
+		const queryString = `?hidden=${pubWord}&source=${service}&flow=${flow}&thread=${thread}`;
 		switch (format) {
 			case MetadataEncoding.HiddenHTML:
 				return `<a href="${config.baseUrl}${queryString}"></a>`;
@@ -162,8 +181,8 @@ export abstract class TranslatorScaffold implements Translator {
 	public static extractMetadata(
 		message: string, format: MetadataEncoding, config: MetadataConfiguration,
 	): TranslatorMetadata {
-		const wordCapture = `(${_.values(config.publicity).join('|')})`;
-		const querystring = `\\?hidden=${wordCapture}&source=(\\w*)&flow=([^"\\)]*)&thread=([^"\\)]*)`;
+		const words = `(${_.values(config.publicity).join('|')})`;
+		const querystring = `\\?hidden=${words}&source=(\\w*)&flow=([^"\\)]*)&thread=([^"\\)]*)`;
 		const baseUrl = _.escapeRegExp(config.baseUrl);
 		const publicity = config.publicity;
 		switch (format) {

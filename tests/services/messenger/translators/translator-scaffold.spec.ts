@@ -82,6 +82,40 @@ describe('lib/services/messenger/translators/translator-scaffold.ts', () => {
 		});
 	});
 
+	describe('TranslatorScaffold.extractWords', () => {
+		it('should find the words in a simple message', () => {
+			expect(TranslatorScaffold.extractWords('test this')).to.deep.equal(['test', 'this']);
+		});
+
+		it('should remove grammar, including upper case', () => {
+			expect(TranslatorScaffold.extractWords('Test this.')).to.deep.equal(['test', 'this']);
+		});
+
+		it('should remove simple html tags', () => {
+			expect(TranslatorScaffold.extractWords('<p>test this</p>')).to.deep.equal(['test', 'this']);
+		});
+
+		it('should remove complex html tags', () => {
+			expect(TranslatorScaffold.extractWords('<a href="blah">test<br/>this</a>')).to.deep.equal(['test', 'this']);
+		});
+
+		it('should ignore invisible html', () => {
+			expect(TranslatorScaffold.extractWords('test this<a href="blah"></a>')).to.deep.equal(['test', 'this']);
+		});
+
+		it('should remove simple markdown', () => {
+			expect(TranslatorScaffold.extractWords('**test this**')).to.deep.equal(['test', 'this']);
+		});
+
+		it('should remove complex markdown', () => {
+			expect(TranslatorScaffold.extractWords('[test](blah)\n\n* this')).to.deep.equal(['test', 'this']);
+		});
+
+		it('should ignore invisible markdown', () => {
+			expect(TranslatorScaffold.extractWords('test this\n\n[](blah)')).to.deep.equal(['test', 'this']);
+		});
+	});
+
 	describe('TranslatorScaffold.stringifyMetadata', () => {
 		const exampleMessage = {
 			details: {
