@@ -53,16 +53,6 @@ SYNCBOT_MAPPINGS:
       previous:
         - "testing"
   - source:
-      service: "discourse"
-      flow: "6"
-      alias: "second sandbox"
-    destination:
-      service: "flowdock"
-      flow: "rulemotion/testing"
-      alias: "sandbox"
-      previous:
-        - "testing"
-  - source:
       service: "flowdock"
       flow: "rulemotion/testing"
       alias: "sandbox"

@@ -268,13 +268,49 @@ Errors, where possible, are reported in the originating thread as whispers.
 1) Add the inbox to the `SyncBot <- Inboxes` rule.  The settings for the rule should be as follows:
 	```text
 	WHEN:
-		<Inbound message, Outbound message, Outbound reply, Comment, Mention>
+		<Inbound message, Outbound message, Outbound reply, Comment, Mention, Conversation moved>
 	IF <at least one> CONDITION IS MET:
 		- <Inbox is> <synchronised inbox>
 		- <Inbox is> <synchronised inbox>
 		- <Inbox is> <synchronised inbox>
 	THEN:
 		<Send to a Webhook> <https://your.deploy/front>
+	```
+
+### Setting up a Discourse category for SyncBot
+
+1) You will need the help of a Discourse admin (not moderator) to perform these steps
+1) Get an All Users API Key from https://your.discourse/admin/api/keys
+1) Fire a request similar to the following to acquire a list of categories
+	```
+	GET https://your.discourse/categories
+	?api_key=<key>
+	&api_username=<username>
+	Accept: application/json
+	```
+1) Find the ID of the category you care about, should be in the format `123`.
+1) Adjust the following values in configs/yml
+	* `SYNCBOT_MAPPINGS`
+		* Add the flow mapping to the array
+1) Create a webhook at https://your.discourse/admin/api/web_hooks, the settings should be as follows:
+	```text
+	Payload URL:
+		<https://your.deploy/discourse>
+	Content Type:
+		<application/json>
+	Secret:
+		<some_secret_here>
+	Which events should trigger this webhook?
+		<Select individual events.>
+			<Post Event>
+	Triggered Categories
+		<empty list>
+	Triggered Groups
+		<empty list>
+	Check TLS certificate of payload url
+		<checked>
+	Active
+		<checked>
 	```
 
 ### Example .sh file
