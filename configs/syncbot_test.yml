@@ -107,6 +107,7 @@ SYNCBOT_METADATA_CONFIG:
     hidden: "whisper"
     hiddenPreferred: "murmur"
     shown: "reply"
+  secret: "<<INJECT_SYNCBOT_SECRET>>"
 SYNCBOT_NAME: "<<INJECT_SYNCBOT_NAME>>"
 SYNCBOT_PORT: "<<INJECT_SYNCBOT_PORT>>"
 SYNCBOT_DEVOPS_FLOW: "duff"

@@ -45,6 +45,11 @@ import {
 	TranslatorMetadata,
 } from './translator-types';
 
+export interface FlowdockMetadata extends TranslatorMetadata {
+	/** Title of the message, usually this doesn't get extracted from the message body; but flowdock. */
+	title?: string;
+}
+
 /**
  * Class to enable the translating between messenger standard forms and service
  * specific forms.
@@ -59,10 +64,15 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 	 */
 	public static extractMetadata(
 		message: string, format: MetadataEncoding, config: MetadataConfiguration,
-	): TranslatorMetadata {
+	): FlowdockMetadata {
+		// Any characters, then a newline, then markdown title formatting, then absolutely anything.
+		const titleSplitter = /^(.*)[\r\n][\s-=]+([\s\S]+)$/;
+		const titleAndText = message.match(titleSplitter);
+		const superMessage = titleAndText ? titleAndText[2].trim() : message.trim();
 		const superFormat = (format === MetadataEncoding.Flowdock) ? MetadataEncoding.HiddenMD : format;
-		const metadata = TranslatorScaffold.extractMetadata(message, superFormat, config);
+		const metadata = TranslatorScaffold.extractMetadata(superMessage, superFormat, config) as FlowdockMetadata;
 		const findPublic = '^> *';
+		metadata.title = titleAndText ? titleAndText[1].trim() : undefined;
 		if ((format === MetadataEncoding.Flowdock) && (metadata.service === null)) {
 			// Check for magic syntax if the message originated in Flowdock
 			metadata.hidden = !(new RegExp(findPublic, 'i').test(message));
@@ -70,6 +80,9 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 		if (metadata.hidden === false) {
 			// Tidy any magic syntax from public messages
 			metadata.content = metadata.content.replace(new RegExp(findPublic, 'igm'), '').trim();
+			if (metadata.title) {
+				metadata.title = metadata.title.replace(new RegExp(findPublic, 'igm'), '').trim();
+			}
 		}
 		return metadata;
 	}
@@ -137,7 +150,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 	): string {
 		const lengthLimit = (options && options.lengthLimit) || 8096;
 		const prefix = options.linePrefix || '';
-		const first = options.header ? `${options.header}\n--\n` : '';
+		const first = options.header ? `${options.header.replace(/^/gmi, prefix)}\n${prefix}--\n` : '';
 		const second = options.tags ? `${FlowdockTranslator.makeTagString(options.tags)}\n` : '';
 		const prefixedBody = body.replace(/^/gmi, prefix);
 		const penultimate = options.footer ? `\n${options.footer}` : '';
@@ -454,7 +467,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 			const firstMessageEvent = _.merge(_.cloneDeep(event), { rawEvent: firstMessage });
 			const firstMessageDetails = this.eventIntoMessageDetails(firstMessageEvent);
 			cookedEvent.details.tags = _.uniq(firstMessage.tags.filter(tagFilter));
-			cookedEvent.details.title = firstMessageDetails.message.title;
+			cookedEvent.details.title = firstMessageDetails.message.title || firstMessageDetails.message.text;
 			return Promise.resolve(undefined);
 		})
 		// Get details of the user nickname.
@@ -527,11 +540,6 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 			event.rawEvent.content, MetadataEncoding.Flowdock, this.metadataConfig
 		);
 		// Pull some details out of the event.
-		// Any characters, then a newline, then markdown title formatting, then absolutely anything.
-		const titleSplitter = /^(.*)[\r\n][\s-=]*([\s\S]+)$/;
-		const titleAndText = metadata.content.match(titleSplitter);
-		const text = titleAndText ? titleAndText[2].trim() : metadata.content.trim();
-		const title = titleAndText ? titleAndText[1].trim() : metadata.content.trim();
 		const flow = event.cookedEvent.flow;
 		const threadId = event.rawEvent.thread_id;
 		const user = event.rawEvent.user;
@@ -557,8 +565,8 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 			},
 			message: {
 				metadata,
-				text,
-				title,
+				text: metadata.content,
+				title: metadata.title,
 			}
 		};
 	}
