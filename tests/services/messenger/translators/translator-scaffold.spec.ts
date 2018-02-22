@@ -4,6 +4,7 @@ import * as chaiAsPromised from 'chai-as-promised';
 chai.use(chaiAsPromised);
 const expect = chai.expect;
 
+import * as crypto from 'crypto';
 import {
 	MetadataEncoding,
 	TranslatorScaffold,
@@ -18,6 +19,7 @@ describe('lib/services/messenger/translators/translator-scaffold.ts', () => {
 			hiddenPreferred: 'murmur',
 			shown: 'reply',
 		},
+		secret: 'salt',
 	};
 
 	describe('TranslatorScaffold.convertPings', () => {
@@ -82,7 +84,42 @@ describe('lib/services/messenger/translators/translator-scaffold.ts', () => {
 		});
 	});
 
+	describe('TranslatorScaffold.extractWords', () => {
+		it('should find the words in a simple message', () => {
+			expect(TranslatorScaffold.extractWords('test this')).to.deep.equal(['test', 'this']);
+		});
+
+		it('should remove grammar, including upper case', () => {
+			expect(TranslatorScaffold.extractWords('Test this.')).to.deep.equal(['test', 'this']);
+		});
+
+		it('should remove simple html tags', () => {
+			expect(TranslatorScaffold.extractWords('<p>test this</p>')).to.deep.equal(['test', 'this']);
+		});
+
+		it('should remove complex html tags', () => {
+			expect(TranslatorScaffold.extractWords('<a href="blah">test<br/>this</a>')).to.deep.equal(['test', 'this']);
+		});
+
+		it('should ignore invisible html', () => {
+			expect(TranslatorScaffold.extractWords('test this<a href="blah"></a>')).to.deep.equal(['test', 'this']);
+		});
+
+		it('should remove simple markdown', () => {
+			expect(TranslatorScaffold.extractWords('**test this**')).to.deep.equal(['test', 'this']);
+		});
+
+		it('should remove complex markdown', () => {
+			expect(TranslatorScaffold.extractWords('[test](blah)\n\n* this')).to.deep.equal(['test', 'this']);
+		});
+
+		it('should ignore invisible markdown', () => {
+			expect(TranslatorScaffold.extractWords('test this\n\n[](blah)')).to.deep.equal(['test', 'this']);
+		});
+	});
+
 	describe('TranslatorScaffold.stringifyMetadata', () => {
+		const hmac = crypto.createHmac('sha256', 'salt').update('c').digest('hex');
 		const exampleMessage = {
 			details: {
 				service: 'a',
@@ -108,7 +145,8 @@ describe('lib/services/messenger/translators/translator-scaffold.ts', () => {
 				MetadataEncoding.HiddenMD,
 				exampleConfig,
 			);
-			expect(encodedMetadata).to.equal('[](http://e.com?hidden=whisper&source=g&flow=i&thread=f)');
+			const expectedString = `[](http://e.com?hidden=whisper&source=g&flow=i&thread=f&hmac=${hmac})`;
+			expect(encodedMetadata).to.equal(expectedString);
 		});
 
 		it('should encode metadata into an invisible link html string', () => {
@@ -117,39 +155,54 @@ describe('lib/services/messenger/translators/translator-scaffold.ts', () => {
 				MetadataEncoding.HiddenHTML,
 				exampleConfig,
 			);
-			expect(encodedMetadata).to.equal('<a href="http://e.com?hidden=whisper&source=g&flow=i&thread=f"></a>');
+			const expectedString = `<a href="http://e.com?hidden=whisper&source=g&flow=i&thread=f&hmac=${hmac}"></a>`;
+			expect(encodedMetadata).to.equal(expectedString);
+		});
+	});
+
+	describe('TranslatorScaffold.signText', () => {
+		const hmac = crypto.createHmac('sha256', 'salt').update('h').digest('hex');
+
+		it('should correctly hash a provided object', () => {
+			const hash = TranslatorScaffold.signText('h', exampleConfig.secret);
+			expect(hash).to.equal(hmac);
 		});
 	});
 
 	describe('TranslatorScaffold.extractMetadata', () => {
+		const hmac = crypto.createHmac('sha256', 'salt').update('h').digest('hex');
+		const expectedObject = { content: 'h', hidden: true, service: 'g', flow: 'j', thread: 'i', hmac };
+
 		it('should extract metadata from a markdown-at-end string', () => {
 			const extractedMetadata = TranslatorScaffold.extractMetadata(
-				'h[](http://e.com?hidden=whisper&source=g&flow=j&thread=i)',
+				`h[](http://e.com?hidden=whisper&source=g&flow=j&thread=i&hmac=${hmac})`,
 				MetadataEncoding.HiddenMD,
 				exampleConfig,
 			);
-			expect(extractedMetadata).to.deep.equal({content: 'h', hidden: true, service: 'g', flow: 'j', thread: 'i'});
+			expect(extractedMetadata).to.deep.equal(expectedObject);
 		});
 
 		it('should extract metadata from a html-at-end string', () => {
 			const extractedMetadata = TranslatorScaffold.extractMetadata(
-				'h<a href="http://e.com?hidden=whisper&source=g&flow=j&thread=i"></a>',
+				`h<a href="http://e.com?hidden=whisper&source=g&flow=j&thread=i&hmac=${hmac}"></a>`,
 				MetadataEncoding.HiddenHTML,
 				exampleConfig,
 			);
-			expect(extractedMetadata).to.deep.equal({content: 'h', hidden: true, service: 'g', flow: 'j', thread: 'i'});
+			expect(extractedMetadata).to.deep.equal(expectedObject);
 		});
 
 		it('should not extract metadata from an html-in-qouted-text string', () => {
+			const copiedMessage = `h<a href="http://e.com?hidden=whisper&source=g&flow=j&thread=i&hmac=${hmac}"></a>`;
 			const extractedMetadata = TranslatorScaffold.extractMetadata(
-				'<div>Their reply.</div><div>h<a href="http://e.com?hidden=whisper&source=g&flow=j&thread=i"></a></div>',
+				`<div>Their reply.</div><div>${copiedMessage}</div>`,
 				MetadataEncoding.HiddenHTML,
 				exampleConfig,
 			);
 			expect(extractedMetadata).to.deep.equal({
-				content: '<div>Their reply.</div><div>h<a href="http://e.com?hidden=whisper&source=g&flow=j&thread=i"></a></div>',
+				content: `<div>Their reply.</div><div>${copiedMessage}</div>`,
 				hidden: true,
 				service: null,
+				hmac: null,
 				flow: null,
 				thread: null,
 			});
@@ -159,11 +212,12 @@ describe('lib/services/messenger/translators/translator-scaffold.ts', () => {
 	describe('TranslatorScaffold.metadataByRegex', () => {
 		it('should find metadata matches in a string based on a provided regex', () => {
 			const extractedMetadata = TranslatorScaffold.metadataByRegex(
-				'blah,reply,e,d,f',
-				/,(\w*),(\w*),(\w*),(\w*)$/,
+				'blah,reply,e,d,f,g',
+				/,(\w*),(\w*),(\w*),(\w*),(\w*)$/,
 				exampleConfig.publicity,
 			);
-			expect(extractedMetadata).to.deep.equal({content: 'blah', hidden: false, service: 'e', flow: 'd', thread: 'f'});
+			const expectedOutput = {content: 'blah', hidden: false, service: 'e', flow: 'd', thread: 'f', hmac: 'g'};
+			expect(extractedMetadata).to.deep.equal(expectedOutput);
 		});
 	});
 });

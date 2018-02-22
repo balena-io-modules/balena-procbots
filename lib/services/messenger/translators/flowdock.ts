@@ -422,14 +422,14 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 	 * @returns      Promise that resolves to an array of message objects in the standard form
 	 */
 	public eventIntoMessages(event: FlowdockEvent): Promise<MessengerEvent[]> {
-		// Calculate metadata and use whichever matched, i.e. has a shorter content because it extracted metadata.
-		const metadata = FlowdockTranslator.extractMetadata(
-			event.rawEvent.content, MetadataEncoding.Flowdock, this.metadataConfig
-		);
-		// Pull some details out of the event.
+		// Break the raw message in two if it contains a 'title'.
 		const titleSplitter = /^(.*)\n--\n((?:\r|\n|.)*)$/;
-		const titleAndText = metadata.content.match(titleSplitter);
-		const text = titleAndText ? titleAndText[2].trim() : metadata.content.trim();
+		const titleAndBody = event.rawEvent.content.match(titleSplitter);
+		const body = titleAndBody ? titleAndBody[2].trim() : event.rawEvent.content.trim();
+		// Use the body of the message to calculate any metadata.
+		// This required because metadata signing uses the body, but not the title.
+		const metadata = FlowdockTranslator.extractMetadata(body, MetadataEncoding.Flowdock, this.metadataConfig);
+		// Pull some details out of the event.
 		const flow = event.cookedEvent.flow;
 		const thread = event.rawEvent.thread_id;
 		const userId = event.rawEvent.user;
@@ -447,7 +447,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 				handle: 'duff_FlowdockTranslator_eventIntoMessage_a', // gets replaced
 				hidden: metadata.hidden,
 				tags: [], // gets replaced
-				text,
+				text: metadata.content,
 				title: 'duff_FlowdockTranslator_eventIntoMessage_b', // gets replaced
 			},
 			source: {
