@@ -211,9 +211,9 @@ export abstract class TranslatorScaffold implements Translator {
 	 * @param content  Content, if any, that originated this empty object.
 	 * @returns        An empty metadata object.
 	 */
-	public static emptyMetadata(content?: string): TranslatorMetadata {
+	public static emptyMetadata(content: string = ''): TranslatorMetadata {
 		return {
-			content: content || '',
+			content,
 			flow: null,
 			service: null,
 			hidden: true,
