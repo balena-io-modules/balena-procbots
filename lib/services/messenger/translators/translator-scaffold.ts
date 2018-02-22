@@ -195,7 +195,7 @@ export abstract class TranslatorScaffold implements Translator {
 		message: string, format: MetadataEncoding, config: MetadataConfiguration,
 	): TranslatorMetadata {
 		const words = `(${_.values(config.publicity).join('|')})`;
-		const querystring = `\\?hidden=${words}&source=(\\w*)&flow=([^"\\)]*)&thread=([^"\\)]*)`;
+		const querystring = `\\?hidden=${words}&source=(\\w*)&flow=([^"&\\)]*)&thread=([^"&\\)]*)`;
 		const baseUrl = _.escapeRegExp(config.baseUrl);
 		const publicity = config.publicity;
 		switch (format) {
