@@ -1,6 +1,7 @@
 /// <reference types="mocha" />
 import { expect } from 'chai';
 
+import * as crypto from 'crypto';
 import { FlowdockTranslator } from '../../../../lib/services/messenger/translators/flowdock';
 import {
 	MetadataEncoding,
@@ -16,6 +17,7 @@ describe('lib/services/messenger/translators/flowdock.ts', () => {
 			hiddenPreferred: 'murmur',
 			shown: 'reply',
 		},
+		secret: 'salt',
 	};
 
 	describe('FlowdockTranslator.createFormattedText', () => {
@@ -105,12 +107,14 @@ describe('lib/services/messenger/translators/flowdock.ts', () => {
 
 	describe('FlowdockTranslator.extractMetadata', () => {
 		it('should find metadata in a synchronised (hiddenMD) message', () => {
+			const hmac = crypto.createHmac('sha256', 'salt').update('h').digest('hex');
 			const extractedMetadata = FlowdockTranslator.extractMetadata(
-				'h[](http://e.com?hidden=whisper&source=g&flow=j&thread=i)',
+				`h[](http://e.com?hidden=whisper&source=g&flow=j&thread=i&hmac=${hmac})`,
 				MetadataEncoding.Flowdock,
 				config,
 			);
-			expect(extractedMetadata).to.deep.equal({content: 'h', hidden: true, service: 'g', flow: 'j', thread: 'i'});
+			const expectedObject = {content: 'h', hidden: true, service: 'g', flow: 'j', thread: 'i', hmac};
+			expect(extractedMetadata).to.deep.equal(expectedObject);
 		});
 
 		it('should return private for a message with no funny business', () => {

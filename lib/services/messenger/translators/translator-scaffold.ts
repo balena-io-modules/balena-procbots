@@ -195,19 +195,29 @@ export abstract class TranslatorScaffold implements Translator {
 		message: string, format: MetadataEncoding, config: MetadataConfiguration,
 	): TranslatorMetadata {
 		const words = `(${_.values(config.publicity).join('|')})`;
-		const querystring = `\\?hidden=${words}&source=(\\w*)&flow=([^"&\\)]*)&thread=([^"&\\)]*)`;
+		const querystring = `\\?hidden=${words}&source=(\\w*)&flow=([^"&\\)]*)&thread=([^"&\\)]*)(?:&hmac=([^"&\\)]*))?`;
 		const baseUrl = _.escapeRegExp(config.baseUrl);
 		const publicity = config.publicity;
+		let metadata = this.emptyMetadata(message);
+		// Find the metadata by seeking a regex within the message.
 		switch (format) {
 			case MetadataEncoding.HiddenHTML:
 				const hiddenHTMLRegex = new RegExp(`<a href="${baseUrl}${querystring}"[^>]*></a>$`, 'i');
-				return TranslatorScaffold.metadataByRegex(message, hiddenHTMLRegex, publicity);
+				metadata = TranslatorScaffold.metadataByRegex(message, hiddenHTMLRegex, publicity);
+				break;
 			case MetadataEncoding.HiddenMD:
 				const hiddenMDRegex = new RegExp(`\\[\\]\\(${baseUrl}${querystring}\\)$`, 'i');
-				return TranslatorScaffold.metadataByRegex(message, hiddenMDRegex, publicity);
+				metadata = TranslatorScaffold.metadataByRegex(message, hiddenMDRegex, publicity);
+				break;
 			default:
 				throw new Error(`${format} format not recognised`);
 		}
+		// If this is from before hashing, or the hash is good, then assume the metadata extracted is accurate.
+		if (metadata.hmac === null || metadata.hmac === this.signText(metadata.content, config.secret)) {
+			return metadata;
+		}
+		// If the signatures do not match assume the metadata extracted is an artifact of copy, paste or quote.
+		return this.emptyMetadata(metadata.content);
 	}
 
 	/**
@@ -228,6 +238,7 @@ export abstract class TranslatorScaffold implements Translator {
 				service: metadata[2] || null,
 				hidden: TranslatorScaffold.findPublicityFromWord(metadata[1], indicators),
 				thread: metadata[4] || null,
+				hmac: metadata[5] || null,
 			};
 		}
 		return TranslatorScaffold.emptyMetadata(content);
@@ -245,6 +256,7 @@ export abstract class TranslatorScaffold implements Translator {
 			service: null,
 			hidden: true,
 			thread: null,
+			hmac: null,
 		};
 	}
 
