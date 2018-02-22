@@ -29,6 +29,8 @@ export interface TranslatorMetadata {
 	hidden: PrivacyPreference;
 	/** Thread ID that this message was created on. */
 	thread: string | null;
+	/** Signature of the words in the associated message. */
+	hmac?: string | null;
 }
 
 export interface PublicityIndicators {
@@ -40,6 +42,7 @@ export interface PublicityIndicators {
 export interface MetadataConfiguration {
 	baseUrl: string;
 	publicity: PublicityIndicators;
+	secret: string;
 }
 
 /** Mapping of generic names for an event into equivalent specific events. */
