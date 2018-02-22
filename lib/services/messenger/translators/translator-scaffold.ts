@@ -197,13 +197,7 @@ export abstract class TranslatorScaffold implements Translator {
 				thread: metadata[4] || null,
 			};
 		}
-		return {
-			content: TranslatorScaffold.unixifyNewLines(message.trim()),
-			flow: null,
-			service: null,
-			hidden: true,
-			thread: null,
-		};
+		return TranslatorScaffold.emptyMetadata(TranslatorScaffold.unixifyNewLines(message.trim()));
 	}
 
 	/**
