@@ -207,6 +207,21 @@ export abstract class TranslatorScaffold implements Translator {
 	}
 
 	/**
+	 * Return an empty metadata object, for occasions where there is no metadata
+	 * @param content  Content, if any, that originated this empty object.
+	 * @returns        An empty metadata object.
+	 */
+	public static emptyMetadata(content?: string): TranslatorMetadata {
+		return {
+			content: content || '',
+			flow: null,
+			service: null,
+			hidden: true,
+			thread: null,
+		};
+	}
+
+	/**
 	 * A dictionary of messenger event names, eg post, into service specific events, eg inbound_message, outbound_message.
 	 */
 	protected abstract eventEquivalencies: EventEquivalencies;
