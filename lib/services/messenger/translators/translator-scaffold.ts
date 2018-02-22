@@ -216,13 +216,7 @@ export abstract class TranslatorScaffold implements Translator {
 				thread: metadata[4] || null,
 			};
 		}
-		return {
-			content: TranslatorScaffold.unixifyNewLines(message.trim()),
-			flow: null,
-			service: null,
-			hidden: true,
-			thread: null,
-		};
+		return TranslatorScaffold.emptyMetadata(TranslatorScaffold.unixifyNewLines(message.trim()));
 	}
 
 	/**
@@ -230,9 +224,9 @@ export abstract class TranslatorScaffold implements Translator {
 	 * @param content  Content, if any, that originated this empty object.
 	 * @returns        An empty metadata object.
 	 */
-	public static emptyMetadata(content?: string): TranslatorMetadata {
+	public static emptyMetadata(content: string = ''): TranslatorMetadata {
 		return {
-			content: content || '',
+			content,
 			flow: null,
 			service: null,
 			hidden: true,
