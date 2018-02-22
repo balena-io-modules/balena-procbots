@@ -15,6 +15,7 @@
  */
 
 import * as Promise from 'bluebird';
+import * as crypto from 'crypto';
 import * as _ from 'lodash';
 import * as marked from 'marked';
 import {
@@ -105,6 +106,17 @@ export abstract class TranslatorScaffold implements Translator {
 	}
 
 	/**
+	 * Create a hash signature using the the message's words.
+	 * @param message  Message to hash.
+	 * @param secret   Shared secret to ID SyncBot.
+	 * @returns        Hex encoded sha256 hash.
+	 */
+	public static signText(message: string, secret: string): string {
+		const messageContent = TranslatorScaffold.extractWords(message).join(' ');
+		return crypto.createHmac('sha256', secret).update(messageContent).digest('hex');
+	}
+
+	/**
 	 * Converts the usernames within a message string using a specified converter.
 	 * @param message    String to replace usernames within
 	 * @param converter  Function to use to convert each username
@@ -157,10 +169,11 @@ export abstract class TranslatorScaffold implements Translator {
 		data: BasicMessageInformation, format: MetadataEncoding, config: MetadataConfiguration,
 	): string {
 		const pubWord = TranslatorScaffold.findPublicityWord(data.details.hidden, config.publicity);
+		const hmac = this.signText(data.details.text, config.secret);
 		const service = data.source.service;
 		const flow = data.source.flow;
 		const thread = data.source.thread;
-		const queryString = `?hidden=${pubWord}&source=${service}&flow=${flow}&thread=${thread}`;
+		const queryString = `?hidden=${pubWord}&source=${service}&flow=${flow}&thread=${thread}&hmac=${hmac}`;
 		switch (format) {
 			case MetadataEncoding.HiddenHTML:
 				return `<a href="${config.baseUrl}${queryString}"></a>`;
