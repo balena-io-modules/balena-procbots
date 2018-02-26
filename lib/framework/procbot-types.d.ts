@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+import * as os from 'os';
 import { ServiceEmitter } from '../services/service-types';
 
 /** The ProcBotConfiguration interface holds per-bot configuration information. */
@@ -40,3 +41,27 @@ export interface ConfigurationLocation {
 	 */
 	location: string | any;
 }
+
+/** A property within the Process object. */
+export type ProcessProperty = {
+	property: keyof NodeJS.Process;
+	value: any;
+};
+
+/** A property within the os object. */
+export type SystemProperty = {
+	property: keyof typeof os;
+	value: any;
+};
+
+/** An object for providing values from the process and os objects. */
+export type ProcBotEnvironmentProperties = {
+	system: SystemProperty[];
+	process: ProcessProperty[];
+};
+
+/** An object for requesting values from the process and os objects. */
+export type ProcBotEnvironmentQuery = {
+	system: Array<keyof typeof os>;
+	process: Array<keyof NodeJS.Process>;
+};

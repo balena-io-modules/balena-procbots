@@ -19,11 +19,17 @@ import * as FS from 'fs';
 import * as yaml from 'js-yaml';
 import * as _ from 'lodash';
 import { Dictionary } from 'lodash';
+import * as os from 'os';
 import { ServiceConstructor, ServiceEmitRequest, ServiceEmitter, ServiceFactory,
 	ServiceListener, ServiceType } from '../services/service-types';
 import { BuildCommand, ExecuteCommand } from '../utils/environment';
 import { Logger } from '../utils/logger';
-import { ConfigurationLocation, ProcBotConfiguration } from './procbot-types';
+import {
+	ConfigurationLocation,
+	ProcBotConfiguration,
+	ProcBotEnvironmentProperties,
+	ProcBotEnvironmentQuery,
+} from './procbot-types';
 const fsReadFile = Promise.promisify(FS.readFile);
 
 /**
@@ -45,6 +51,49 @@ interface ServiceMap<T> {
  * * Retrieve configuration file from either the local FS or a ServiceEmitter
  */
 export class ProcBot {
+	/**
+	 * Query properties of the environment and check that they all match.
+	 * Must be properties that DO NOT execute, e.g. process.pid but not process.exit().
+	 * @param filter  List of property/value pairs for process and os that all must match.
+	 * @returns       Whether all properties matched.
+	 */
+	public static matchEnvironment(filter: ProcBotEnvironmentProperties): boolean {
+		const matchProcess = _.every(filter.process, (term) => {
+			return JSON.stringify(process[term.property]) === term.value;
+		});
+		const matchSystem = _.every(filter.system, (term) => {
+			return JSON.stringify(os[term.property]) === term.value;
+		});
+		return matchProcess && matchSystem;
+	}
+
+	/**
+	 * Find properties of the environment, executing functions.
+	 * @param query  List of properties that you want from the process and os.
+	 * @returns      Populated object with the values requested.
+	 */
+	public static queryEnvironment(query: ProcBotEnvironmentQuery): ProcBotEnvironmentProperties {
+		const response: ProcBotEnvironmentProperties = {
+			process: [],
+			system: [],
+		};
+		_.forEach(query.process, (queryItem) => {
+			const property = process[queryItem];
+			response.process.push({
+				property: queryItem,
+				value: _.isFunction(property) ? property() : property,
+			});
+		});
+		_.forEach(query.system, (queryItem) => {
+			const property = os[queryItem];
+			response.system.push({
+				property: queryItem,
+				value: _.isFunction(property) ? property() : property,
+			});
+		});
+		return response;
+	}
+
 	/**
 	 * A method that recursively dives down a nested structure,
 	 * replacing values flagged <<INJECT_BLAH>> with values from process.env
