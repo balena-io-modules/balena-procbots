@@ -531,7 +531,7 @@ export class SyncBot extends ProcBot {
 					thread: data.source.thread,
 				};
 				// This comments on the original thread about the new thread.
-				const targetText = `${createThread.target.service}/${to.alias || to.flow} thread ${response.thread}`;
+				const targetText = `${createThread.target.service} ${to.alias || to.flow} thread ${response.thread}`;
 				updateOriginating.details.text += `[${targetText}](${response.url})`;
 				updateOriginating.details.service = createThread.target.service;
 				updateOriginating.details.flow = createThread.target.flow;
@@ -549,7 +549,7 @@ export class SyncBot extends ProcBot {
 					thread: response.thread,
 				};
 				// This comments on the new thread about the original thread..
-				const sourceText = `${data.source.service}/${from.alias || from.flow} thread ${data.source.thread}'`;
+				const sourceText = `${data.source.service} ${from.alias || from.flow} thread ${data.source.thread}`;
 				updateCreated.details.text += `[${sourceText}](${data.source.url})`;
 				updateCreated.details.service = data.source.service;
 				updateCreated.details.flow = data.source.flow;

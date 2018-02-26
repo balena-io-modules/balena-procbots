@@ -67,6 +67,19 @@ describe('lib/services/messenger/translators/translator-scaffold.ts', () => {
 			expect(threadId).to.deep.equal({thread: 'ghi'});
 		});
 
+		it('should find the correct "Flow cited" style id from an array of message strings', () => {
+			const threadId = TranslatorScaffold.extractSource(
+				'foo',
+				[
+					'A message that mentions blah, foo, bar, test, discourse and thread.',
+					'This is mirrored in [bar baz thread jkl]',
+					'This is mirrored in [foo baz thread ghi]',
+				],
+				exampleConfig,
+			);
+			expect(threadId).to.deep.equal({thread: 'ghi'});
+		});
+
 		it('should find the correct "Atomic" style id from an array of message strings', () => {
 			const threadId = TranslatorScaffold.extractSource(
 				'm',
