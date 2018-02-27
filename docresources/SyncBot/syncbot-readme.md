@@ -265,6 +265,17 @@ Errors, where possible, are reported in the originating thread as whispers.
 		* Add the flow mapping to the array
 	* `SYNCBOT_LISTENER_CONSTRUCTORS.front.channelPerInbox`
 		* Add the map of inbox to channel to the array
+1) Add the inbox to the `SyncBot <- Inboxes` rule.  The settings for the rule should be as follows:
+	```text
+	WHEN:
+		<Inbound message, Outbound message, Outbound reply, Comment, Mention>
+	IF <at least one> CONDITION IS MET:
+		- <Inbox is> <synchronised inbox>
+		- <Inbox is> <synchronised inbox>
+		- <Inbox is> <synchronised inbox>
+	THEN:
+		<Send to a Webhook> <https://your.deploy/front>
+	```
 
 ### Example .sh file
 
