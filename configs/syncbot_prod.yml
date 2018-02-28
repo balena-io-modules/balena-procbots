@@ -89,6 +89,11 @@ SYNCBOT_LISTENER_CONSTRUCTORS:
     webhookSecret: "<<INJECT_SYNCBOT_GITHUB_SECRET>>"
   flowdock:
     token: "<<INJECT_SYNCBOT_FLOWDOCK_TOKEN>>"
+    serviceName: "flowdock"
+  flowdockhashtag:
+    organization: "rulemotion"
+    token: "<<INJECT_SYNCBOT_FLOWDOCK_TOKEN>>"
+    serviceName: "flowdockhashtag"
   front:
     secret: "<<INJECT_SYNCBOT_FRONT_SECRET>>"
     token: "<<INJECT_SYNCBOT_FRONT_TOKEN>>"
@@ -96,11 +101,13 @@ SYNCBOT_LISTENER_CONSTRUCTORS:
       inb_23sp: "cha_20ep"
       inb_nla: "cha_20er"
       inb_2hvh: "cha_5cih"
+    serviceName: "front"
   discourse:
     instance: "forums.resin.io"
     username: "syncbot"
     secret: "<<INJECT_SYNCBOT_DISCOURSE_SECRET>>"
     token: "<<INJECT_SYNCBOT_DISCOURSE_TOKEN>>"
+    serviceName: "discourse"
 SYNCBOT_METADATA_CONFIG:
   baseUrl: "http://resin.io"
   publicity:

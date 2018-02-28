@@ -106,7 +106,7 @@ export interface FlowdockConstructor extends ServiceScaffoldConstructor {
  * registration for example).
  */
 export interface FlowdockEvent extends ServiceScaffoldEvent {
-	cookedData: {
+	cookedEvent: {
 		flow: string;
 	};
 }

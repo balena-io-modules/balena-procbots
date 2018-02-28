@@ -540,6 +540,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	 */
 	public messageIntoEmitterConstructor(_message: TransmitInformation): FrontConstructor {
 		return {
+			serviceName: 'front',
 			token: this.connectionDetails.token,
 			type: ServiceType.Emitter,
 		};

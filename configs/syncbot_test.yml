@@ -14,12 +14,18 @@ SYNCBOT_ERROR_UNDOCUMENTED: 'No fixes currently documented. (at)sqweelygig'
 SYNCBOT_LISTENER_CONSTRUCTORS:
   flowdock:
     token: "<<INJECT_SYNCBOT_FLOWDOCK_TOKEN>>"
+    serviceName: "flowdock"
+  flowdockhashtag:
+    organization: "rulemotion"
+    token: "<<INJECT_SYNCBOT_FLOWDOCK_TOKEN>>"
+    serviceName: "flowdockhashtag"
   front:
     secret: "<<INJECT_SYNCBOT_FRONT_SECRET>>"
     token: "<<INJECT_SYNCBOT_FRONT_TOKEN>>"
     channelPerInbox:
       inb_1yea: "cha_1vc0"
       inb_3n6y: "cha_3gb6"
+    serviceName: "front"
   github:
     client: "syncbot"
     authentication:
@@ -34,6 +40,7 @@ SYNCBOT_LISTENER_CONSTRUCTORS:
     username: "testbot"
     secret: "<<INJECT_SYNCBOT_DISCOURSE_SECRET>>"
     token: "<<INJECT_SYNCBOT_DISCOURSE_TOKEN>>"
+    serviceName: "discourse"
 SYNCBOT_MAPPINGS:
   - source:
       service: "discourse"
@@ -76,8 +83,8 @@ SYNCBOT_MAPPINGS:
       flow: "rulemotion/testing"
       alias: "sandbox"
   - source:
-      service: "flowdock"
-      flow: "rulemotion/testing"
+      service: "flowdockhashtag"
+      flow: "test"
       alias: "sandbox"
     destination:
       service: "flowdock"
@@ -90,6 +97,6 @@ SYNCBOT_METADATA_CONFIG:
     shown: "reply"
 SYNCBOT_NAME: "<<INJECT_SYNCBOT_NAME>>"
 SYNCBOT_PORT: "<<INJECT_SYNCBOT_PORT>>"
-SYNCBOT_DEVOPS_FLOW: "testing"
+SYNCBOT_DEVOPS_FLOW: "duff"
 SYNCBOT_DEVOPS_USERS:
   - "2273d667fb262d0b3b891b80f198fa9ba9a88fe8025982030b813b33d0d4b8c6"

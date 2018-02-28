@@ -17,7 +17,6 @@ limitations under the License.
 import * as Promise from 'bluebird';
 import { Session } from 'flowdock';
 import * as _ from 'lodash';
-import * as path from 'path';
 import { Logger, LogLevel } from '../utils/logger';
 import {
 	FlowdockConstructor, FlowdockEmitContext,
@@ -34,7 +33,7 @@ export class FlowdockService extends ServiceScaffold<string> implements ServiceE
 	private postsSynced = new Set<number>();
 
 	constructor(data: FlowdockConstructor, logger: Logger) {
-		super(data, logger, path.basename(__filename.split('.')[0]));
+		super(data, logger);
 		this.session = new Session(data.token);
 		// The flowdock service both emits and calls back the error
 		// We'll just log the emit to prevent it bubbling
