@@ -135,7 +135,6 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 			protocol: 'https',
 			timeout: 20000
 		});
-		this.authenticate();
 
 		// Only the listener deals with events.
 		if (constObj.type === ServiceType.Listener) {
@@ -324,6 +323,10 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 			});
 		};
 
+		// This authenticates on demand
+		if (!this.authToken) {
+			return this.authenticate().then(runApi);
+		}
 		return runApi();
 	}
 
