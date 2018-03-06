@@ -262,7 +262,7 @@ export class SyncBot extends ProcBot {
 						});
 					}
 					if (!threadId && _.includes(actions, MessengerAction.CreateThread)) {
-						logger.log(LogLevel.INFO, `---> Creating thread '${firstLine}' on ${toText}.`);
+						logger.log(LogLevel.INFO, `---> Creating thread '${data.details.title}' on ${toText}.`);
 						// Create a thread if the quest for connections didn't find any
 						return SyncBot.createThreadAndConnect(to, from, messenger, data, name);
 					}
