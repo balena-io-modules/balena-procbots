@@ -52,6 +52,9 @@ export class TranslatorError extends TypedError {
  * - The communal standard for messages.
  */
 export interface Translator {
+	/** Whether messages to this service should share an emitter. */
+	sharedEmitter: boolean;
+
 	/**
 	 * Extract from an event (in the form specific to this service) a message type (in messenger phrasing).
 	 * @param event  Event to analyse.

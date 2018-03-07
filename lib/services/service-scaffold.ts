@@ -31,7 +31,7 @@ import {
 } from './service-scaffold-types';
 import {
 	ServiceAPIHandle, ServiceEmitContext, ServiceEmitRequest, ServiceEmitResponse,
-	ServiceEmitter, ServiceListener, ServiceRegistration,
+	ServiceEmitter, ServiceListener, ServiceRegistration, ServiceType,
 } from './service-types';
 
 /**
@@ -90,18 +90,20 @@ export abstract class ServiceScaffold<T> extends WorkerClient<T> implements Serv
 		this.constructorObject = data;
 		this.loggerInstance = logger;
 		this._serviceName = data.serviceName || path.basename(__filename.split('.')[0]);
-		if (typeof data.ingress === 'number') {
-			// Construction details provided a port number, so use that.
-			const port = data.ingress;
-			this.expressApp = express();
-			// This passes to the inheriting class responsibility for understanding the payload structure.
-			this.expressApp.use(bodyParser.text({type: '*/*'}));
-			this.expressApp.listen(port);
-			this.logger.log(LogLevel.INFO, `---> Created Express app on port ${port} for '${this.serviceName}'.`);
-		} else if (data.ingress) {
-			// Construction details provided an express.Express (only value left that's truthy), so use it.
-			this.expressApp = data.ingress;
-			this.logger.log(LogLevel.INFO, `---> Using provided Express app for '${this.serviceName}'.`);
+		if (data.type === ServiceType.Listener) {
+			if (typeof data.ingress === 'number') {
+				// Construction details provided a port number, so use that.
+				const port = data.ingress;
+				this.expressApp = express();
+				// This passes to the inheriting class responsibility for understanding the payload structure.
+				this.expressApp.use(bodyParser.text({type: '*/*'}));
+				this.expressApp.listen(port);
+				this.logger.log(LogLevel.INFO, `---> Created Express app on port ${port} for '${this.serviceName}'.`);
+			} else if (data.ingress) {
+				// Construction details provided an express.Express (only value left that's truthy), so use it.
+				this.expressApp = data.ingress;
+				this.logger.log(LogLevel.INFO, `---> Using provided Express app for '${this.serviceName}'.`);
+			}
 		}
 	}
 

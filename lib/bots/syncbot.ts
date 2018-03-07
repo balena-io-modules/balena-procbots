@@ -61,7 +61,7 @@ interface SyncBotConstructor {
 	SYNCBOT_METADATA_CONFIG: MetadataConfiguration;
 	SYNCBOT_PORT: string;
 	SYNCBOT_NAME: string;
-	SYNCBOT_LISTENER_CONSTRUCTORS: MessengerConnectionDetails;
+	SYNCBOT_SERVICE_CONSTRUCTORS: MessengerConnectionDetails;
 	SYNCBOT_ARCHIVE_STRINGS: string[];
 	SYNCBOT_DEVOPS_FLOW: string;
 	SYNCBOT_DEVOPS_USERS: string[];
@@ -177,7 +177,7 @@ export class SyncBot extends ProcBot {
 	 *  * Reacts to details provided by each event.
 	 * @param from                 Definition, {service, flow}, of the flow being listened to.
 	 * @param to                   Definition {service, flow} of the flow being emitted to.
-	 * @param messenger            Service to use to interact with the cloud.
+	 * @param emitter              Service to use to interact with the cloud.
 	 * @param logger               Logger to use to interact with the maintainers.
 	 * @param actions              An array of which actions to sync along this route.
 	 * @param name                 Username that the router should use.
@@ -185,12 +185,12 @@ export class SyncBot extends ProcBot {
 	 * @param solutionMatrix       A matrix of possible solutions to common routing errors.
 	 * @param genericErrorMessage  An error message that should be used by default.
 	 * @param archiveStrings       An array of strings that instruct the router to archive.
-	 * @returns                    Function that processes events from the messenger.
+	 * @returns                    Function that processes events from the listener.
 	 */
 	private static makeRouter(
 		from: FlowDefinition,
 		to: FlowDefinition,
-		messenger: MessengerService,
+		emitter: MessengerService,
 		logger: Logger,
 		actions: MessengerAction[],
 		name: string,
@@ -234,7 +234,7 @@ export class SyncBot extends ProcBot {
 					logger.log(LogLevel.WARN, 'Misconfiguration in SyncBot aliases.');
 				}
 				// Find details of any connections stored in the originating thread.
-				return SyncBot.readConnectedThread(to, messenger, data, name)
+				return SyncBot.readConnectedThread(to, emitter, data, name)
 				// Then comment on or create a thread, if appropriate.
 				.then((threadDetails: MessengerEmitResponse) => {
 					// Cease processing if there's an error and it is not ValueNotFound TranslatorError
@@ -252,7 +252,7 @@ export class SyncBot extends ProcBot {
 						logger.log(LogLevel.INFO, `---> Creating comment '${firstLine}' on ${toText}.`);
 						// Comment on the found thread
 						const flow = { service: to.service, flow: to.flow, thread: threadId };
-						return SyncBot.processCommand(flow, messenger, data, MessengerAction.CreateMessage)
+						return SyncBot.processCommand(flow, emitter, data, MessengerAction.CreateMessage)
 						// Pass through details of the thread updated
 						.then((emitResponse) => {
 							if (emitResponse.err) {
@@ -267,7 +267,7 @@ export class SyncBot extends ProcBot {
 					if (!threadId && _.includes(actions, MessengerAction.CreateThread)) {
 						logger.log(LogLevel.INFO, `---> Creating thread '${data.details.title}' on ${toText}.`);
 						// Create a thread if the quest for connections didn't find any
-						return SyncBot.createThreadAndConnect(to, from, messenger, data, name);
+						return SyncBot.createThreadAndConnect(to, from, emitter, data, name);
 					}
 					// Pass on that this has no connected thread
 					return {
@@ -297,7 +297,7 @@ export class SyncBot extends ProcBot {
 					if (threadId && (flowId === true || flowId === to.flow) && data.details.hidden && toldToArchive && routeArchive) {
 						// Pass the instruction to archive to the static method
 						const flow = { service: to.service, flow: to.flow, thread: threadId };
-						return SyncBot.processCommand(flow, messenger, data, MessengerAction.ArchiveThread)
+						return SyncBot.processCommand(flow, emitter, data, MessengerAction.ArchiveThread)
 						.then((emitResponse: MessengerEmitResponse) => {
 							const error = emitResponse.err;
 							if (!error) {
@@ -326,7 +326,7 @@ export class SyncBot extends ProcBot {
 							message: threadDetails.err.message, stack: threadDetails.err.stack,
 						}));
 						return SyncBot.createErrorComment(
-							to, messenger, data, threadDetails.err, name, solutionMatrix, genericErrorMessage
+							to, emitter, data, threadDetails.err, name, solutionMatrix, genericErrorMessage
 						)
 						.return();
 					}
@@ -575,11 +575,11 @@ export class SyncBot extends ProcBot {
 	 * Consults the environment for configuration to create a service that aggregates many other services.
 	 * @returns  Service that wraps and translates specified sub services.
 	 */
-	private static makeMessenger(
+	private static makeMessengers(
 		listenerConstructors: MessengerConnectionDetails, port: number, metadataConfig: MetadataConfiguration, logger: Logger
-	): MessengerService {
+	): { listener: MessengerService, emitter: MessengerService } {
 		// Created this as its own function to scope the `let` a little
-		const messenger = new MessengerService({
+		const listener = new MessengerService({
 			metadataConfig,
 			ingress: port,
 			subServices: listenerConstructors,
@@ -587,22 +587,29 @@ export class SyncBot extends ProcBot {
 			type: ServiceType.Listener,
 		}, logger);
 
-		if (messenger) {
-			return messenger;
+		const emitter = new MessengerService({
+			metadataConfig,
+			ingress: port,
+			subServices: listenerConstructors,
+			type: ServiceType.Emitter,
+		}, logger);
+
+		if (listener && emitter) {
+			return { listener, emitter };
 		}
 		throw new Error('Could not create Messenger.');
 	}
 
 	/**
 	 * Create a function that will, under certain conditions, query the environment
-	 * @param messenger  Service to use for emitting to the user.
+	 * @param emitter    Service to use for emitting to the user.
 	 * @param botname    Name that the message must begin with before activation.
 	 * @param flow       Flow to check before activatation.
 	 * @param users      List of account name hashes to check before activation.
 	 * @returns          Method that will consume MessengerEvents.
 	 */
 	private static makeEnvironmentQuerier(
-		messenger: MessengerService, botname: string, flow: string, users: string[]
+		emitter: MessengerService, botname: string, flow: string, users: string[]
 	): MessageListener {
 		return (_registration: ServiceRegistration, event: MessengerEvent): Promise<void> => {
 			// This pre-check examines the event before letting it anywhere near the process.
@@ -636,7 +643,7 @@ export class SyncBot extends ProcBot {
 					};
 					return SyncBot.processCommand(
 						event.cookedEvent.source,
-						messenger,
+						emitter,
 						echoData,
 						MessengerAction.CreateMessage
 					).return();
@@ -663,14 +670,14 @@ export class SyncBot extends ProcBot {
 				this.logger.log(LogLevel.INFO, `---> SyncBot configured to use port '${config.SYNCBOT_PORT}'.`);
 				this.logger.log(LogLevel.INFO, `---> SyncBot configured to use name '${config.SYNCBOT_NAME}'.`);
 				const port = parseInt(config.SYNCBOT_PORT, 10);
-				const messenger = SyncBot.makeMessenger(
-					config.SYNCBOT_LISTENER_CONSTRUCTORS, port, config.SYNCBOT_METADATA_CONFIG, this.logger
+				const messengers = SyncBot.makeMessengers(
+					config.SYNCBOT_SERVICE_CONSTRUCTORS, port, config.SYNCBOT_METADATA_CONFIG, this.logger
 				);
 				// Pass received messages through a method that might query the environment.
-				messenger.registerEvent({
+				messengers.listener.registerEvent({
 					events: ['message'],
 					listenerMethod: SyncBot.makeEnvironmentQuerier(
-						messenger,
+						messengers.emitter,
 						config.SYNCBOT_NAME,
 						config.SYNCBOT_DEVOPS_FLOW,
 						config.SYNCBOT_DEVOPS_USERS,
@@ -691,7 +698,7 @@ export class SyncBot extends ProcBot {
 					const router = SyncBot.makeRouter(
 						source,
 						destination,
-						messenger,
+						messengers.emitter,
 						this.logger,
 						actions,
 						config.SYNCBOT_NAME,
@@ -701,7 +708,7 @@ export class SyncBot extends ProcBot {
 						config.SYNCBOT_ARCHIVE_STRINGS
 					);
 					const label = `${source.service}.${source.flow}(all)=>${destination.service}.${destination.flow}`;
-					messenger.registerEvent({
+					messengers.listener.registerEvent({
 						events: ['message'],
 						listenerMethod: router,
 						name: label,
@@ -718,7 +725,7 @@ export class SyncBot extends ProcBot {
 						const router = SyncBot.makeRouter(
 							source,
 							destination,
-							messenger,
+							messengers.emitter,
 							this.logger,
 							[MessengerAction.CreateMessage, MessengerAction.ArchiveThread],
 							config.SYNCBOT_NAME,
@@ -728,7 +735,7 @@ export class SyncBot extends ProcBot {
 							config.SYNCBOT_ARCHIVE_STRINGS
 						);
 						const label = `${source.service}.${source.flow}(messages)=>${destination.service}.${destination.flow}`;
-						messenger.registerEvent({
+						messengers.listener.registerEvent({
 							events: ['message'],
 							listenerMethod: router,
 							name: label,
