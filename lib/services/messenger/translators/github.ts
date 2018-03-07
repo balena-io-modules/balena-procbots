@@ -225,6 +225,15 @@ export class GithubTranslator extends TranslatorScaffold implements Translator {
 	 * @returns      Promise that resolves to an array of message objects in the standard form
 	 */
 	public eventIntoMessages(event: ServiceScaffoldEvent): Promise<MessengerEvent[]> {
+		const eventFilter = {
+			issues: [ 'reopened', 'opened', 'closed' ],
+			issue_comment: [ 'created' ],
+			pull_request: [ 'reopened', 'opened', 'closed' ],
+		};
+		const actions = _.get(eventFilter, event.cookedEvent.type, []);
+		if (!_.includes(actions, event.cookedEvent.data.action)) {
+			return Promise.resolve([]);
+		}
 		const data = event.cookedEvent.data;
 		const comment = data.comment || data.issue || data.pull_request;
 		const thread = data.issue || data.pull_request;
