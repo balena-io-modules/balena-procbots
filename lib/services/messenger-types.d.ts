@@ -157,6 +157,8 @@ export interface FlowDefinition {
 	flow: string;
 	/** A name for this flow, if not ID. */
 	alias?: string;
+	/** Names that this flow has gone by before.  Used to find routes who's flowname has changed. */
+	previous?: string[];
 }
 
 /** The requirements to identify a specific thread from among the services. */

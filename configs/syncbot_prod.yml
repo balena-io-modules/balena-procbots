@@ -38,10 +38,14 @@ SYNCBOT_MAPPINGS:
       service: "flowdock"
       flow: "rulemotion/public-s-community"
       alias: "forums"
+      previous:
+        - "public-s-community"
   - source:
       service: "flowdock"
       flow: "rulemotion/public-s-community"
       alias: "forums"
+      previous:
+        - "public-s-community"
     destination:
       service: "front"
       flow: "inb_23sp"
@@ -54,6 +58,8 @@ SYNCBOT_MAPPINGS:
       service: "flowdock"
       flow: "rulemotion/public-s-community"
       alias: "forums"
+      previous:
+        - "public-s-community"
   - source:
       service: "front"
       flow: "inb_nla"
@@ -62,6 +68,8 @@ SYNCBOT_MAPPINGS:
       service: "flowdock"
       flow: "rulemotion/public-s-premium"
       alias: "premium"
+      previous:
+        - "public-s-premium"
   - source:
       service: "front"
       flow: "inb_2hvh"
@@ -70,6 +78,8 @@ SYNCBOT_MAPPINGS:
       service: "flowdock"
       flow: "rulemotion/r-leads"
       alias: "leads"
+      previous:
+        - "r-leads"
   - source:
       service: "github"
       flow: "resin-io/hubot-as-mainbot"
@@ -78,6 +88,8 @@ SYNCBOT_MAPPINGS:
       service: "flowdock"
       flow: "rulemotion/d-bots"
       alias: "bots"
+      previous:
+        - "d-bots"
 SYNCBOT_SERVICE_CONSTRUCTORS:
   github:
     client: "syncbot"

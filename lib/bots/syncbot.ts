@@ -249,7 +249,10 @@ export class SyncBot extends ProcBot {
 					// If the search resolved with a response.
 					const threadId = _.get(threadDetails, ['response', 'thread'], false);
 					const flowId = _.get(threadDetails, ['response', 'flow'], true);
-					if (threadId && (flowId === true || flowId === to.flow) && _.includes(actions, MessengerAction.CreateMessage)) {
+					if (
+						(flowId === true || flowId === to.flow || _.includes(to.previous, flowId)) &&
+						threadId && _.includes(actions, MessengerAction.CreateMessage)
+					) {
 						logger.log(LogLevel.INFO, `---> Creating comment '${firstLine}' on ${toText}.`);
 						// Comment on the found thread
 						const flow = { service: to.service, flow: to.flow, thread: threadId };
