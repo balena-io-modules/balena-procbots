@@ -96,7 +96,6 @@ export interface FlowdockMessage {
 
 /** Details required to initialise the service. */
 export interface FlowdockConstructor extends ServiceScaffoldConstructor {
-	organization: string;
 	token: string;
 }
 

@@ -48,7 +48,7 @@ export class FlowdockService extends ServiceScaffold<string> implements ServiceE
 				// Enclose a list of flow names
 				const flowIdToFlowName: {[key: string]: string} = {};
 				for (const flow of flows) {
-					flowIdToFlowName[flow.id] = flow.parameterized_name;
+					flowIdToFlowName[flow.id] = `${flow.organization.parameterized_name}/${flow.parameterized_name}`;
 				}
 				const stream = this.session.stream(Object.keys(flowIdToFlowName));
 				stream.on('message', (message: any) => {
