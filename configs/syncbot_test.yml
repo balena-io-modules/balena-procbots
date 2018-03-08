@@ -11,7 +11,7 @@ SYNCBOT_ERROR_SOLUTIONS:
       fixes:
         - "You should check that your username and token are correct."
 SYNCBOT_ERROR_UNDOCUMENTED: 'No fixes currently documented. (at)sqweelygig'
-SYNCBOT_LISTENER_CONSTRUCTORS:
+SYNCBOT_SERVICE_CONSTRUCTORS:
   flowdock:
     token: "<<INJECT_SYNCBOT_FLOWDOCK_TOKEN>>"
     serviceName: "flowdock"

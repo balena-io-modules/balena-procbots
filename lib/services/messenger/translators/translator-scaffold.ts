@@ -206,6 +206,8 @@ export abstract class TranslatorScaffold implements Translator {
 		};
 	}
 
+	public sharedEmitter = false;
+
 	/**
 	 * A dictionary of messenger event names, eg post, into service specific events, eg inbound_message, outbound_message.
 	 */

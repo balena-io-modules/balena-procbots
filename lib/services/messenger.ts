@@ -36,6 +36,7 @@ import {
  */
 export class MessengerService extends ServiceScaffold<string> implements ServiceListener, ServiceEmitter {
 	private translators: TranslatorDictionary;
+	private sharedEmitters: { [name: string]: ServiceEmitter } = {};
 
 	constructor(data: MessengerConstructor, logger: Logger) {
 		super(data, logger);
@@ -87,8 +88,15 @@ export class MessengerService extends ServiceScaffold<string> implements Service
 			emit: this.translators[data.target.service].messageIntoEmitDetails(data),
 		})
 		.then((details: { connection: object, emit: EmitInstructions } ) => {
-			// Instantiates a one-shot emitter, because requests might have changing credentials.
-			const emitter = require(`./${data.target.service}`).createServiceEmitter(details.connection);
+			// Finds a shared emitter or creates a unique emitter for this message.
+			const emitter = _.get(
+				this.sharedEmitters,
+				data.target.service,
+				require(`./${data.target.service}`).createServiceEmitter(details.connection)
+			);
+			if (this.translators[data.target.service].sharedEmitter) {
+				this.sharedEmitters[data.target.service] = emitter;
+			}
 			// This converts a method path, represented as an array of strings, eg ['comment', 'create']
 			// into a method from a possibly nested SDK object, eg Front.comment.create
 			const sdk = emitter.apiHandle[data.target.service];

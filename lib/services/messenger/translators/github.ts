@@ -171,6 +171,8 @@ export class GithubTranslator extends TranslatorScaffold implements Translator {
 		return Promise.resolve({});
 	}
 
+	public sharedEmitter = true;
+
 	/**
 	 * A list of Messenger events and their GitHub equivalents.
 	 */

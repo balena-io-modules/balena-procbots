@@ -78,7 +78,7 @@ SYNCBOT_MAPPINGS:
       service: "flowdock"
       flow: "rulemotion/d-bots"
       alias: "bots"
-SYNCBOT_LISTENER_CONSTRUCTORS:
+SYNCBOT_SERVICE_CONSTRUCTORS:
   github:
     client: "syncbot"
     authentication:
