@@ -91,11 +91,11 @@ export class GithubTranslator extends TranslatorScaffold implements Translator {
 	}
 
 	/**
-	 * Converts a provided message object into instructions to read a thread for connections.
+	 * Converts a provided message object into instructions to read a thread.
 	 * @param message  object to analyse.
 	 * @returns        Promise that resolves to emit instructions.
 	 */
-	private static readConnectionIntoEmit(message: TransmitInformation): Promise<EmitInstructions> {
+	private static searchThreadIntoEmit(message: TransmitInformation): Promise<EmitInstructions> {
 		const splitIds = GithubTranslator.splitIds(message.target);
 		const thread = splitIds.number;
 		if (!thread) {
@@ -160,6 +160,18 @@ export class GithubTranslator extends TranslatorScaffold implements Translator {
 	}
 
 	/**
+	 * Converts a response into a the generic format.
+	 * @param _message  The initial message that triggered this response.
+	 * @param response  The response provided by the service.
+	 * @returns         Promise that resolves to the metadata of the connection.
+	 */
+	private static convertReadErrorResponse(
+		_message: TransmitInformation, response: any[]
+	): Promise<String[]> {
+		return Promise.resolve(_.map(response, (comment) => comment.body));
+	}
+
+	/**
 	 * Converts a thread update response into a promise that it is complete.
 	 * @param _message   Not used, the initial message.
 	 * @param _response  Not used, the response provided by the service.
@@ -183,13 +195,15 @@ export class GithubTranslator extends TranslatorScaffold implements Translator {
 	 * A list of the converters that may be used to convert Messenger events into GitHub instructions.
 	 */
 	protected emitConverters: EmitConverters = {
-		[MessengerAction.ReadConnection]: GithubTranslator.readConnectionIntoEmit,
+		[MessengerAction.ReadConnection]: GithubTranslator.searchThreadIntoEmit,
+		[MessengerAction.ReadErrors]: GithubTranslator.searchThreadIntoEmit,
 	};
 	/**
 	 * A list of the converters that may be used to convert GitHub's responses into Messenger format.
 	 */
 	protected responseConverters: ResponseConverters = {
 		[MessengerAction.CreateMessage]: GithubTranslator.convertUpdateThreadResponse,
+		[MessengerAction.ReadErrors]: GithubTranslator.convertReadErrorResponse,
 	};
 	/**
 	 * Just a store of the details used to connect to GitHub.

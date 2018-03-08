@@ -108,6 +108,18 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	}
 
 	/**
+	 * Converts a response into the generic format.
+	 * @param _message  The initial message that prompted this action.
+	 * @param response  The response from the SDK.
+	 * @returns         Promise that resolve to the thread details.
+	 */
+	public static convertReadErrorResponse(
+		_message: TransmitInformation, response: ConversationComments
+	): Promise<String[]> {
+		return Promise.resolve(_.reverse(_.map(response._results, (comment) => comment.body )));
+	}
+
+	/**
 	 * Promises to find the name of the person who authored a comment.
 	 * @param connectionDetails  Details required to connect to the Front instance.
 	 * @param message            Details of the message we care about.
@@ -384,11 +396,11 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	}
 
 	/**
-	 * Converts a provided message object into instructions to read a thread for connections.
+	 * Converts a provided message object into instructions to read a thread.
 	 * @param message            object to analyse.
 	 * @returns                  Promise that resolves to emit instructions.
 	 */
-	private static readConnectionIntoEmit(message: TransmitInformation): Promise<FrontEmitInstructions> {
+	private static searchThreadIntoEmit(message: TransmitInformation): Promise<FrontEmitInstructions> {
 		// Check we have a thread.
 		const threadId = message.target.thread;
 		if (!threadId) {
@@ -444,7 +456,8 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 		message: ['comment', 'out_reply', 'inbound', 'mention'],
 	};
 	protected emitConverters: EmitConverters = {
-		[MessengerAction.ReadConnection]: FrontTranslator.readConnectionIntoEmit,
+		[MessengerAction.ReadConnection]: FrontTranslator.searchThreadIntoEmit,
+		[MessengerAction.ReadErrors]: FrontTranslator.searchThreadIntoEmit,
 		[MessengerAction.UpdateTags]: FrontTranslator.updateTagsIntoEmit,
 		[MessengerAction.ArchiveThread]: FrontTranslator.archiveThreadIntoEmit,
 	};
@@ -452,6 +465,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 		[MessengerAction.UpdateTags]: FrontTranslator.convertUpdateThreadResponse,
 		[MessengerAction.CreateMessage]: FrontTranslator.convertUpdateThreadResponse,
 		[MessengerAction.ArchiveThread]: FrontTranslator.convertUpdateThreadResponse,
+		[MessengerAction.ReadErrors]: FrontTranslator.convertReadErrorResponse,
 	};
 
 	private session: Front;

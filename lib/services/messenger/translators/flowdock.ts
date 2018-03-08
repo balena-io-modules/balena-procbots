@@ -345,11 +345,11 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 	}
 
 	/**
-	 * Converts a provided message object into instructions to read a thread for connections.
+	 * Converts a provided message object into instructions to read a thread.
 	 * @param message  object to analyse.
 	 * @returns        Promise that resolves to emit instructions.
 	 */
-	private static readConnectionIntoEmit(message: TransmitInformation): Promise<FlowdockEmitInstructions> {
+	private static searchThreadIntoEmit(message: TransmitInformation): Promise<FlowdockEmitInstructions> {
 		// Check we have a thread.
 		const threadId = message.target.thread;
 		if (!threadId) {
@@ -364,22 +364,36 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 				path: `/flows/${message.target.flow}/threads/${threadId}/messages`,
 				payload: {
 					limit: '100', // Default is 30, but there is literally no reason why we wouldn't ask for as many as we can
-					search: `${message.source.service} thread`,
+					search: message.source.service,
 				},
 			}
 		});
+	}
+
+	/**
+	 * Converts a response into the generic format.
+	 * @param _message  The initial message that prompted this action.
+	 * @param response  The response from the SDK.
+	 * @returns               Promise that resolve to the thread details.
+	 */
+	private static convertReadErrorResponse(
+		_message: TransmitInformation, response: FlowdockMessage[]
+	): Promise<string[]> {
+		return Promise.resolve(_.map(response, (comment) => comment.content));
 	}
 
 	protected eventEquivalencies = {
 		message: ['message'],
 	};
 	protected emitConverters: EmitConverters = {
-		[MessengerAction.ReadConnection]: FlowdockTranslator.readConnectionIntoEmit,
+		[MessengerAction.ReadConnection]: FlowdockTranslator.searchThreadIntoEmit,
+		[MessengerAction.ReadErrors]: FlowdockTranslator.searchThreadIntoEmit,
 	};
 	protected responseConverters: ResponseConverters = {
 		[MessengerAction.UpdateTags]: FlowdockTranslator.convertUpdateThreadResponse,
 		[MessengerAction.CreateMessage]: FlowdockTranslator.convertUpdateThreadResponse,
 		[MessengerAction.CreateThread]: FlowdockTranslator.convertCreateThreadResponse,
+		[MessengerAction.ReadErrors]: FlowdockTranslator.convertReadErrorResponse,
 	};
 	protected session: Session;
 

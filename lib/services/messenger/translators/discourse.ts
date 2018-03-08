@@ -191,11 +191,11 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 	}
 
 	/**
-	 * Converts a provided message object into instructions to read a thread for connections.
+	 * Converts a provided message object into instructions to read a thread
 	 * @param message  object to analyse.
 	 * @returns        Promise that resolves to emit instructions.
 	 */
-	private static readConnectionIntoEmit(message: TransmitInformation): Promise<DiscourseEmitInstructions> {
+	private static searchThreadIntoEmit(message: TransmitInformation): Promise<DiscourseEmitInstructions> {
 		// Check we have a thread.
 		const thread = message.target.thread;
 		if (!thread) {
@@ -210,7 +210,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 				htmlVerb: 'GET',
 				path: '/search/query',
 				qs: {
-					term: `${message.source.service}`,
+					term: message.source.service,
 					'search_context[type]': 'topic',
 					'search_context[id]': thread,
 				}
@@ -305,6 +305,19 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 
 	/**
 	 * Converts a response into a the generic format.
+	 * @param message         The initial message that triggered this response.
+	 * @param response        The response provided by the service.
+	 * @returns               Promise that resolves to emit instructions.
+	 */
+	private static convertReadErrorResponse(
+		_message: TransmitInformation, response: DiscoursePostSearchResponse
+	): Promise<String[]> {
+		const uncookedComments = _.map(response.posts, DiscourseTranslator.reverseEngineerComment);
+		return Promise.resolve(uncookedComments);
+	}
+
+	/**
+	 * Converts a response into a the generic format.
 	 * @param _message   Not used, the initial message.
 	 * @param _response  Not used, the response provided by the service.
 	 * @returns          Promise that resolves to emit instructions.
@@ -319,11 +332,13 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 		message: ['post_created'],
 	};
 	protected emitConverters: EmitConverters = {
-		[MessengerAction.ReadConnection]: DiscourseTranslator.readConnectionIntoEmit,
+		[MessengerAction.ReadConnection]: DiscourseTranslator.searchThreadIntoEmit,
+		[MessengerAction.ReadErrors]: DiscourseTranslator.searchThreadIntoEmit,
 	};
 	protected responseConverters: ResponseConverters = {
 		[MessengerAction.UpdateTags]: DiscourseTranslator.convertUpdateThreadResponse,
 		[MessengerAction.CreateMessage]: DiscourseTranslator.convertUpdateThreadResponse,
+		[MessengerAction.ReadErrors]: DiscourseTranslator.convertReadErrorResponse,
 	};
 	private connectionDetails: DiscourseConstructor;
 
