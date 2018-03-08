@@ -21,6 +21,7 @@ import * as bodyParser from 'body-parser';
 import * as express from 'express';
 import { RequestHandler } from 'express';
 import * as _ from 'lodash';
+import * as path from 'path';
 import { Worker } from '../framework/worker';
 import { WorkerClient } from '../framework/worker-client';
 import { Logger, LogLevel } from '../utils/logger';
@@ -84,11 +85,11 @@ export abstract class ServiceScaffold<T> extends WorkerClient<T> implements Serv
 	private eventListeners: { [event: string]: ServiceRegistration[] } = {};
 
 	// https://github.com/resin-io-modules/resin-procbots/issues/262
-	constructor(data: ServiceScaffoldConstructor, logger: Logger, serviceName: string) {
+	constructor(data: ServiceScaffoldConstructor, logger: Logger) {
 		super();
 		this.constructorObject = data;
 		this.loggerInstance = logger;
-		this._serviceName = serviceName;
+		this._serviceName = data.serviceName || path.basename(__filename.split('.')[0]);
 		if (typeof data.ingress === 'number') {
 			// Construction details provided a port number, so use that.
 			const port = data.ingress;

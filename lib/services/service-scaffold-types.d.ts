@@ -47,6 +47,8 @@ export interface ServiceScaffoldConstructor {
 	ingress?: ServerDetails;
 	/** Endpoint path to listen to. Defaults to the name of the service. */
 	path?: string;
+	/** Specifies a name for the service, defaults to the file name. */
+	serviceName?: string;
 	/** Specifies that this listener must be a listener. */
 	type: ServiceType;
 }

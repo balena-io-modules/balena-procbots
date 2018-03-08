@@ -421,6 +421,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 			username: convertedUsername,
 			instance: this.connectionDetails.instance,
 			protocol: this.connectionDetails.protocol,
+			serviceName: 'discourse',
 			type: ServiceType.Emitter,
 		};
 	}

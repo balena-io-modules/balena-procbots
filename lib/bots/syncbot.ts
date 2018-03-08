@@ -212,10 +212,13 @@ export class SyncBot extends ProcBot {
 				LogLevel.DEBUG,
 				`---> Considering '${firstLine}' on ${sourceText}, from ${fromText} to ${toText}. ${JSON.stringify(data)}`,
 			);
+			const compare = (a: any, b: any) => ((a.service === b.service) && (a.flow === b.flow));
+			const eventIsOn = data.source;
+			const eventCameFrom = data.details;
 			if (
-				from.service === data.source.service &&
-				from.flow === data.source.flow &&
-				((to.service !== data.details.service) || (to.flow !== data.details.flow)) &&
+				compare(eventIsOn, from) &&
+				!compare(eventCameFrom, to) &&
+				!compare(eventIsOn, to) &&
 				// https://github.com/resin-io-modules/resin-procbots/issues/301
 				!data.details.intercomHack
 			) {
@@ -580,6 +583,7 @@ export class SyncBot extends ProcBot {
 			metadataConfig,
 			ingress: port,
 			subServices: listenerConstructors,
+			serviceName: 'messenger',
 			type: ServiceType.Listener,
 		}, logger);
 

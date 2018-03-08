@@ -16,7 +16,6 @@
 
 import * as Promise from 'bluebird';
 import * as _ from 'lodash';
-import * as path from 'path';
 
 import { Logger, LogLevel } from '../utils/logger';
 import {
@@ -39,7 +38,7 @@ export class MessengerService extends ServiceScaffold<string> implements Service
 	private translators: TranslatorDictionary;
 
 	constructor(data: MessengerConstructor, logger: Logger) {
-		super(data, logger, path.basename(__filename.split('.')[0]));
+		super(data, logger);
 		// Our super might have built a genuine express instance out of a port number
 		data.ingress = this.expressApp;
 

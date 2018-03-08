@@ -16,7 +16,6 @@
 
 import * as Promise from 'bluebird';
 import { Event, Front } from 'front-sdk';
-import * as path from 'path';
 
 import { Logger, LogLevel } from '../utils/logger';
 import {
@@ -35,7 +34,7 @@ export class FrontService extends ServiceScaffold<string> implements ServiceList
 	private session: Front;
 
 	constructor(data: FrontConstructor | FrontListenerConstructor, logger: Logger) {
-		super(data, logger, path.basename(__filename.split('.')[0]));
+		super(data, logger);
 		if (data.type === ServiceType.Listener) {
 			const listenerData = <FrontListenerConstructor>data;
 			this.session = new Front(listenerData.token, listenerData.secret);

@@ -161,7 +161,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 	 * @param search   Optional, some words which may be used to shortlist the results.
 	 * @returns        Response from the session.
 	 */
-	private static fetchFromSession = (session: Session, path: string, search?: string): Promise<any> => {
+	protected static fetchFromSession = (session: Session, path: string, search?: string): Promise<any> => {
 		return new Promise<any>((resolve, reject) => {
 			session.get(path, {search}, (error?: Error, result?: any) => {
 				if (result) {
@@ -381,9 +381,9 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 		[MessengerAction.CreateMessage]: FlowdockTranslator.convertUpdateThreadResponse,
 		[MessengerAction.CreateThread]: FlowdockTranslator.convertCreateThreadResponse,
 	};
+	protected session: Session;
 
 	private token: string;
-	private session: Session;
 
 	constructor(data: FlowdockConstructor, metadataConfig: MetadataConfiguration) {
 		super(metadataConfig);
@@ -409,18 +409,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 	 * @returns      Promise that resolves to an array of message objects in the standard form
 	 */
 	public eventIntoMessages(event: FlowdockEvent): Promise<MessengerEvent[]> {
-		// Calculate metadata and use whichever matched, i.e. has a shorter content because it extracted metadata.
-		const metadata = FlowdockTranslator.extractMetadata(
-			event.rawEvent.content, MetadataEncoding.Flowdock, this.metadataConfig
-		);
-		// Pull some details out of the event.
-		const titleSplitter = /^(.*)\n--\n((?:\r|\n|.)*)$/;
-		const titleAndText = metadata.content.match(titleSplitter);
-		const text = titleAndText ? titleAndText[2].trim() : metadata.content.trim();
-		const flow = event.cookedEvent.flow;
-		const thread = event.rawEvent.thread_id;
-		const userId = event.rawEvent.user;
-		const firstMessageId = event.rawEvent.thread.initial_message;
+		const details = this.eventIntoMessageDetails(event);
 		// Flowdock uses tags that begin with a colon as system tags.
 		const tagFilter = (tag: string) => {
 			return !/^:/.test(tag);
@@ -428,49 +417,40 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 		// Start building this in service scaffold form.
 		const cookedEvent: BasicMessageInformation = {
 			details: {
-				service: metadata.service || event.source,
-				flow: metadata.flow || flow,
+				service: details.message.metadata.service || details.ids.service,
+				flow: details.message.metadata.flow || details.ids.flow,
 				handle: 'duff_FlowdockTranslator_eventIntoMessage_a', // gets replaced
-				hidden: metadata.hidden,
+				hidden: details.message.metadata.hidden,
 				tags: [], // gets replaced
-				text,
+				text: details.message.text,
 				title: 'duff_FlowdockTranslator_eventIntoMessage_b', // gets replaced
 			},
 			source: {
-				service: event.source,
+				service: details.ids.service,
 				message: event.rawEvent.id,
-				flow,
-				thread,
-				url: `https://www.flowdock.com/app/${flow}/threads/${thread}`,
+				flow: details.ids.flow,
+				thread: details.ids.thread,
+				url: details.paths.thread,
 				username: 'duff_FlowdockTranslator_eventIntoMessage_c', // gets replaced
 			},
 		};
 		// Get details of the tags and title from the first message.
-		return FlowdockTranslator.fetchFromSession(this.session, `flows/${flow}/messages/${firstMessageId}`)
+		return FlowdockTranslator.fetchFromSession(this.session, details.paths.firstMessage)
 		.then((firstMessage) => {
+			const firstMessageEvent = _.merge(_.cloneDeep(event), { rawEvent: firstMessage });
+			const firstMessageDetails = this.eventIntoMessageDetails(firstMessageEvent);
 			cookedEvent.details.tags = _.uniq(firstMessage.tags.filter(tagFilter));
-			const encoding = MetadataEncoding.Flowdock;
-			const content = FlowdockTranslator.extractMetadata(firstMessage.content, encoding, this.metadataConfig).content;
-			const findTitle = content.match(titleSplitter);
-			cookedEvent.details.title = findTitle ? findTitle[1].trim() : content.trim();
+			cookedEvent.details.title = firstMessageDetails.message.title;
 			return Promise.resolve(undefined);
 		})
 		// Get details of the user nickname.
-		.then(() => {
-			if (event.rawEvent.external_user_name) {
-				return event.rawEvent.external_user_name;
-			}
-			return FlowdockTranslator.fetchFromSession(this.session, `/users/${userId}`)
-			.then((user) => {
-				return user.nick;
-			});
-		})
+		.then(() => this.fetchAlias(event))
 		// Resolve to the details, compiled from those provided and those gathered.
 		.then((username: string) => {
 			cookedEvent.source.username = username;
 			cookedEvent.details.handle = username;
 			return [{
-				context: `${event.source}.${event.cookedEvent.context}`,
+				context: `${event.source}.${event.context}`,
 				type: this.eventIntoMessageType(event),
 				cookedEvent,
 				rawEvent: event.rawEvent,
@@ -486,6 +466,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 	 */
 	public messageIntoEmitterConstructor(_message: TransmitInformation): FlowdockConstructor {
 		return {
+			serviceName: 'flowdock',
 			token: this.token,
 			type: ServiceType.Emitter
 		};
@@ -505,6 +486,67 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 			connectionDetails.type = genericDetails.type;
 		}
 		return connectionDetails;
+	}
+
+	/**
+	 * Promise to retrieve the alias used to present an event
+	 * @param event  Event to scrutinise for user details
+	 * @returns      Promise that resolves to the alias presented with the message
+	 */
+	protected fetchAlias(event: FlowdockEvent): Promise<string> {
+		if (event.rawEvent.external_user_name) {
+			return event.rawEvent.external_user_name;
+		}
+		const url = `/users/${event.rawEvent.user}`;
+		return FlowdockTranslator.fetchFromSession(this.session, url)
+		.get('nick');
+	}
+
+	/**
+	 * Calculate some trivially derivable details from an event and this context.
+	 * @param event  Event to analyse.
+	 * @returns      Some cherry picked derivations of the event.
+	 */
+	protected eventIntoMessageDetails(event: FlowdockEvent) {
+		// Calculate metadata and use whichever matched, i.e. has a shorter content because it extracted metadata.
+		const metadata = FlowdockTranslator.extractMetadata(
+			event.rawEvent.content, MetadataEncoding.Flowdock, this.metadataConfig
+		);
+		// Pull some details out of the event.
+		// Any characters, then a newline, then markdown title formatting, then absolutely anything.
+		const titleSplitter = /^(.*)[\r\n][\s-=]*([\s\S]+)$/;
+		const titleAndText = metadata.content.match(titleSplitter);
+		const text = titleAndText ? titleAndText[2].trim() : metadata.content.trim();
+		const title = titleAndText ? titleAndText[1].trim() : metadata.content.trim();
+		const flow = event.cookedEvent.flow;
+		const threadId = event.rawEvent.thread_id;
+		const user = event.rawEvent.user;
+		const service = event.source;
+		const message = event.rawEvent.id;
+		const threadUrl = `https://www.flowdock.com/app/${flow}/threads/${threadId}`;
+		const firstMessageId = event.rawEvent.thread.initial_message;
+		const firstMessagePath = `flows/${flow}/messages/${firstMessageId}`;
+		const messagesPath = `/flows/${flow}/threads/${threadId}/messages`;
+		return {
+			ids: {
+				service,
+				flow,
+				thread: threadId,
+				user,
+				message,
+				firstMessage: firstMessageId,
+			},
+			paths: {
+				thread: threadUrl,
+				firstMessage: firstMessagePath,
+				messages: messagesPath,
+			},
+			message: {
+				metadata,
+				text,
+				title,
+			}
+		};
 	}
 }
 

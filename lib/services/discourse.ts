@@ -17,7 +17,6 @@
 import * as Promise from 'bluebird';
 import * as crypto from 'crypto';
 import * as _ from 'lodash';
-import * as path from 'path';
 import { UrlOptions } from 'request';
 import * as request from 'request-promise';
 import { RequestPromiseOptions } from 'request-promise';
@@ -38,7 +37,7 @@ export class DiscourseService extends ServiceScaffold<string> implements Service
 	private connectionDetails: DiscourseConstructor;
 
 	constructor(data: DiscourseConstructor | DiscourseListenerConstructor, logger: Logger) {
-		super(data, logger, path.basename(__filename.split('.')[0]));
+		super(data, logger);
 		// #203: Verify connection data
 		this.connectionDetails = data;
 		if (data.type === ServiceType.Listener) {
