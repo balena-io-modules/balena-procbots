@@ -50,6 +50,8 @@ SYNCBOT_MAPPINGS:
       service: "flowdock"
       flow: "rulemotion/testing"
       alias: "sandbox"
+      previous:
+        - "testing"
   - source:
       service: "discourse"
       flow: "6"
@@ -58,10 +60,14 @@ SYNCBOT_MAPPINGS:
       service: "flowdock"
       flow: "rulemotion/testing"
       alias: "sandbox"
+      previous:
+        - "testing"
   - source:
       service: "flowdock"
       flow: "rulemotion/testing"
       alias: "sandbox"
+      previous:
+        - "testing"
     destination:
       service: "front"
       flow: "inb_1yea"
@@ -74,6 +80,8 @@ SYNCBOT_MAPPINGS:
       service: "flowdock"
       flow: "rulemotion/testing"
       alias: "sandbox"
+      previous:
+        - "testing"
   - source:
       service: "github"
       flow: "sqweelygig/syncbot-sandbox"
@@ -82,6 +90,8 @@ SYNCBOT_MAPPINGS:
       service: "flowdock"
       flow: "rulemotion/testing"
       alias: "sandbox"
+      previous:
+        - "testing"
   - source:
       service: "flowdockhashtag"
       flow: "test"
@@ -89,6 +99,8 @@ SYNCBOT_MAPPINGS:
     destination:
       service: "flowdock"
       flow: "rulemotion/testing_hubot"
+      previous:
+        - "testing_hubot"
 SYNCBOT_METADATA_CONFIG:
   baseUrl: "http://resin.io"
   publicity:
