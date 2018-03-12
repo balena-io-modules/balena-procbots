@@ -23,6 +23,11 @@ SYNCBOT_ERROR_SOLUTIONS:
         - "Try again in a few minutes"
         - "If it persists put an (at)team, (at)sqweelygig PSA into r/support"
   front:
+    ^Conversation have been received on multiple channels:
+      description: "This issue was sent to more than one e-mail address, and SyncBot doesn't know which to reply from."
+      fixes:
+        - "Reply via Front"
+        - "@sqweelygig is monitoring to see how frequently we experience this issue."
     ^5:
       description: "Problem with their server infrastructure."
       fixes:
