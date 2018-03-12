@@ -205,17 +205,27 @@ export abstract class TranslatorScaffold implements Translator {
 	 */
 	public static metadataByRegex(message: string, regex: RegExp, indicators: PublicityIndicators): TranslatorMetadata {
 		const metadata = message.match(regex);
+		const content = TranslatorScaffold.unixifyNewLines(message.replace(regex, '').trim());
 		if (metadata) {
 			return {
-				content: TranslatorScaffold.unixifyNewLines(message.replace(regex, '').trim()),
+				content,
 				flow: metadata[3] || null,
 				service: metadata[2] || null,
 				hidden: TranslatorScaffold.findPublicityFromWord(metadata[1], indicators),
 				thread: metadata[4] || null,
 			};
 		}
+		return TranslatorScaffold.emptyMetadata(content);
+	}
+
+	/**
+	 * Return an empty metadata object, for occasions where there is no metadata
+	 * @param content  Content, if any, that originated this empty object.
+	 * @returns        An empty metadata object.
+	 */
+	public static emptyMetadata(content: string = ''): TranslatorMetadata {
 		return {
-			content: TranslatorScaffold.unixifyNewLines(message.trim()),
+			content,
 			flow: null,
 			service: null,
 			hidden: true,
