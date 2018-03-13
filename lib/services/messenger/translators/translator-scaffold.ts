@@ -157,8 +157,10 @@ export abstract class TranslatorScaffold implements Translator {
 		data: BasicMessageInformation, format: MetadataEncoding, config: MetadataConfiguration,
 	): string {
 		const pubWord = TranslatorScaffold.findPublicityWord(data.details.hidden, config.publicity);
-		const source = data.source;
-		const queryString = `?hidden=${pubWord}&source=${source.service}&flow=${source.flow}&thread=${source.thread}`;
+		const service = data.source.service;
+		const flow = data.source.flow;
+		const thread = data.source.thread;
+		const queryString = `?hidden=${pubWord}&source=${service}&flow=${flow}&thread=${thread}`;
 		switch (format) {
 			case MetadataEncoding.HiddenHTML:
 				return `<a href="${config.baseUrl}${queryString}"></a>`;
@@ -179,8 +181,8 @@ export abstract class TranslatorScaffold implements Translator {
 	public static extractMetadata(
 		message: string, format: MetadataEncoding, config: MetadataConfiguration,
 	): TranslatorMetadata {
-		const wordCapture = `(${_.values(config.publicity).join('|')})`;
-		const querystring = `\\?hidden=${wordCapture}&source=(\\w*)&flow=([^"&\\)]*)&thread=([^"&\\)]*)`;
+		const words = `(${_.values(config.publicity).join('|')})`;
+		const querystring = `\\?hidden=${words}&source=(\\w*)&flow=([^"&\\)]*)&thread=([^"&\\)]*)`;
 		const baseUrl = _.escapeRegExp(config.baseUrl);
 		const publicity = config.publicity;
 		switch (format) {
