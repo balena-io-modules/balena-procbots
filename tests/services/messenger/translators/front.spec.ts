@@ -18,7 +18,8 @@ describe('lib/services/messenger/translators/front.ts', () => {
 					hidden: 'whisper',
 					hiddenPreferred: 'murmur',
 					shown: 'reply',
-				}
+				},
+				secret: 'salt',
 			};
 			const target = {
 				action: 1,

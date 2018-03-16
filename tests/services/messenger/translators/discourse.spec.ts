@@ -3,6 +3,7 @@ import { expect } from 'chai';
 import * as _ from 'lodash';
 
 import { DiscourseTranslator } from '../../../../lib/services/messenger/translators/discourse';
+import * as crypto from "crypto";
 
 describe('lib/services/messenger/translators/discourse.ts', () => {
 
@@ -32,18 +33,21 @@ describe('lib/services/messenger/translators/discourse.ts', () => {
 				hiddenPreferred: 'murmur',
 				shown: 'comment',
 			},
+			secret: 'salt',
 		};
 		const thread = 'l';
 
 		it('should convert a simple message object into emit instructions', async () => {
 			const emit = await DiscourseTranslator.bundleMessage(simpleMessage, thread, metadataConfig);
+			const hmac = crypto.createHmac('sha256', 'salt').update('cde test').digest('hex');
+			const raw = `cde @test\n[](http://e.com?hidden=comment&source=i&flow=k&thread=h&hmac=${hmac})`;
 			expect(emit).to.deep.equal({
 				method: ['request'],
 				payload: {
 					htmlVerb: 'POST',
 					path: '/posts',
 					body: {
-						raw: 'cde @test\n[](http://e.com?hidden=comment&source=i&flow=k&thread=h)',
+						raw,
 						topic_id: 'l',
 						whisper: 'false',
 					},
@@ -55,13 +59,15 @@ describe('lib/services/messenger/translators/discourse.ts', () => {
 			const complexMessage = _.cloneDeep(simpleMessage);
 			complexMessage.details.text = 'cde @test-';
 			const emit = await DiscourseTranslator.bundleMessage(complexMessage, thread, metadataConfig);
+			const hmac = crypto.createHmac('sha256', 'salt').update('cde test').digest('hex');
+			const raw = `cde @_test\n[](http://e.com?hidden=comment&source=i&flow=k&thread=h&hmac=${hmac})`;
 			expect(emit).to.deep.equal({
 				method: ['request'],
 				payload: {
 					htmlVerb: 'POST',
 					path: '/posts',
 					body: {
-						raw: 'cde @_test\n[](http://e.com?hidden=comment&source=i&flow=k&thread=h)',
+						raw,
 						topic_id: 'l',
 						whisper: 'false',
 					},

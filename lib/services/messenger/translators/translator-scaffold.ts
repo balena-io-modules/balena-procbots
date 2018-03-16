@@ -15,6 +15,7 @@
  */
 
 import * as Promise from 'bluebird';
+import * as crypto from 'crypto';
 import * as _ from 'lodash';
 import * as marked from 'marked';
 import {
@@ -105,6 +106,17 @@ export abstract class TranslatorScaffold implements Translator {
 	}
 
 	/**
+	 * Create a hash signature using the the message's words.
+	 * @param message  Message to hash.
+	 * @param secret   Shared secret to ID SyncBot.
+	 * @returns        Hex encoded sha256 hash.
+	 */
+	public static signText(message: string, secret: string): string {
+		const messageContent = TranslatorScaffold.extractWords(message).join(' ');
+		return crypto.createHmac('sha256', secret).update(messageContent).digest('hex');
+	}
+
+	/**
 	 * Converts the usernames within a message string using a specified converter.
 	 * @param message    String to replace usernames within
 	 * @param converter  Function to use to convert each username
@@ -157,8 +169,11 @@ export abstract class TranslatorScaffold implements Translator {
 		data: BasicMessageInformation, format: MetadataEncoding, config: MetadataConfiguration,
 	): string {
 		const pubWord = TranslatorScaffold.findPublicityWord(data.details.hidden, config.publicity);
-		const source = data.source;
-		const queryString = `?hidden=${pubWord}&source=${source.service}&flow=${source.flow}&thread=${source.thread}`;
+		const hmac = this.signText(data.details.text, config.secret);
+		const service = data.source.service;
+		const flow = data.source.flow;
+		const thread = data.source.thread;
+		const queryString = `?hidden=${pubWord}&source=${service}&flow=${flow}&thread=${thread}&hmac=${hmac}`;
 		switch (format) {
 			case MetadataEncoding.HiddenHTML:
 				return `<a href="${config.baseUrl}${queryString}"></a>`;
@@ -179,20 +194,30 @@ export abstract class TranslatorScaffold implements Translator {
 	public static extractMetadata(
 		message: string, format: MetadataEncoding, config: MetadataConfiguration,
 	): TranslatorMetadata {
-		const wordCapture = `(${_.values(config.publicity).join('|')})`;
-		const querystring = `\\?hidden=${wordCapture}&source=(\\w*)&flow=([^"&\\)]*)&thread=([^"&\\)]*)`;
+		const words = `(${_.values(config.publicity).join('|')})`;
+		const querystring = `\\?hidden=${words}&source=(\\w*)&flow=([^"&\\)]*)&thread=([^"&\\)]*)(?:&hmac=([^"&\\)]*))?`;
 		const baseUrl = _.escapeRegExp(config.baseUrl);
 		const publicity = config.publicity;
+		let metadata = this.emptyMetadata(message);
+		// Find the metadata by seeking a regex within the message.
 		switch (format) {
 			case MetadataEncoding.HiddenHTML:
 				const hiddenHTMLRegex = new RegExp(`<a href="${baseUrl}${querystring}"[^>]*></a>$`, 'i');
-				return TranslatorScaffold.metadataByRegex(message, hiddenHTMLRegex, publicity);
+				metadata = TranslatorScaffold.metadataByRegex(message, hiddenHTMLRegex, publicity);
+				break;
 			case MetadataEncoding.HiddenMD:
 				const hiddenMDRegex = new RegExp(`\\[\\]\\(${baseUrl}${querystring}\\)$`, 'i');
-				return TranslatorScaffold.metadataByRegex(message, hiddenMDRegex, publicity);
+				metadata = TranslatorScaffold.metadataByRegex(message, hiddenMDRegex, publicity);
+				break;
 			default:
 				throw new Error(`${format} format not recognised`);
 		}
+		// If this is from before hashing, or the hash is good, then assume the metadata extracted is accurate.
+		if (metadata.hmac === null || metadata.hmac === this.signText(metadata.content, config.secret)) {
+			return metadata;
+		}
+		// If the signatures do not match assume the metadata extracted is an artefact of copy, paste or quote.
+		return this.emptyMetadata(metadata.content);
 	}
 
 	/**
@@ -205,21 +230,33 @@ export abstract class TranslatorScaffold implements Translator {
 	 */
 	public static metadataByRegex(message: string, regex: RegExp, indicators: PublicityIndicators): TranslatorMetadata {
 		const metadata = message.match(regex);
+		const content = TranslatorScaffold.unixifyNewLines(message.replace(regex, '').trim());
 		if (metadata) {
 			return {
-				content: TranslatorScaffold.unixifyNewLines(message.replace(regex, '').trim()),
+				content,
 				flow: metadata[3] || null,
 				service: metadata[2] || null,
 				hidden: TranslatorScaffold.findPublicityFromWord(metadata[1], indicators),
 				thread: metadata[4] || null,
+				hmac: metadata[5] || null,
 			};
 		}
+		return TranslatorScaffold.emptyMetadata(content);
+	}
+
+	/**
+	 * Return an empty metadata object, for occasions where there is no metadata
+	 * @param content  Content, if any, that originated this empty object.
+	 * @returns        An empty metadata object.
+	 */
+	public static emptyMetadata(content: string = ''): TranslatorMetadata {
 		return {
-			content: TranslatorScaffold.unixifyNewLines(message.trim()),
+			content,
 			flow: null,
 			service: null,
 			hidden: true,
 			thread: null,
+			hmac: null,
 		};
 	}
 

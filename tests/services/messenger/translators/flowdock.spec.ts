@@ -1,6 +1,7 @@
 /// <reference types="mocha" />
 import { expect } from 'chai';
 
+import * as crypto from 'crypto';
 import { FlowdockTranslator } from '../../../../lib/services/messenger/translators/flowdock';
 import {
 	MetadataEncoding,
@@ -16,6 +17,7 @@ describe('lib/services/messenger/translators/flowdock.ts', () => {
 			hiddenPreferred: 'murmur',
 			shown: 'reply',
 		},
+		secret: 'salt',
 	};
 
 	describe('FlowdockTranslator.createFormattedText', () => {
@@ -67,8 +69,8 @@ describe('lib/services/messenger/translators/flowdock.ts', () => {
 				metadata: 'stuff',
 			};
 			const expected = [
-				'top',
-				'--',
+				'>top',
+				'>--',
 				'>first line.',
 				'>second line.',
 				'>third line.',
@@ -91,10 +93,10 @@ describe('lib/services/messenger/translators/flowdock.ts', () => {
 				footer: '- Cicero',
 			};
 			const longString = [
-				'De finibus bonorum et malorum',
-				'--',
-				'>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do ',
-				'`… about 52% shown.`',
+				'>De finibus bonorum et malorum',
+				'>--',
+				'>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed d',
+				'`… about 51% shown.`',
 				`- Cicero`,
 			].join('\n');
 			const snippedString = FlowdockTranslator.createFormattedText(veryLongString, options);
@@ -105,12 +107,14 @@ describe('lib/services/messenger/translators/flowdock.ts', () => {
 
 	describe('FlowdockTranslator.extractMetadata', () => {
 		it('should find metadata in a synchronised (hiddenMD) message', () => {
+			const hmac = crypto.createHmac('sha256', 'salt').update('h').digest('hex');
 			const extractedMetadata = FlowdockTranslator.extractMetadata(
-				'h[](http://e.com?hidden=whisper&source=g&flow=j&thread=i)',
+				`h[](http://e.com?hidden=whisper&source=g&flow=j&thread=i&hmac=${hmac})`,
 				MetadataEncoding.Flowdock,
 				config,
 			);
-			expect(extractedMetadata).to.deep.equal({content: 'h', hidden: true, service: 'g', flow: 'j', thread: 'i'});
+			const expectedObject = {content: 'h', hidden: true, service: 'g', flow: 'j', thread: 'i', hmac, title: undefined};
+			expect(extractedMetadata).to.deep.equal(expectedObject);
 		});
 
 		it('should return private for a message with no funny business', () => {
