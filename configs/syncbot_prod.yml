@@ -95,6 +95,12 @@ SYNCBOT_MAPPINGS:
       alias: "bots"
       previous:
         - "d-bots"
+  - source:
+      service: "front"
+      flow: "inb_67mx"
+    destination:
+      service: "flowdock"
+      flow: "resinio-collaborations/p_colab_flow"
 SYNCBOT_SERVICE_CONSTRUCTORS:
   github:
     client: "syncbot"
