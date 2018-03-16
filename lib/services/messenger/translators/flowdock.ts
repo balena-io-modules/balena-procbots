@@ -17,6 +17,7 @@ limitations under the License.
 import * as Promise from 'bluebird';
 import { Session } from 'flowdock';
 import * as _ from 'lodash';
+import * as marked from 'marked';
 import {
 	FlowdockConstructor,
 	FlowdockEmitInstructions,
@@ -72,7 +73,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 		const superFormat = (format === MetadataEncoding.Flowdock) ? MetadataEncoding.HiddenMD : format;
 		const metadata = TranslatorScaffold.extractMetadata(superMessage, superFormat, config) as FlowdockMetadata;
 		const findPublic = '^> *';
-		metadata.title = titleAndText ? titleAndText[1].trim() : undefined;
+		metadata.title = titleAndText ? marked(titleAndText[1]).replace(/<[^>]*>/g, ' ').trim() : undefined;
 		if ((format === MetadataEncoding.Flowdock) && (metadata.service === null)) {
 			// Check for magic syntax if the message originated in Flowdock
 			metadata.hidden = !(new RegExp(findPublic, 'i').test(message));
@@ -146,11 +147,19 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 			tags?: string[];
 			linePrefix?: string;
 			lengthLimit?: number;
+			url?: string;
 		} = {},
 	): string {
 		const lengthLimit = (options && options.lengthLimit) || 8096;
 		const prefix = options.linePrefix || '';
-		const first = options.header ? `${options.header.replace(/^/gmi, prefix)}\n${prefix}--\n` : '';
+		let first = '';
+		if (options.header) {
+			if (options.url) {
+				first = `[${options.header.replace(/^/gmi, prefix)}](${options.url})\n${prefix}--\n`;
+			} else {
+				first = `${options.header.replace(/^/gmi, prefix)}\n${prefix}--\n`;
+			}
+		}
 		const second = options.tags ? `${FlowdockTranslator.makeTagString(options.tags)}\n` : '';
 		const prefixedBody = body.replace(/^/gmi, prefix);
 		const penultimate = options.footer ? `\n${options.footer}` : '';
@@ -262,6 +271,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 							header: message.details.title,
 							metadata: FlowdockTranslator.stringifyMetadata(message, MetadataEncoding.Flowdock, metadataConfig),
 							linePrefix: '>',
+							url: message.source.url,
 						}
 					),
 					event: 'message',
