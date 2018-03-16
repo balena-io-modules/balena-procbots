@@ -23,8 +23,8 @@ import {
 	ConversationMessages,
 	ConversationRequest,
 	Conversations,
+	Event,
 	Front,
-	Message,
 	MessageRequest,
 } from 'front-sdk';
 import * as _ from 'lodash';
@@ -127,16 +127,20 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	}
 
 	/**
-	 * Promises to find the name of the person who authored a comment.
+	 * Promises to find the name of the source individual of the event.
 	 * @param connectionDetails  Details required to connect to the Front instance.
-	 * @param message            Details of the message we care about.
+	 * @param event              Details of the event we care about.
 	 * @returns                  Promise that resolves to the name of the author.
 	 */
-	private static fetchAuthorName(connectionDetails: FrontConstructor, message: Message): Promise<string> {
-		if (message.author) {
-			return Promise.resolve(FrontTranslator.convertUsernameToGeneric(message.author.username));
+	private static fetchAuthorName(connectionDetails: FrontConstructor, event: Event): Promise<string> {
+		if (event.source._meta.type === 'teammate') {
+			return Promise.resolve(FrontTranslator.convertUsernameToGeneric(event.source.data.username));
 		}
-		for (const recipient of message.recipients) {
+		const target = _.get(event, ['target', 'data'], {});
+		if (target.author) {
+			return Promise.resolve(FrontTranslator.convertUsernameToGeneric(target.author.username));
+		}
+		for (const recipient of _.get(target, ['recipients'], [])) {
 			if (recipient.role === 'from') {
 				const contactUrl = recipient._links.related.contact;
 				if (contactUrl) {
@@ -460,7 +464,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	}
 
 	protected eventEquivalencies = {
-		message: ['comment', 'out_reply', 'inbound', 'mention'],
+		message: ['comment', 'out_reply', 'inbound', 'mention', 'move'],
 	};
 	protected emitConverters: EmitConverters = {
 		[MessengerAction.ReadConnection]: FrontTranslator.searchThreadIntoEmit,
@@ -505,7 +509,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 			messages: this.session.conversation.listMessages({conversation_id: rawEvent.conversation.id}),
 			event: rawEvent,
 			subject: FrontTranslator.fetchSubject(this.connectionDetails, rawEvent.conversation),
-			author: FrontTranslator.fetchAuthorName(this.connectionDetails, rawEvent.target.data),
+			author: FrontTranslator.fetchAuthorName(this.connectionDetails, rawEvent),
 		})
 		.then((details: {
 			inboxes: ConversationInboxes,
@@ -519,7 +523,17 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 			const message = details.event.target.data;
 			const hidden = _.includes(['comment', 'mention'], details.event.type);
 			const metadataFormat = hidden ? MetadataEncoding.HiddenMD : MetadataEncoding.HiddenHTML;
-			const metadata = TranslatorScaffold.extractMetadata(message.body, metadataFormat, this.metadataConfig);
+			let metadata = TranslatorScaffold.emptyMetadata();
+			switch (details.event.type) {
+				// If this is an edit, then create a murmur to that effect
+				case 'move':
+					metadata = TranslatorScaffold.emptyMetadata(`This thread was edited by ${details.author}.`);
+					metadata.hidden = 'preferred';
+					break;
+				default:
+					// Find the metadata from the post created
+					metadata = TranslatorScaffold.extractMetadata(message.body, metadataFormat, this.metadataConfig);
+			}
 			const duffFlow = 'duff_FrontTranslator_eventIntoMessages_b';
 			const tags = _.map(details.event.conversation.tags, (tag: {name: string}) => {
 				return tag.name;

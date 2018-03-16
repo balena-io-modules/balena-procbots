@@ -329,7 +329,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 	}
 
 	protected eventEquivalencies = {
-		message: ['post_created'],
+		message: ['post_created', 'post_edited'],
 	};
 	protected emitConverters: EmitConverters = {
 		[MessengerAction.ReadConnection]: DiscourseTranslator.searchThreadIntoEmit,
@@ -385,12 +385,21 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 			topic: request(getTopic),
 		})
 		.then((details: { post: any, topic: any }) => {
-			// Calculate metadata and resolve
-			const metadata = TranslatorScaffold.extractMetadata(
-				details.post.raw, MetadataEncoding.HiddenMD, this.metadataConfig
-			);
 			// Generic has `-` at the end, Discourse has `_` at the beginning
 			const convertedUsername = DiscourseTranslator.convertUsernameToGeneric(details.post.username);
+			let metadata = TranslatorScaffold.emptyMetadata();
+			switch (event.type) {
+				// If this is an edit, then create a murmur to that effect
+				case 'post_edited':
+					metadata = TranslatorScaffold.emptyMetadata(`This thread was edited by ${convertedUsername}.`);
+					metadata.hidden = 'preferred';
+					break;
+				// Find the metadata from the post created
+				default:
+					metadata = TranslatorScaffold.extractMetadata(
+						details.post.raw, MetadataEncoding.HiddenMD, this.metadataConfig
+					);
+			}
 			const cookedEvent: BasicMessageInformation = {
 				details: {
 					service: metadata.service || event.source,
