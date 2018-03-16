@@ -401,6 +401,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 					tags: details.topic.tags,
 					text: TranslatorScaffold.convertPings(metadata.content, DiscourseTranslator.convertUsernameToGeneric),
 					title: details.topic.title,
+					messageCount: details.post.post_number,
 				},
 				source: {
 					service: event.source,

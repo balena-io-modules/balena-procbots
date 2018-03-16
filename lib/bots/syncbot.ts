@@ -575,10 +575,22 @@ export class SyncBot extends ProcBot {
 				updateCreated.source.thread = data.source.thread;
 				updateCreated.source.flow = data.source.flow;
 
+				// Promise to post a message count if there is more than one message when the synced thread is created.
+				let summariseThread: Promise<void> = Promise.resolve();
+				if (data.details.messageCount && (data.details.messageCount > 1)) {
+					const threadSummary = _.cloneDeep(updateCreated);
+					const count = data.details.messageCount - 1;
+					const be = (count > 1) ? 'are' : 'is';
+					const noun = (count > 1) ? 'messages' : 'message';
+					threadSummary.details.text = `There ${be} ${count} prior ${noun} on this thread`;
+					summariseThread = messenger.sendData({contexts: {messenger: threadSummary}, source: 'syncbot'}).return();
+				}
+
 				// Request that the payloads created just above be sent.
 				return Promise.all([
 					messenger.sendData({contexts: {messenger: updateOriginating}, source: 'syncbot'}),
 					messenger.sendData({contexts: {messenger: updateCreated}, source: 'syncbot'}),
+					summariseThread,
 				]).return(emitResponse);
 			}
 			// If we failed to create a thread then just pass this back unmolested.

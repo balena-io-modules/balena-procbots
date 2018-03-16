@@ -16,9 +16,16 @@
 
 import * as Promise from 'bluebird';
 import {
-	CommentRequest, Conversation, ConversationComments,
-	ConversationInboxes, ConversationRequest, Conversations,
-	Front, Message, MessageRequest,
+	CommentRequest,
+	Conversation,
+	ConversationComments,
+	ConversationInboxes,
+	ConversationMessages,
+	ConversationRequest,
+	Conversations,
+	Front,
+	Message,
+	MessageRequest,
 } from 'front-sdk';
 import * as _ from 'lodash';
 import * as marked from 'marked';
@@ -494,11 +501,20 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 		const rawEvent: any = event.rawEvent;
 		return Promise.props({
 			inboxes: this.session.conversation.listInboxes({conversation_id: rawEvent.conversation.id}),
+			comments: this.session.conversation.listComments({conversation_id: rawEvent.conversation.id}),
+			messages: this.session.conversation.listMessages({conversation_id: rawEvent.conversation.id}),
 			event: rawEvent,
 			subject: FrontTranslator.fetchSubject(this.connectionDetails, rawEvent.conversation),
 			author: FrontTranslator.fetchAuthorName(this.connectionDetails, rawEvent.target.data),
 		})
-		.then((details: { inboxes: ConversationInboxes, event: any, subject: string, author: string }) => {
+		.then((details: {
+			inboxes: ConversationInboxes,
+			comments: ConversationComments,
+			messages: ConversationMessages,
+			event: any,
+			subject: string,
+			author: string
+		}) => {
 			// Extract some details from the event.
 			const message = details.event.target.data;
 			const hidden = _.includes(['comment', 'mention'], details.event.type);
@@ -520,6 +536,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 					tags,
 					text: TranslatorScaffold.convertPings(message.text || metadata.content, FrontTranslator.convertUsernameToGeneric),
 					title: details.subject,
+					messageCount: details.messages._results.length + details.comments._results.length,
 				},
 				source: {
 					service: event.source,
