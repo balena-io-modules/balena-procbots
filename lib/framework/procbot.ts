@@ -183,7 +183,7 @@ export class ProcBot {
 	 * @returns           The configuration object or void.
 	 */
 	protected processConfiguration(configFile: string): ProcBotConfiguration | void {
-		const config: ProcBotConfiguration = yaml.safeLoad(configFile);
+		const config = yaml.safeLoad(configFile);
 
 		if (!config) {
 			return;
@@ -197,7 +197,7 @@ export class ProcBot {
 			}
 		}
 
-		return config;
+		return config as ProcBotConfiguration;
 	}
 
 	/**

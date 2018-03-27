@@ -146,7 +146,7 @@ export class FlowdockHashtagTranslator extends FlowdockTranslator implements Tra
 							hidden: details.message.metadata.hidden,
 							tags: [],
 							text: details.message.text.replace(/#/g, '#.'),
-							title: firstMessageDetails.message.title.replace(/#/g, '#.')
+							title: _.get(firstMessageDetails, ['message', 'title'], '').replace(/#/g, '#.')
 						},
 						source: {
 							service: 'flowdockhashtag',
