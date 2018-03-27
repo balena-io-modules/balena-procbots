@@ -66,6 +66,20 @@ SYNCBOT_MAPPINGS:
       service: "front"
       flow: "inb_1yea"
       alias: "sandbox"
+      previous:
+        - "inb_3n6y"
+    destination:
+      service: "flowdock"
+      flow: "rulemotion/testing"
+      alias: "sandbox"
+      previous:
+        - "testing"
+  - source:
+      service: "front"
+      flow: "inb_3n6y"
+      alias: "second"
+      previous:
+        - "inb_1yea"
     destination:
       service: "flowdock"
       flow: "rulemotion/testing"

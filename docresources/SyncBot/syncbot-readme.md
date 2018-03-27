@@ -21,9 +21,10 @@ A little Bot, using the ProcBot framework, that links communication services
 ### Which entities are linked?
 
 * Flows
-  * Forums:Troubleshooting - Flowdock:public/s/community - Front:support/community
-  * Flowdock:public/s/premium - Front:support/premium
-  * Front:z/leads - Flowdock:r/leads
+  * Forums:Troubleshooting -> Flowdock:s/support_forums -> Front:S/Forums
+  * Front:S/Paid_Support -> Flowdock:s/support_premium 
+  * Front:S/Device_Support -> Flowdock:s/support_premium
+  * Front:z/leads -> Flowdock:r/leads
 * Threads
   * A new thread in a source flow will become a new linked thread in a destination flow
 * Comments
@@ -244,7 +245,8 @@ Errors, where possible, are reported in the originating thread as whispers.
 
 ### Setting up a Front inbox for SyncBot
 
-1) You will need the help of a Front admin to perform these steps
+1) You will need the help of a Front admin to perform the first steps,
+and someone with write access to this repo to perform the final step
 1) Get the Front API token from Settings > Plugins and API > API
 1) Fire a request similar to the following to acquire a list of inboxes
 	```
@@ -260,11 +262,6 @@ Errors, where possible, are reported in the originating thread as whispers.
 	API endpoints outgoing = https://your.syncbot.url/front-dev-null
 	```
 1) Note the channel id, `cha_abc` from incoming url in API Endpoints
-1) Adjust the following values in configs/yml
-	* `SYNCBOT_MAPPINGS`
-		* Add the flow mapping to the array
-	* `SYNCBOT_LISTENER_CONSTRUCTORS.front.channelPerInbox`
-		* Add the map of inbox to channel to the array
 1) Add the inbox to the `SyncBot <- Inboxes` rule.  The settings for the rule should be as follows:
 	```text
 	WHEN:
@@ -276,6 +273,11 @@ Errors, where possible, are reported in the originating thread as whispers.
 	THEN:
 		<Send to a Webhook> <https://your.deploy/front>
 	```
+1) Adjust the following values in configs/yml
+	* `SYNCBOT_MAPPINGS`
+		* Add the flow mapping to the array
+	* `SYNCBOT_LISTENER_CONSTRUCTORS.front.channelPerInbox`
+		* Add the map of inbox to channel to the array
 
 ### Setting up a Discourse category for SyncBot
 
