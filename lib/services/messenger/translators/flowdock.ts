@@ -66,8 +66,11 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 	public static extractMetadata(
 		message: string, format: MetadataEncoding, config: MetadataConfiguration,
 	): FlowdockMetadata {
-		// Any characters, then a newline, then markdown title formatting, then absolutely anything.
-		const titleSplitter = /^(.*)[\r\n][\s-=]+([\s\S]+)$/;
+		// One line of characters `(.*)`...
+		// then markdown title formatting on the very next line `\r?\n[-=]+`...
+		// then any amount of whitespace that includes a new line `\s*\n\s*`...
+		// then absolutely any content `([\s\S]+)`
+		const titleSplitter = /^(.*)\r?\n[-=]+\s*\n\s*([\s\S]+)$/;
 		const titleAndText = message.match(titleSplitter);
 		const superMessage = titleAndText ? titleAndText[2].trim() : message.trim();
 		const superFormat = (format === MetadataEncoding.Flowdock) ? MetadataEncoding.HiddenMD : format;

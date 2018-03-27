@@ -169,6 +169,36 @@ describe('lib/services/messenger/translators/flowdock.ts', () => {
 			);
 			expect(extractedMetadata.hidden).to.equal(true);
 		});
+
+		it('should return all paragraphs of a multi paragraph message', () => {
+			const message = [
+				'title',
+				'',
+				'body',
+			].join('\n');
+			const extractedMetadata = FlowdockTranslator.extractMetadata(
+				message,
+				MetadataEncoding.Flowdock,
+				config,
+			);
+			expect(extractedMetadata.content).to.equal(message);
+		});
+
+		it('should split title and body of a titled message', () => {
+			const message = [
+				'title',
+				'==',
+				'',
+				'body',
+			].join('\n');
+			const extractedMetadata = FlowdockTranslator.extractMetadata(
+				message,
+				MetadataEncoding.Flowdock,
+				config,
+			);
+			expect(extractedMetadata.title).to.equal('title');
+			expect(extractedMetadata.content).to.equal('body');
+		});
 	});
 
 	describe('FlowdockTranslator.extractSource', () => {
