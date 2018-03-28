@@ -10,7 +10,9 @@ const exec = require('child_process').exec;
 gulp.task('typescript', () => {
 	return tsProject.src()
 		.pipe(sourcemaps.init())
-		.pipe(tsProject()).on('error', gutil.log)
+		.pipe(tsProject()).on('error', (err) => {
+			throw err;
+		})
 		.pipe(sourcemaps.write('./', { includeContent: true,
 			sourceRoot: '../lib'
 		}))
