@@ -371,8 +371,8 @@ export class NotifyBot extends ProcBot {
 			//  * No new version, we abort
 			//  * Should *either* the old (if existing) or new version be invalid (ie. do not exist
 			//    in the component's CHANGELOG.md), then the component is skipped and an error reported.
-			const oldComponents = yaml.safeLoad(oldFile).keyframe.components || {};
-			const newComponents = yaml.safeLoad(newFile).keyframe.components;
+			const oldComponents = _.get(yaml.safeLoad(oldFile), ['keyframe', 'components'], {});
+			const newComponents = _.get(yaml.safeLoad(newFile), ['keyframe', 'components'], undefined);
 
 			// Track every new version by trying to match a component in the new version
 			// with a component in the old.
