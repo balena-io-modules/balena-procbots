@@ -69,6 +69,20 @@ SYNCBOT_MAPPINGS:
       service: "front"
       flow: "inb_nla"
       alias: "paid"
+      previous:
+        - "inb_8i97"
+    destination:
+      service: "flowdock"
+      flow: "rulemotion/public-s-premium"
+      alias: "premium"
+      previous:
+        - "public-s-premium"
+  - source:
+      service: "front"
+      flow: "inb_8i97"
+      alias: "device"
+      previous:
+        - "inb_nla"
     destination:
       service: "flowdock"
       flow: "rulemotion/public-s-premium"
@@ -124,6 +138,7 @@ SYNCBOT_SERVICE_CONSTRUCTORS:
       inb_23sp: "cha_20ep"
       inb_nla: "cha_20er"
       inb_2hvh: "cha_5cih"
+      inb_8i97: "cha_80mj"
     serviceName: "front"
   discourse:
     instance: "forums.resin.io"
