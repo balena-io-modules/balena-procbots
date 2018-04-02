@@ -158,9 +158,9 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 		let first = '';
 		if (options.header) {
 			if (options.url) {
-				first = `[${options.header.replace(/^/gmi, prefix)}](${options.url})\n${prefix}--\n`;
+				first = `${prefix}[${options.header}](${options.url})\n${prefix}--\n`;
 			} else {
-				first = `${options.header.replace(/^/gmi, prefix)}\n${prefix}--\n`;
+				first = `${prefix}${options.header}\n${prefix}--\n`;
 			}
 		}
 		const second = options.tags ? `${FlowdockTranslator.makeTagString(options.tags)}\n` : '';
