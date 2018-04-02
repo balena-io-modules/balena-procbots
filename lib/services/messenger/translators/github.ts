@@ -252,7 +252,7 @@ export class GithubTranslator extends TranslatorScaffold implements Translator {
 					handle: data.sender.login,
 					hidden: _.isSet(metadata.hidden) ? metadata.hidden : false,
 					tags: thread.labels,
-					text,
+					text: TranslatorScaffold.unixifyNewLines(text),
 					title: thread.title
 				},
 				source: {
