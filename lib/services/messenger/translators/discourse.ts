@@ -179,7 +179,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 				},
 				url: `${connectionDetails.protocol || 'https'}://${connectionDetails.instance}/users/${username}.json`,
 			}).then((response) => {
-				if (response.user.can_send_private_messages) {
+				if (response.user.admin || response.user.moderator) {
 					return DiscourseTranslator.bundleMessage(message, thread, metadataConfig);
 				}
 				return Promise.reject(new TranslatorError(
