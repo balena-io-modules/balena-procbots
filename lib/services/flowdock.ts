@@ -39,33 +39,44 @@ export class FlowdockService extends ServiceScaffold<string> implements ServiceE
 		// We'll just log the emit to prevent it bubbling
 		this.session.on('error', _.partial(console.log, 'Error in Flowdock service.'));
 		if (data.type === ServiceType.Listener) {
-			// Get a list of known flows from the session
-			this.session.flows((error: any, flows: any) => {
-				if (error) {
-					this.logger.alert(LogLevel.WARN, `Problem connecting to Flowdock, ${error}`);
-				}
-				// Enclose a list of flow names
-				const flowIdToFlowName: {[key: string]: string} = {};
-				for (const flow of flows) {
-					flowIdToFlowName[flow.id] = `${flow.organization.parameterized_name}/${flow.parameterized_name}`;
-				}
-				const stream = this.session.stream(Object.keys(flowIdToFlowName));
-				stream.on('message', (message: any) => {
-					if (!this.postsSynced.has(message.id)) {
-						this.postsSynced.add(message.id);
-						this.queueData({
-							context: message.thread_id,
-							cookedEvent: {
-								flow: flowIdToFlowName[message.flow],
-							},
-							type: message.event,
-							rawEvent: message,
-							source: this.serviceName,
-						});
-					}
-				});
-			});
+			this.fetchFlowsAndConnect();
 		}
+	}
+
+	protected fetchFlowsAndConnect(): void {
+		this.session.flows((error: any, flows: any) => {
+			if (error) {
+				this.logger.alert(LogLevel.WARN, `Problem connecting to Flowdock, ${error}`);
+			}
+			// Enclose a list of flow names
+			const flowIdToFlowName: {[key: string]: string} = {};
+			for (const flow of flows) {
+				flowIdToFlowName[flow.id] = `${flow.organization.parameterized_name}/${flow.parameterized_name}`;
+			}
+			const stream = this.session.stream(Object.keys(flowIdToFlowName), {active: 'idle', user: 1});
+			this.logger.log(LogLevel.INFO, `Connected to Flowdock.`);
+			// Disconnect logic lifted from https://github.com/flowdock/hubot-flowdock/blob/master/src/flowdock.coffee
+			stream.on('disconnected', () => {
+				this.logger.log(LogLevel.INFO, `Disconnected from Flowdock.`);
+				stream.end();
+				stream.removeAllListeners();
+				this.fetchFlowsAndConnect();
+			});
+			stream.on('message', (message: any) => {
+				if (!this.postsSynced.has(message.id)) {
+					this.postsSynced.add(message.id);
+					this.queueData({
+						context: message.thread_id,
+						cookedEvent: {
+							flow: flowIdToFlowName[message.flow],
+						},
+						type: message.event,
+						rawEvent: message,
+						source: this.serviceName,
+					});
+				}
+			});
+		});
 	}
 
 	/**
