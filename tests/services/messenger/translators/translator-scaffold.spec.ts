@@ -102,6 +102,10 @@ describe('lib/services/messenger/translators/translator-scaffold.ts', () => {
 			expect(TranslatorScaffold.extractWords('test this')).to.deep.equal(['test', 'this']);
 		});
 
+		it('should find the words in a message that contains hyphens and underscores', () => {
+			expect(TranslatorScaffold.extractWords('test-this_')).to.deep.equal(['test', 'this']);
+		});
+
 		it('should remove grammar, including upper case', () => {
 			expect(TranslatorScaffold.extractWords('Test this.')).to.deep.equal(['test', 'this']);
 		});
