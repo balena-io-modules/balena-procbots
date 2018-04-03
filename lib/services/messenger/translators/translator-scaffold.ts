@@ -102,7 +102,7 @@ export abstract class TranslatorScaffold implements Translator {
 		// Remove any html tags
 		const cleanedString = htmlString.replace(/<[^>]*>/g, ' ');
 		// Break the string down to word sections
-		return cleanedString.match(/\w+/g) || [];
+		return cleanedString.match(/[a-zA-Z]+/g) || [];
 	}
 
 	/**
