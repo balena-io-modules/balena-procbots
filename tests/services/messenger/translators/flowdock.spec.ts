@@ -199,6 +199,21 @@ describe('lib/services/messenger/translators/flowdock.ts', () => {
 			expect(extractedMetadata.title).to.equal('title');
 			expect(extractedMetadata.content).to.equal('body');
 		});
+
+		it('should split title and body of a titled and formatted message', () => {
+			const message = [
+				'>[title](www.example.com)',
+				'>--',
+				'>body',
+			].join('\n');
+			const extractedMetadata = FlowdockTranslator.extractMetadata(
+				message,
+				MetadataEncoding.Flowdock,
+				config,
+			);
+			expect(extractedMetadata.title).to.equal('title');
+			expect(extractedMetadata.content).to.equal('body');
+		});
 	});
 
 	describe('FlowdockTranslator.extractSource', () => {
