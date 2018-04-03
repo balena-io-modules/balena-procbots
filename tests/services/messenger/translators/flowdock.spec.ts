@@ -103,6 +103,20 @@ describe('lib/services/messenger/translators/flowdock.ts', () => {
 			expect(snippedString.length).to.equal(lengthLimit);
 			expect(snippedString).to.equal(longString);
 		});
+
+		it('should format thread links as correct MD headers', () => {
+			const options = {
+				linePrefix: '>',
+				header: 'top',
+				url: 'www.example.com'
+			};
+			const expected = [
+				'>[top](www.example.com)',
+				'>--',
+				'>body',
+			].join('\n');
+			expect(FlowdockTranslator.createFormattedText('body', options)).to.equal(expected);
+		});
 	});
 
 	describe('FlowdockTranslator.extractMetadata', () => {
