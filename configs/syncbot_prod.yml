@@ -69,8 +69,6 @@ SYNCBOT_MAPPINGS:
       service: "front"
       flow: "inb_nla"
       alias: "paid"
-      previous:
-        - "inb_8i97"
     destination:
       service: "flowdock"
       flow: "rulemotion/public-s-premium"
@@ -81,8 +79,6 @@ SYNCBOT_MAPPINGS:
       service: "front"
       flow: "inb_8i97"
       alias: "device"
-      previous:
-        - "inb_nla"
     destination:
       service: "flowdock"
       flow: "rulemotion/public-s-premium"
