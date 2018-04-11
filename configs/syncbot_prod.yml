@@ -77,16 +77,6 @@ SYNCBOT_MAPPINGS:
         - "public-s-premium"
   - source:
       service: "front"
-      flow: "inb_8i97"
-      alias: "device"
-    destination:
-      service: "flowdock"
-      flow: "rulemotion/public-s-premium"
-      alias: "premium"
-      previous:
-        - "public-s-premium"
-  - source:
-      service: "front"
       flow: "inb_2hvh"
       alias: "leads"
     destination:
