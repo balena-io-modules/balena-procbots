@@ -214,6 +214,26 @@ describe('lib/services/messenger/translators/flowdock.ts', () => {
 			expect(extractedMetadata.content).to.equal('body');
 		});
 
+		it('should return all paragraphs of a quoted message', () => {
+			const message = [
+				'>body',
+				'>',
+				'>also body',
+			].join('\n');
+			const expectedResponse = [
+				'body',
+				'',
+				'also body',
+			].join('\n');
+			const extractedMetadata = FlowdockTranslator.extractMetadata(
+				message,
+				MetadataEncoding.Flowdock,
+				config,
+			);
+			expect(extractedMetadata.content).to.equal(expectedResponse);
+			expect(extractedMetadata.hidden).to.equal(false);
+		});
+
 		it('should split title and body of a titled and formatted message', () => {
 			const message = [
 				'>[title](www.example.com)',
