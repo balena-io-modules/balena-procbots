@@ -152,6 +152,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 			lengthLimit?: number;
 			url?: string;
 		} = {},
+		config: MetadataConfiguration,
 	): string {
 		const lengthLimit = (options && options.lengthLimit) || 8096;
 		const prefix = options.linePrefix || '';
@@ -166,16 +167,21 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 		const second = options.tags ? `${FlowdockTranslator.makeTagString(options.tags)}\n` : '';
 		const prefixedBody = body.replace(/^/gmi, prefix);
 		const penultimate = options.footer ? `\n${options.footer}` : '';
-		const last = options.metadata ? `\n${options.metadata}` : '';
-		const candidate = `${first}${second}${prefixedBody}${penultimate}${last}`;
+		const lastProvisional = options.metadata ? `\n${options.metadata}` : '';
+		const candidate = `${first}${second}${prefixedBody}${penultimate}${lastProvisional}`;
 		if (candidate.length < lengthLimit) {
 			return candidate;
 		}
 		const snipProvisional = '\n`… about xx% shown.`';
-		const midSpace = lengthLimit - `${first}${second}${snipProvisional}${penultimate}${last}`.length;
+		const midSpace = lengthLimit - `${first}${second}${snipProvisional}${penultimate}${lastProvisional}`.length;
 		const snipped = prefixedBody.substr(0, midSpace);
 		const roundedSnip = Math.floor((100*snipped.length)/body.length);
 		const snipText = snipProvisional.replace('xx', roundedSnip.toString(10));
+		const newSign = TranslatorScaffold.signText(`${snipped}${snipText}`, config.secret);
+		if (options.metadata) {
+			options.metadata = options.metadata.replace(/hmac=[0-9a-f]+/, `hmac=${newSign}`);
+		}
+		const last = options.metadata ? `\n${options.metadata}` : '';
 		return `${first}${second}${snipped}${snipText}${penultimate}${last}`;
 	}
 
@@ -275,7 +281,8 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 							metadata: FlowdockTranslator.stringifyMetadata(message, MetadataEncoding.Flowdock, metadataConfig),
 							linePrefix: '>',
 							url: message.source.url,
-						}
+						},
+						metadataConfig,
 					),
 					event: 'message',
 					external_user_name: message.details.handle.replace(/\s/g, '_')
@@ -312,7 +319,8 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 						{
 							metadata: FlowdockTranslator.stringifyMetadata(message, MetadataEncoding.Flowdock, metadataConfig),
 							linePrefix: message.details.hidden ? '' : '>',
-						}
+						},
+						metadataConfig,
 					),
 					event: 'message',
 					external_user_name: message.details.handle.replace(/\s/g, '_'),

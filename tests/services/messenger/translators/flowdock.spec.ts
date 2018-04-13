@@ -36,7 +36,7 @@ describe('lib/services/messenger/translators/flowdock.ts', () => {
 				'bottom',
 				'stuff',
 			].join('\n');
-			expect(FlowdockTranslator.createFormattedText('middle', options)).to.equal(expected);
+			expect(FlowdockTranslator.createFormattedText('middle', options, config)).to.equal(expected);
 		});
 
 		it('should inject line prefixes into simple multi-line strings', () => {
@@ -53,7 +53,7 @@ describe('lib/services/messenger/translators/flowdock.ts', () => {
 				'>second line.',
 				'>third line.',
 			].join('\n');
-			expect(FlowdockTranslator.createFormattedText(multiLineString, options)).to.equal(expected);
+			expect(FlowdockTranslator.createFormattedText(multiLineString, options, config)).to.equal(expected);
 		});
 
 		it('should inject line prefixes into a compound string', () => {
@@ -77,7 +77,7 @@ describe('lib/services/messenger/translators/flowdock.ts', () => {
 				'bottom',
 				'stuff',
 			].join('\n');
-			expect(FlowdockTranslator.createFormattedText(multiLineString, options)).to.equal(expected);
+			expect(FlowdockTranslator.createFormattedText(multiLineString, options, config)).to.equal(expected);
 		});
 
 		it('should format a really long string into one trimmed string', () => {
@@ -99,7 +99,34 @@ describe('lib/services/messenger/translators/flowdock.ts', () => {
 				'`… about 51% shown.`',
 				`- Cicero`,
 			].join('\n');
-			const snippedString = FlowdockTranslator.createFormattedText(veryLongString, options);
+			const snippedString = FlowdockTranslator.createFormattedText(veryLongString, options, config);
+			expect(snippedString.length).to.equal(lengthLimit);
+			expect(snippedString).to.equal(longString);
+		});
+
+		it('should replace signature on really long strings', () => {
+			const veryLongString = [
+				'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut',
+				'labore et dolore magna aliqua.',
+			].join('\n');
+			const lengthLimit = 192;
+			const hmac = crypto.createHmac('sha256', 'salt').update('h').digest('hex');
+			const metadata = `http://e.com?hmac=${hmac}`;
+			expect(metadata).to.equal('http://e.com?hmac=26e52d694bce4b1f7cb5645c59910c75c9f218bd4a1e568600f678d537d0f14d');
+			const options = {
+				lengthLimit,
+				linePrefix: '>',
+				header: 'De finibus bonorum et malorum',
+				metadata
+			};
+			const longString = [
+				'>De finibus bonorum et malorum',
+				'>--',
+				'>Lorem ipsum dolor sit amet, consectetur adipiscing e',
+				'`… about 43% shown.`',
+				'http://e.com?hmac=80eb58263708aaf21d59fd6d35fdc997f494dcbeef5bc4ee5830a1dff9ac8c98',
+			].join('\n');
+			const snippedString = FlowdockTranslator.createFormattedText(veryLongString, options, config);
 			expect(snippedString.length).to.equal(lengthLimit);
 			expect(snippedString).to.equal(longString);
 		});
@@ -115,7 +142,7 @@ describe('lib/services/messenger/translators/flowdock.ts', () => {
 				'>--',
 				'>body',
 			].join('\n');
-			expect(FlowdockTranslator.createFormattedText('body', options)).to.equal(expected);
+			expect(FlowdockTranslator.createFormattedText('body', options, config)).to.equal(expected);
 		});
 	});
 
