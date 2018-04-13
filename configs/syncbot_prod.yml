@@ -86,6 +86,14 @@ SYNCBOT_MAPPINGS:
       previous:
         - "r-leads"
   - source:
+      service: "front"
+      flow: "inb_8htn"
+      alias: "revenue"
+    destination:
+      service: "flowdock"
+      flow: "rulemotion/sales"
+      alias: "sales"
+  - source:
       service: "github"
       flow: "resin-io/hubot-as-mainbot"
       alias: "hubot"
@@ -125,6 +133,7 @@ SYNCBOT_SERVICE_CONSTRUCTORS:
       inb_nla: "cha_20er"
       inb_2hvh: "cha_5cih"
       inb_8i97: "cha_80mj"
+      inb_8htn: "cha_85e3"
     serviceName: "front"
   discourse:
     instance: "forums.resin.io"
