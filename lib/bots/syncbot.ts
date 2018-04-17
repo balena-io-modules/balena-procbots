@@ -373,6 +373,7 @@ export class SyncBot extends ProcBot {
 				hidden: 'preferred',
 				tags: data.details.tags,
 				text: `${to.service} reports \`${solution.description}\`.\r\n${fixes}\r\n`,
+				time: data.details.time,
 				title: data.details.title,
 			},
 			source: {
@@ -520,6 +521,7 @@ export class SyncBot extends ProcBot {
 						hidden: 'preferred',
 						tags: data.details.tags,
 						text: 'This is mirrored in ', // will be appended
+						time: data.details.time,
 						title: data.details.title,
 					},
 					// this message is being created from nothing.
@@ -665,6 +667,7 @@ export class SyncBot extends ProcBot {
 							hidden: true,
 							tags: event.cookedEvent.details.tags,
 							text,
+							time: event.cookedEvent.details.time,
 							title: event.cookedEvent.details.title,
 						},
 						source: event.cookedEvent.source,

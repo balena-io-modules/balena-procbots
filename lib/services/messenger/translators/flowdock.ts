@@ -471,6 +471,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 				hidden: details.message.metadata.hidden,
 				tags: [], // gets replaced
 				text: details.message.text,
+				time: details.message.time,
 				title: 'duff_FlowdockTranslator_eventIntoMessage_b', // gets replaced
 				messageCount: event.rawEvent.thread.internal_comments,
 			},
@@ -588,6 +589,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 			message: {
 				metadata,
 				text: metadata.content,
+				time: event.rawEvent.created_at,
 				title: metadata.title,
 			}
 		};

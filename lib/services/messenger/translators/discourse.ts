@@ -409,6 +409,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 					hidden: _.isSet(metadata.hidden) ? metadata.hidden : details.post.post_type === 4,
 					tags: details.topic.tags,
 					text: TranslatorScaffold.convertPings(metadata.content, DiscourseTranslator.convertUsernameToGeneric),
+					time: details.post.created_at,
 					title: details.topic.title,
 					messageCount: details.post.post_number,
 				},
