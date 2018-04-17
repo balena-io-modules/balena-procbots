@@ -84,7 +84,8 @@ export class FlowdockHashtagTranslator extends FlowdockTranslator implements Tra
 						{
 							metadata: FlowdockTranslator.stringifyMetadata(message, MetadataEncoding.Flowdock, metadataConfig),
 							linePrefix: message.details.hidden ? '' : '>',
-						}
+						},
+						metadataConfig,
 					),
 					event: 'message',
 					external_user_name: message.details.handle.replace(/\s/g, '_'),
