@@ -17,6 +17,7 @@
 import * as Promise from 'bluebird';
 import {
 	CommentRequest,
+	Contact,
 	Conversation,
 	ConversationComments,
 	ConversationInboxes,
@@ -29,7 +30,6 @@ import {
 } from 'front-sdk';
 import * as _ from 'lodash';
 import * as marked from 'marked';
-import * as request from 'request-promise';
 import { FrontConstructor, FrontEmitInstructions, FrontResponse, FrontServiceEvent } from '../../front-types';
 import {
 	BasicMessageInformation,
@@ -128,11 +128,11 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 
 	/**
 	 * Promises to find the name of the source individual of the event.
-	 * @param connectionDetails  Details required to connect to the Front instance.
-	 * @param event              Details of the event we care about.
-	 * @returns                  Promise that resolves to the name of the author.
+	 * @param session  Session to interrogate.
+	 * @param event    Details of the event we care about.
+	 * @returns        Promise that resolves to the name of the author.
 	 */
-	private static fetchAuthorName(connectionDetails: FrontConstructor, event: Event): Promise<string> {
+	private static fetchAuthorName(session: Front, event: Event): Promise<string> {
 		if (event.source._meta.type === 'teammate') {
 			return Promise.resolve(FrontTranslator.convertUsernameToGeneric(event.source.data.username));
 		}
@@ -144,7 +144,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 			if (recipient.role === 'from') {
 				const contactUrl = recipient._links.related.contact;
 				if (contactUrl) {
-					return FrontTranslator.fetchContactName(connectionDetails, contactUrl);
+					return FrontTranslator.fetchContactName(session, contactUrl);
 				}
 				return Promise.resolve(FrontTranslator.convertUsernameToGeneric(recipient.handle));
 			}
@@ -154,40 +154,32 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 
 	/**
 	 * Promises to fetch the name from a provided contact (ctc_blah) url.
-	 * @param connectionDetails  Details required to connect to the Front instance.
-	 * @param contactUrl         Url of the contact to fetch.
-	 * @returns                  Promise that resolves to the name of the contact.
+	 * @param session     Session to interrogate.
+	 * @param contactUrl  Url of the contact to fetch.
+	 * @returns           Promise that resolves to the name of the contact.
 	 */
-	private static fetchContactName(connectionDetails: FrontConstructor, contactUrl: string): Promise<string> {
-		// https://github.com/resin-io-modules/resin-procbots/issues/200
-		return request({
-			headers: {
-				authorization: `Bearer ${connectionDetails.token}`,
-			},
-			json: true,
-			method: 'GET',
-			url: contactUrl,
-		})
-		.then((contact) => {
+	private static fetchContactName(session: Front, contactUrl: string): Promise<string> {
+		return session.getFromLink(contactUrl)
+		.then((contact: Contact) => {
 			return contact.name || contact.handles[0].handle;
 		});
 	}
 
 	/**
 	 * Promises to fetch the subject of a conversation
-	 * @param connectionDetails  Details required to connect to the Front instance.
-	 * @param conversation       Details of the conversation we care about.
-	 * @returns                  Promise that resolves to the subject line of the conversation.
+	 * @param session       Session to interrogate.
+	 * @param conversation  Details of the conversation we care about.
+	 * @returns             Promise that resolves to the subject line of the conversation.
 	 */
 	private static fetchSubject(
-		connectionDetails: FrontConstructor, conversation: Conversation
+		session: Front, conversation: Conversation
 	): Promise<string> {
 		if (conversation.subject) {
 			return Promise.resolve(conversation.subject);
 		}
 		const contactUrl = conversation.recipient._links.related.contact;
 		if (contactUrl) {
-			return FrontTranslator.fetchContactName(connectionDetails, contactUrl)
+			return FrontTranslator.fetchContactName(session, contactUrl)
 			.then((name: string) => {
 				return `Conversation with ${name}`;
 			});
@@ -198,19 +190,12 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	/**
 	 * Internal function to retrieve the ID for a particular username.
 	 * ... only needed because on the way into Front events use ID, but on their way out use username.
-	 * @param token     Token to use for request.
+	 * @param session   Session to interrogate.
 	 * @param username  Username to search for.
 	 * @returns         Promise that resolves to the user ID.
 	 */
-	private static fetchUserId(token: string, username: string): Promise<string|undefined> {
-		return request({
-			headers: {
-				authorization: `Bearer ${token}`,
-			},
-			json: true,
-			method: 'GET',
-			url: 'https://api2.frontapp.com/teammates',
-		})
+	private static fetchUserId(session: Front, username: string): Promise<string|undefined> {
+		return session.teammate.list()
 		.then((teammates) => {
 			const loweredUsername = username.toLowerCase();
 			const substitutedUsername = FrontTranslator.convertUsernameToFront(loweredUsername);
@@ -287,13 +272,17 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 
 	/**
 	 * Converts a provided message object into instructions to create a thread.
-	 * @param connectionDetails  Details of the connection to find things like channels to use.
-	 * @param metadataConfig     Configuration to use to encode metadata
-	 * @param message            object to analyse.
-	 * @returns                  Promise that resolves to emit instructions.
+	 * @param session         Session to interrogate.
+	 * @param channelMap      Map of inbox ids to channel ids
+	 * @param metadataConfig  Configuration to use to encode metadata
+	 * @param message         object to analyse.
+	 * @returns               Promise that resolves to emit instructions.
 	 */
 	private static createThreadIntoEmit(
-		connectionDetails: FrontConstructor, metadataConfig: MetadataConfiguration, message: TransmitInformation
+		session: Front,
+		channelMap: {[inbox: string]: string},
+		metadataConfig: MetadataConfiguration,
+		message: TransmitInformation,
 	): Promise<FrontEmitInstructions> {
 		// Check we have a title.
 		if (!message.details.title) {
@@ -301,17 +290,8 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 				TranslatorErrorCode.IncompleteTransmitInformation, 'Cannot create a thread without a title'
 			));
 		}
-		// Check we have a way of mapping channels.
-		const channelMap = connectionDetails.channelPerInbox;
-		if (!channelMap) {
-			return Promise.reject(new TranslatorError(
-					TranslatorErrorCode.ConfigurationError,
-					'Cannot translate Front threads without a channelPerInbox specified.'
-				)
-			);
-		}
 		// Gather the ID for the user.
-		return FrontTranslator.fetchUserId(connectionDetails.token, message.target.username)
+		return FrontTranslator.fetchUserId(session, message.target.username)
 		.then((userId) => {
 			// Bundle for the session.
 			const metadataString = TranslatorScaffold.stringifyMetadata(
@@ -342,13 +322,13 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 
 	/**
 	 * Converts a provided message object into instructions to create a message.
-	 * @param connectionDetails  Details of the connection to find things user ID.
-	 * @param metadataConfig     Configuration to use to encode metadata
-	 * @param message            object to analyse.
-	 * @returns                  Promise that resolves to emit instructions.
+	 * @param session         Details of the connection to find things user ID.
+	 * @param metadataConfig  Configuration to use to encode metadata
+	 * @param message         object to analyse.
+	 * @returns               Promise that resolves to emit instructions.
 	 */
 	private static createMessageIntoEmit(
-		connectionDetails: FrontConstructor, metadataConfig: MetadataConfiguration, message: TransmitInformation
+		session: Front, metadataConfig: MetadataConfiguration, message: TransmitInformation
 	): Promise<FrontEmitInstructions> {
 		// Check we have a thread.
 		const threadId = message.target.thread;
@@ -358,7 +338,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 			));
 		}
 		// Gather the user ID for the username.
-		return FrontTranslator.fetchUserId(connectionDetails.token, message.target.username)
+		return FrontTranslator.fetchUserId(session, message.target.username)
 		.then((userId: string) => {
 			// Bundle a 'comment', which is private, for the session.
 			if (message.details.hidden) {
@@ -451,7 +431,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	private static convertCreateThreadResponse(
 		session: Front, message: TransmitInformation, _response: FrontResponse
 	): Promise<CreateThreadResponse> {
-		// The creation of a conversation returns a conversation_reference which is useless.
+		// The creation of a conversation returns a conversation_reference which is compartmentalised.
 		// It bears no relation to anything understood by any other part of Front.
 		// So we go diving through the recent conversations for a matching subject line.
 		return FrontTranslator.findConversation(session, message.details.title)
@@ -480,20 +460,20 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	};
 
 	private session: Front;
-	private connectionDetails: FrontConstructor;
+	private token: string;
 
 	constructor(data: FrontConstructor, metadataConfig: MetadataConfiguration) {
 		super(metadataConfig);
-		this.connectionDetails = data;
 		this.session = new Front(data.token);
+		this.token = data.token;
 		this.responseConverters[MessengerAction.CreateThread] =
 			_.partial(FrontTranslator.convertCreateThreadResponse, this.session);
 		this.responseConverters[MessengerAction.ReadConnection] =
 			_.partial(FrontTranslator.convertReadConnectionResponse, this.metadataConfig);
 		this.emitConverters[MessengerAction.CreateMessage] =
-			_.partial(FrontTranslator.createMessageIntoEmit, this.connectionDetails, metadataConfig);
+			_.partial(FrontTranslator.createMessageIntoEmit, this.session, metadataConfig);
 		this.emitConverters[MessengerAction.CreateThread] =
-			_.partial(FrontTranslator.createThreadIntoEmit, this.connectionDetails, metadataConfig);
+			_.partial(FrontTranslator.createThreadIntoEmit, this.session, data.channelPerInbox, metadataConfig);
 	}
 
 	/**
@@ -508,8 +488,8 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 			comments: this.session.conversation.listComments({conversation_id: rawEvent.conversation.id}),
 			messages: this.session.conversation.listMessages({conversation_id: rawEvent.conversation.id}),
 			event: rawEvent,
-			subject: FrontTranslator.fetchSubject(this.connectionDetails, rawEvent.conversation),
-			author: FrontTranslator.fetchAuthorName(this.connectionDetails, rawEvent),
+			subject: FrontTranslator.fetchSubject(this.session, rawEvent.conversation),
+			author: FrontTranslator.fetchAuthorName(this.session, rawEvent),
 		})
 		.then((details: {
 			inboxes: ConversationInboxes,
@@ -586,7 +566,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	public messageIntoEmitterConstructor(_message: TransmitInformation): FrontConstructor {
 		return {
 			serviceName: 'front',
-			token: this.connectionDetails.token,
+			token: this.token,
 			type: ServiceType.Emitter,
 		};
 	}
