@@ -145,6 +145,7 @@ describe('lib/services/messenger/translators/translator-scaffold.ts', () => {
 				hidden: true,
 				tags: [],
 				text: 'c',
+				time: '2018-04-16T12:45:46+00:00',
 				title: 'd',
 			},
 			source: {

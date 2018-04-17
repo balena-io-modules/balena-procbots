@@ -1,9 +1,8 @@
 /// <reference types="mocha" />
 import { expect } from 'chai';
+import * as crypto from 'crypto';
 import * as _ from 'lodash';
-
 import { DiscourseTranslator } from '../../../../lib/services/messenger/translators/discourse';
-import * as crypto from "crypto";
 
 describe('lib/services/messenger/translators/discourse.ts', () => {
 
@@ -16,6 +15,7 @@ describe('lib/services/messenger/translators/discourse.ts', () => {
 				hidden: false,
 				tags: [],
 				text: 'cde @test',
+				time: '2018-04-16T12:45:46+00:00',
 				title: 'f',
 			},
 			source: {

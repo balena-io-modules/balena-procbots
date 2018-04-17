@@ -63,6 +63,11 @@ export interface MessageDetails {
 	tags: string[];
 	/** The actual message string. */
 	text: string;
+	/**
+	 * The time a message was created.
+	 * This can be in any format understood by the momentjs constructor
+	 */
+	time: string;
 	/** The title of the thread. */
 	title: string;
 	/** A count of how many comments there are in this thread. */

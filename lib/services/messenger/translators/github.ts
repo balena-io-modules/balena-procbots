@@ -253,6 +253,7 @@ export class GithubTranslator extends TranslatorScaffold implements Translator {
 					hidden: _.isSet(metadata.hidden) ? metadata.hidden : false,
 					tags: thread.labels,
 					text: TranslatorScaffold.unixifyNewLines(text),
+					time: event.cookedEvent.data.updated_at,
 					title: thread.title
 				},
 				source: {

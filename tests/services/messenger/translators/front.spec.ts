@@ -42,6 +42,7 @@ describe('lib/services/messenger/translators/front.ts', () => {
 					hidden: false,
 					tags: [],
 					text: 'duff',
+					time: '2018-04-16T12:45:46+00:00',
 					title: 'duff',
 				}
 			};
@@ -82,6 +83,7 @@ describe('lib/services/messenger/translators/front.ts', () => {
 				hidden: false,
 				tags: [],
 				text: 'cde @test',
+				time: '2018-04-16T12:45:46+00:00',
 				title: 'f',
 			},
 			source: {

@@ -30,6 +30,7 @@ import {
 } from 'front-sdk';
 import * as _ from 'lodash';
 import * as marked from 'marked';
+import * as moment from 'moment';
 import { FrontConstructor, FrontEmitInstructions, FrontResponse, FrontServiceEvent } from '../../front-types';
 import {
 	BasicMessageInformation,
@@ -529,6 +530,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 					intercomHack: message.type === 'intercom' ? details.event.conversation.subject !== '' : undefined,
 					tags,
 					text: TranslatorScaffold.convertPings(message.text || metadata.content, FrontTranslator.convertUsernameToGeneric),
+					time: moment.unix(details.event.emitted_at).toISOString(),
 					title: details.subject,
 					messageCount: details.messages._results.length + details.comments._results.length,
 				},
