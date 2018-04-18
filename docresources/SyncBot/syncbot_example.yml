@@ -1,0 +1,115 @@
+---
+SYNCBOT_ALIAS_USERS:
+  - "hubot"
+SYNCBOT_ARCHIVE_STRINGS:
+  - "#close"
+  - "#archive"
+SYNCBOT_ERROR_SOLUTIONS:
+  discourse:
+    ^403:
+      description: "permissions error"
+      fixes:
+        - "You should check that your username and token are correct."
+SYNCBOT_ERROR_UNDOCUMENTED: 'No fixes currently documented. (at)sqweelygig'
+SYNCBOT_SERVICE_CONSTRUCTORS:
+  flowdock:
+    token: "<<INJECT_SYNCBOT_FLOWDOCK_TOKEN>>"
+    serviceName: "flowdock"
+  flowdockhashtag:
+    organization: "rulemotion"
+    token: "<<INJECT_SYNCBOT_FLOWDOCK_TOKEN>>"
+    serviceName: "flowdockhashtag"
+  front:
+    secret: "<<INJECT_SYNCBOT_FRONT_SECRET>>"
+    token: "<<INJECT_SYNCBOT_FRONT_TOKEN>>"
+    channelPerInbox:
+      inb_1yea: "cha_1vc0"
+      inb_3n6y: "cha_3gb6"
+    serviceName: "front"
+  github:
+    client: "syncbot"
+    authentication:
+      appId: "<<INJECT_SYNCBOT_GITHUB_APP_ID>>"
+      pem: "<<INJECT_SYNCBOT_GITHUB_PEM>>"
+      type: 0
+    path: "/github"
+    webhookSecret: "<<INJECT_SYNCBOT_GITHUB_SECRET>>"
+  discourse:
+    protocol: "http"
+    instance: "localhost"
+    username: "testbot"
+    secret: "<<INJECT_SYNCBOT_DISCOURSE_SECRET>>"
+    token: "<<INJECT_SYNCBOT_DISCOURSE_TOKEN>>"
+    serviceName: "discourse"
+SYNCBOT_MAPPINGS:
+  - source:
+      service: "discourse"
+      flow: "5"
+      alias: "sandbox"
+    destination:
+      service: "flowdock"
+      flow: "rulemotion/testing"
+      alias: "sandbox"
+      previous:
+        - "testing"
+  - source:
+      service: "flowdock"
+      flow: "rulemotion/testing"
+      alias: "sandbox"
+      previous:
+        - "testing"
+    destination:
+      service: "front"
+      flow: "inb_1yea"
+      alias: "sandbox"
+  - source:
+      service: "front"
+      flow: "inb_1yea"
+      alias: "sandbox"
+    destination:
+      service: "flowdock"
+      flow: "rulemotion/testing"
+      alias: "sandbox"
+      previous:
+        - "testing"
+  - source:
+      service: "front"
+      flow: "inb_3n6y"
+      alias: "second"
+    destination:
+      service: "flowdock"
+      flow: "rulemotion/testing"
+      alias: "sandbox"
+      previous:
+        - "testing"
+  - source:
+      service: "github"
+      flow: "sqweelygig/syncbot-sandbox"
+      alias: "sandbox"
+    destination:
+      service: "flowdock"
+      flow: "rulemotion/testing"
+      alias: "sandbox"
+      previous:
+        - "testing"
+  - source:
+      service: "flowdockhashtag"
+      flow: "test"
+      alias: "sandbox"
+    destination:
+      service: "flowdock"
+      flow: "rulemotion/testing_hubot"
+      previous:
+        - "testing_hubot"
+SYNCBOT_METADATA_CONFIG:
+  baseUrl: "http://resin.io"
+  publicity:
+    hidden: "whisper"
+    hiddenPreferred: "murmur"
+    shown: "reply"
+  secret: "<<INJECT_SYNCBOT_SECRET>>"
+SYNCBOT_NAME: "<<INJECT_SYNCBOT_NAME>>"
+SYNCBOT_PORT: "<<INJECT_SYNCBOT_PORT>>"
+SYNCBOT_DEVOPS_FLOW: "rulemotion/testing"
+SYNCBOT_DEVOPS_USERS:
+  - "2273d667fb262d0b3b891b80f198fa9ba9a88fe8025982030b813b33d0d4b8c6"
