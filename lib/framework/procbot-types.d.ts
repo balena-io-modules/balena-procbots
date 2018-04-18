@@ -54,14 +54,21 @@ export type SystemProperty = {
 	value: any;
 };
 
+export type PackageProperty = {
+	property: string;
+	value: any;
+};
+
 /** An object for providing values from the process and os objects. */
 export type ProcBotEnvironmentProperties = {
+	package: PackageProperty[];
 	system: SystemProperty[];
 	process: ProcessProperty[];
 };
 
 /** An object for requesting values from the process and os objects. */
 export type ProcBotEnvironmentQuery = {
+	package: string[];
 	system: Array<keyof typeof os>;
 	process: Array<keyof NodeJS.Process>;
 };

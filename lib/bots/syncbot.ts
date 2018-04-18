@@ -18,6 +18,7 @@ import * as Promise from 'bluebird';
 import * as crypto from 'crypto';
 import * as _ from 'lodash';
 import * as os from 'os';
+import * as util from 'util';
 import { ProcBot } from '../framework/procbot';
 import {
 	ProcBotEnvironmentProperties,
@@ -107,10 +108,12 @@ export class SyncBot extends ProcBot {
 		message: string
 	): { filter: ProcBotEnvironmentProperties, query: ProcBotEnvironmentQuery } {
 		const filter: ProcBotEnvironmentProperties = {
+			package: [],
 			process: [],
 			system: []
 		};
 		const query: ProcBotEnvironmentQuery = {
+			package: [],
 			process: [],
 			system: []
 		};
@@ -136,12 +139,19 @@ export class SyncBot extends ProcBot {
 							property: property as keyof typeof os,
 							value,
 						});
+					} else if (scope === 'package') {
+						filter.package.push({
+							property,
+							value,
+						});
 					}
 				} else {
 					if (scope === 'process') {
 						query.process.push(property as keyof NodeJS.Process);
 					} else if (scope === 'system') {
 						query.system.push(property as keyof typeof os);
+					} else if (scope === 'package') {
+						query.package.push(property);
 					}
 				}
 			}
@@ -160,7 +170,13 @@ export class SyncBot extends ProcBot {
 		_.forEach(result, (list, scope) => {
 			_.forEach(list, (item: SystemProperty | ProcessProperty) => {
 				if (_.isArray(item.value) || _.isObject(item.value)) {
-					const value = JSON.stringify(item.value, undefined, '  ');
+					const value = util.inspect(
+						item.value,
+						{
+							depth: null,
+							maxArrayLength: null,
+						},
+					);
 					longResponses.push(`${scope}.${item.property}=\n\`\`\`json\n${value}\n\`\`\``);
 				} else if (_.isNull(item.value) || _.isUndefined(item.value)) {
 					shortResponses.push(`${scope}.${item.property}?!`);
@@ -656,29 +672,34 @@ export class SyncBot extends ProcBot {
 				(_.includes(users, hash))
 			) {
 				const environmentQuery = SyncBot.messageIntoEnvQuery(event.cookedEvent.details.text);
-				if (ProcBot.matchEnvironment(environmentQuery.filter)) {
-					const environment = ProcBot.queryEnvironment(environmentQuery.query);
-					const text = SyncBot.envResultIntoMessage(environment);
-					const echoData: BasicMessageInformation = {
-						details: {
-							service: 'process',
-							flow: process.pid.toString(),
-							handle: botname,
-							hidden: true,
-							tags: event.cookedEvent.details.tags,
-							text,
-							time: event.cookedEvent.details.time,
-							title: event.cookedEvent.details.title,
-						},
-						source: event.cookedEvent.source,
-					};
-					return SyncBot.processCommand(
-						event.cookedEvent.source,
-						emitter,
-						echoData,
-						MessengerAction.CreateMessage
-					).return();
-				}
+				return ProcBot.matchEnvironment(environmentQuery.filter)
+				.then((matched) => {
+					if (matched) {
+						return ProcBot.queryEnvironment(environmentQuery.query)
+						.then((environment) => {
+							const text = SyncBot.envResultIntoMessage(environment);
+							const echoData: BasicMessageInformation = {
+								details: {
+									service: 'process',
+									flow: process.pid.toString(),
+									handle: botname,
+									hidden: true,
+									tags: event.cookedEvent.details.tags,
+									text,
+									time: event.cookedEvent.details.time,
+									title: event.cookedEvent.details.title,
+								},
+								source: event.cookedEvent.source,
+							};
+							return SyncBot.processCommand(
+								event.cookedEvent.source,
+								emitter,
+								echoData,
+								MessengerAction.CreateMessage
+							).return();
+						});
+					}
+				});
 			}
 			return Promise.resolve();
 		};
