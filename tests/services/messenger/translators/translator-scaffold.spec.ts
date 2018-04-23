@@ -140,6 +140,12 @@ describe('lib/services/messenger/translators/translator-scaffold.ts', () => {
 			expect(TranslatorScaffold.extractWords('test 😄 this')).to.deep.equal(['test', 'this']);
 			expect(TranslatorScaffold.extractWords('test😄this')).to.deep.equal(['test', 'this']);
 		});
+
+		it('should correctly parse citations', () => {
+			const citation = 'Test <test@example.com>';
+			const expectedWords = ['test', 'test', 'example', 'com'];
+			expect(TranslatorScaffold.extractWords(citation)).to.deep.equal(expectedWords);
+		});
 	});
 
 	describe('TranslatorScaffold.stringifyMetadata', () => {

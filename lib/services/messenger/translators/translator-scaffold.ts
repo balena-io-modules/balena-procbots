@@ -16,6 +16,7 @@
 
 import * as Promise from 'bluebird';
 import * as crypto from 'crypto';
+import { AllHtmlEntities } from 'html-entities';
 import * as _ from 'lodash';
 import * as marked from 'marked';
 import {
@@ -101,7 +102,10 @@ export abstract class TranslatorScaffold implements Translator {
 		const htmlString = marked(lowerCaseString);
 		// Remove any html tags
 		const cleanedString = htmlString.replace(/<[^>]*>/g, ' ');
-		const demojiedString = cleanedString.replace(/:[a-zA-Z0-9_-]+:/g, ' ');
+		// Revoke any html entities
+		const unescapedString = new AllHtmlEntities().decode(cleanedString);
+		// Remove any emoji strings
+		const demojiedString = unescapedString.replace(/:[a-zA-Z0-9_-]+:/g, ' ');
 		// Break the string down to word sections
 		return demojiedString.match(/[a-zA-Z]+/g) || [];
 	}
