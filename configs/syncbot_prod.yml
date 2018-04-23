@@ -109,6 +109,14 @@ SYNCBOT_MAPPINGS:
     destination:
       service: "flowdock"
       flow: "resinio-collaborations/p_colab_flow"
+  - source:
+      service: "front"
+      flow: "inb_8go3"
+      alias: "fin"
+    destination:
+      service: "flowdock"
+      flow: "rulemotion/r-hardware"
+      alias: "fin"
 SYNCBOT_SERVICE_CONSTRUCTORS:
   github:
     client: "syncbot"
@@ -134,6 +142,7 @@ SYNCBOT_SERVICE_CONSTRUCTORS:
       inb_2hvh: "cha_5cih"
       inb_8i97: "cha_80mj"
       inb_8htn: "cha_85e3"
+      inb_8go3: "cha_86t7"
     serviceName: "front"
   discourse:
     instance: "forums.resin.io"
