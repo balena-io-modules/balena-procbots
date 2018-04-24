@@ -20,8 +20,7 @@ Merges and checks can be suppressed using the `procbots/versionbot/no-checks` la
 
 ## Creating a Github Integration
 
-Follow the instructions on [making a GitHub integration]
-(https://github.com/resin-io-modules/resin-procbots/blob/master/docresources/Services/GitHub/integration.md#creating-a-github-integration)
+Follow the instructions on [making a GitHub integration](https://github.com/resin-io-modules/resin-procbots/blob/master/docresources/Services/GitHub/integration.md#creating-a-github-integration)
 with the following notes:
 
 * The Webhook Path should be `/webhooks`.

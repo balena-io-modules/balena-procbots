@@ -317,10 +317,12 @@ and someone with write access to this repo to perform the final step
 
 ### Setting up a Github org for SyncBot
 
-Follow the instructions on [making a GitHub integration]
-(https://github.com/resin-io-modules/resin-procbots/blob/master/docresources/Services/GitHub/integration.md#creating-a-github-integration)
+Follow the instructions on [making a GitHub integration](https://github.com/resin-io-modules/resin-procbots/blob/master/docresources/Services/GitHub/integration.md#creating-a-github-integration)
 with the following notes:
 
+* The Webhook Domain and Port depend on your server installation.
+  These should be available from your server documentation (in Resin, the
+  `keyframe`) or DevOps team.
 * The Webhook Path should be `/github`
 * The Permissions it needs are:
 	* Repository metadata: R/O
@@ -336,8 +338,11 @@ with the following notes:
 ### Setting up a Github repo for SyncBot
 
 1) Add the repo in the Org's Settings > Applications > Configure > Repository access
-1) Note the name and org of the repo
-1) Add these to configs/SYNCBOT_MAPPINGS, example format available in syncbot_example.yml
+1) Note the name and org of the repo, these will be needed to set up the routing
+1) Configure the route into the codebase in `configs/syncbot_*.yml/SYNCBOT_MAPPINGS`,
+  example format available in syncbot_example.yml
+1) Ensure the notes from setting up the integration are provided by your
+  server environment, often managed via a DevOps team.
 
 ### Example configuration files
 
