@@ -101,8 +101,9 @@ export abstract class TranslatorScaffold implements Translator {
 		const htmlString = marked(lowerCaseString);
 		// Remove any html tags
 		const cleanedString = htmlString.replace(/<[^>]*>/g, ' ');
+		const demojiedString = cleanedString.replace(/:[a-zA-Z0-9_-]+:/g, ' ');
 		// Break the string down to word sections
-		return cleanedString.match(/[a-zA-Z]+/g) || [];
+		return demojiedString.match(/[a-zA-Z]+/g) || [];
 	}
 
 	/**
