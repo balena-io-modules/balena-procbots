@@ -20,48 +20,35 @@ Merges and checks can be suppressed using the `procbots/versionbot/no-checks` la
 
 ## Creating a Github Integration
 
-`VersionBot` runs as an Integration in the Github scope. For development, you can create an Integration on your personal Github account by going to your Settings page (from your profile avatar icon) and selecting 'Github Apps -> Register New Github App` from the 'Developer Settings' sidebar.
+Follow the instructions on [making a GitHub integration]
+(https://github.com/resin-io-modules/resin-procbots/blob/master/docresources/Services/GitHub/integration.md#creating-a-github-integration)
+with the following notes:
 
-    * Give Integration a name
-    * Set a Homepage URL (required but not used)
-    * Set a callback URL (this is where all callbacks will go to, eg: `http://myurl.com:4567/webhooks`). Currently `VersionBot` expects webhooks to be sent to the `/webhooks` path when running, and listens on port `4567`
-    * Create a new Webhook Secret (see [here](https://developer.github.com/webhooks/securing/)). You will require this secret later
+* The Webhook Path should be `/webhooks`.
+* The Webhook Port should be `4567`.
+* The Permissions it needs are:
+	- Repository metadata: R/O
+	- Repository administration: R/O
+	- Commit statuses: R/W
+		# Status
+	- Deployments: R/W
+		# Deployment
+		# Deployment status
+	- Issues:
+		# Issue comment: R/W
+		# Issues: R/W
+	- Pull Requests: R/W
+		# Pull request
+		# Pull request review
+		# Pull request review comment
+	- Repository contents: R/W
+		# Commit comment
+		# Create
+		# Delete
+		# Fork
+		# Push
+		# Release
 
-    * Set up secure Webhooks:
-        - Go to repository you want Integration on
-        - Add a new secret
-        - Add relevant code for HMAC digest in version bot and check again 'x-hub-signature' header entry for matching digest
-
-Set the following permissions in 'Permissions & events':
-
-    * Settings:
-        - Repository metadata: R/O
-        - Repository administration: R/O
-        - Commit statuses: R/W
-            # Status
-        - Deployments: R/W
-            # Deployment
-            # Deployment status
-        - Issues:
-            # Issue comment: R/W
-            # Issues: R/W
-        - Pull Requests: R/W
-            # Pull request
-            # Pull request review
-            # Pull request review comment
-        - Repository contents: R/W
-            # Commit comment
-            # Create
-            # Delete
-            # Fork
-            # Push
-            # Release
-
-Now hit 'Save'. The Integration will be created and you'll be given an Integration ID (note it down, it will be required later).
-
-Finally you need to create a new private key for your Integration. Hit the 'Generate Private Key' in the 'Private Key' section.
-
-Download the key and then create a Base64 string from it. It will be required later.
 
 ## Secret Key, Webhook Token and Integration ID
 

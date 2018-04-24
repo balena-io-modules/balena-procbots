@@ -315,10 +315,36 @@ and someone with write access to this repo to perform the final step
 		<checked>
 	```
 
-### Example .sh file
+### Setting up a Github org for SyncBot
 
-There is an example .sh file in the same directory as this file, that gives
-some sanitised examples of configuration.
+Follow the instructions on [making a GitHub integration]
+(https://github.com/resin-io-modules/resin-procbots/blob/master/docresources/Services/GitHub/integration.md#creating-a-github-integration)
+with the following notes:
+
+* The Webhook Path should be `/github`
+* The Permissions it needs are:
+	* Repository metadata: R/O
+	* Issues: R/W
+	* Pull requests: R/W
+* The Subscriptions it needs are:
+	* Issues
+	* Pull request
+	* Issue comment
+	* Pull request review
+	* Pull request review comment
+
+### Setting up a Github repo for SyncBot
+
+1) Add the repo in the Org's Settings > Applications > Configure > Repository access
+1) Note the name and org of the repo
+1) Add these to configs/SYNCBOT_MAPPINGS, example format available in syncbot_example.yml
+
+### Example configuration files
+
+* There is an example .yml file in the same directory as this file that gives
+an example of configuring the bot.
+* There is an example .sh file in the same directory as this file that gives
+a sanitised example of providing secrets via the environment.
 
 ### Environment Variables
 
