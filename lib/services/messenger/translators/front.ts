@@ -50,6 +50,7 @@ import {
 	MetadataConfiguration,
 	ResponseConverters,
 	TranslatorErrorCode,
+	TranslatorMetadata,
 } from './translator-types';
 
 /**
@@ -125,6 +126,36 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 		_message: TransmitInformation, response: ConversationComments
 	): Promise<String[]> {
 		return Promise.resolve(_.reverse(_.map(response._results, (comment) => comment.body )));
+	}
+
+	/**
+	 * Converts a response into the generic format.
+	 * @param _message  The initial message that prompted this action.
+	 * @param response  The response from the SDK.
+	 * @returns         Promise that resolve to the thread details.
+	 */
+	public static convertListWhispersResponse(
+		metadataConfig: MetadataConfiguration, _message: TransmitInformation, response: ConversationComments
+	): Promise<TranslatorMetadata[]> {
+		const rawComments = _.reverse(_.map(response._results, (comment) => comment.body ));
+		return Promise.resolve(_.map(rawComments, (commentObject) => {
+			return FrontTranslator.extractMetadata(commentObject, MetadataEncoding.HiddenMD, metadataConfig);
+		}));
+	}
+
+	/**
+	 * Converts a response into the generic format.
+	 * @param _message  The initial message that prompted this action.
+	 * @param response  The response from the SDK.
+	 * @returns         Promise that resolve to the thread details.
+	 */
+	public static convertListRepliesResponse(
+		metadataConfig: MetadataConfiguration, _message: TransmitInformation, response: ConversationComments
+	): Promise<TranslatorMetadata[]> {
+		const rawComments = _.reverse(_.map(response._results, (comment) => comment.body ));
+		return Promise.resolve(_.map(rawComments, (commentObject) => {
+			return FrontTranslator.extractMetadata(commentObject, MetadataEncoding.HiddenHTML, metadataConfig);
+		}));
 	}
 
 	/**
@@ -388,11 +419,11 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	}
 
 	/**
-	 * Converts a provided message object into instructions to read a thread.
+	 * Converts a provided message object into instructions to list a thread's comments.
 	 * @param message            object to analyse.
 	 * @returns                  Promise that resolves to emit instructions.
 	 */
-	private static searchThreadIntoEmit(message: TransmitInformation): Promise<FrontEmitInstructions> {
+	private static listWhispersIntoEmit(message: TransmitInformation): Promise<FrontEmitInstructions> {
 		// Check we have a thread.
 		const threadId = message.target.thread;
 		if (!threadId) {
@@ -406,6 +437,29 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 		};
 		return Promise.resolve({
 			method: ['conversation', 'listComments'],
+			payload: readConnectionData
+		});
+	}
+
+	/**
+	 * Converts a provided message object into instructions to list a thread's messages.
+	 * @param message            object to analyse.
+	 * @returns                  Promise that resolves to emit instructions.
+	 */
+	private static listRepliesIntoEmit(message: TransmitInformation): Promise<FrontEmitInstructions> {
+		// Check we have a thread.
+		const threadId = message.target.thread;
+		if (!threadId) {
+			return Promise.reject(new TranslatorError(
+				TranslatorErrorCode.IncompleteTransmitInformation, 'Cannot search for connections without a thread.'
+			));
+		}
+		// Bundle it for the session.
+		const readConnectionData: ConversationRequest.List = {
+			conversation_id: threadId,
+		};
+		return Promise.resolve({
+			method: ['conversation', 'listMessages'],
 			payload: readConnectionData
 		});
 	}
@@ -445,13 +499,15 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	}
 
 	protected eventEquivalencies = {
-		message: ['comment', 'out_reply', 'inbound', 'mention', 'move'],
+		message: ['comment', 'out_reply', 'inbound', 'mention', 'move', 'outbound'],
 	};
 	protected emitConverters: EmitConverters = {
-		[MessengerAction.ReadConnection]: FrontTranslator.searchThreadIntoEmit,
-		[MessengerAction.ReadErrors]: FrontTranslator.searchThreadIntoEmit,
+		[MessengerAction.ReadConnection]: FrontTranslator.listWhispersIntoEmit,
+		[MessengerAction.ReadErrors]: FrontTranslator.listWhispersIntoEmit,
 		[MessengerAction.UpdateTags]: FrontTranslator.updateTagsIntoEmit,
 		[MessengerAction.ArchiveThread]: FrontTranslator.archiveThreadIntoEmit,
+		[MessengerAction.ListReplies]: FrontTranslator.listWhispersIntoEmit,
+		[MessengerAction.ListWhispers]: FrontTranslator.listRepliesIntoEmit,
 	};
 	protected responseConverters: ResponseConverters = {
 		[MessengerAction.UpdateTags]: FrontTranslator.convertUpdateThreadResponse,
@@ -471,6 +527,10 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 			_.partial(FrontTranslator.convertCreateThreadResponse, this.session);
 		this.responseConverters[MessengerAction.ReadConnection] =
 			_.partial(FrontTranslator.convertReadConnectionResponse, this.metadataConfig);
+		this.responseConverters[MessengerAction.ListReplies] =
+			_.partial(FrontTranslator.convertListRepliesResponse, this.metadataConfig);
+		this.responseConverters[MessengerAction.ListWhispers] =
+			_.partial(FrontTranslator.convertListWhispersResponse, this.metadataConfig);
 		this.emitConverters[MessengerAction.CreateMessage] =
 			_.partial(FrontTranslator.createMessageIntoEmit, this.session, metadataConfig);
 		this.emitConverters[MessengerAction.CreateThread] =

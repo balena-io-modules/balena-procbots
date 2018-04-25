@@ -55,7 +55,7 @@ import {
 } from '../services/service-types';
 import { Logger, LogLevel } from '../utils/logger';
 
-interface SyncBotConstructor {
+export interface SyncBotConstructor {
 	SYNCBOT_ALIAS_USERS: string[];
 	SYNCBOT_ERROR_SOLUTIONS: SolutionMatrix;
 	SYNCBOT_ERROR_UNDOCUMENTED: string;
@@ -708,7 +708,7 @@ export class SyncBot extends ProcBot {
 	constructor(name = 'SyncBot') {
 		super(name);
 
-		super.retrieveConfiguration({
+		ProcBot.retrieveConfiguration({
 			emitter: 'string',
 			location: process.env.SYNCBOT_CONFIG_TO_LOAD,
 		}).then((rawConfig) => {

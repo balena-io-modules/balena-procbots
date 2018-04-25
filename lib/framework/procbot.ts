@@ -170,6 +170,53 @@ export class ProcBot {
 	}
 
 	/**
+	 * Retrieve a ProcBotConfiguration file from a ServiceEmitter or inbuilt route.
+	 * @param details  An object detailing the service to retrieve the configuration file from, and its location.
+	 * @returns        A Promise containing configuration object should one have been found, or void.
+	 */
+	public static retrieveConfiguration(details: ConfigurationLocation): Promise<ProcBotConfiguration | void> {
+		let retrievePromise: Promise<string | void>;
+		if (typeof details.emitter === 'string') {
+			retrievePromise = fsReadFile(details.location).call('toString');
+		} else {
+			if (details.emitter.getConfigurationFile) {
+				retrievePromise = details.emitter.getConfigurationFile(details);
+			} else {
+				return Promise.resolve();
+			}
+		}
+
+		return retrievePromise.then((configFile: string | void) => {
+			if (configFile) {
+				return ProcBot.processConfiguration(configFile);
+			}
+		});
+	}
+
+	/**
+	 * Process a configuration file from YAML into a nested object.
+	 * @param configFile  The configuration file as a string.
+	 * @returns           The configuration object or void.
+	 */
+	protected static processConfiguration(configFile: string): ProcBotConfiguration | void {
+		const config = yaml.safeLoad(configFile);
+
+		if (!config) {
+			return;
+		}
+
+		// Swap out known tags that become booleans.
+		const minimumVersion = _.get(config, 'procbot.minimum_version');
+		if (minimumVersion && process.env.npm_package_version) {
+			if (process.env.npm_package_version < minimumVersion) {
+				throw new Error('Current ProcBot implementation does not meet minimum required version to run ');
+			}
+		}
+
+		return config as ProcBotConfiguration;
+	}
+
+	/**
 	 * A method to inject values from env vars if required
 	 * @param raw  String to translate, use <<INJECT_BLAH>> to retrieve BLAH
 	 * @returns      Object of the cooked string and injections performed
@@ -210,53 +257,6 @@ export class ProcBot {
 	 */
 	public getNodeBinPath(): Promise<string> {
 		return ExecuteCommand(BuildCommand('npm', [ 'bin' ])).then(_.trimEnd);
-	}
-
-	/**
-	 * Process a configuration file from YAML into a nested object.
-	 * @param configFile  The configuration file as a string.
-	 * @returns           The configuration object or void.
-	 */
-	protected processConfiguration(configFile: string): ProcBotConfiguration | void {
-		const config = yaml.safeLoad(configFile);
-
-		if (!config) {
-			return;
-		}
-
-		// Swap out known tags that become booleans.
-		const minimumVersion = _.get(config, 'procbot.minimum_version');
-		if (minimumVersion && process.env.npm_package_version) {
-			if (process.env.npm_package_version < minimumVersion) {
-				throw new Error('Current ProcBot implementation does not meet minimum required version to run ');
-			}
-		}
-
-		return config as ProcBotConfiguration;
-	}
-
-	/**
-	 * Retrieve a ProcBotConfiguration file from a ServiceEmitter or inbuilt route.
-	 * @param details  An object detailing the service to retrieve the configuration file from, and its location.
-	 * @returns        A Promise containing configuration object should one have been found, or void.
-	 */
-	protected retrieveConfiguration(details: ConfigurationLocation): Promise<ProcBotConfiguration | void> {
-		let retrievePromise: Promise<string | void>;
-		if (typeof details.emitter === 'string') {
-			retrievePromise = fsReadFile(details.location).call('toString');
-		} else {
-			if (details.emitter.getConfigurationFile) {
-				retrievePromise = details.emitter.getConfigurationFile(details);
-			} else {
-				return Promise.resolve();
-			}
-		}
-
-		return retrievePromise.then((configFile: string | void) => {
-			if (configFile) {
-				return this.processConfiguration(configFile);
-			}
-		});
 	}
 
 	/**

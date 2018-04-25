@@ -17,6 +17,7 @@ limitations under the License.
 import * as Promise from 'bluebird';
 import { Session } from 'flowdock';
 import * as _ from 'lodash';
+import { Dictionary } from 'lodash';
 import * as marked from 'marked';
 import {
 	FlowdockConstructor,
@@ -383,25 +384,32 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 	 * @param message  object to analyse.
 	 * @returns        Promise that resolves to emit instructions.
 	 */
-	private static searchThreadIntoEmit(message: TransmitInformation): Promise<FlowdockEmitInstructions> {
+	private static readThreadIntoEmit(message: TransmitInformation, term?: string): Promise<FlowdockEmitInstructions> {
 		// Check we have a thread.
 		const threadId = message.target.thread;
 		if (!threadId) {
 			return Promise.reject(new TranslatorError(
-				TranslatorErrorCode.IncompleteTransmitInformation, 'Cannot search for connections without a thread.'
+				TranslatorErrorCode.IncompleteTransmitInformation, 'Cannot read a thread without a thread.'
 			));
+		}
+		const subPayload: Dictionary<string> = {
+			limit: '100', // Default is 30, but there is literally no reason why we wouldn't ask for as many as we can
+		};
+		if (term) {
+			subPayload.search = term;
 		}
 		// Bundle for the session.
 		return Promise.resolve({
 			method: ['get'],
 			payload: {
 				path: `/flows/${message.target.flow}/threads/${threadId}/messages`,
-				payload: {
-					limit: '100', // Default is 30, but there is literally no reason why we wouldn't ask for as many as we can
-					search: message.source.service,
-				},
+				payload: subPayload,
 			}
 		});
+	}
+
+	private static searchThreadIntoEmit(message: TransmitInformation): Promise<FlowdockEmitInstructions> {
+		return FlowdockTranslator.readThreadIntoEmit(message, message.source.service);
 	}
 
 	/**
@@ -416,12 +424,32 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 		return Promise.resolve(_.map(response, (comment) => comment.content));
 	}
 
+	private static convertReadThreadResponse(
+		config: MetadataConfiguration,
+		show: 'reply' | 'whisper' | 'all',
+		_message: TransmitInformation,
+		response: FlowdockMessage[],
+	): Promise<TranslatorMetadata[]> {
+		return Promise.resolve(_.compact(_.map(response, (comment) => {
+			const messageObject = FlowdockTranslator.extractMetadata(comment.content, MetadataEncoding.Flowdock, config);
+			if (show === 'all') {
+				return messageObject;
+			} else if ((show === 'reply') && (messageObject.hidden === false)) {
+				return messageObject;
+			} else if ((show === 'whisper') && (messageObject.hidden === true)) {
+				return messageObject;
+			}
+		})));
+	}
+
 	protected eventEquivalencies = {
 		message: ['message'],
 	};
 	protected emitConverters: EmitConverters = {
 		[MessengerAction.ReadConnection]: FlowdockTranslator.searchThreadIntoEmit,
 		[MessengerAction.ReadErrors]: FlowdockTranslator.searchThreadIntoEmit,
+		[MessengerAction.ListWhispers]: FlowdockTranslator.readThreadIntoEmit,
+		[MessengerAction.ListReplies]: FlowdockTranslator.readThreadIntoEmit,
 	};
 	protected responseConverters: ResponseConverters = {
 		[MessengerAction.UpdateTags]: FlowdockTranslator.convertUpdateThreadResponse,
@@ -443,6 +471,10 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 		// These converters require the injection of a couple of details from `this` instance.
 		this.responseConverters[MessengerAction.ReadConnection] =
 			_.partial(FlowdockTranslator.convertReadConnectionResponse, metadataConfig);
+		this.responseConverters[MessengerAction.ListWhispers] =
+			_.partial(FlowdockTranslator.convertReadThreadResponse, metadataConfig, 'whisper');
+		this.responseConverters[MessengerAction.ListReplies] =
+			_.partial(FlowdockTranslator.convertReadThreadResponse, metadataConfig, 'reply');
 		this.emitConverters[MessengerAction.CreateThread] =
 			_.partial(FlowdockTranslator.createThreadIntoEmit, metadataConfig);
 		this.emitConverters[MessengerAction.CreateMessage] =
