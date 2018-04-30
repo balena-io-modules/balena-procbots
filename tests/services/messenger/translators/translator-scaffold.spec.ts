@@ -133,6 +133,13 @@ describe('lib/services/messenger/translators/translator-scaffold.ts', () => {
 		it('should ignore invisible markdown', () => {
 			expect(TranslatorScaffold.extractWords('test this\n\n[](blah)')).to.deep.equal(['test', 'this']);
 		});
+
+		it('should ignore emoji, in both character and :colon: format', () => {
+			expect(TranslatorScaffold.extractWords('test :smile: this')).to.deep.equal(['test', 'this']);
+			expect(TranslatorScaffold.extractWords('test :face_with_cowboy_hat: this')).to.deep.equal(['test', 'this']);
+			expect(TranslatorScaffold.extractWords('test 😄 this')).to.deep.equal(['test', 'this']);
+			expect(TranslatorScaffold.extractWords('test😄this')).to.deep.equal(['test', 'this']);
+		});
 	});
 
 	describe('TranslatorScaffold.stringifyMetadata', () => {
