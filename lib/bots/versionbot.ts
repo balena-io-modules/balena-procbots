@@ -1858,7 +1858,7 @@ export class VersionBot extends ProcBot {
 			//  <footer>
 			// As sometimes a development patch may be self-explanatory in the header alone.
 			const lines = commitMessage.split('\n');
-			const lastLine = _.findLastIndex(lines, (line) => line.match(/^\s*$/) );
+			const lastLine = _.findLastIndex(lines, (line) => /^\s*$/.test(line));
 
 			// If there's no match, then at the very least there's no footer, and the commit
 			// is in the wrong format (as there's no text to use in the logs).
