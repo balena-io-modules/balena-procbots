@@ -53,7 +53,7 @@ export class MessengerService extends ServiceScaffold<string> implements Service
 		// This branch creates listeners for every sub-service, if relevant.
 		if (data.type === ServiceType.Listener) {
 			_.forEach(data.subServices, (subConnectionDetails, subServiceName) => {
-				this.logger.log(LogLevel.INFO, `---> Constructing '${subServiceName}' listener.`);
+				this.logger.log(LogLevel.INFO, `--> Constructing '${subServiceName}' listener.`);
 				const subTranslator = this.translators[subServiceName];
 				subTranslator.mergeGenericDetails(subConnectionDetails, data);
 				const subListener = require(`./${subServiceName}`).createServiceListener(subConnectionDetails, this.logger);
