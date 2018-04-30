@@ -1,0 +1,45 @@
+---
+SYNCBOT_ALIAS_USERS:
+  - "hubot"
+SYNCBOT_ARCHIVE_STRINGS:
+  - "#close"
+  - "#archive"
+SYNCBOT_ERROR_SOLUTIONS:
+SYNCBOT_ERROR_UNDOCUMENTED: 'No fixes currently documented. (@sqweelygig)'
+SYNCBOT_MAPPINGS:
+  - source:
+      service: "github"
+      flow: "resin-io/hubot-as-mainbot"
+      alias: "hubot"
+    destination:
+      service: "flowdock"
+      flow: "rulemotion/d-bots"
+      alias: "bots"
+      previous:
+        - "d-bots"
+SYNCBOT_SERVICE_CONSTRUCTORS:
+  github:
+    client: "syncbot"
+    authentication:
+      appId: "<<INJECT_SYNCBOT_GITHUB_APP_ID>>"
+      pem: "<<INJECT_SYNCBOT_GITHUB_PEM>>"
+      type: 0
+    path: "/github"
+    webhookSecret: "<<INJECT_SYNCBOT_GITHUB_SECRET>>"
+  flowdock:
+    token: "<<INJECT_SYNCBOT_FLOWDOCK_TOKEN>>"
+    serviceName: "flowdock"
+SYNCBOT_METADATA_CONFIG:
+  baseUrl: "http://resin.io"
+  publicity:
+    hidden: "whisper"
+    hiddenPreferred: "murmur"
+    shown: "reply"
+  secret: "<<INJECT_SYNCBOT_SECRET>>"
+SYNCBOT_NAME: "<<INJECT_SYNCBOT_NAME>>"
+SYNCBOT_PORT: "<<INJECT_SYNCBOT_PORT>>"
+SYNCBOT_DEVOPS_FLOW: "rulemotion/resin-devops"
+SYNCBOT_DEVOPS_USERS:
+  - "2273d667fb262d0b3b891b80f198fa9ba9a88fe8025982030b813b33d0d4b8c6"
+  - "788f2210f0e7227df13eeb5deda9a24a8dbb47099a83471f866f60a6b829d7fe"
+  - "29d56e7a6f6de242f5d10bb691b03b775ca21b5bed45e2ce8524abe32ca19072"
