@@ -20,6 +20,7 @@ import * as yaml from 'js-yaml';
 import * as _ from 'lodash';
 import { Dictionary } from 'lodash';
 import * as os from 'os';
+import * as path from 'path';
 import { ServiceConstructor, ServiceEmitRequest, ServiceEmitter, ServiceFactory,
 	ServiceListener, ServiceType } from '../services/service-types';
 import { BuildCommand, ExecuteCommand } from '../utils/environment';
@@ -55,28 +56,43 @@ export class ProcBot {
 	 * Query properties of the environment and check that they all match.
 	 * Must be properties that DO NOT execute, e.g. process.pid but not process.exit().
 	 * @param filter  List of property/value pairs for process and os that all must match.
-	 * @returns       Whether all properties matched.
+	 * @returns       Promise that resolves to whether all properties matched.
 	 */
-	public static matchEnvironment(filter: ProcBotEnvironmentProperties): boolean {
+	public static matchEnvironment(filter: ProcBotEnvironmentProperties): Promise<boolean> {
 		const matchProcess = _.every(filter.process, (term) => {
 			return JSON.stringify(process[term.property]) === term.value;
 		});
 		const matchSystem = _.every(filter.system, (term) => {
 			return JSON.stringify(os[term.property]) === term.value;
 		});
-		return matchProcess && matchSystem;
+		if (!matchProcess || !matchSystem) {
+			return Promise.resolve(false);
+		} else if (_.isEmpty(filter.package)) {
+			return Promise.resolve(true);
+		}
+		const execPath = _.get(require, ['main', 'filename']).replace(/procbots$/ , '');
+		return fsReadFile(path.join(execPath, '..', 'package.json'))
+		.call('toString')
+		.then((contents) => {
+			const packageJson = JSON.parse(contents);
+			return _.every(filter.package, (term) => {
+				return packageJson[term.property] === term.value;
+			});
+		});
 	}
 
 	/**
 	 * Find properties of the environment, executing functions.
 	 * @param query  List of properties that you want from the process and os.
-	 * @returns      Populated object with the values requested.
+	 * @returns      Promise that resolves to a populated object with the values requested.
 	 */
-	public static queryEnvironment(query: ProcBotEnvironmentQuery): ProcBotEnvironmentProperties {
+	public static queryEnvironment(query: ProcBotEnvironmentQuery): Promise<ProcBotEnvironmentProperties> {
 		const response: ProcBotEnvironmentProperties = {
+			package: [],
 			process: [],
 			system: [],
 		};
+
 		_.forEach(query.process, (queryItem) => {
 			const property = process[queryItem];
 			response.process.push({
@@ -84,6 +100,7 @@ export class ProcBot {
 				value: _.isFunction(property) ? property() : property,
 			});
 		});
+
 		_.forEach(query.system, (queryItem) => {
 			const property = os[queryItem];
 			response.system.push({
@@ -91,7 +108,25 @@ export class ProcBot {
 				value: _.isFunction(property) ? property() : property,
 			});
 		});
-		return response;
+
+		if (_.isEmpty(query.package)) {
+			return Promise.resolve(response);
+		}
+
+		const execPath = _.get(require, ['main', 'filename']).replace(/procbots$/ , '');
+		return fsReadFile(path.join(execPath, '..', 'package.json'))
+		.call('toString')
+		.then((contents) => {
+			const packageJson = JSON.parse(contents);
+			_.forEach(query.package, (property) => {
+				const value = packageJson[property];
+				response.package.push({
+					property,
+					value,
+				});
+			});
+			return response;
+		});
 	}
 
 	/**
