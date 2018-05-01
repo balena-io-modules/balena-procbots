@@ -41,6 +41,7 @@ import {
 	MessengerAction,
 	MessengerConstructor,
 	MessengerEvent,
+	ReceiptInformation,
 	SourceDescription,
 	TransmitInformation,
 	UpdateThreadResponse,
@@ -114,10 +115,10 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	 * @returns             Promise that resolve to the thread details.
 	 */
 	public static convertReadConnectionResponse(
-		metadataConfig: MetadataConfiguration, message: TransmitInformation, response: ConversationComments
+		metadataConfig: MetadataConfiguration, message: BasicMessageInformation, response: ConversationComments
 	): Promise<SourceDescription> {
 		return Promise.resolve(TranslatorScaffold.extractSource(
-			message.source,
+			message.current,
 			_.reverse(_.map(response._results, (comment) => { return comment.body; })),
 			metadataConfig,
 			MetadataEncoding.HiddenMD,
@@ -606,10 +607,8 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 				return tag.name;
 			});
 			// Bundle it in service scaffold form and resolve.
-			const cookedEvent: BasicMessageInformation = {
+			const cookedEvent: ReceiptInformation = {
 				details: {
-					service: metadata.service || event.source,
-					flow: metadata.flow || duffFlow, // Gets replaced
 					handle: details.author,
 					hidden: _.isSet(metadata.hidden) ? metadata.hidden : hidden,
 					// https://github.com/resin-io-modules/resin-procbots/issues/301
@@ -620,7 +619,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 					title: details.subject,
 					messageCount: details.messages._results.length + details.comments._results.length,
 				},
-				source: {
+				current: {
 					service: event.source,
 					message: message.id,
 					flow: 'duff_FrontTranslator_eventIntoMessages_a', // Gets replaced
@@ -628,12 +627,20 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 					url: `https://app.frontapp.com/open/${details.event.conversation.id}`,
 					username: details.author,
 				},
+				source: {
+					service: metadata.service || event.source,
+					flow: metadata.flow || duffFlow, // Gets replaced
+					thread: metadata.thread || details.event.conversation.id,
+					message: message.id,
+					url: `https://app.frontapp.com/open/${details.event.conversation.id}`,
+					username: details.author,
+				}
 			};
 			return _.map(details.inboxes._results, (inbox) => {
 				const recookedEvent = _.cloneDeep(cookedEvent);
-				recookedEvent.source.flow = inbox.id;
-				if (recookedEvent.details.flow === duffFlow) {
-					recookedEvent.details.flow = inbox.id;
+				recookedEvent.current.flow = inbox.id;
+				if (recookedEvent.source.flow === duffFlow) {
+					recookedEvent.source.flow = inbox.id;
 				}
 				return {
 					context: `${event.source}.${event.context}`,

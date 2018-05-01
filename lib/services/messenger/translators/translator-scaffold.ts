@@ -241,9 +241,9 @@ export abstract class TranslatorScaffold implements Translator {
 	): string {
 		const pubWord = TranslatorScaffold.findPublicityWord(data.details.hidden, config.publicity);
 		const hmac = this.signText(data.details.text, config.secret);
-		const service = data.source.service;
-		const flow = data.source.flow;
-		const thread = data.source.thread;
+		const service = data.current.service;
+		const flow = data.current.flow;
+		const thread = data.current.thread;
 		const queryString = `?hidden=${pubWord}&source=${service}&flow=${flow}&thread=${thread}&hmac=${hmac}`;
 		switch (format) {
 			case MetadataEncoding.HiddenHTML:

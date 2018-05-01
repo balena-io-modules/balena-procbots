@@ -5,6 +5,7 @@ chai.use(chaiAsPromised);
 const expect = chai.expect;
 
 import * as crypto from 'crypto';
+import { BasicMessageInformation } from '../../../../lib/services/messenger-types';
 import {
 	MetadataEncoding,
 	TranslatorScaffold,
@@ -178,10 +179,8 @@ describe('lib/services/messenger/translators/translator-scaffold.ts', () => {
 
 	describe('TranslatorScaffold.stringifyMetadata', () => {
 		const hmac = crypto.createHmac('sha256', 'salt').update('c').digest('hex');
-		const exampleMessage = {
+		const exampleMessage: BasicMessageInformation = {
 			details: {
-				service: 'a',
-				flow: 'j',
 				handle: 'b',
 				hidden: true,
 				tags: [],
@@ -189,7 +188,7 @@ describe('lib/services/messenger/translators/translator-scaffold.ts', () => {
 				time: '2018-04-16T12:45:46+00:00',
 				title: 'd',
 			},
-			source: {
+			current: {
 				message: 'e',
 				thread: 'f',
 				service: 'g',

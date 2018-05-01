@@ -32,6 +32,7 @@ import {
 	MessengerAction,
 	MessengerConstructor,
 	MessengerEvent,
+	ReceiptInformation,
 	SourceDescription,
 	TransmitInformation,
 	UpdateThreadResponse,
@@ -212,7 +213,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 				htmlVerb: 'GET',
 				path: '/search/query',
 				qs: {
-					term: message.source.service,
+					term: message.current.service,
 					'search_context[type]': 'topic',
 					'search_context[id]': thread,
 				}
@@ -312,11 +313,11 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 	 * @returns               Promise that resolves to emit instructions.
 	 */
 	private static convertReadConnectionResponse(
-		metadataConfig: MetadataConfiguration, message: TransmitInformation, response: DiscoursePostSearchResponse
+		metadataConfig: MetadataConfiguration, message: BasicMessageInformation, response: DiscoursePostSearchResponse
 	): Promise<SourceDescription> {
 		const uncookedComments = _.map(response.posts, DiscourseTranslator.reverseEngineerComment);
 		return Promise.resolve(TranslatorScaffold.extractSource(
-			message.source,
+			message.current,
 			uncookedComments,
 			metadataConfig,
 			MetadataEncoding.HiddenHTML,
@@ -479,10 +480,8 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 				return `${citation}${body}`;
 			});
 			const codeParsedText = quoteParsedText.replace(/\[\/?code]/g, '```');
-			const cookedEvent: BasicMessageInformation = {
+			const cookedEvent: ReceiptInformation = {
 				details: {
-					service: metadata.service || event.source,
-					flow: metadata.flow || details.topic.category_id.toString(),
 					handle: convertedUsername,
 					// post_type 4 seems to correspond to whisper
 					hidden: _.isSet(metadata.hidden) ? metadata.hidden : details.post.post_type === 4,
@@ -492,7 +491,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 					title: details.topic.title,
 					messageCount: details.post.post_number,
 				},
-				source: {
+				current: {
 					service: event.source,
 					// These come in as integers, but should be strings
 					flow: details.topic.category_id.toString(),
@@ -501,6 +500,14 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 					url: getTopic.uri,
 					username: convertedUsername,
 				},
+				source: {
+					service: metadata.service || event.source,
+					flow: metadata.flow || details.topic.category_id.toString(),
+					thread: metadata.thread || details.post.topic_id.toString(),
+					message: details.post.id,
+					url: getTopic.uri,
+					username: convertedUsername,
+				}
 			};
 			// Yield the object in a form suitable for service scaffold.
 			return [{

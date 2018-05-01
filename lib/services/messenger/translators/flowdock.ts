@@ -34,6 +34,7 @@ import {
 	MessengerConstructor,
 	MessengerEvent,
 	ReceiptIds,
+	ReceiptInformation,
 	SourceDescription,
 	TransmitInformation,
 	UpdateThreadResponse,
@@ -233,7 +234,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 	 * @returns               Promise that resolve to the thread details.
 	 */
 	private static convertReadConnectionResponse(
-		metadataConfig: MetadataConfiguration, message: TransmitInformation, response: FlowdockMessage[]
+		metadataConfig: MetadataConfiguration, message: BasicMessageInformation, response: FlowdockMessage[]
 	): Promise<SourceDescription> {
 		// Create an array of those tag IDs that match on service & flow
 		const idsFromTags = _.compact(_.map(response[0].tags, (tag) => {
@@ -241,8 +242,8 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 			if (mirrorMatch.test(tag)) {
 				const ids = TranslatorScaffold.slugToIds(tag.replace(mirrorMatch, ''));
 				if (
-					(ids.service === message.source.service) &&
-					(ids.flow === message.source.flow)
+					(ids.service === message.current.service) &&
+					(ids.flow === message.current.flow)
 				) {
 					return ids;
 				}
@@ -252,7 +253,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 			return Promise.resolve(idsFromTags[0]);
 		}
 		return Promise.resolve(FlowdockTranslator.extractSource(
-			message.source,
+			message.current,
 			_.map(response, (comment) => { return comment.content; }),
 			metadataConfig,
 			MetadataEncoding.Flowdock,
@@ -294,7 +295,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 							header: message.details.title,
 							metadata: FlowdockTranslator.stringifyMetadata(message, MetadataEncoding.Flowdock, metadataConfig),
 							prefix: message.details.hidden ? '' : '% ',
-							url: message.source.url,
+							url: _.get(message, ['source', 'url']),
 						},
 						metadataConfig,
 					),
@@ -422,7 +423,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 	}
 
 	private static searchThreadIntoEmit(message: TransmitInformation): Promise<FlowdockEmitInstructions> {
-		return FlowdockTranslator.readThreadIntoEmit(message, message.source.service);
+		return FlowdockTranslator.readThreadIntoEmit(message, message.current.service);
 	}
 
 	/**
@@ -507,10 +508,8 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 	public eventIntoMessages(event: FlowdockEvent): Promise<MessengerEvent[]> {
 		const details = this.eventIntoMessageDetails(event);
 		// Start building this in service scaffold form.
-		const cookedEvent: BasicMessageInformation = {
+		const cookedEvent: ReceiptInformation = {
 			details: {
-				service: details.message.metadata.service || details.ids.service,
-				flow: details.message.metadata.flow || details.ids.flow,
 				handle: 'duff_FlowdockTranslator_eventIntoMessage_a', // gets replaced
 				hidden: details.message.metadata.hidden,
 				tags: [],
@@ -519,7 +518,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 				title: 'duff_FlowdockTranslator_eventIntoMessage_b', // gets replaced
 				messageCount: event.rawEvent.thread.internal_comments,
 			},
-			source: {
+			current: {
 				service: details.ids.service,
 				message: event.rawEvent.id,
 				flow: details.ids.flow,
@@ -527,6 +526,14 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 				url: details.paths.thread,
 				username: 'duff_FlowdockTranslator_eventIntoMessage_c', // gets replaced
 			},
+			source: {
+				service: details.message.metadata.service || details.ids.service,
+				flow: details.message.metadata.flow || details.ids.flow,
+				thread: details.message.metadata.thread || details.ids.thread,
+				message: details.ids.message,
+				url: details.paths.thread,
+				username: 'duff_FlowdockTranslator_eventIntoMessage_a', // gets replaced
+			}
 		};
 		// Get details of the tags and title from the first message.
 		return FlowdockTranslator.fetchFromSession(this.session, details.paths.firstMessage)
@@ -542,6 +549,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 		.then((username: string) => {
 			cookedEvent.source.username = username;
 			cookedEvent.details.handle = username;
+			cookedEvent.current.username = username;
 			return [{
 				context: `${event.source}.${event.context}`,
 				type: this.eventIntoMessageType(event),
