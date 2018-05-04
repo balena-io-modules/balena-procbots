@@ -616,7 +616,7 @@ export class VersionBot extends ProcBot {
 		this.logger.log(LogLevel.INFO, `Checking reviewers list for ${owner}/${repo}#${pr.number}`);
 
 		// Get the reviewers for the PR.
-		return this.retrieveConfiguration({
+		return ProcBot.retrieveConfiguration({
 			emitter: this.githubEmitter,
 			location: {
 				owner,
@@ -687,7 +687,7 @@ export class VersionBot extends ProcBot {
 		this.logger.log(LogLevel.INFO, `Checking reviewer conditions for ${owner}/${repo}#${pr.number}`);
 
 		// Get the reviews for the PR.
-		return this.retrieveConfiguration({
+		return ProcBot.retrieveConfiguration({
 			emitter: this.githubEmitter,
 			location: {
 				owner,
@@ -865,7 +865,7 @@ export class VersionBot extends ProcBot {
 		this.logger.log(LogLevel.INFO, `Checking footer tags for ${owner}/${name}#${pr.number}`);
 
 		// Get the configuration, if it exists, for this repo.
-		return this.retrieveConfiguration({
+		return ProcBot.retrieveConfiguration({
 			emitter: this.githubEmitter,
 			location: {
 				owner,
@@ -1058,7 +1058,7 @@ export class VersionBot extends ProcBot {
 			`version up for ${owner}/${repo}#${pr.number}`);
 
 		// Get the reviews for the PR.
-		return this.retrieveConfiguration({
+		return ProcBot.retrieveConfiguration({
 			emitter: this.githubEmitter,
 			location: {
 				owner,
@@ -1674,7 +1674,7 @@ export class VersionBot extends ProcBot {
 					if (commitMessage) {
 						// Ensure that the labeler was authorised. We do this here, else we could
 						// end up spamming the PR with errors.
-						return this.retrieveConfiguration({
+						return ProcBot.retrieveConfiguration({
 							emitter: this.githubEmitter,
 							location: {
 								owner,

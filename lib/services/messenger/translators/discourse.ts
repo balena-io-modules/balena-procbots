@@ -43,6 +43,7 @@ import {
 	MetadataConfiguration,
 	ResponseConverters,
 	TranslatorErrorCode,
+	TranslatorMetadata,
 } from './translator-types';
 
 /**
@@ -218,6 +219,24 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 		});
 	}
 
+	private static readThreadIntoEmit(message: TransmitInformation): Promise<DiscourseEmitInstructions> {
+		// Check we have a thread.
+		const thread = message.target.thread;
+		if (!thread) {
+			return Promise.reject(new TranslatorError(
+				TranslatorErrorCode.IncompleteTransmitInformation, 'Cannot read a thread without a thread.'
+			));
+		}
+		// Bundle into a format for the service.
+		return Promise.resolve({
+			method: ['request'],
+			payload: {
+				htmlVerb: 'GET',
+				path: `/t/${thread}.json`,
+			}
+		});
+	}
+
 	/**
 	 * Converts a provided message object into instructions to update the tags.
 	 * @param connectionDetails  Details to use to retrieve the topic slug.
@@ -328,12 +347,32 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 		return Promise.resolve({});
 	}
 
+	private static convertReadThreadResponse(
+		config: MetadataConfiguration,
+		show: 'reply' | 'whisper' | 'all',
+		_message: TransmitInformation,
+		response: any,
+	): Promise<TranslatorMetadata[]> {
+		return Promise.resolve(_.compact(_.map(response.post_stream.posts, (comment) => {
+			const messageObject = DiscourseTranslator.extractMetadata(comment.cooked, MetadataEncoding.HiddenMD, config);
+			if (show === 'all') {
+				return messageObject;
+			} else if ((show === 'reply') && (messageObject.hidden === false)) {
+				return messageObject;
+			} else if ((show === 'whisper') && (messageObject.hidden === true)) {
+				return messageObject;
+			}
+		})));
+	}
+
 	protected eventEquivalencies = {
 		message: ['post_created', 'post_edited'],
 	};
 	protected emitConverters: EmitConverters = {
 		[MessengerAction.ReadConnection]: DiscourseTranslator.searchThreadIntoEmit,
 		[MessengerAction.ReadErrors]: DiscourseTranslator.searchThreadIntoEmit,
+		[MessengerAction.ListReplies]: DiscourseTranslator.readThreadIntoEmit,
+		[MessengerAction.ListWhispers]: DiscourseTranslator.readThreadIntoEmit,
 	};
 	protected responseConverters: ResponseConverters = {
 		[MessengerAction.UpdateTags]: DiscourseTranslator.convertUpdateThreadResponse,
@@ -356,6 +395,10 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 			_.partial(DiscourseTranslator.convertReadConnectionResponse, metadataConfig);
 		this.responseConverters[MessengerAction.CreateThread] =
 			_.partial(DiscourseTranslator.convertCreateThreadResponse, data);
+		this.responseConverters[MessengerAction.ListReplies] =
+			_.partial(DiscourseTranslator.convertReadThreadResponse, metadataConfig, 'reply');
+		this.responseConverters[MessengerAction.ListWhispers] =
+			_.partial(DiscourseTranslator.convertReadThreadResponse, metadataConfig, 'whisper');
 	}
 
 	/**
