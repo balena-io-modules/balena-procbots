@@ -122,6 +122,18 @@ export class Logger {
 		this.output(level, this._logLevel, this.logLevelStrings, message);
 	}
 
+	public logInfo(message: string): void {
+		this.log(LogLevel.INFO, message);
+	}
+
+	public logWarn(message: string): void {
+		this.log(LogLevel.WARN, message);
+	}
+
+	public logDebug(message: string): void {
+		this.log(LogLevel.DEBUG, message);
+	}
+
 	/**
 	 * Alert output.
 	 * @param level    The level that this message is of (ERROR, etc.).

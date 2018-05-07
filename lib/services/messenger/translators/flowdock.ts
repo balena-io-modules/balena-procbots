@@ -16,6 +16,7 @@ limitations under the License.
 
 import * as Promise from 'bluebird';
 import { Session } from 'flowdock';
+import { AllHtmlEntities } from 'html-entities';
 import * as _ from 'lodash';
 import { Dictionary } from 'lodash';
 import * as marked from 'marked';
@@ -46,6 +47,7 @@ import {
 	TranslatorErrorCode,
 	TranslatorMetadata,
 } from './translator-types';
+const htmlEntities = new AllHtmlEntities();
 
 export interface FlowdockMetadata extends TranslatorMetadata {
 	/** Title of the message, usually this doesn't get extracted from the message body; but flowdock. */
@@ -87,6 +89,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 			metadata.content = metadata.content.replace(new RegExp(findPublic, 'igm'), '').trim();
 			if (metadata.title) {
 				metadata.title = metadata.title.replace(new RegExp(findPublic, 'igm'), '').trim();
+				metadata.title = htmlEntities.decode(metadata.title);
 			}
 		}
 		return metadata;

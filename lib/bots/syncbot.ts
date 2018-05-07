@@ -269,7 +269,8 @@ export class SyncBot extends ProcBot {
 						(flowId === true || flowId === to.flow || _.includes(to.previous, flowId)) &&
 						threadId && _.includes(actions, MessengerAction.CreateMessage)
 					) {
-						logger.log(LogLevel.INFO, `---> Creating comment '${firstLine}' on ${toText}.`);
+						logger.logInfo(`---> Creating comment '${firstLine}' on ${toText}.`);
+						logger.logDebug(`---> Full message from above, '${data.details.text}'.`);
 						// Comment on the found thread
 						const flow = { service: to.service, flow: to.flow, thread: threadId };
 						return SyncBot.processCommand(flow, emitter, data, MessengerAction.CreateMessage)
@@ -285,7 +286,8 @@ export class SyncBot extends ProcBot {
 						});
 					}
 					if (!threadId && _.includes(actions, MessengerAction.CreateThread)) {
-						logger.log(LogLevel.INFO, `---> Creating thread '${data.details.title}' on ${toText}.`);
+						logger.logInfo(`---> Creating thread '${data.details.title}' on ${toText}.`);
+						logger.logDebug(`---> Full message from above, '${data.details.text}'.`);
 						// Create a thread if the quest for connections didn't find any
 						return SyncBot.createThreadAndConnect(to, from, emitter, data, name);
 					}
