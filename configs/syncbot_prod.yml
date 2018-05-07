@@ -109,6 +109,14 @@ SYNCBOT_MAPPINGS:
       alias: "fin"
   - source:
       service: "front"
+      flow: "inb_26il"
+      alias: "commercial"
+    destination:
+      service: "flowdock"
+      flow: "rulemotion/r-commercial"
+      alias: "commercial"
+  - source:
+      service: "front"
       flow: "inb_stt"
       alias: "process"
     destination:
@@ -133,6 +141,7 @@ SYNCBOT_SERVICE_CONSTRUCTORS:
       inb_8i97: "cha_80mj"
       inb_8htn: "cha_85e3"
       inb_8go3: "cha_86t7"
+      inb_26il: "cha_9sib"
       inb_stt: "cha_9sij"
     serviceName: "front"
   discourse:
