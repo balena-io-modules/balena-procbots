@@ -335,7 +335,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 			const messageString = TranslatorScaffold.convertPings(message.details.text, converter);
 			const createThreadData: MessageRequest.Send = {
 				author_id: userId,
-				body: `${messageString}<br />${metadataString}`,
+				body: `${marked(messageString)}<br />${metadataString}`,
 				channel_id: channelMap[message.target.flow],
 				options: {
 					archive: false,
@@ -402,7 +402,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 			const messageString = TranslatorScaffold.convertPings(message.details.text, converter);
 			const createMessageData: MessageRequest.Reply = {
 				author_id: userId,
-				body: `${marked(messageString.replace(/\n+/g, '\n\n'))}${metadataInjection}`,
+				body: `${marked(messageString)}${metadataInjection}`,
 				conversation_id: threadId,
 				options: {
 					archive: false,

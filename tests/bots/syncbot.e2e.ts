@@ -267,8 +267,13 @@ describe('lib/bots/syncbot.ts', function() {
 					this.timeout(delay * 3);
 					it('should emit a thread on the source service', function() {
 						return mappingTester.makeThread(
-							'Test thread',
-							'This is the opening comment.',
+							'Test thread with "stuff"',
+							[
+								'This is the opening comment.',
+								'```',
+								'code',
+								'```',
+							].join('\n'),
 							{ shouldBreadcrumb: true },
 						).then((response) => {
 							response.source.should.eq('messenger');
