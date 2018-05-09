@@ -107,6 +107,14 @@ SYNCBOT_MAPPINGS:
       service: "flowdock"
       flow: "rulemotion/r-hardware"
       alias: "fin"
+  - source:
+      service: "front"
+      flow: "inb_stt"
+      alias: "process"
+    destination:
+      service: "flowdock"
+      flow: "rulemotion/r-process"
+      alias: "process"
 SYNCBOT_SERVICE_CONSTRUCTORS:
   flowdock:
     token: "<<INJECT_SYNCBOT_FLOWDOCK_TOKEN>>"
@@ -125,6 +133,7 @@ SYNCBOT_SERVICE_CONSTRUCTORS:
       inb_8i97: "cha_80mj"
       inb_8htn: "cha_85e3"
       inb_8go3: "cha_86t7"
+      inb_stt: "cha_9sij"
     serviceName: "front"
   discourse:
     instance: "forums.resin.io"
