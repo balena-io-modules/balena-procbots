@@ -119,7 +119,6 @@ describe('lib/services/messenger/translators/flowdock.ts', () => {
 				'`… about 81% shown.`',
 			].join('\n');
 			const snippedString = FlowdockTranslator.createFormattedText(veryLongString, options, config);
-			console.log(snippedString);
 			expect(snippedString.length).to.equal(lengthLimit);
 			expect(snippedString).to.equal(longString);
 		});

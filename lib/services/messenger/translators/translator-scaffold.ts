@@ -27,6 +27,7 @@ import {
 	MessengerResponse,
 	PrivacyPreference,
 	SourceDescription,
+	ThreadDefinition,
 	TransmitInformation,
 } from '../../messenger-types';
 import { ServiceScaffoldConstructor, ServiceScaffoldEvent } from '../../service-scaffold-types';
@@ -50,6 +51,63 @@ export enum MetadataEncoding {
  * and service specific forms.
  */
 export abstract class TranslatorScaffold implements Translator {
+	/**
+	 * Convert an id, that may contain any characters, into a form that only contains [a-z0-9-]
+	 * @param id  Plaintext to encode
+	 * @returns   Encoded string
+	 */
+	public static idToSlugPart(id: string): string {
+		return _.map(id, (character) => {
+			if (/[a-z0-9]/.test(character)) {
+				return character;
+			} else if (/[A-Z]/.test(character)) {
+				return `-${character.toLowerCase()}`;
+			} else {
+				return `-${character.charCodeAt(0).toString()}-`;
+			}
+		}).join('');
+	}
+
+	/**
+	 * Convert an escaped [a-z0-9-] variant string into it's enriched form
+	 * @param slug  Character restricted variant of the string
+	 * @returns     Full string
+	 */
+	public static slugPartToId(slug: string): string {
+		// This regex finds all hyphens, then either (a single letter) or (any number followed by hyphen)
+		return slug.replace(/-(?:([a-z])|([0-9]+)-)/g, (fullMatch) => {
+			if (/[a-z]/.test(fullMatch[1])) {
+				return fullMatch[1].toUpperCase();
+			}
+			const digits = fullMatch.substr(1, fullMatch.length - 2);
+			return String.fromCharCode(parseInt(digits, 10));
+		});
+	}
+
+	/**
+	 * Convert an object containing thread ids into a slug
+	 * @param ids   Object of all the ids that may be required
+	 * @returns     Slug encoded ids
+	 */
+	public static idsToSlug(ids: ThreadDefinition): string {
+		const slugParts = _.mapValues(ids, TranslatorScaffold.idToSlugPart);
+		return `${slugParts.service}--00--thread--00--${slugParts.flow}--00--${slugParts.thread}`;
+	}
+
+	/**
+	 * Convert a slug into an id object
+	 * @param slug  slug encoded ids
+	 * @returns     Object of the ids present
+	 */
+	public static slugToIds(slug: string): ThreadDefinition {
+		const slugParts = slug.split(/--00--/g);
+		return {
+			service: TranslatorScaffold.slugPartToId(slugParts[0]),
+			flow: TranslatorScaffold.slugPartToId(slugParts[2]),
+			thread: TranslatorScaffold.slugPartToId(slugParts[3]),
+		};
+	}
+
 	/**
 	 * Extract the thread id for the referenced service from an array of messages.
 	 * @param service   Service of interest.
@@ -287,7 +345,7 @@ export abstract class TranslatorScaffold implements Translator {
 
 	protected metadataConfig: MetadataConfiguration;
 
-	constructor(metadataConfig: MetadataConfiguration) {
+	protected constructor(metadataConfig: MetadataConfiguration) {
 		this.metadataConfig = metadataConfig;
 	}
 

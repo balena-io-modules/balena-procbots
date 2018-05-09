@@ -234,6 +234,22 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 	private static convertReadConnectionResponse(
 		metadataConfig: MetadataConfiguration, message: TransmitInformation, response: FlowdockMessage[]
 	): Promise<SourceDescription> {
+		// Create an array of those tag IDs that match on service & flow
+		const idsFromTags = _.compact(_.map(response[0].tags, (tag) => {
+			const mirrorMatch = /^mirror:/;
+			if (mirrorMatch.test(tag)) {
+				const ids = TranslatorScaffold.slugToIds(tag.replace(mirrorMatch, ''));
+				if (
+					(ids.service === message.source.service) &&
+					(ids.flow === message.source.flow)
+				) {
+					return ids;
+				}
+			}
+		}));
+		if (idsFromTags.length > 0) {
+			return Promise.resolve(idsFromTags[0]);
+		}
 		return Promise.resolve(FlowdockTranslator.extractSource(
 			message.source.service,
 			_.map(response, (comment) => { return comment.content; }),
@@ -285,6 +301,42 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 					external_user_name: message.details.handle.replace(/\s/g, '_')
 				}
 			}
+		});
+	}
+
+	/**
+	 * Converts a provided message object into instructions to connect a thread.
+	 * @param session  session to query to find the first message of the thread
+	 * @param message  object that provides connection data.
+	 * @returns        Promise that resolves to emit instructions.
+	 */
+	private static createConnectionIntoEmit(
+		session: Session,
+		message: TransmitInformation,
+	): Promise<FlowdockEmitInstructions> {
+		const threadId = message.target.thread;
+		const flowId = message.target.flow;
+		if (!threadId) {
+			return Promise.reject(new TranslatorError(
+				TranslatorErrorCode.IncompleteTransmitInformation, 'Cannot create a connection without a thread.'
+			));
+		}
+		return FlowdockTranslator.fetchFromSession(session, `/flows/${flowId}/threads/${threadId}`)
+		.then((thread) => {
+			return FlowdockTranslator.fetchFromSession(session, `/flows/${flowId}/messages/${thread.initial_message}`);
+		})
+		.then((initialMessage: FlowdockMessage) => {
+			return {
+				method: ['put'],
+				payload: {
+					path: `/flows/${flowId}/messages/${initialMessage.id}`,
+					payload: {
+						tags: _.concat(initialMessage.tags, [
+							`mirror:${TranslatorScaffold.idsToSlug(message.source)}`,
+						]),
+					},
+				},
+			};
 		});
 	}
 
@@ -442,7 +494,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 		message: ['message'],
 	};
 	protected emitConverters: EmitConverters = {
-		[MessengerAction.ReadConnection]: FlowdockTranslator.searchThreadIntoEmit,
+		[MessengerAction.ReadConnection]: FlowdockTranslator.readThreadIntoEmit,
 		[MessengerAction.ReadErrors]: FlowdockTranslator.searchThreadIntoEmit,
 		[MessengerAction.ListWhispers]: FlowdockTranslator.readThreadIntoEmit,
 		[MessengerAction.ListReplies]: FlowdockTranslator.readThreadIntoEmit,
@@ -477,7 +529,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 		this.emitConverters[MessengerAction.CreateMessage] =
 			_.partial(FlowdockTranslator.createMessageIntoEmit, metadataConfig);
 		this.emitConverters[MessengerAction.CreateConnection] =
-			_.partial(FlowdockTranslator.createMessageIntoEmit, metadataConfig);
+			_.partial(FlowdockTranslator.createConnectionIntoEmit, this.session);
 		this.emitConverters[MessengerAction.UpdateTags] =
 			_.partial(FlowdockTranslator.updateTagsIntoEmit, this.session);
 	}

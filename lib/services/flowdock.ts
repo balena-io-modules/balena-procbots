@@ -29,7 +29,7 @@ import { ServiceEmitter, ServiceListener, ServiceType } from './service-types';
  * A service for interacting with Flowdock via their SDK
  */
 export class FlowdockService extends ServiceScaffold<string> implements ServiceEmitter, ServiceListener {
-	private session: Session;
+	private readonly session: Session;
 	private postsSynced = new Set<number>();
 
 	constructor(data: FlowdockConstructor, logger: Logger) {

@@ -191,6 +191,67 @@ describe('lib/services/messenger/translators/translator-scaffold.ts', () => {
 		});
 	});
 
+	describe('TranslatorScaffold.idToSlugPart', () => {
+		it('should leave an entirely lower case ID alone', () => {
+			expect(TranslatorScaffold.idToSlugPart('thisid')).to.equal('thisid');
+		});
+		it('should snake case a camel case ID', () => {
+			expect(TranslatorScaffold.idToSlugPart('thisId')).to.equal('this-id');
+		});
+		it('should escape special characters as their char code', () => {
+			expect(TranslatorScaffold.idToSlugPart('this-id')).to.equal('this-45-id');
+		});
+		it('should combine escape techniques', () => {
+			expect(TranslatorScaffold.idToSlugPart('this-Id')).to.equal('this-45--id');
+		});
+	});
+
+	describe('TranslatorScaffold.slugPartToId', () => {
+		it('should leave an entirely lower case ID alone', () => {
+			expect(TranslatorScaffold.slugPartToId('thisid')).to.equal('thisid');
+		});
+		it('should camel case a snake case ID', () => {
+			expect(TranslatorScaffold.slugPartToId('this-id')).to.equal('thisId');
+		});
+		it('should resolve special characters from their char code', () => {
+			expect(TranslatorScaffold.slugPartToId('this-45-id')).to.equal('this-id');
+		});
+		it('should combine escape techniques', () => {
+			expect(TranslatorScaffold.slugPartToId('this-45--id')).to.equal('this-Id');
+		});
+	});
+
+	const simpleIds = {
+		service: 'someservice',
+		flow: 'someflow',
+		thread: 'somethread',
+	};
+	const simpleSlug = 'someservice--00--thread--00--someflow--00--somethread';
+	const complexIds = {
+		service: 'flowdock',
+		flow: 'p/testing',
+		thread: '_t-T0',
+	};
+	const complexSlug = 'flowdock--00--thread--00--p-47-testing--00---95-t-45--t0';
+
+	describe('TranslatorScaffold.idsToSlug', () => {
+		it('should translate a simple id', () => {
+			expect(TranslatorScaffold.idsToSlug(simpleIds)).to.equal(simpleSlug);
+		});
+		it('should translate a complex id', () => {
+			expect(TranslatorScaffold.idsToSlug(complexIds)).to.equal(complexSlug);
+		});
+	});
+
+	describe('TranslatorScaffold.slugToIds', () => {
+		it('should translate a simple slug', () => {
+			expect(TranslatorScaffold.slugToIds(simpleSlug)).to.deep.equal(simpleIds);
+		});
+		it('should translate a complex slug', () => {
+			expect(TranslatorScaffold.slugToIds(complexSlug)).to.deep.equal(complexIds);
+		});
+	});
+
 	describe('TranslatorScaffold.signText', () => {
 		const hmac = crypto.createHmac('sha256', 'salt').update('h').digest('hex');
 

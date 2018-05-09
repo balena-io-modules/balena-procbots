@@ -66,15 +66,15 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## v3.17.42 - 2018-05-09
 
-* Add Product sync #503 [Andrew Lucas]
+* SyncBot: Add Product sync #503 [Andrew Lucas]
 
 ## v3.17.41 - 2018-05-09
 
-* Add Commercial sync #504 [Andrew Lucas]
+* SyncBot: Add Commercial sync #504 [Andrew Lucas]
 
 ## v3.17.40 - 2018-05-09
 
-* Add Process sync #505 [Andrew Lucas]
+* SyncBot: Add Process sync #505 [Andrew Lucas]
 
 ## v3.17.39 - 2018-05-08
 
