@@ -70,15 +70,15 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 		message: string, format: MetadataEncoding, config: MetadataConfiguration,
 	): FlowdockMetadata {
 		// One line of characters `(.*)`...
-		// then markdown title formatting on the very next line `\r?\n>?[-=]+`...
+		// then markdown title formatting on the very next line `\r?\n[-=]+`...
 		// then any amount of whitespace that includes a new line `\s*\n\s*`...
 		// then absolutely any content `([\s\S]+)`
-		const titleSplitter = /^(.*)\r?\n>?[-=]+\s*\n\s*([\s\S]+)$/;
+		const titleSplitter = /^(.*)\r?\n[-=]+\s*\n\s*([\s\S]+)$/;
 		const titleAndText = message.match(titleSplitter);
 		const superMessage = titleAndText ? titleAndText[2].trim() : message.trim();
 		const superFormat = (format === MetadataEncoding.Flowdock) ? MetadataEncoding.HiddenMD : format;
 		const metadata = TranslatorScaffold.extractMetadata(superMessage, superFormat, config) as FlowdockMetadata;
-		const findPublic = '^> *';
+		const findPublic = '^% *';
 		metadata.title = titleAndText ? marked(titleAndText[1]).replace(/<[^>]*>/g, ' ').trim() : undefined;
 		if ((format === MetadataEncoding.Flowdock) && (metadata.service === null)) {
 			// Check for magic syntax if the message originated in Flowdock
@@ -152,33 +152,32 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 			metadata?: string;
 			footer?: string;
 			tags?: string[];
-			linePrefix?: string;
+			prefix?: string;
 			lengthLimit?: number;
 			url?: string;
 		} = {},
 		config: MetadataConfiguration,
 	): string {
 		const lengthLimit = (options && options.lengthLimit) || 8096;
-		const prefix = options.linePrefix || '';
+		const prefix = options.prefix || '';
 		let first = '';
 		if (options.header) {
 			if (options.url) {
-				first = `${prefix}[${options.header}](${options.url})\n${prefix}--\n`;
+				first = `[${options.header}](${options.url})\n--\n`;
 			} else {
-				first = `${prefix}${options.header}\n${prefix}--\n`;
+				first = `${options.header}\n--\n`;
 			}
 		}
 		const second = options.tags ? `${FlowdockTranslator.makeTagString(options.tags)}\n` : '';
-		const prefixedBody = body.replace(/^/gmi, prefix);
 		const penultimate = options.footer ? `\n${options.footer}` : '';
 		const lastProvisional = options.metadata ? `\n${options.metadata}` : '';
-		const candidate = `${first}${second}${prefixedBody}${penultimate}${lastProvisional}`;
+		const candidate = `${prefix}${first}${second}${body}${penultimate}${lastProvisional}`;
 		if (candidate.length < lengthLimit) {
 			return candidate;
 		}
 		const snipProvisional = '\n`… about xx% shown.`';
-		const midSpace = lengthLimit - `${first}${second}${snipProvisional}${penultimate}${lastProvisional}`.length;
-		const snipped = prefixedBody.substr(0, midSpace);
+		const midSpace = lengthLimit - `${prefix}${first}${second}${snipProvisional}${penultimate}${lastProvisional}`.length;
+		const snipped = body.substr(0, midSpace);
 		const roundedSnip = Math.floor((100*snipped.length)/body.length);
 		const snipText = snipProvisional.replace('xx', roundedSnip.toString(10));
 		const newSign = TranslatorScaffold.signText(`${snipped}${snipText}`, config.secret);
@@ -186,7 +185,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 			options.metadata = options.metadata.replace(/hmac=[0-9a-f]+/, `hmac=${newSign}`);
 		}
 		const last = options.metadata ? `\n${options.metadata}` : '';
-		return `${first}${second}${snipped}${snipText}${penultimate}${last}`;
+		return `${prefix}${first}${second}${snipped}${snipText}${penultimate}${last}`;
 	}
 
 	/**
@@ -283,7 +282,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 						{
 							header: message.details.title,
 							metadata: FlowdockTranslator.stringifyMetadata(message, MetadataEncoding.Flowdock, metadataConfig),
-							linePrefix: '>',
+							prefix: '% ',
 							url: message.source.url,
 						},
 						metadataConfig,
@@ -322,7 +321,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 						message.details.text,
 						{
 							metadata: FlowdockTranslator.stringifyMetadata(message, MetadataEncoding.Flowdock, metadataConfig),
-							linePrefix: message.details.hidden ? '' : '>',
+							prefix: message.details.hidden ? '' : '% ',
 						},
 						metadataConfig,
 					),

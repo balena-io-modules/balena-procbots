@@ -46,12 +46,12 @@ describe('lib/services/messenger/translators/flowdock.ts', () => {
 				'third line.',
 			].join('\n');
 			const options = {
-				linePrefix: '>'
+				prefix: '% '
 			};
 			const expected = [
-				'>first line.',
-				'>second line.',
-				'>third line.',
+				'% first line.',
+				'second line.',
+				'third line.',
 			].join('\n');
 			expect(FlowdockTranslator.createFormattedText(multiLineString, options, config)).to.equal(expected);
 		});
@@ -63,17 +63,17 @@ describe('lib/services/messenger/translators/flowdock.ts', () => {
 				'third line.',
 			].join('\n');
 			const options = {
-				linePrefix: '>',
+				prefix: '% ',
 				header: 'top',
 				footer: 'bottom',
 				metadata: 'stuff',
 			};
 			const expected = [
-				'>top',
-				'>--',
-				'>first line.',
-				'>second line.',
-				'>third line.',
+				'% top',
+				'--',
+				'first line.',
+				'second line.',
+				'third line.',
 				'bottom',
 				'stuff',
 			].join('\n');
@@ -88,14 +88,14 @@ describe('lib/services/messenger/translators/flowdock.ts', () => {
 			const lengthLimit = 128;
 			const options = {
 				lengthLimit,
-				linePrefix: '>',
+				prefix: '% ',
 				header: 'De finibus bonorum et malorum',
 				footer: '- Cicero',
 			};
 			const longString = [
-				'>De finibus bonorum et malorum',
-				'>--',
-				'>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed d',
+				'% De finibus bonorum et malorum',
+				'--',
+				'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do',
 				'`… about 51% shown.`',
 				`- Cicero`,
 			].join('\n');
@@ -115,16 +115,16 @@ describe('lib/services/messenger/translators/flowdock.ts', () => {
 			expect(metadata).to.equal('http://e.com?hmac=26e52d694bce4b1f7cb5645c59910c75c9f218bd4a1e568600f678d537d0f14d');
 			const options = {
 				lengthLimit,
-				linePrefix: '>',
+				prefix: '% ',
 				header: 'De finibus bonorum et malorum',
 				metadata
 			};
 			const longString = [
-				'>De finibus bonorum et malorum',
-				'>--',
-				'>Lorem ipsum dolor sit amet, consectetur adipiscing e',
+				'% De finibus bonorum et malorum',
+				'--',
+				'Lorem ipsum dolor sit amet, consectetur adipiscing el',
 				'`… about 43% shown.`',
-				'http://e.com?hmac=80eb58263708aaf21d59fd6d35fdc997f494dcbeef5bc4ee5830a1dff9ac8c98',
+				'http://e.com?hmac=435c282780572c656f255b4bdd669c9568bec32bc8ef2931cd830e45b1705a58',
 			].join('\n');
 			const snippedString = FlowdockTranslator.createFormattedText(veryLongString, options, config);
 			expect(snippedString.length).to.equal(lengthLimit);
@@ -133,14 +133,14 @@ describe('lib/services/messenger/translators/flowdock.ts', () => {
 
 		it('should format thread links as correct MD headers', () => {
 			const options = {
-				linePrefix: '>',
+				prefix: '% ',
 				header: 'top',
 				url: 'www.example.com'
 			};
 			const expected = [
-				'>[top](www.example.com)',
-				'>--',
-				'>body',
+				'% [top](www.example.com)',
+				'--',
+				'body',
 			].join('\n');
 			expect(FlowdockTranslator.createFormattedText('body', options, config)).to.equal(expected);
 		});
@@ -169,8 +169,8 @@ describe('lib/services/messenger/translators/flowdock.ts', () => {
 
 		it('should return public and strip syntax for a message with the magic syntax', () => {
 			const message = [
-				'>h',
-				'> i',
+				'% h',
+				'i',
 			].join('\n');
 			const expected = [
 				'h',
@@ -243,9 +243,9 @@ describe('lib/services/messenger/translators/flowdock.ts', () => {
 
 		it('should return all paragraphs of a quoted message', () => {
 			const message = [
-				'>body',
-				'>',
-				'>also body',
+				'% body',
+				'',
+				'also body',
 			].join('\n');
 			const expectedResponse = [
 				'body',
@@ -263,9 +263,9 @@ describe('lib/services/messenger/translators/flowdock.ts', () => {
 
 		it('should split title and body of a titled and formatted message', () => {
 			const message = [
-				'>[title](www.example.com)',
-				'>--',
-				'>body',
+				'% [title](www.example.com)',
+				'--',
+				'body',
 			].join('\n');
 			const extractedMetadata = FlowdockTranslator.extractMetadata(
 				message,
@@ -278,9 +278,9 @@ describe('lib/services/messenger/translators/flowdock.ts', () => {
 
 		it('should deal with quote marks', () => {
 			const message = [
-				'>"title"',
-				'>--',
-				'>"body"',
+				'% "title"',
+				'--',
+				'"body"',
 			].join('\n');
 			const extractedMetadata = FlowdockTranslator.extractMetadata(
 				message,

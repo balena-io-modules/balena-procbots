@@ -83,7 +83,7 @@ export class FlowdockHashtagTranslator extends FlowdockTranslator implements Tra
 						message.details.text,
 						{
 							metadata: FlowdockTranslator.stringifyMetadata(message, MetadataEncoding.Flowdock, metadataConfig),
-							linePrefix: message.details.hidden ? '' : '>',
+							prefix: message.details.hidden ? '' : '% ',
 						},
 						metadataConfig,
 					),
