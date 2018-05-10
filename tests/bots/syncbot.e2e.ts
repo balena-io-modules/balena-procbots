@@ -273,6 +273,7 @@ describe('lib/bots/syncbot.ts', function() {
 								'```',
 								'code',
 								'```',
+								'> quote',
 							].join('\n'),
 							{ shouldBreadcrumb: true },
 						).then((response) => {

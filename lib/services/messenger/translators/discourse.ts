@@ -443,6 +443,17 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 						details.post.raw, MetadataEncoding.HiddenMD, this.metadataConfig
 					);
 			}
+			const quoteFinder = /\[quote="([^,"]*).*"]\s*([\s\S]*)\[\/quote]/;
+			const quoteParsedText = metadata.content.replace(new RegExp(quoteFinder, 'gm'), (fullMatch) => {
+				const matchArray = fullMatch.match(new RegExp(quoteFinder, 'm'));
+				if (!matchArray) {
+					return fullMatch;
+				}
+				const citation = `>*${matchArray[1]}*:`;
+				const body = matchArray[2].trim().replace(/((?:^|\r|\n)+)/g, '\n>');
+				return `${citation}${body}`;
+			});
+			const codeParsedText = quoteParsedText.replace(/\[\/?code]/g, '```');
 			const cookedEvent: BasicMessageInformation = {
 				details: {
 					service: metadata.service || event.source,
@@ -451,7 +462,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 					// post_type 4 seems to correspond to whisper
 					hidden: _.isSet(metadata.hidden) ? metadata.hidden : details.post.post_type === 4,
 					tags: details.topic.tags,
-					text: TranslatorScaffold.convertPings(metadata.content, DiscourseTranslator.convertUsernameToGeneric),
+					text: TranslatorScaffold.convertPings(codeParsedText, DiscourseTranslator.convertUsernameToGeneric),
 					time: details.post.created_at,
 					title: details.topic.title,
 					messageCount: details.post.post_number,
