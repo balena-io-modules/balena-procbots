@@ -57,7 +57,7 @@ A little Bot, using the ProcBot framework, that links communication services.
 * A new thread in a source flow will become a new linked thread in a destination flow
 * A new message on a linked thread will become a new message in all its linked threads
 * If a service does not support privacy, then privacy is assumed by default
-* To make a comment public use `>`
+* Flowdock does nothing to distinguish internal from public, so to make a comment public use `%` as the very first character
 
 ## How do I set up my accounts?
 
