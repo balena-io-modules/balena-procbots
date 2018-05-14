@@ -94,6 +94,16 @@ SYNCBOT_MAPPINGS:
       flow: "rulemotion/sales"
       alias: "sales"
   - source:
+      service: "github"
+      flow: "resin-io/hubot-as-mainbot"
+      alias: "hubot"
+    destination:
+      service: "flowdock"
+      flow: "rulemotion/d-bots"
+      alias: "bots"
+      previous:
+        - "d-bots"
+  - source:
       service: "front"
       flow: "inb_67mx"
     destination:
@@ -132,6 +142,14 @@ SYNCBOT_MAPPINGS:
       flow: "rulemotion/r-process"
       alias: "process"
 SYNCBOT_SERVICE_CONSTRUCTORS:
+  github:
+    client: "syncbot"
+    authentication:
+      appId: "<<INJECT_SYNCBOT_GITHUB_APP_ID>>"
+      pem: "<<INJECT_SYNCBOT_GITHUB_PEM>>"
+      type: 0
+    path: "/github"
+    webhookSecret: "<<INJECT_SYNCBOT_GITHUB_SECRET>>"
   flowdock:
     token: "<<INJECT_SYNCBOT_FLOWDOCK_TOKEN>>"
     serviceName: "flowdock"
