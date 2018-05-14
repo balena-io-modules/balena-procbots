@@ -24,15 +24,24 @@ SYNCBOT_ERROR_SOLUTIONS:
         - "Try again in a few minutes"
         - "If it persists put an (at)team, (at)sqweelygig PSA into r/support"
   front:
-    ^Conversation have been received on multiple channels:
+    ^Conversation has been received on multiple channels:
       description: "This issue was sent to more than one e-mail address, and SyncBot doesn't know which to reply from."
       fixes:
         - "Reply via Front"
         - "@sqweelygig is monitoring to see how frequently we experience this issue."
+    ^Tried loads of times to find the conversation:
+      description: "There is an unusually long delay on Front indexing a conversation"
+      fixes:
+        - "Only the syncbot routes into Front (forums) should be affected."
+        - "Replies via the Front UI should still get to the Forums thread."
+        - "Replies via the Forums or Flowdock UI may result in duplicated Front threads."
+        - "Keep half an eye on https://www.frontstatus.com/"
+        - "Ping (at)sqweelygig if anything doesn't fit in the above pattern."
     ^5:
       description: "Problem with their server infrastructure."
       fixes:
         - "Try again in a few minutes"
+        - "Keep half an eye on https://www.frontstatus.com/"
         - "If it persists put an (at)team, (at)sqweelygig PSA into r/support"
 SYNCBOT_ERROR_UNDOCUMENTED: 'No fixes currently documented. (@sqweelygig)'
 SYNCBOT_MAPPINGS:
