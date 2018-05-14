@@ -10,6 +10,101 @@ import { MetadataConfiguration } from '../../../../lib/services/messenger/transl
 const fsReadFile: (filename: string, options?: any) => Bluebird<Buffer | string> = Bluebird.promisify(FS.readFile);
 
 describe('lib/services/messenger/translators/front.ts', () => {
+	describe('FrontTranslator.extractReply', () => {
+		it('should leave the content from a simple email alone', () => {
+			const email = [
+				'test this',
+			].join('\n');
+			expect(FrontTranslator.extractReply(email)).to.equal(email);
+		});
+		it('should extract the most recent reply from a more complex email', () => {
+			// This a trimmed version of https://app.frontapp.com/open/cnv_lmlnb5
+			const email = [
+				'Thank you, I will check it out.',
+				'',
+				'On Mon, 14 May 2018 at 16:42 Someone Great <support@resin.io> wrote:',
+				'',
+				'> Hi,',
+				'>',
+				'>The thing, it be done.',
+				'',
+				'Best Regards,',
+				'The Customer',
+			].join('\n');
+			const newContent = [
+				'Thank you, I will check it out.',
+				'',
+				'Best Regards,',
+				'The Customer',
+			].join('\n');
+			expect(FrontTranslator.extractReply(email)).to.equal(newContent);
+		});
+		it('should leave content from ZenDesk alone', () => {
+			// This is a trimmed version of https://app.frontapp.com/open/cnv_s3sqkb
+			const email = [
+				'Thanks',
+				'some details',
+				'[View in Zendesk](https://resin.zendesk.com/agent/tickets/123) -- https://resin.zendesk.com/agent/tickets/123'
+			].join('\n');
+			expect(FrontTranslator.extractReply(email)).to.equal(email);
+		});
+		it('should leave content from Intercom alone', () => {
+			// This is a trimmed version of https://app.frontapp.com/open/cnv_s3sqkb
+			const email = [
+				'What\'s most odd to us right now is some stuff',
+			].join('\n');
+			expect(FrontTranslator.extractReply(email)).to.equal(email);
+		});
+		// Edge cases taken from https://www.npmjs.com/package/emailreplyparser
+		it('should not fail catastrophically when a customer uses Latin (or any other foreign language)', () => {
+			const email = [
+				'gratias',
+				'',
+				'Die Lunae, MMXVIII May XIV, scripsit aliquem magnum:',
+				'> Salve',
+			].join('\n');
+			const acceptableContent = [
+				'gratias',
+				'',
+				'Die Lunae, MMXVIII May XIV, scripsit aliquem magnum:',
+			].join('\n');
+			expect(FrontTranslator.extractReply(email)).to.equal(acceptableContent);
+		});
+		it('should not fail catastrophically when a citation breaks the /^on.*wrote:$/im convention', () => {
+			const email = [
+				'thanks',
+				'',
+				'On date, author',
+				'wrote:',
+				'> this',
+			].join('\n');
+			expect(FrontTranslator.extractReply(email)).to.equal('thanks');
+		});
+		it('should not fail catastrophically when a signature is just a follow on block', () => {
+			const email = [
+				'Hello',
+				'',
+				'Mr Rick Olson',
+				'Galactic President Superstar Mc Awesomeville',
+				'GitHub',
+			].join('\n');
+			expect(FrontTranslator.extractReply(email)).to.equal(email);
+		});
+		it('should not fail catastrophically when quoted text uses strange quoting', () => {
+			const email = [
+				'Hello',
+				'',
+				'--',
+				'Rick',
+				'________________________________________',
+				'From: Bob [reply@reply.github.com]',
+				'Sent: Monday, March 14, 2011 6:16 PM',
+				'To: Rick',
+			].join('\n');
+			expect(FrontTranslator.extractReply(email)).to.equal(email);
+		});
+	});
+
 	describe('FrontTranslator.convertReadConnectionResponse', () => {
 		it('should convert a list of messages into an id', async () => {
 			const config: MetadataConfiguration = {
