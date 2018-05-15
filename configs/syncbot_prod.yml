@@ -92,7 +92,7 @@ SYNCBOT_MAPPINGS:
     destination:
       service: "flowdock"
       flow: "rulemotion/sales"
-      alias: "sales"
+      alias: "sales_meta"
   - source:
       service: "github"
       flow: "resin-io/hubot-as-mainbot"
@@ -141,6 +141,14 @@ SYNCBOT_MAPPINGS:
       service: "flowdock"
       flow: "rulemotion/r-process"
       alias: "process"
+  - source:
+      service: "front"
+      flow: "inb_srn"
+      alias: "sales"
+    destination:
+      service: "flowdock"
+      flow: "rulemotion/s-sales"
+      alias: "sales"
 SYNCBOT_SERVICE_CONSTRUCTORS:
   github:
     client: "syncbot"
@@ -170,6 +178,7 @@ SYNCBOT_SERVICE_CONSTRUCTORS:
       inb_1deg: "cha_9si3"
       inb_26il: "cha_9sib"
       inb_stt: "cha_9sij"
+      inb_srn: "cha_9u57"
     serviceName: "front"
   discourse:
     instance: "forums.resin.io"
