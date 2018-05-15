@@ -35,6 +35,7 @@ SYNCBOT_ERROR_SOLUTIONS:
         - "If it persists put an (at)team, (at)sqweelygig PSA into r/support"
 SYNCBOT_ERROR_UNDOCUMENTED: 'No fixes currently documented. (@sqweelygig)'
 SYNCBOT_MAPPINGS:
+  # All threads in discourse/troubleshooting become threads in flowdock/support_forums
   - source:
       service: "discourse"
       flow: "42"
@@ -45,6 +46,7 @@ SYNCBOT_MAPPINGS:
       alias: "forums"
       previous:
         - "public-s-community"
+  # All threads in flowdock/support_forums become threads in front/forums
   - source:
       service: "flowdock"
       flow: "rulemotion/public-s-community"
@@ -55,6 +57,7 @@ SYNCBOT_MAPPINGS:
       service: "front"
       flow: "inb_23sp"
       alias: "forums"
+  # All threads in front/forums become threads in flowdock/support_forums
   - source:
       service: "front"
       flow: "inb_23sp"
@@ -65,6 +68,7 @@ SYNCBOT_MAPPINGS:
       alias: "forums"
       previous:
         - "public-s-community"
+  # All threads in front/paid become threads in flowdock/support_premium
   - source:
       service: "front"
       flow: "inb_nla"
@@ -75,6 +79,7 @@ SYNCBOT_MAPPINGS:
       alias: "premium"
       previous:
         - "public-s-premium"
+  # All threads in front/leads become threads in flowdock/leads
   - source:
       service: "front"
       flow: "inb_2hvh"
@@ -85,6 +90,7 @@ SYNCBOT_MAPPINGS:
       alias: "leads"
       previous:
         - "r-leads"
+  # All threads in front/revenue become threads in flowdock/sales_meta
   - source:
       service: "front"
       flow: "inb_8htn"
@@ -93,6 +99,7 @@ SYNCBOT_MAPPINGS:
       service: "flowdock"
       flow: "rulemotion/sales"
       alias: "sales_meta"
+  # All threads in github/hubot become threads in flowdock/bots
   - source:
       service: "github"
       flow: "resin-io/hubot-as-mainbot"
@@ -103,20 +110,41 @@ SYNCBOT_MAPPINGS:
       alias: "bots"
       previous:
         - "d-bots"
+  # All threads in front/p become threads in flowdock/p
   - source:
       service: "front"
       flow: "inb_67mx"
     destination:
       service: "flowdock"
       flow: "resinio-collaborations/p_colab_flow"
+  # All threads in front/fin become threads in flowdock/support_fin
   - source:
       service: "front"
       flow: "inb_8go3"
       alias: "fin"
     destination:
       service: "flowdock"
-      flow: "rulemotion/r-hardware"
+      flow: "rulemotion/r-support_fin"
       alias: "fin"
+  # All threads in forums/fin become threads in flowdock/support_fin
+  - source:
+      service: "discourse"
+      flow: "45"
+      alias: "fin"
+    destination:
+      service: "flowdock"
+      flow: "rulemotion/r-support_fin"
+      alias: "fin"
+  # All threads in flowdock/support_fin become threads in front/fin
+  - source:
+      service: "flowdock"
+      flow: "rulemotion/r-support_fin"
+      alias: "fin"
+    destination:
+      service: "discourse"
+      flow: "45"
+      alias: "fin"
+  # All threads front/product become threads in flowdock/product
   - source:
       service: "front"
       flow: "inb_1deg"
@@ -125,6 +153,7 @@ SYNCBOT_MAPPINGS:
       service: "flowdock"
       flow: "rulemotion/r-product"
       alias: "product"
+  # All threads in front/commercial become threads in flowdock/commercial
   - source:
       service: "front"
       flow: "inb_26il"
@@ -133,6 +162,7 @@ SYNCBOT_MAPPINGS:
       service: "flowdock"
       flow: "rulemotion/r-commercial"
       alias: "commercial"
+  # All threads in front/process become threads in flowdock/process
   - source:
       service: "front"
       flow: "inb_stt"
@@ -141,6 +171,7 @@ SYNCBOT_MAPPINGS:
       service: "flowdock"
       flow: "rulemotion/r-process"
       alias: "process"
+  # All threads in front/sales become threads in flowdock/sales
   - source:
       service: "front"
       flow: "inb_srn"

@@ -52,6 +52,8 @@ A little Bot, using the ProcBot framework, that links communication services.
 
 ## What goes where?
 
+**Since drawing this diagram the number of syncs has exploded, but I am keeping it because it shows all of the support syncs**
+
 ![flow-diagram](syncflow.png)
 
 * A new thread in a source flow will become a new linked thread in a destination flow
