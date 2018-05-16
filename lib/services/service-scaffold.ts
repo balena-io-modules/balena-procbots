@@ -164,6 +164,7 @@ export abstract class ServiceScaffold<T> extends WorkerClient<T> implements Serv
 	protected queueData = (data: ServiceScaffoldEvent) => {
 		// Check that the event passes verification
 		if (this.verify(data)) {
+			this.logger.log(LogLevel.INFO, `---> Enqueueing ${data.type} from ${data.source} ${data.context}`);
 			// Enqueue the event
 			super.queueEvent({
 				data,
