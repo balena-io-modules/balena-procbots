@@ -144,6 +144,15 @@ SYNCBOT_MAPPINGS:
       service: "discourse"
       flow: "45"
       alias: "fin"
+  # All threads in front/architecture become threads in flowdock/architecture
+  - source:
+      service: "front"
+      flow: "inb_udy"
+      alias: "architecture"
+    destination:
+      service: "flowdock"
+      flow: "rulemotion/r-architecture"
+      alias: "architecture"
   # All threads front/product become threads in flowdock/product
   - source:
       service: "front"
@@ -210,6 +219,7 @@ SYNCBOT_SERVICE_CONSTRUCTORS:
       inb_26il: "cha_9sib"
       inb_stt: "cha_9sij"
       inb_srn: "cha_9u57"
+      inb_udy: "cha_9sir"
     serviceName: "front"
   discourse:
     instance: "forums.resin.io"
