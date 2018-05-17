@@ -60,6 +60,16 @@ SYNCBOT_MAPPINGS:
       alias: "sandbox"
       previous:
         - "testing"
+  - source:
+      service: "flowdock"
+      flow: "rulemotion/testing_hubot"
+      alias: "hubot"
+    destination:
+      service: "flowdock"
+      flow: "rulemotion/testing"
+      alias: "sandbox"
+      previous:
+        - "testing"
 SYNCBOT_METADATA_CONFIG:
   baseUrl: "http://resin.io"
   publicity:

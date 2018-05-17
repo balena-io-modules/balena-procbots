@@ -189,6 +189,15 @@ SYNCBOT_MAPPINGS:
       service: "flowdock"
       flow: "rulemotion/s-sales"
       alias: "sales"
+  # All threads in flowdock/pub become threads in flowdock/omniflow
+  - source:
+      service: "flowdock"
+      flow: "rulemotion/pub"
+      alias: "all"
+    destination:
+      service: "flowdock"
+      flow: "rulemotion/omniflow"
+      alias: "omniflow"
 SYNCBOT_SERVICE_CONSTRUCTORS:
   github:
     client: "syncbot"
