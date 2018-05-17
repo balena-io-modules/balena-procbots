@@ -16,6 +16,9 @@
 
 import * as Promise from 'bluebird';
 import {
+	EmailReplyParser
+} from 'emailreplyparser';
+import {
 	CommentRequest,
 	Contact,
 	Conversation,
@@ -58,6 +61,11 @@ import {
  * specific forms.
  */
 export class FrontTranslator extends TranslatorScaffold implements Translator {
+	public static extractReply(email: string): string {
+		const newFragments = _.filter(EmailReplyParser.read(email).fragments, { quoted: false });
+		return _.map(newFragments, 'content').join('\n');
+	}
+
 	/**
 	 * Converts a provided username, in service specific format, into a generic username
 	 * @param username  Username to convert
@@ -516,8 +524,8 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 		[MessengerAction.ReadErrors]: FrontTranslator.convertReadErrorResponse,
 	};
 
-	private session: Front;
-	private token: string;
+	private readonly session: Front;
+	private readonly token: string;
 
 	constructor(data: FrontConstructor, metadataConfig: MetadataConfiguration) {
 		super(metadataConfig);
@@ -575,6 +583,9 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 					// Find the metadata from the post created
 					metadata = TranslatorScaffold.extractMetadata(message.body, metadataFormat, this.metadataConfig);
 			}
+			const body = message.text || metadata.content;
+			const reply = _.includes(['inbound'], details.event.type) ? FrontTranslator.extractReply(body) : body;
+			const text = TranslatorScaffold.convertPings(reply, FrontTranslator.convertUsernameToGeneric);
 			const duffFlow = 'duff_FrontTranslator_eventIntoMessages_b';
 			const tags = _.map(details.event.conversation.tags, (tag: {name: string}) => {
 				return tag.name;
@@ -589,7 +600,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 					// https://github.com/resin-io-modules/resin-procbots/issues/301
 					intercomHack: message.type === 'intercom' ? details.event.conversation.subject !== '' : undefined,
 					tags,
-					text: TranslatorScaffold.convertPings(message.text || metadata.content, FrontTranslator.convertUsernameToGeneric),
+					text,
 					time: moment.unix(details.event.emitted_at).toISOString(),
 					title: details.subject,
 					messageCount: details.messages._results.length + details.comments._results.length,
