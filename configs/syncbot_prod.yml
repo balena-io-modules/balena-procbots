@@ -198,6 +198,15 @@ SYNCBOT_MAPPINGS:
       service: "flowdock"
       flow: "rulemotion/omniflow"
       alias: "omniflow"
+  # All threads in front/syncbot (service outage) become threads in flowdock/support_meta
+  - source:
+      service: "front"
+      flow: "inb_amf7"
+      alias: "outage"
+    destination:
+      service: "flowdock"
+      flow: "rulemotion/user_happiness"
+      alias: "support_meta"
 SYNCBOT_SERVICE_CONSTRUCTORS:
   github:
     client: "syncbot"
@@ -229,6 +238,7 @@ SYNCBOT_SERVICE_CONSTRUCTORS:
       inb_stt: "cha_9sij"
       inb_srn: "cha_9u57"
       inb_udy: "cha_9sir"
+      inb_amf7: "cha_9vh"
     serviceName: "front"
   discourse:
     instance: "forums.resin.io"
