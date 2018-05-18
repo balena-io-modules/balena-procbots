@@ -276,7 +276,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 						{
 							header: message.details.title,
 							metadata: FlowdockTranslator.stringifyMetadata(message, MetadataEncoding.Flowdock, metadataConfig),
-							prefix: '% ',
+							prefix: message.details.hidden ? '' : '% ',
 							url: message.source.url,
 						},
 						metadataConfig,
