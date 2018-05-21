@@ -69,7 +69,7 @@ export interface MessageDetails {
 	 */
 	time: string;
 	/** The title of the thread. */
-	title: string;
+	title?: string;
 	/** A count of how many comments there are in this thread. */
 	messageCount?: number;
 }

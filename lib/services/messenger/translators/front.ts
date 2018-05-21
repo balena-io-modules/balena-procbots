@@ -393,8 +393,10 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 					author_id: userId,
 					body: `${messageString}\n${metadataInjection}`,
 					conversation_id: threadId,
-					subject: message.details.title,
 				};
+				if (message.details.title) {
+					createCommentData.subject = message.details.title;
+				}
 				return {
 					method: ['comment', 'create'],
 					payload: createCommentData
@@ -416,9 +418,11 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 					archive: false,
 				},
 				sender_name: message.target.username,
-				subject: message.details.title,
 				type: 'message',
 			};
+			if (message.details.title) {
+				createMessageData.subject = message.details.title;
+			}
 			return {
 				method: ['message', 'reply'],
 				payload: createMessageData
@@ -494,6 +498,12 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	private static convertCreateThreadResponse(
 		session: Front, message: TransmitInformation, _response: FrontResponse
 	): Promise<CreateThreadResponse> {
+		// Check we have a title.
+		if (!message.details.title) {
+			return Promise.reject(new TranslatorError(
+				TranslatorErrorCode.IncompleteTransmitInformation, 'Could not have created a thread without a title'
+			));
+		}
 		// The creation of a conversation returns a conversation_reference which is compartmentalised.
 		// It bears no relation to anything understood by any other part of Front.
 		// So we go diving through the recent conversations for a matching subject line.

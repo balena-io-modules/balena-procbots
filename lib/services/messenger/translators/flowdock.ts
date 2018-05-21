@@ -264,12 +264,6 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 		metadataConfig: MetadataConfiguration,
 		message: TransmitInformation
 	): Promise<FlowdockEmitInstructions> {
-		// Check we have a flow.
-		if (!message.details.title) {
-			return Promise.reject(new TranslatorError(
-				TranslatorErrorCode.IncompleteTransmitInformation, 'Cannot create a thread without a title'
-			));
-		}
 		// Bundle for the session
 		return Promise.resolve({
 			method: ['post'],
@@ -461,7 +455,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 	};
 	protected session: Session;
 
-	private token: string;
+	private readonly token: string;
 
 	constructor(data: FlowdockConstructor, metadataConfig: MetadataConfiguration) {
 		super(metadataConfig);
@@ -524,7 +518,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 			const firstMessageEvent = _.merge(_.cloneDeep(event), { rawEvent: firstMessage });
 			const firstMessageDetails = this.eventIntoMessageDetails(firstMessageEvent);
 			cookedEvent.details.tags = _.uniq(firstMessage.tags.filter(tagFilter));
-			cookedEvent.details.title = firstMessageDetails.message.title || firstMessageDetails.message.text;
+			cookedEvent.details.title = firstMessageDetails.message.title;
 			return Promise.resolve(undefined);
 		})
 		// Get details of the user nickname.

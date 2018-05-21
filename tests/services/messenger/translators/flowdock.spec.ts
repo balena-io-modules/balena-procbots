@@ -80,7 +80,7 @@ describe('lib/services/messenger/translators/flowdock.ts', () => {
 			expect(FlowdockTranslator.createFormattedText(multiLineString, options, config)).to.equal(expected);
 		});
 
-		it('should format a really long string into one trimmed string', () => {
+		it('should format a really long string with surrounds into one trimmed string', () => {
 			const veryLongString = [
 				'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut',
 				'labore et dolore magna aliqua.',
@@ -100,6 +100,26 @@ describe('lib/services/messenger/translators/flowdock.ts', () => {
 				`- Cicero`,
 			].join('\n');
 			const snippedString = FlowdockTranslator.createFormattedText(veryLongString, options, config);
+			expect(snippedString.length).to.equal(lengthLimit);
+			expect(snippedString).to.equal(longString);
+		});
+
+		it('should format a really long string without surrounds into one trimmed string', () => {
+			const veryLongString = [
+				'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut',
+				'labore et dolore magna aliqua. - Cicero',
+			].join('\n');
+			const lengthLimit = 128;
+			const options = {
+				lengthLimit,
+			};
+			const longString = [
+				'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut',
+				'labore et dolo',
+				'`… about 81% shown.`',
+			].join('\n');
+			const snippedString = FlowdockTranslator.createFormattedText(veryLongString, options, config);
+			console.log(snippedString);
 			expect(snippedString.length).to.equal(lengthLimit);
 			expect(snippedString).to.equal(longString);
 		});
