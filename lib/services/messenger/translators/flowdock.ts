@@ -450,6 +450,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 	protected responseConverters: ResponseConverters = {
 		[MessengerAction.UpdateTags]: FlowdockTranslator.convertUpdateThreadResponse,
 		[MessengerAction.CreateMessage]: FlowdockTranslator.convertUpdateThreadResponse,
+		[MessengerAction.CreateConnection]: FlowdockTranslator.convertUpdateThreadResponse,
 		[MessengerAction.CreateThread]: FlowdockTranslator.convertCreateThreadResponse,
 		[MessengerAction.ReadErrors]: FlowdockTranslator.convertReadErrorResponse,
 	};
@@ -474,6 +475,8 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 		this.emitConverters[MessengerAction.CreateThread] =
 			_.partial(FlowdockTranslator.createThreadIntoEmit, metadataConfig);
 		this.emitConverters[MessengerAction.CreateMessage] =
+			_.partial(FlowdockTranslator.createMessageIntoEmit, metadataConfig);
+		this.emitConverters[MessengerAction.CreateConnection] =
 			_.partial(FlowdockTranslator.createMessageIntoEmit, metadataConfig);
 		this.emitConverters[MessengerAction.UpdateTags] =
 			_.partial(FlowdockTranslator.updateTagsIntoEmit, this.session);

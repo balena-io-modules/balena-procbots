@@ -377,6 +377,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 	protected responseConverters: ResponseConverters = {
 		[MessengerAction.UpdateTags]: DiscourseTranslator.convertUpdateThreadResponse,
 		[MessengerAction.CreateMessage]: DiscourseTranslator.convertUpdateThreadResponse,
+		[MessengerAction.CreateConnection]: DiscourseTranslator.convertUpdateThreadResponse,
 		[MessengerAction.ReadErrors]: DiscourseTranslator.convertReadErrorResponse,
 	};
 	private connectionDetails: DiscourseConstructor;
@@ -390,6 +391,8 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 		this.emitConverters[MessengerAction.CreateThread] =
 			_.partial(DiscourseTranslator.createThreadIntoEmit, metadataConfig);
 		this.emitConverters[MessengerAction.CreateMessage] =
+			_.partial(DiscourseTranslator.createMessageIntoEmit, data, metadataConfig);
+		this.emitConverters[MessengerAction.CreateConnection] =
 			_.partial(DiscourseTranslator.createMessageIntoEmit, data, metadataConfig);
 		this.responseConverters[MessengerAction.ReadConnection] =
 			_.partial(DiscourseTranslator.convertReadConnectionResponse, metadataConfig);

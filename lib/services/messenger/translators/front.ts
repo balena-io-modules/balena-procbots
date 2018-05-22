@@ -530,6 +530,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	protected responseConverters: ResponseConverters = {
 		[MessengerAction.UpdateTags]: FrontTranslator.convertUpdateThreadResponse,
 		[MessengerAction.CreateMessage]: FrontTranslator.convertUpdateThreadResponse,
+		[MessengerAction.CreateConnection]: FrontTranslator.convertUpdateThreadResponse,
 		[MessengerAction.ArchiveThread]: FrontTranslator.convertUpdateThreadResponse,
 		[MessengerAction.ReadErrors]: FrontTranslator.convertReadErrorResponse,
 	};
@@ -550,6 +551,8 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 		this.responseConverters[MessengerAction.ListWhispers] =
 			_.partial(FrontTranslator.convertListWhispersResponse, this.metadataConfig);
 		this.emitConverters[MessengerAction.CreateMessage] =
+			_.partial(FrontTranslator.createMessageIntoEmit, this.session, metadataConfig);
+		this.emitConverters[MessengerAction.CreateConnection] =
 			_.partial(FrontTranslator.createMessageIntoEmit, this.session, metadataConfig);
 		this.emitConverters[MessengerAction.CreateThread] =
 			_.partial(FrontTranslator.createThreadIntoEmit, this.session, data.channelPerInbox, metadataConfig);

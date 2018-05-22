@@ -529,8 +529,7 @@ export class SyncBot extends ProcBot {
 			if (response) {
 				// Bundle a payload that can be easily mutated to each of the source and target threads.
 				const genericConnect: TransmitInformation = {
-					// #251 This could be .CreateConnection, and translated
-					action: MessengerAction.CreateMessage,
+					action: MessengerAction.CreateConnection,
 					// A message that advertises the connected thread.
 					details: {
 						service: 'duff_SyncBot_createThreadAndConnect_a', // will be replaced

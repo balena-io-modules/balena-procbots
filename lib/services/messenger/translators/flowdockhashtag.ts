@@ -100,6 +100,8 @@ export class FlowdockHashtagTranslator extends FlowdockTranslator implements Tra
 			_.partial(FlowdockHashtagTranslator.readConnectionToEmit);
 		this.emitConverters[MessengerAction.CreateMessage] =
 			_.partial(FlowdockHashtagTranslator.createMessageToEmit, metadataConfig);
+		this.emitConverters[MessengerAction.CreateConnection] =
+			_.partial(FlowdockHashtagTranslator.createMessageToEmit, metadataConfig);
 	}
 
 	/**

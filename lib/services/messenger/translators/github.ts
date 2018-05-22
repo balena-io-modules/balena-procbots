@@ -203,6 +203,7 @@ export class GithubTranslator extends TranslatorScaffold implements Translator {
 	 */
 	protected responseConverters: ResponseConverters = {
 		[MessengerAction.CreateMessage]: GithubTranslator.convertUpdateThreadResponse,
+		[MessengerAction.CreateConnection]: GithubTranslator.convertUpdateThreadResponse,
 		[MessengerAction.ReadErrors]: GithubTranslator.convertReadErrorResponse,
 	};
 	/**
@@ -216,6 +217,8 @@ export class GithubTranslator extends TranslatorScaffold implements Translator {
 		this.responseConverters[MessengerAction.ReadConnection] =
 			_.partial(GithubTranslator.convertReadConnectionResponse, metadataConfig);
 		this.emitConverters[MessengerAction.CreateMessage] =
+			_.partial(GithubTranslator.createMessageIntoEmit, metadataConfig);
+		this.emitConverters[MessengerAction.CreateConnection] =
 			_.partial(GithubTranslator.createMessageIntoEmit, metadataConfig);
 	}
 
