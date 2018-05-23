@@ -124,7 +124,7 @@ SYNCBOT_MAPPINGS:
       alias: "fin"
     destination:
       service: "flowdock"
-      flow: "rulemotion/r-support_fin"
+      flow: "rulemotion/s-support_fin"
       alias: "fin"
   # All threads in forums/fin become threads in flowdock/support_fin
   - source:
@@ -133,12 +133,12 @@ SYNCBOT_MAPPINGS:
       alias: "fin"
     destination:
       service: "flowdock"
-      flow: "rulemotion/r-support_fin"
+      flow: "rulemotion/s-support_fin"
       alias: "fin"
   # All threads in flowdock/support_fin become threads in front/fin
   - source:
       service: "flowdock"
-      flow: "rulemotion/r-support_fin"
+      flow: "rulemotion/s-support_fin"
       alias: "fin"
     destination:
       service: "discourse"
