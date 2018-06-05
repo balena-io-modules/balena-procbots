@@ -16,6 +16,7 @@
 
 import * as Promise from 'bluebird';
 import * as _ from 'lodash';
+import { Dictionary } from 'lodash';
 import * as request from 'request-promise';
 import {
 	DiscourseConstructor,
@@ -446,8 +447,29 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 						details.post.raw, MetadataEncoding.HiddenMD, this.metadataConfig
 					);
 			}
+			const images: Dictionary<string> = {};
+			// Find every <img> tag in the HTML (cooked) string
+			_.forEach(details.post.cooked.match(/<img[^>]*>/g), (imgTag) => {
+				const attributes: Dictionary<string> = {};
+				_.forEach(imgTag.match(/(\w+)="(\S+)"/g), (attributeText) => {
+					const splitAttribute = attributeText.match(/(\w+)="(\S+)"/);
+					attributes[splitAttribute[1]] = splitAttribute[2];
+				});
+				// Track them via their `alt` text
+				images[attributes.alt] = attributes.src;
+			});
+			// Find every ![alt|size](url) (aka image) tag in the MD (raw) string
+			const imgFinder = /!\[([^|]*)[|\]].*]\(.*?\)/;
+			const imgReplacedText = metadata.content.replace(new RegExp(imgFinder, 'g'), (fullMatch) => {
+				// Replace the MD img tags with raw URLs
+				const imgAlt = fullMatch.match(new RegExp(imgFinder));
+				if (!imgAlt) {
+					return fullMatch;
+				}
+				return images[imgAlt[1]];
+			});
 			const quoteFinder = /\[quote="([^,"]*).*"]\s*([\s\S]*)\[\/quote]/;
-			const quoteParsedText = metadata.content.replace(new RegExp(quoteFinder, 'gm'), (fullMatch) => {
+			const quoteParsedText = imgReplacedText.replace(new RegExp(quoteFinder, 'gm'), (fullMatch) => {
 				const matchArray = fullMatch.match(new RegExp(quoteFinder, 'm'));
 				if (!matchArray) {
 					return fullMatch;
