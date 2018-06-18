@@ -94,7 +94,7 @@ export class ProcBot {
 		};
 
 		_.forEach(query.process, (queryItem) => {
-			const property = process[queryItem];
+			const property: (() => any) | any = process[queryItem];
 			response.process.push({
 				property: queryItem,
 				value: _.isFunction(property) ? property() : property,
@@ -102,7 +102,7 @@ export class ProcBot {
 		});
 
 		_.forEach(query.system, (queryItem) => {
-			const property = os[queryItem];
+			const property: (() => any) | any = os[queryItem];
 			response.system.push({
 				property: queryItem,
 				value: _.isFunction(property) ? property() : property,
@@ -227,9 +227,10 @@ export class ProcBot {
 		let match = /<<INJECT_(.*?)>>/g.exec(cooked);
 		while (match) {
 			const key = match[1];
-			if (typeof process.env[key] === 'string') {
-				injections[key] = process.env[key];
-				cooked = cooked.replace(match[0], process.env[key]);
+			const value = process.env[key];
+			if (typeof value === 'string') {
+				injections[key] = value;
+				cooked = cooked.replace(match[0], value);
 			} else {
 				throw new Error(`${key} expected in environment variables, but not found.`);
 			}

@@ -235,7 +235,7 @@ export class NotifyBot extends ProcBot {
 	/** Instance of the Front API retrieved from the Front ServiceEmitter. */
 	private frontApi: Front;
 	/** Instance of the Github API retrieved from the Github ServiceEmitter. */
-	private githubApi: GithubApi;
+	private readonly githubApi: GithubApi;
 
 	/**
 	 * Constructor.
@@ -912,19 +912,22 @@ export class NotifyBot extends ProcBot {
  * @returns A new NotifyBot instance.
  */
 export function createBot(): NotifyBot {
-	const notifyBotConfig = {
-		botName: process.env.NOTIFYBOT_NAME,
-		frontApiKey: process.env.NOTIFYBOT_FRONT_API_KEY,
-		frontUser: process.env.NOTIFYBOT_FRONT_USERNAME,
-		githubApp: process.env.NOTIFYBOT_GITHUB_INTEGRATION_ID,
-		githubPEM: process.env.NOTIFYBOT_GITHUB_PEM,
-		githubSecret: process.env.NOTIFYBOT_GITHUB_WEBHOOK_SECRET,
-	};
-	_.each(notifyBotConfig, (value) => {
-		if (!value) {
-			throw new Error('At least one required envvar for NotifyBot is missing');
-		}
-	});
-
-	return new NotifyBot(notifyBotConfig);
+	if (
+		process.env.NOTIFYBOT_NAME &&
+		process.env.NOTIFYBOT_FRONT_API_KEY &&
+		process.env.NOTIFYBOT_FRONT_USERNAME &&
+		process.env.NOTIFYBOT_GITHUB_INTEGRATION_ID &&
+		process.env.NOTIFYBOT_GITHUB_PEM &&
+		process.env.NOTIFYBOT_GITHUB_WEBHOOK_SECRET
+	) {
+		return new NotifyBot({
+			botName: process.env.NOTIFYBOT_NAME,
+			frontApiKey: process.env.NOTIFYBOT_FRONT_API_KEY,
+			frontUser: process.env.NOTIFYBOT_FRONT_USERNAME,
+			githubApp: process.env.NOTIFYBOT_GITHUB_INTEGRATION_ID,
+			githubPEM: process.env.NOTIFYBOT_GITHUB_PEM,
+			githubSecret: process.env.NOTIFYBOT_GITHUB_WEBHOOK_SECRET,
+		});
+	}
+	throw new Error('At least one required envvar for NotifyBot is missing');
 }
