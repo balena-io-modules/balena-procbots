@@ -251,11 +251,11 @@ export class VersionBot extends ProcBot {
 	}
 
 	/** Github ServiceEmitter name. */
-	private githubEmitterName: string;
+	private readonly githubEmitterName: string;
 	/** Github App ServiceEmitter. */
 	private githubEmitter: ServiceEmitter;
 	/** Instance of Github SDK API in use for App. */
-	private githubApi: GithubApi;
+	private readonly githubApi: GithubApi;
 	/** Email address used for commiting as VersionBot. */
 	private emailAddress: string;
 
@@ -428,7 +428,7 @@ export class VersionBot extends ProcBot {
 								login: pullRequest.user.login
 							}
 						},
-						source: process.env.VERSIONBOT_NAME
+						source: this._botname
 					});
 				}
 			});
@@ -1972,21 +1972,24 @@ export class VersionBot extends ProcBot {
  * Creates a new instance of the VersionBot client.
  */
 export function createBot(): VersionBot {
-	const requiredEnvVars = [
-		'VERSIONBOT_NAME',
-		'VERSIONBOT_EMAIL',
-		'VERSIONBOT_INTEGRATION_ID',
-		'VERSIONBOT_PEM',
-		'VERSIONBOT_WEBHOOK_SECRET',
-		'VERSIONBOT_USER',
-	];
-
-	const missingEnvVars = requiredEnvVars.filter((variable) => !process.env[variable]);
-
-	if (missingEnvVars.length) {
-		throw new Error(`${missingEnvVars.map(v => `'${v}'`).join(', ')} environment variables need setting`);
+	const integrationId = (process.env.VERSIONBOT_INTEGRATION_ID) ?
+		parseInt(process.env.VERSIONBOT_INTEGRATION_ID, 10) :
+		NaN;
+	if (
+		process.env.VERSIONBOT_NAME &&
+		process.env.VERSIONBOT_EMAIL &&
+		_.isFinite(integrationId) &&
+		process.env.VERSIONBOT_PEM &&
+		process.env.VERSIONBOT_WEBHOOK_SECRET &&
+		process.env.VERSIONBOT_USER
+	) {
+		return new VersionBot(
+			integrationId,
+			process.env.VERSIONBOT_NAME,
+			process.env.VERSIONBOT_EMAIL,
+			process.env.VERSIONBOT_PEM,
+			process.env.VERSIONBOT_WEBHOOK_SECRET
+		);
 	}
-
-	return new VersionBot(process.env.VERSIONBOT_INTEGRATION_ID, process.env.VERSIONBOT_NAME,
-	process.env.VERSIONBOT_EMAIL, process.env.VERSIONBOT_PEM, process.env.VERSIONBOT_WEBHOOK_SECRET);
+	throw new Error('At least one required envvar for VersionBot is missing');
 }

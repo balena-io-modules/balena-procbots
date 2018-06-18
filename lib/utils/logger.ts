@@ -54,10 +54,8 @@ export enum AlertLevel {
  * Currently the only output is of that to the console.
  */
 export class Logger {
-	// Log and Alert levels are taken from an envvar or set to the minimum.
-	// These can be overriden by specific methods.
-	private _logLevel = _.parseInt(process.env.PROCBOT_LOG_LEVEL) || LogLevel.INFO;
-	private _alertLevel = _.parseInt(process.env.PROCBOT_ALERT_LEVEL) || AlertLevel.ERROR;
+	private _logLevel: number;
+	private _alertLevel: number;
 	private _secrets: string[] = [];
 
 	/** Strings prepended to logging output. */
@@ -72,6 +70,15 @@ export class Logger {
 		'CRITICAL',
 		'ERROR'
 	];
+
+	constructor() {
+		// Log and Alert levels are taken from an envvar or set to the minimum.
+		// These can be overriden by specific methods.
+		const logLevelFromEnv = (process.env.PROCBOT_LOG_LEVEL) ? parseInt(process.env.PROCBOT_LOG_LEVEL, 10) : NaN;
+		this.logLevel = _.isFinite(logLevelFromEnv) ? logLevelFromEnv : LogLevel.INFO;
+		const alertLevelFromEnv = (process.env.PROCBOT_ALERT_LEVEL) ? parseInt(process.env.PROCBOT_ALERT_LEVEL, 10) : NaN;
+		this.alertLevel = _.isFinite(alertLevelFromEnv) ? alertLevelFromEnv : AlertLevel.ERROR;
+	}
 
 	/**
 	 * Get the logging level.

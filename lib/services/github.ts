@@ -97,8 +97,8 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 	protected authToken: string;
 	protected pem: string;
 	protected githubApi: any;
-	private appId: number;
-	private userPat: string;
+	private readonly appId: number;
+	private readonly userPat: string;
 	private eventTriggers: GithubRegistration[] = [];
 	// This is the current voodoo to allow all API calls to succeed.
 	// Accept: 'application/vnd.github.black-cat-preview+json' is now out of date
@@ -521,7 +521,7 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 			const payload = {
 				exp: Math.floor((Date.now() / 1000)) + (10 * 50),
 				iat: Math.floor((Date.now() / 1000)),
-				iss: this.appId
+				iss: this.appId.toString()
 			};
 			const jwToken = jwt.sign(payload, privatePem, { algorithm: 'RS256' });
 
