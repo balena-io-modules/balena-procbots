@@ -541,10 +541,6 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 	 */
 	public eventIntoMessages(event: FlowdockEvent): Promise<MessengerEvent[]> {
 		const details = this.eventIntoMessageDetails(event);
-		// Flowdock uses tags that begin with a colon as system tags.
-		const tagFilter = (tag: string) => {
-			return !/^:/.test(tag);
-		};
 		// Start building this in service scaffold form.
 		const cookedEvent: BasicMessageInformation = {
 			details: {
@@ -552,7 +548,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 				flow: details.message.metadata.flow || details.ids.flow,
 				handle: 'duff_FlowdockTranslator_eventIntoMessage_a', // gets replaced
 				hidden: details.message.metadata.hidden,
-				tags: [], // gets replaced
+				tags: [],
 				text: details.message.text,
 				time: details.message.time,
 				title: 'duff_FlowdockTranslator_eventIntoMessage_b', // gets replaced
@@ -572,7 +568,6 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 		.then((firstMessage) => {
 			const firstMessageEvent = _.merge(_.cloneDeep(event), { rawEvent: firstMessage });
 			const firstMessageDetails = this.eventIntoMessageDetails(firstMessageEvent);
-			cookedEvent.details.tags = _.uniq(firstMessage.tags.filter(tagFilter));
 			cookedEvent.details.title = firstMessageDetails.message.title;
 			return Promise.resolve(undefined);
 		})
