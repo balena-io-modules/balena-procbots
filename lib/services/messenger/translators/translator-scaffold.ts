@@ -125,6 +125,9 @@ export abstract class TranslatorScaffold implements Translator {
 		const matches = _.compact(_.map(
 			messages,
 			(message) => {
+				if (!_.isString(message)) {
+					return undefined;
+				}
 				if (format) {
 					const metadata = TranslatorScaffold.extractMetadata(message, format, config);
 					if ((metadata.service === service) && metadata.thread && metadata.flow) {
