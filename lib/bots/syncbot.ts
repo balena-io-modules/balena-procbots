@@ -318,13 +318,13 @@ export class SyncBot extends ProcBot {
 					const toldToArchive = archiveRegex && archiveRegex.test(data.details.text);
 					if (threadId && (flowId === true || flowId === to.flow) && data.details.hidden && toldToArchive && routeArchive) {
 						// Pass the instruction to archive to the static method
-						const flow = { service: to.service, flow: to.flow, thread: threadId };
-						return SyncBot.processCommand(flow, emitter, data, MessengerAction.ArchiveThread)
-						.then((emitResponse: MessengerEmitResponse) => {
+						const toFlow = { service: to.service, flow: to.flow, thread: threadId };
+						const fromFlow = data.source;
+						const reportArchive = (service: string, emitResponse: MessengerEmitResponse) => {
 							const error = emitResponse.err;
 							if (!error) {
 								// If the service performed the action fine then report this
-								logger.log(LogLevel.INFO, `---> Archived thread on ${toText} based on comment '${firstLine}'.`);
+								logger.log(LogLevel.INFO, `---> Archived thread on ${service} based on comment '${firstLine}'.`);
 								return threadDetails;
 							} else if (error instanceof TranslatorError && error.code === TranslatorErrorCode.EmitUnsupported) {
 								// If the service does not support the action then do not panic
@@ -332,7 +332,13 @@ export class SyncBot extends ProcBot {
 							} else {
 								return emitResponse;
 							}
-						});
+						};
+						return SyncBot.processCommand(toFlow, emitter, data, MessengerAction.ArchiveThread)
+						.then(_.partial(reportArchive, toFlow.service))
+						.then(() => {
+							return SyncBot.processCommand(fromFlow, emitter, data, MessengerAction.ArchiveThread);
+						})
+						.then(_.partial(reportArchive, fromFlow.service));
 					}
 					// The correct action was to do nothing, so pass the details along to the next thing
 					return threadDetails;

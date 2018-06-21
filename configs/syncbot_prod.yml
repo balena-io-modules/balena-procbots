@@ -4,6 +4,7 @@ SYNCBOT_ALIAS_USERS:
 SYNCBOT_ARCHIVE_STRINGS:
   - "#close"
   - "#archive"
+  - "#summary"
 SYNCBOT_ERROR_SOLUTIONS:
   discourse:
     ^403:
