@@ -316,7 +316,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 	): Promise<SourceDescription> {
 		const uncookedComments = _.map(response.posts, DiscourseTranslator.reverseEngineerComment);
 		return Promise.resolve(TranslatorScaffold.extractSource(
-			message.source.service,
+			message.source,
 			uncookedComments,
 			metadataConfig,
 			MetadataEncoding.HiddenHTML,
@@ -355,7 +355,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 		response: any,
 	): Promise<TranslatorMetadata[]> {
 		return Promise.resolve(_.compact(_.map(response.post_stream.posts, (comment) => {
-			const messageObject = DiscourseTranslator.extractMetadata(comment.cooked, MetadataEncoding.HiddenMD, config);
+			const messageObject = DiscourseTranslator.extractMetadata(comment.cooked, MetadataEncoding.HiddenHTML, config);
 			if (show === 'all') {
 				return messageObject;
 			} else if ((show === 'reply') && (messageObject.hidden === false)) {

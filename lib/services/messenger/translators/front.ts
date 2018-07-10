@@ -117,7 +117,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 		metadataConfig: MetadataConfiguration, message: TransmitInformation, response: ConversationComments
 	): Promise<SourceDescription> {
 		return Promise.resolve(TranslatorScaffold.extractSource(
-			message.source.service,
+			message.source,
 			_.reverse(_.map(response._results, (comment) => { return comment.body; })),
 			metadataConfig,
 			MetadataEncoding.HiddenMD,
@@ -587,9 +587,10 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 			const metadataFormat = hidden ? MetadataEncoding.HiddenMD : MetadataEncoding.HiddenHTML;
 			let metadata = TranslatorScaffold.emptyMetadata();
 			switch (details.event.type) {
-				// If this is an edit, then create a murmur to that effect
+				// Be a bit careful when adding cases to this. `details.event.type` is embedded within a sentence so
+				// English grammar must be considered.
 				case 'move':
-					metadata = TranslatorScaffold.emptyMetadata(`This thread was edited by ${details.author}.`);
+					metadata = TranslatorScaffold.emptyMetadata(`This thread was ${details.event.type}d by ${details.author}.`);
 					metadata.hidden = 'preferred';
 					break;
 				default:

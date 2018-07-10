@@ -48,3 +48,5 @@ package-lock.json
 
 # build files
 build
+
+configs/syncbot_dev.yml

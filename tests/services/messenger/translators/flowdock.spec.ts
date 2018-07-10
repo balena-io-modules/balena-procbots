@@ -319,8 +319,30 @@ describe('lib/services/messenger/translators/flowdock.ts', () => {
 		];
 
 		it('should just equate to hiddenMD metadata encoding', () => {
-			const flowdockObject = FlowdockTranslator.extractSource('m', messages, config, MetadataEncoding.Flowdock);
-			const scaffoldObject = TranslatorScaffold.extractSource('m', messages, config, MetadataEncoding.HiddenMD);
+			const flowdockObject = FlowdockTranslator.extractSource(
+				{
+					service: 'm',
+					flow: 'n',
+					message: 'duff',
+					thread: 'duff',
+					username: 'duff',
+				},
+				messages,
+				config,
+				MetadataEncoding.Flowdock
+			);
+			const scaffoldObject = TranslatorScaffold.extractSource(
+				{
+					service: 'm',
+					flow: 'n',
+					message: 'duff',
+					thread: 'duff',
+					username: 'duff',
+				},
+				messages,
+				config,
+				MetadataEncoding.HiddenMD
+			);
 			expect(flowdockObject).to.deep.equal(scaffoldObject);
 		});
 	});

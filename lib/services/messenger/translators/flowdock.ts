@@ -33,6 +33,7 @@ import {
 	MessengerAction,
 	MessengerConstructor,
 	MessengerEvent,
+	ReceiptIds,
 	SourceDescription,
 	TransmitInformation,
 	UpdateThreadResponse,
@@ -117,13 +118,13 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 	 * @param format    Format used to encode the metadata.
 	 */
 	public static extractSource(
-		service: string,
+		source: ReceiptIds,
 		messages: string[],
 		config: MetadataConfiguration,
 		format?: MetadataEncoding,
 	): SourceDescription {
 		const superFormat = (format === MetadataEncoding.Flowdock) ? MetadataEncoding.HiddenMD : format;
-		return TranslatorScaffold.extractSource(service, messages, config, superFormat);
+		return TranslatorScaffold.extractSource(source, messages, config, superFormat);
 	}
 
 	/**
@@ -251,7 +252,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 			return Promise.resolve(idsFromTags[0]);
 		}
 		return Promise.resolve(FlowdockTranslator.extractSource(
-			message.source.service,
+			message.source,
 			_.map(response, (comment) => { return comment.content; }),
 			metadataConfig,
 			MetadataEncoding.Flowdock,
