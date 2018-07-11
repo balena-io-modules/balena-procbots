@@ -145,42 +145,6 @@ SYNCBOT_MAPPINGS:
       service: "front"
       flow: "inb_8go3"
       alias: "fin"
-  # All threads in front/architecture become threads in flowdock/architecture
-  - source:
-      service: "front"
-      flow: "inb_udy"
-      alias: "architecture"
-    destination:
-      service: "flowdock"
-      flow: "rulemotion/r-architecture"
-      alias: "architecture"
-  # All threads front/product become threads in flowdock/product
-  - source:
-      service: "front"
-      flow: "inb_1deg"
-      alias: "product"
-    destination:
-      service: "flowdock"
-      flow: "rulemotion/r-product"
-      alias: "product"
-  # All threads in front/commercial become threads in flowdock/commercial
-  - source:
-      service: "front"
-      flow: "inb_26il"
-      alias: "commercial"
-    destination:
-      service: "flowdock"
-      flow: "rulemotion/r-commercial"
-      alias: "commercial"
-  # All threads in front/process become threads in flowdock/process
-  - source:
-      service: "front"
-      flow: "inb_stt"
-      alias: "process"
-    destination:
-      service: "flowdock"
-      flow: "rulemotion/r-process"
-      alias: "process"
   # All threads in front/sales become threads in flowdock/sales
   - source:
       service: "front"
