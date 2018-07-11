@@ -29,24 +29,24 @@ with the following notes:
 	- Repository metadata: R/O
 	- Repository administration: R/O
 	- Commit statuses: R/W
-		# Status
+		- **Status**
 	- Deployments: R/W
-		# Deployment
-		# Deployment status
+		- **Deployment**
+		- **Deployment status**
 	- Issues:
-		# Issue comment: R/W
-		# Issues: R/W
+		- **Issue comment: R/W**
+		- **Issues: R/W**
 	- Pull Requests: R/W
-		# Pull request
-		# Pull request review
-		# Pull request review comment
+		- **Pull request**
+		- **Pull request review**
+		- **Pull request review comment**
 	- Repository contents: R/W
-		# Commit comment
-		# Create
-		# Delete
-		# Fork
-		# Push
-		# Release
+		- **Commit comment**
+		- **Create**
+		- **Delete**
+		- **Fork**
+		- **Push**
+		- **Release**
 
 
 ## Secret Key, Webhook Token and Integration ID
