@@ -466,7 +466,14 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 				if (!imgAlt) {
 					return fullMatch;
 				}
-				return images[imgAlt[1]];
+				// /uploads/this.png is relative and does not have protocol
+				// http://example.com/uploads/this.png is not relative and has protocol
+				// //localhost/uploads/this.png is not relative and does not have protocol
+				const hasProtocol = /^\w+:/.test(images[imgAlt[1]]); // Begins with some letters, then :
+				const protocolFiller = hasProtocol ? '' : `${this.connectionDetails.protocol || 'https'}:`;
+				const isRelative = /^\/[^\/]/.test(images[imgAlt[1]]); // Begins with a / then not a /
+				const serverFiller = isRelative ? `//${this.connectionDetails.instance}` : '';
+				return `${protocolFiller}${serverFiller}${images[imgAlt[1]]}`;
 			});
 			const quoteFinder = /\[quote="([^,"]*).*"]\s*([\s\S]*)\[\/quote]/;
 			const quoteParsedText = imgReplacedText.replace(new RegExp(quoteFinder, 'gm'), (fullMatch) => {

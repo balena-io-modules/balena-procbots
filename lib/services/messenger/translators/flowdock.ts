@@ -455,7 +455,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 	}
 
 	protected eventEquivalencies = {
-		message: ['message'],
+		message: ['message', 'file'],
 	};
 	protected emitConverters: EmitConverters = {
 		[MessengerAction.ReadConnection]: FlowdockTranslator.readThreadIntoEmit,
@@ -504,6 +504,9 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 	 * @returns      Promise that resolves to an array of message objects in the standard form
 	 */
 	public eventIntoMessages(event: FlowdockEvent): Promise<MessengerEvent[]> {
+		if (event.type === 'file') {
+			event.rawEvent.content = this.fullyQualifyPath(event.rawEvent.content.path);
+		}
 		const details = this.eventIntoMessageDetails(event);
 		// Start building this in service scaffold form.
 		const cookedEvent: BasicMessageInformation = {
@@ -635,6 +638,10 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 				title: metadata.title,
 			}
 		};
+	}
+
+	private fullyQualifyPath(path: string): string {
+		return `https://www.flowdock.com/rest${path}`;
 	}
 }
 
