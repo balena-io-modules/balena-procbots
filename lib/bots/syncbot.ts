@@ -17,6 +17,7 @@ limitations under the License.
 import * as Promise from 'bluebird';
 import * as crypto from 'crypto';
 import * as _ from 'lodash';
+import * as moment from 'moment';
 import * as os from 'os';
 import * as util from 'util';
 import { ProcBot } from '../framework/procbot';
@@ -28,7 +29,7 @@ import {
 } from '../framework/procbot-types';
 import { MessengerService } from '../services/messenger';
 import {
-	BasicMessageInformation,
+	BasicEventInformation,
 	CreateThreadResponse,
 	FlowDefinition,
 	FlowMapping,
@@ -224,8 +225,7 @@ export class SyncBot extends ProcBot {
 			const sourceText = `${data.source.service} (${data.source.flow})`;
 			const fromText = `${from.service} (${from.flow})`;
 			const toText = `${to.service} (${to.flow})`;
-			// This will find everything before the first thing that is in the set of new line characters
-			const firstLine = data.details.text.split(/[\r\n]/)[0];
+			const firstLine = data.details.message ? data.details.message.text.split(/[\r\n]/)[0] : data.details.thread.title;
 			logger.log(
 				LogLevel.DEBUG,
 				`---> Considering '${firstLine}' on ${sourceText}, from ${fromText} to ${toText}. ${JSON.stringify(data)}`,
@@ -238,14 +238,14 @@ export class SyncBot extends ProcBot {
 				!compare(eventCameFrom, to) &&
 				!compare(eventIsOn, to) &&
 				// https://github.com/resin-io-modules/resin-procbots/issues/301
-				!data.details.intercomHack
+				!data.current.intercomHack
 			) {
 				// Log that we received this event.
 				logger.log(LogLevel.DEBUG, `---> Actioning '${firstLine}' to ${toText}.`);
 				try {
 					// This allows syncbot to represent specific other accounts.
-					if (_.includes(_.map(aliases, _.toLower), data.details.handle.toLowerCase())) {
-						data.details.handle = name;
+					if (_.includes(_.map(aliases, _.toLower), data.details.user.handle.toLowerCase())) {
+						data.details.user.handle = name;
 						data.current.username = name;
 						data.source.username = name;
 					}
@@ -269,10 +269,10 @@ export class SyncBot extends ProcBot {
 					const flowId = _.get(threadDetails, ['response', 'flow'], true);
 					if (
 						(flowId === true || flowId === to.flow || _.includes(to.previous, flowId)) &&
-						threadId && _.includes(actions, MessengerAction.CreateMessage)
+						threadId && _.includes(actions, MessengerAction.CreateMessage) && data.details.message
 					) {
 						logger.logInfo(`---> Creating comment '${firstLine}' on ${toText}.`);
-						logger.logDebug(`---> Full message from above, '${data.details.text}'.`);
+						logger.logDebug(`---> Full message from above, '${data.details.message.text}'.`);
 						// Comment on the found thread
 						const flow = { service: to.service, flow: to.flow, thread: threadId };
 						return SyncBot.processCommand(flow, emitter, data, MessengerAction.CreateMessage)
@@ -288,16 +288,52 @@ export class SyncBot extends ProcBot {
 						});
 					}
 					if (!threadId && _.includes(actions, MessengerAction.CreateThread)) {
-						logger.logInfo(`---> Creating thread '${data.details.title}' on ${toText}.`);
-						logger.logDebug(`---> Full message from above, '${data.details.text}'.`);
+						logger.logInfo(`---> Creating thread '${data.details.thread.title}' on ${toText}.`);
+						if (data.details.message) {
+							logger.logDebug(`---> Full message from above, '${data.details.message.text}'.`);
+						}
 						// Create a thread if the quest for connections didn't find any
 						return SyncBot.createThreadAndConnect(to, from, emitter, data, name);
 					}
-					// Pass on that this has no connected thread
 					return {
-						response: {},
+						response: threadDetails.response || {},
 						source: to.service,
 					};
+				})
+				.then((threadDetails: MessengerEmitResponse) => {
+					if (threadDetails.err) {
+						return threadDetails;
+					}
+					const threadId = _.get(threadDetails, ['response', 'thread'], false);
+					const flowId = _.get(threadDetails, ['response', 'flow'], true);
+					if (
+						(flowId === true || flowId === to.flow || _.includes(to.previous, flowId)) &&
+						threadId &&
+						_.includes(actions, MessengerAction.SyncState) &&
+						!_.isEmpty(data.details.thread.states)
+					) {
+						logger.logInfo(`---> Syncing state of '${firstLine}' to ${toText}.`);
+						logger.logDebug(`---> Full states from above, '${JSON.stringify(data.details.thread.states)}'.`);
+						const flow = { service: to.service, flow: to.flow, thread: threadId };
+						return SyncBot.processCommand(flow, emitter, data, MessengerAction.SyncState)
+						// Pass through details of the thread updated
+						.then((emitResponse) => {
+							if (emitResponse.err) {
+								return emitResponse;
+							}
+							return threadDetails;
+						})
+						.catch((error) => {
+							// If the service does not support the action then do not panic
+							if (
+								(error instanceof TranslatorError) &&
+								(error.code === TranslatorErrorCode.EmitUnsupported)
+							) {
+								return threadDetails;
+							}
+						});
+					}
+					return threadDetails;
 				})
 				// Then report that we have passed the message on
 				.then((threadDetails: MessengerEmitResponse) => {
@@ -317,8 +353,9 @@ export class SyncBot extends ProcBot {
 					const flowId = _.get(threadDetails, ['response', 'flow'], true);
 					const routeArchive = _.includes(actions, MessengerAction.ArchiveThread);
 					const archiveRegex = archiveStrings ? new RegExp(`(${archiveStrings.join('|')})`, 'i') : null;
-					const toldToArchive = archiveRegex && archiveRegex.test(data.details.text);
-					if (threadId && (flowId === true || flowId === to.flow) && data.details.hidden && toldToArchive && routeArchive) {
+					const toldToArchive = archiveRegex && data.details.message && archiveRegex.test(data.details.message.text);
+					const inHiddenMessage = data.details.message && data.details.message.hidden;
+					if (threadId && (flowId === true || flowId === to.flow) && inHiddenMessage && toldToArchive && routeArchive) {
 						// Pass the instruction to archive to the static method
 						const toFlow = { service: to.service, flow: to.flow, thread: threadId };
 						const fromFlow = data.source;
@@ -391,15 +428,19 @@ export class SyncBot extends ProcBot {
 		const fixes = solution.fixes.length > 0 ?
 			` * ${solution.fixes.join('\r\n * ')}` :
 			generic || 'No fixes documented.';
+		const errorMessage = `${to.service} reports \`${solution.description}\`.\r\n${fixes}\r\n`;
 		// We 'received' this error from the place we were syncing to.
 		const echoData: ReceiptInformation = {
 			details: {
-				handle: name,
-				hidden: 'preferred',
-				tags: data.details.tags,
-				text: `${to.service} reports \`${solution.description}\`.\r\n${fixes}\r\n`,
-				time: data.details.time,
-				title: data.details.title,
+				user: {
+					handle: name,
+				},
+				message: {
+					hidden: 'preferred',
+					text: errorMessage,
+					time: moment().toISOString(),
+				},
+				thread: data.details.thread,
 			},
 			source: {
 				message: 'duff_SyncBot_createErrorComment_a',
@@ -419,7 +460,7 @@ export class SyncBot extends ProcBot {
 		// We should tell the place the message was found on
 		return SyncBot.processCommand(data.current, messenger, echoData, MessengerAction.ReadErrors)
 		.then((response) => {
-			const needle = TranslatorScaffold.extractWords(echoData.details.text).join(' ');
+			const needle = TranslatorScaffold.extractWords(errorMessage).join(' ');
 			const isMentioned = _.some(response.response, (text) => {
 				return TranslatorScaffold.extractWords(text).join(' ') === needle;
 			});
@@ -440,7 +481,7 @@ export class SyncBot extends ProcBot {
 	 * @returns           Promise to create the comment and respond with the threadId updated.
 	 */
 	private static processCommand(
-		to: ThreadDefinition, messenger: MessengerService, data: BasicMessageInformation, action: MessengerAction
+		to: ThreadDefinition, messenger: MessengerService, data: BasicEventInformation, action: MessengerAction
 	): Promise<MessengerEmitResponse> {
 		const transmit: TransmitInformation = {
 			action,
@@ -471,7 +512,7 @@ export class SyncBot extends ProcBot {
 	 * @returns           Promise to create the comment and respond with the threadId updated.
 	 */
 	private static readConnectedThread(
-		to: FlowDefinition, messenger: MessengerService, data: BasicMessageInformation, username: string,
+		to: FlowDefinition, messenger: MessengerService, data: BasicEventInformation, username: string,
 	): Promise<MessengerEmitResponse> {
 		// Bundle a read connection request, it's a bit weird compared to others in this file.
 		// I've typed this here to split the union type earlier, and make error reports more useful.
@@ -549,12 +590,13 @@ export class SyncBot extends ProcBot {
 					action: MessengerAction.CreateConnection,
 					// A message that advertises the connected thread.
 					details: {
-						handle: name,
-						hidden: 'preferred',
-						tags: data.details.tags,
-						text: 'This is mirrored in ', // will be appended
-						time: data.details.time,
-						title: data.details.title,
+						user: {
+							handle: name,
+						},
+						thread: {
+							tags: data.details.thread.tags,
+							title: data.details.thread.title,
+						}
 					},
 					// this message is being created from nothing.
 					current: {
@@ -584,7 +626,11 @@ export class SyncBot extends ProcBot {
 				};
 				// This comments on the original thread about the new thread.
 				const targetText = `${createThread.target.service} ${to.alias || to.flow} thread ${response.thread}`;
-				updateOriginating.details.text += `[${targetText}](${response.url})`;
+				updateOriginating.details.message = {
+					hidden: 'preferred',
+					text: `This is mirrored in [${targetText}](${response.url})`,
+					time: moment().toISOString()
+				};
 				updateOriginating.current.service = createThread.target.service;
 				updateOriginating.current.thread = response.thread;
 				updateOriginating.current.flow = createThread.target.flow;
@@ -600,19 +646,27 @@ export class SyncBot extends ProcBot {
 				};
 				// This comments on the new thread about the original thread..
 				const sourceText = `${data.current.service} ${from.alias || from.flow} thread ${data.current.thread}`;
-				updateCreated.details.text += `[${sourceText}](${data.current.url})`;
+				updateCreated.details.message = {
+					hidden: 'preferred',
+					text: `This is mirrored in [${sourceText}](${data.current.url})`,
+					time: moment().toISOString()
+				};
 				updateCreated.current.service = data.current.service;
 				updateCreated.current.thread = data.current.thread;
 				updateCreated.current.flow = data.current.flow;
 
 				// Promise to post a message count if there is more than one message when the synced thread is created.
 				let summariseThread: Promise<void> = Promise.resolve();
-				if (data.details.messageCount && (data.details.messageCount > 1)) {
+				if (data.details.thread.messageCount && (data.details.thread.messageCount > 1)) {
 					const threadSummary = _.cloneDeep(updateCreated);
-					const count = data.details.messageCount - 1;
+					const count = data.details.thread.messageCount - 1;
 					const be = (count > 1) ? 'are' : 'is';
 					const noun = (count > 1) ? 'messages' : 'message';
-					threadSummary.details.text = `There ${be} ${count} prior ${noun} on this thread`;
+					threadSummary.details.message = {
+						hidden: true,
+						text: `There ${be} ${count} prior ${noun} on this thread`,
+						time: moment().toISOString()
+					};
 					summariseThread = messenger.sendData({contexts: {messenger: threadSummary}, source: 'syncbot'}).return();
 				}
 
@@ -677,27 +731,32 @@ export class SyncBot extends ProcBot {
 				// Not a synchronised post.
 				(event.cookedEvent.current.service === event.cookedEvent.source.service) &&
 				(event.cookedEvent.current.flow === event.cookedEvent.source.flow) &&
+				// Contains a message
+				event.cookedEvent.details.message &&
 				// Addressed to syncbot.
-				(beginsWithBotName.test(event.cookedEvent.details.text)) &&
+				(beginsWithBotName.test(event.cookedEvent.details.message.text)) &&
 				// On devops flow and from a devops user.
 				(event.cookedEvent.source.flow === flow) &&
 				(_.includes(users, hash))
 			) {
-				const environmentQuery = SyncBot.messageIntoEnvQuery(event.cookedEvent.details.text);
+				const environmentQuery = SyncBot.messageIntoEnvQuery(event.cookedEvent.details.message.text);
 				return ProcBot.matchEnvironment(environmentQuery.filter)
 				.then((matched) => {
 					if (matched) {
 						return ProcBot.queryEnvironment(environmentQuery.query)
 						.then((environment) => {
 							const text = SyncBot.envResultIntoMessage(environment);
-							const echoData: BasicMessageInformation = {
+							const echoData: BasicEventInformation = {
 								details: {
-									handle: botname,
-									hidden: true,
-									tags: event.cookedEvent.details.tags,
-									text,
-									time: event.cookedEvent.details.time,
-									title: event.cookedEvent.details.title,
+									user: {
+										handle: botname,
+									},
+									message: {
+										hidden: true,
+										text,
+										time: moment().toISOString(),
+									},
+									thread: event.cookedEvent.details.thread
 								},
 								current: {
 									service: 'process',
@@ -762,6 +821,7 @@ export class SyncBot extends ProcBot {
 						MessengerAction.CreateMessage,
 						MessengerAction.CreateThread,
 						MessengerAction.ArchiveThread,
+						MessengerAction.SyncState
 					];
 					const router = SyncBot.makeRouter(
 						source,
@@ -795,7 +855,11 @@ export class SyncBot extends ProcBot {
 							destination,
 							messengers.emitter,
 							this.logger,
-							[MessengerAction.CreateMessage, MessengerAction.ArchiveThread],
+							[
+								MessengerAction.CreateMessage,
+								MessengerAction.ArchiveThread,
+								MessengerAction.SyncState
+							],
 							config.SYNCBOT_NAME,
 							config.SYNCBOT_ALIAS_USERS,
 							config.SYNCBOT_ERROR_SOLUTIONS,

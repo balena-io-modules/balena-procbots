@@ -31,7 +31,7 @@ import { ServiceEmitter, ServiceListener, ServiceType } from './service-types';
  */
 export class FrontService extends ServiceScaffold<string> implements ServiceListener, ServiceEmitter {
 	/** Underlying SDK object that we route requests to */
-	private session: Front;
+	private readonly session: Front;
 
 	constructor(data: FrontConstructor | FrontListenerConstructor, logger: Logger) {
 		super(data, logger);

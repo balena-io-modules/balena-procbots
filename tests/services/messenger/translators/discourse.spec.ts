@@ -2,20 +2,26 @@
 import { expect } from 'chai';
 import * as crypto from 'crypto';
 import * as _ from 'lodash';
-import { BasicMessageInformation } from '../../../../lib/services/messenger-types';
+import { BasicEventInformation } from '../../../../lib/services/messenger-types';
 import { DiscourseTranslator } from '../../../../lib/services/messenger/translators/discourse';
 
 describe('lib/services/messenger/translators/discourse.ts', () => {
 
 	describe('DiscourseTranslator.bundleMessage', () => {
-		const simpleMessage: BasicMessageInformation = {
+		const simpleMessage: BasicEventInformation = {
 			details: {
-				handle: 'b',
-				hidden: false,
-				tags: [],
-				text: 'cde @test',
-				time: '2018-04-16T12:45:46+00:00',
-				title: 'f',
+				user: {
+					handle: 'b',
+				},
+				message: {
+					hidden: false,
+					text: 'cde @test',
+					time: '2018-04-16T12:45:46+00:00',
+				},
+				thread: {
+					tags: [],
+					title: 'f',
+				}
 			},
 			current: {
 				message: 'g',
@@ -56,7 +62,11 @@ describe('lib/services/messenger/translators/discourse.ts', () => {
 
 		it('should convert a message with a funny username into emit instructions', async () => {
 			const complexMessage = _.cloneDeep(simpleMessage);
-			complexMessage.details.text = 'cde @test-';
+			complexMessage.details.message = {
+				hidden: false,
+				text: 'cde @test-',
+				time: '2018-04-16T12:45:46+00:00',
+			};
 			const emit = await DiscourseTranslator.bundleMessage(complexMessage, thread, metadataConfig);
 			const hmac = crypto.createHmac('sha256', 'salt').update('cde test').digest('hex');
 			const raw = `cde @_test\n[](http://e.com?hidden=comment&source=i&flow=k&thread=h&hmac=${hmac})`;

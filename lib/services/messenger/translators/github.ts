@@ -25,7 +25,7 @@ import {
 	GithubListenerConstructor,
 } from '../../github-types';
 import {
-	BasicMessageInformation,
+	BasicEventInformation,
 	EmitInstructions,
 	MessengerAction,
 	MessengerBaseIds,
@@ -114,28 +114,38 @@ export class GithubTranslator extends TranslatorScaffold implements Translator {
 
 	/**
 	 * Converts a provided message object into instructions to create a message.
-	 * @param metadataConfig     Configuration of how to encode the metadata.
-	 * @param message            object to analyse.
-	 * @returns                  Promise that resolves to emit instructions.
+	 * @param metadataConfig   Configuration of how to encode the metadata.
+	 * @param event            object to analyse.
+	 * @returns                Promise that resolves to emit instructions.
 	 */
 	private static createMessageIntoEmit(
-		metadataConfig: MetadataConfiguration, message: TransmitInformation
+		metadataConfig: MetadataConfiguration, event: TransmitInformation
 	): Promise<EmitInstructions> {
-		const splitIds = GithubTranslator.splitIds(message.target);
+		const splitIds = GithubTranslator.splitIds(event.target);
 		const thread = splitIds.number;
 		if (!thread) {
 			return Promise.reject(new TranslatorError(
 				TranslatorErrorCode.IncompleteTransmitInformation, 'Cannot create a message without a thread.'
 			));
 		}
-		if (message.details.hidden === true) {
+		if (!event.details.message) {
+			return Promise.reject(new TranslatorError(
+				TranslatorErrorCode.IncompleteTransmitInformation, 'Cannot emit an absent message.'
+			));
+		}
+		if (event.details.message.hidden === true) {
 			return Promise.reject(new TranslatorError(
 				TranslatorErrorCode.EmitUnsupported, 'GitHub does not support whispers.'
 			));
 		}
-		message.details.text = `**${message.details.handle}**:\n${message.details.text}`;
-		const metadataString = TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenMD, metadataConfig);
-		const body = `${message.details.text}\n${metadataString}`;
+		event.details.message.text = `**${event.details.user.handle}**:\n${event.details.message.text}`;
+		const metadataString = TranslatorScaffold.stringifyMetadata(
+			event.details.message,
+			event.current,
+			MetadataEncoding.HiddenMD,
+			metadataConfig
+		);
+		const body = `${event.details.user.handle}:\n${event.details.message.text}\n${metadataString}`;
 		const payload: IssuesCreateCommentParams = _.merge({ body, number: thread }, splitIds);
 		return Promise.resolve({
 			method: ['issues', 'createComment'],
@@ -146,15 +156,15 @@ export class GithubTranslator extends TranslatorScaffold implements Translator {
 	/**
 	 * Converts a response into a the generic format.
 	 * @param metadataConfig  Configuration of how the metadata was encoded.
-	 * @param message         The initial message that triggered this response.
+	 * @param event           The initial message that triggered this response.
 	 * @param response        The response provided by the service.
 	 * @returns               Promise that resolves to the metadata of the connection.
 	 */
 	private static convertReadConnectionResponse(
-		metadataConfig: MetadataConfiguration, message: BasicMessageInformation, response: any[]
+		metadataConfig: MetadataConfiguration, event: BasicEventInformation, response: any[]
 	): Promise<SourceDescription> {
 		return Promise.resolve(TranslatorScaffold.extractSource(
-			message.current,
+			event.current,
 			_.map(response, (comment) => { return _.get(comment, 'body'); }),
 			metadataConfig,
 			MetadataEncoding.HiddenMD,
@@ -252,12 +262,18 @@ export class GithubTranslator extends TranslatorScaffold implements Translator {
 			context: `${event.source}.${thread.id}`,
 			cookedEvent: {
 				details: {
-					handle: data.sender.login,
-					hidden: _.isSet(metadata.hidden) ? metadata.hidden : false,
-					tags: thread.labels,
-					text: TranslatorScaffold.unixifyNewLines(text),
-					time: event.cookedEvent.data.updated_at,
-					title: thread.title
+					user: {
+						handle: data.sender.login,
+					},
+					message: {
+						hidden: _.isSet(metadata.hidden) ? metadata.hidden : false,
+						text: TranslatorScaffold.unixifyNewLines(text),
+						time: event.cookedEvent.data.updated_at,
+					},
+					thread: {
+						tags: thread.labels,
+						title: thread.title
+					}
 				},
 				current: {
 					flow: data.repository.full_name,

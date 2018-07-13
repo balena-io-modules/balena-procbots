@@ -15,6 +15,7 @@
  */
 
 import * as Promise from 'bluebird';
+import { Dictionary } from 'lodash';
 import { Translator } from './messenger/translators/translator';
 import { MetadataConfiguration } from './messenger/translators/translator-types';
 import { ServiceScaffoldConstructor, ServiceScaffoldEvent } from './service-scaffold-types';
@@ -42,21 +43,22 @@ export interface ReceiptIds extends MessengerBaseIds {
 	message: string;
 	/** The ID of the thread. */
 	thread: string;
+	// https://github.com/resin-io-modules/resin-procbots/issues/301
+	/**
+	 * For Intercom messages on Front, whether they had an empty subject line
+	 * An empty subject line indicates the message was inputted via the Front or Intercom UI
+	 * A subject line indicates the message was inputted via the Front API
+	 * Needed because Front mangles the message into plaintext and refuses to let you see raw
+	 * */
+	intercomHack?: boolean;
 }
 
 export type PrivacyPreference = boolean | 'preferred';
 
 /** The details that all messages shall possess. */
 export interface MessageDetails {
-	/** The alias relevant to this message, in github form. */
-	handle: string;
 	/** Whether this message should be publicly visible. */
 	hidden: PrivacyPreference;
-	// https://github.com/resin-io-modules/resin-procbots/issues/301
-	/** For Intercom messages on Front, whether they had an empty subject line */
-	intercomHack?: boolean;
-	/** An array of the tags associated with the thread. */
-	tags: string[];
 	/** The actual message string. */
 	text: string;
 	/**
@@ -64,10 +66,24 @@ export interface MessageDetails {
 	 * This can be in any format understood by the momentjs constructor
 	 */
 	time: string;
+}
+
+/** The details that all threads shall possess. */
+export interface ThreadDetails {
+	/** An array of the tags associated with the thread. */
+	tags: string[];
 	/** The title of the thread. */
 	title?: string;
 	/** A count of how many comments there are in this thread. */
 	messageCount?: number;
+	/** Flags to set or clear for this thread */
+	states?: Dictionary<boolean>;
+}
+
+/** The details that all users shall possess. */
+export interface UserDetails {
+	/** The alias relevant to this event, in github form. */
+	handle: string;
 }
 
 /**
@@ -101,23 +117,28 @@ export const enum MessengerAction {
 	CreateThread, CreateMessage, ReadConnection,
 	UpdateTags, ArchiveThread, ReadErrors,
 	ListReplies, ListWhispers, CreateConnection,
+	SyncState,
 }
 
 /** The form that all messages events shall possess, both generally and as received. */
-export interface BasicMessageInformation {
+export interface BasicEventInformation {
 	/** Details of the message itself. */
-	details: MessageDetails;
+	details: {
+		message?: MessageDetails;
+		user: UserDetails;
+		thread: ThreadDetails;
+	};
 	/** Where the message was found. */
 	current: ReceiptIds;
 }
 
-export interface ReceiptInformation extends BasicMessageInformation {
+export interface ReceiptInformation extends BasicEventInformation {
 	/** Where the message came from. */
 	source: ReceiptIds;
 }
 
 /** The requirements that a message fulfill for transmission through Messenger. */
-export interface TransmitInformation extends BasicMessageInformation {
+export interface TransmitInformation extends BasicEventInformation {
 	/** Action that should be undertaken */
 	action: MessengerAction;
 	/** Where the message came from. */

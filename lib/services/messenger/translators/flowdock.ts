@@ -28,8 +28,9 @@ import {
 	FlowdockResponse,
 } from '../../flowdock-types';
 import {
-	BasicMessageInformation,
+	BasicEventInformation,
 	CreateThreadResponse,
+	MessageDetails,
 	MessengerAction,
 	MessengerConstructor,
 	MessengerEvent,
@@ -99,16 +100,17 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 
 	/**
 	 * Encode the metadata of an event into a string to embed in the message.
-	 * @param data    Event to gather details from.
-	 * @param format  Optional, markdown or plaintext, defaults to markdown.
-	 * @param config  Configuration that should be used to encode the metadata.
-	 * @returns       Text with data embedded.
+	 * @param message  Message to encode details of.
+	 * @param current  Service which found the message.
+	 * @param format   Optional, markdown or plaintext, defaults to markdown.
+	 * @param config   Configuration that should be used to encode the metadata.
+	 * @returns        Text with data embedded.
 	 */
 	public static stringifyMetadata(
-		data: BasicMessageInformation, format: MetadataEncoding, config: MetadataConfiguration,
+		message: MessageDetails, current: ReceiptIds, format: MetadataEncoding, config: MetadataConfiguration,
 	): string {
 		const superFormat = (format === MetadataEncoding.Flowdock) ? MetadataEncoding.HiddenMD : format;
-		return TranslatorScaffold.stringifyMetadata(data, superFormat, config);
+		return TranslatorScaffold.stringifyMetadata(message, current, superFormat, config);
 	}
 
 	/**
@@ -229,12 +231,12 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 	/**
 	 * Converts a response into the generic format.
 	 * @param metadataConfig  Configuration of how metadata was encoded
-	 * @param message         The initial message that prompted this action.
+	 * @param event           The initial message that prompted this action.
 	 * @param response        The response from the SDK.
 	 * @returns               Promise that resolve to the thread details.
 	 */
 	private static convertReadConnectionResponse(
-		metadataConfig: MetadataConfiguration, message: BasicMessageInformation, response: FlowdockMessage[]
+		metadataConfig: MetadataConfiguration, event: BasicEventInformation, response: FlowdockMessage[]
 	): Promise<SourceDescription> {
 		// Create an array of those tag IDs that match on service & flow
 		const idsFromTags = _.compact(_.map(response[0].tags, (tag) => {
@@ -242,8 +244,8 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 			if (mirrorMatch.test(tag)) {
 				const ids = TranslatorScaffold.slugToIds(tag.replace(mirrorMatch, ''));
 				if (
-					(ids.service === message.current.service) &&
-					(ids.flow === message.current.flow)
+					(ids.service === event.current.service) &&
+					(ids.flow === event.current.flow)
 				) {
 					return ids;
 				}
@@ -253,7 +255,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 			return Promise.resolve(idsFromTags[0]);
 		}
 		return Promise.resolve(FlowdockTranslator.extractSource(
-			message.current,
+			event.current,
 			_.map(response, (comment) => { return comment.content; }),
 			metadataConfig,
 			MetadataEncoding.Flowdock,
@@ -280,27 +282,35 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 	 */
 	private static createThreadIntoEmit(
 		metadataConfig: MetadataConfiguration,
-		message: TransmitInformation
+		event: TransmitInformation
 	): Promise<FlowdockEmitInstructions> {
+		if (!event.details.message) {
+			return Promise.reject('Cannot email a thread without a message.');
+		}
 		// Bundle for the session
 		return Promise.resolve({
 			method: ['post'],
 			payload: {
-				path: `/flows/${message.target.flow}/messages`,
+				path: `/flows/${event.target.flow}/messages`,
 				payload: {
 					// The concatenated string, of various data nuggets, to emit.
 					content: FlowdockTranslator.createFormattedText(
-						message.details.text,
+						event.details.message.text,
 						{
-							header: message.details.title,
-							metadata: FlowdockTranslator.stringifyMetadata(message, MetadataEncoding.Flowdock, metadataConfig),
-							prefix: message.details.hidden ? '' : '% ',
-							url: _.get(message, ['source', 'url']),
+							header: event.details.thread.title,
+							metadata: FlowdockTranslator.stringifyMetadata(
+								event.details.message,
+								event.current,
+								MetadataEncoding.Flowdock,
+								metadataConfig
+							),
+							prefix: event.details.message.hidden ? '' : '% ',
+							url: _.get(event, ['source', 'url']),
 						},
 						metadataConfig,
 					),
 					event: 'message',
-					external_user_name: message.details.handle.replace(/\s/g, '_')
+					external_user_name: event.details.user.handle.replace(/\s/g, '_')
 				}
 			}
 		});
@@ -309,36 +319,46 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 	/**
 	 * Converts a provided message object into instructions to create a message.
 	 * @param metadataConfig  Configuration of how to encode metadata.
-	 * @param message         object to analyse.
+	 * @param event           object to analyse.
 	 * @returns               Promise that resolves to emit instructions.
 	 */
 	private static createMessageIntoEmit(
 		metadataConfig: MetadataConfiguration,
-		message: TransmitInformation
+		event: TransmitInformation
 	): Promise<FlowdockEmitInstructions> {
 		// Check we have a thread.
-		const threadId = message.target.thread;
+		const threadId = event.target.thread;
 		if (!threadId) {
 			return Promise.reject(new TranslatorError(
 				TranslatorErrorCode.IncompleteTransmitInformation, 'Cannot create a comment without a thread.'
+			));
+		}
+		if (!event.details.message) {
+			return Promise.reject(new TranslatorError(
+				TranslatorErrorCode.IncompleteTransmitInformation, 'Cannot emit an absent message.'
 			));
 		}
 		// Bundle for the session.
 		return Promise.resolve({
 			method: ['post'],
 			payload: {
-				path: `/flows/${message.target.flow}/threads/${threadId}/messages`,
+				path: `/flows/${event.target.flow}/threads/${threadId}/messages`,
 				payload: {
 					content: FlowdockTranslator.createFormattedText(
-						message.details.text,
+						event.details.message.text,
 						{
-							metadata: FlowdockTranslator.stringifyMetadata(message, MetadataEncoding.Flowdock, metadataConfig),
-							prefix: message.details.hidden ? '' : '% ',
+							metadata: FlowdockTranslator.stringifyMetadata(
+								event.details.message,
+								event.current,
+								MetadataEncoding.Flowdock,
+								metadataConfig
+							),
+							prefix: event.details.message.hidden ? '' : '% ',
 						},
 						metadataConfig,
 					),
 					event: 'message',
-					external_user_name: message.details.handle.replace(/\s/g, '_'),
+					external_user_name: event.details.user.handle.replace(/\s/g, '_'),
 				}
 			}
 		});
@@ -361,7 +381,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 			));
 		}
 		// Check we have tags.
-		const tags = message.details.tags;
+		const tags = message.details.thread.tags;
 		if (!_.isArray(tags)) {
 			return Promise.reject(new TranslatorError(
 				TranslatorErrorCode.IncompleteTransmitInformation, 'Cannot update tags without a tags array.'
@@ -426,6 +446,35 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 		return FlowdockTranslator.readThreadIntoEmit(message, message.current.service);
 	}
 
+	private static syncStateIntoEmit(session: Session, message: TransmitInformation): Promise<FlowdockEmitInstructions> {
+		const threadId = message.target.thread;
+		return FlowdockTranslator.fetchFromSession(session, `/flows/${message.target.flow}/threads/${threadId}`)
+		.then((threadResponse) => {
+			return FlowdockTranslator.fetchFromSession(
+				session,
+				`/flows/${message.target.flow}/messages/${threadResponse.initial_message}`,
+			);
+		})
+		.then((initialMessage) => {
+			_.forEach(message.details.thread.states, (toSet, state) => {
+				if (toSet) {
+					initialMessage.tags.push(`is-${state}`);
+				} else {
+					_.pull(initialMessage.tags, `is-${state}`);
+				}
+			});
+			return {
+				method: ['put'],
+				payload: {
+					path: `/flows/${message.target.flow}/messages/${initialMessage.id}`,
+					payload: {
+						tags: initialMessage.tags
+					},
+				}
+			};
+		});
+	}
+
 	/**
 	 * Converts a response into the generic format.
 	 * @param _message  The initial message that prompted this action.
@@ -468,6 +517,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 	protected responseConverters: ResponseConverters = {
 		[MessengerAction.UpdateTags]: FlowdockTranslator.convertUpdateThreadResponse,
 		[MessengerAction.CreateMessage]: FlowdockTranslator.convertUpdateThreadResponse,
+		[MessengerAction.SyncState]: FlowdockTranslator.convertUpdateThreadResponse,
 		[MessengerAction.CreateConnection]: FlowdockTranslator.convertUpdateThreadResponse,
 		[MessengerAction.CreateThread]: FlowdockTranslator.convertCreateThreadResponse,
 		[MessengerAction.ReadErrors]: FlowdockTranslator.convertReadErrorResponse,
@@ -498,6 +548,8 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 			_.partial(FlowdockTranslator.createMessageIntoEmit, metadataConfig);
 		this.emitConverters[MessengerAction.UpdateTags] =
 			_.partial(FlowdockTranslator.updateTagsIntoEmit, this.session);
+		this.emitConverters[MessengerAction.SyncState] =
+			_.partial(FlowdockTranslator.syncStateIntoEmit, this.session);
 	}
 
 	/**
@@ -510,13 +562,19 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 		// Start building this in service scaffold form.
 		const cookedEvent: ReceiptInformation = {
 			details: {
-				handle: 'duff_FlowdockTranslator_eventIntoMessage_a', // gets replaced
-				hidden: details.message.metadata.hidden,
-				tags: [],
-				text: details.message.text,
-				time: details.message.time,
-				title: 'duff_FlowdockTranslator_eventIntoMessage_b', // gets replaced
-				messageCount: event.rawEvent.thread.internal_comments,
+				user: {
+					handle: 'duff_FlowdockTranslator_eventIntoMessage_a', // gets replaced
+				},
+				message: {
+					hidden: details.message.metadata.hidden,
+					text: details.message.text,
+					time: details.message.time,
+				},
+				thread: {
+					tags: [],
+					title: 'duff_FlowdockTranslator_eventIntoMessage_b', // gets replaced
+					messageCount: event.rawEvent.thread.internal_comments,
+				}
 			},
 			current: {
 				service: details.ids.service,
@@ -540,7 +598,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 		.then((firstMessage) => {
 			const firstMessageEvent = _.merge(_.cloneDeep(event), { rawEvent: firstMessage });
 			const firstMessageDetails = this.eventIntoMessageDetails(firstMessageEvent);
-			cookedEvent.details.title = firstMessageDetails.message.title;
+			cookedEvent.details.thread.title = firstMessageDetails.message.title;
 			return Promise.resolve(undefined);
 		})
 		// Get details of the user nickname.
@@ -548,7 +606,7 @@ export class FlowdockTranslator extends TranslatorScaffold implements Translator
 		// Resolve to the details, compiled from those provided and those gathered.
 		.then((username: string) => {
 			cookedEvent.source.username = username;
-			cookedEvent.details.handle = username;
+			cookedEvent.details.user.handle = username;
 			cookedEvent.current.username = username;
 			return [{
 				context: `${event.source}.${event.context}`,

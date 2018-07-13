@@ -20,8 +20,8 @@ import { AllHtmlEntities } from 'html-entities';
 import * as _ from 'lodash';
 import * as marked from 'marked';
 import {
-	BasicMessageInformation,
 	EmitInstructions,
+	MessageDetails,
 	MessengerConstructor,
 	MessengerEvent,
 	MessengerResponse,
@@ -231,19 +231,20 @@ export abstract class TranslatorScaffold implements Translator {
 
 	/**
 	 * Encode the metadata of an event into a string to embed in the message.
-	 * @param data    Event to gather details from.
-	 * @param format  Optional, markdown or plaintext, defaults to markdown.
-	 * @param config  Configuration that should be used to encode the metadata.
-	 * @returns       Text with data embedded.
+	 * @param message  Message to encode details of.
+	 * @param current  Service which found the message.
+	 * @param format   Optional, markdown or plaintext, defaults to markdown.
+	 * @param config   Configuration that should be used to encode the metadata.
+	 * @returns        Text with data embedded.
 	 */
 	public static stringifyMetadata(
-		data: BasicMessageInformation, format: MetadataEncoding, config: MetadataConfiguration,
+		message: MessageDetails, current: ReceiptIds, format: MetadataEncoding, config: MetadataConfiguration,
 	): string {
-		const pubWord = TranslatorScaffold.findPublicityWord(data.details.hidden, config.publicity);
-		const hmac = this.signText(data.details.text, config.secret);
-		const service = data.current.service;
-		const flow = data.current.flow;
-		const thread = data.current.thread;
+		const pubWord = TranslatorScaffold.findPublicityWord(message.hidden, config.publicity);
+		const hmac = this.signText(message.text, config.secret);
+		const service = current.service;
+		const flow = current.flow;
+		const thread = current.thread;
 		const queryString = `?hidden=${pubWord}&source=${service}&flow=${flow}&thread=${thread}&hmac=${hmac}`;
 		switch (format) {
 			case MetadataEncoding.HiddenHTML:
@@ -277,7 +278,7 @@ export abstract class TranslatorScaffold implements Translator {
 				metadata = TranslatorScaffold.metadataByRegex(message, hiddenHTMLRegex, publicity);
 				break;
 			case MetadataEncoding.HiddenMD:
-				const hiddenMDRegex = new RegExp(`\\[\\]\\(${baseUrl}${querystring}\\)$`, 'i');
+				const hiddenMDRegex = new RegExp(`\\[]\\(${baseUrl}${querystring}\\)$`, 'i');
 				metadata = TranslatorScaffold.metadataByRegex(message, hiddenMDRegex, publicity);
 				break;
 			default:

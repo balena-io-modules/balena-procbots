@@ -27,7 +27,7 @@ import {
 	DiscourseServiceEvent,
 } from '../../discourse-types';
 import {
-	BasicMessageInformation,
+	BasicEventInformation,
 	CreateThreadResponse,
 	MessengerAction,
 	MessengerConstructor,
@@ -93,20 +93,33 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 
 	/**
 	 * Converts provided message details into a Promise of emit instructions
-	 * @param message         Message data to emit
+	 * @param event           Message data to emit
 	 * @param thread          Thread ID to emit to
 	 * @param metadataConfig  Configuration of how to encode the metadata
 	 * @returns               Promise that resolves to the instructions that will emit the message
 	 */
 	public static bundleMessage(
-		message: BasicMessageInformation, thread: string, metadataConfig: MetadataConfiguration
+		event: BasicEventInformation, thread: string, metadataConfig: MetadataConfiguration
 	): Promise<DiscourseEmitInstructions> {
-		if (message.details.hidden) {
-			message.details.text = `**${message.details.handle}** whispered:\n${message.details.text}`;
+		if (!event.details.message) {
+			return Promise.reject(new TranslatorError(
+				TranslatorErrorCode.IncompleteTransmitInformation, 'Cannot emit an absent message.'
+			));
 		}
-		const metadataString = TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenMD, metadataConfig);
+		if (event.details.message.hidden) {
+			event.details.message.text = `**${event.details.user.handle}** whispered:\n${event.details.message.text}`;
+		}
+		if (event.details.message.hidden) {
+			event.details.message.text = `${event.details.user.handle} whispered:\n${event.details.message.text}`;
+		}
+		const metadataString = TranslatorScaffold.stringifyMetadata(
+			event.details.message,
+			event.current,
+			MetadataEncoding.HiddenMD,
+			metadataConfig
+		);
 		const converter = DiscourseTranslator.convertUsernameToDiscourse;
-		const messageString = TranslatorScaffold.convertPings(message.details.text, converter);
+		const messageString = TranslatorScaffold.convertPings(event.details.message.text, converter);
 		return Promise.resolve({
 			method: ['request'],
 			payload: {
@@ -115,7 +128,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 				body: {
 					raw: `${messageString}\n${metadataString}`,
 					topic_id: thread,
-					whisper: message.details.hidden ? 'true' : 'false',
+					whisper: event.details.message.hidden ? 'true' : 'false',
 				}
 			}
 		});
@@ -124,30 +137,40 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 	/**
 	 * Converts a provided message object into instructions to create a thread.
 	 * @param metadataConfig  Configuration of how to encode metadata
-	 * @param message         object to analyse.
+	 * @param event           Message data to emit.
 	 * @returns               Promise that resolves to emit instructions.
 	 */
 	private static createThreadIntoEmit(
-		metadataConfig: MetadataConfiguration, message: TransmitInformation
+		metadataConfig: MetadataConfiguration, event: TransmitInformation
 	): Promise<DiscourseEmitInstructions> {
+		if (!event.details.message) {
+			return Promise.reject(new TranslatorError(
+				TranslatorErrorCode.IncompleteTransmitInformation, 'Cannot email a thread without a message.'
+			));
+		}
 		// Check that we have a title.
-		const title = message.details.title;
+		const title = event.details.thread.title;
 		if (!title) {
 			return Promise.reject(new TranslatorError(
 				TranslatorErrorCode.IncompleteTransmitInformation, 'Cannot create a thread without a title.'
 			));
 		}
 		// Bundle into a format for the service.
-		const metadataString = TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenMD, metadataConfig);
+		const metadataString = TranslatorScaffold.stringifyMetadata(
+			event.details.message,
+			event.current,
+			MetadataEncoding.HiddenMD,
+			metadataConfig
+		);
 		const converter = DiscourseTranslator.convertUsernameToDiscourse;
-		const messageString = TranslatorScaffold.convertPings(message.details.text, converter);
+		const messageString = TranslatorScaffold.convertPings(event.details.message.text, converter);
 		return Promise.resolve({
 			method: ['request'],
 			payload: {
 				htmlVerb: 'POST',
 				path: '/posts',
 				body: {
-					category: message.target.flow,
+					category: event.target.flow,
 					raw: `${messageString}\n${metadataString}`,
 					title,
 					unlist_topic: 'false',
@@ -238,7 +261,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 			));
 		}
 		// Check that we have an array of tags.
-		const tags = message.details.tags;
+		const tags = message.details.thread.tags;
 		if (!_.isArray(tags)) {
 			return Promise.reject(new TranslatorError(
 				TranslatorErrorCode.IncompleteTransmitInformation, 'Cannot update tags without a tags array.'
@@ -290,16 +313,16 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 	/**
 	 * Converts a response into a the generic format.
 	 * @param metadataConfig  Configuration of how the metadata was encoded.
-	 * @param message         The initial message that triggered this response.
+	 * @param event           The initial event that triggered this response.
 	 * @param response        The response provided by the service.
 	 * @returns               Promise that resolves to emit instructions.
 	 */
 	private static convertReadConnectionResponse(
-		metadataConfig: MetadataConfiguration, message: BasicMessageInformation, response: DiscoursePostSearchResponse
+		metadataConfig: MetadataConfiguration, event: BasicEventInformation, response: DiscoursePostSearchResponse
 	): Promise<SourceDescription> {
 		const uncookedComments = _.map(response.posts, DiscourseTranslator.reverseEngineerComment);
 		return Promise.resolve(TranslatorScaffold.extractSource(
-			message.current,
+			event.current,
 			uncookedComments,
 			metadataConfig,
 			MetadataEncoding.HiddenHTML,
@@ -308,7 +331,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 
 	/**
 	 * Converts a response into a the generic format.
-	 * @param message         The initial message that triggered this response.
+	 * @param _message        The initial message that triggered this response.
 	 * @param response        The response provided by the service.
 	 * @returns               Promise that resolves to emit instructions.
 	 */
@@ -472,14 +495,20 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 			const codeParsedText = quoteParsedText.replace(/\[\/?code]/g, '```');
 			const cookedEvent: ReceiptInformation = {
 				details: {
-					handle: convertedUsername,
-					// post_type 4 seems to correspond to whisper
-					hidden: _.isSet(metadata.hidden) ? metadata.hidden : details.post.post_type === 4,
-					tags: details.topic.tags,
-					text: TranslatorScaffold.convertPings(codeParsedText, DiscourseTranslator.convertUsernameToGeneric),
-					time: details.post.created_at,
-					title: details.topic.title,
-					messageCount: details.post.post_number,
+					user: {
+						handle: convertedUsername,
+					},
+					thread: {
+						tags: details.topic.tags,
+						title: details.topic.title,
+						messageCount: details.post.post_number,
+					},
+					message: {
+						// post_type 4 seems to correspond to whisper
+						hidden: _.isSet(metadata.hidden) ? metadata.hidden : details.post.post_type === 4,
+						text: TranslatorScaffold.convertPings(codeParsedText, DiscourseTranslator.convertUsernameToGeneric),
+						time: details.post.created_at,
+					}
 				},
 				current: {
 					service: event.source,
@@ -512,15 +541,16 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 
 	/**
 	 * Promise to provide emitter construction details for a provided message.
-	 * @param message  Message information, used to retrieve username
-	 * @returns        The details required to construct an emitter.
+	 * @param event  Message information, used to retrieve username
+	 * @returns      The details required to construct an emitter.
 	 */
-	public messageIntoEmitterConstructor(message: TransmitInformation): DiscourseConstructor {
-		const convertedUsername = DiscourseTranslator.convertUsernameToDiscourse(message.target.username);
+	public messageIntoEmitterConstructor(event: TransmitInformation): DiscourseConstructor {
+		const convertedUsername = DiscourseTranslator.convertUsernameToDiscourse(event.target.username);
+		const isReply = event.details.message && !event.details.message.hidden;
 		// Pass back details that may be used to connect.
 		return {
 			token: this.connectionDetails.token,
-			username: message.details.hidden ? this.connectionDetails.username : convertedUsername,
+			username: isReply ? convertedUsername : this.connectionDetails.username,
 			instance: this.connectionDetails.instance,
 			protocol: this.connectionDetails.protocol,
 			serviceName: 'discourse',

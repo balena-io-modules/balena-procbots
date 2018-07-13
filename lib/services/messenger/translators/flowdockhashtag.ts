@@ -59,18 +59,23 @@ export class FlowdockHashtagTranslator extends FlowdockTranslator implements Tra
 	 * Converts a provided message object into instructions to create a message.
 	 * @param orgId           Parameterised ID of the organisation.
 	 * @param metadataConfig  Configuration of how to encode metadata.
-	 * @param message         object to analyse.
+	 * @param event           object to analyse.
 	 * @returns               Promise that resolves to emit instructions.
 	 */
 	private static createMessageToEmit(
 		metadataConfig: MetadataConfiguration,
-		message: TransmitInformation
+		event: TransmitInformation
 	): Promise<FlowdockEmitInstructions> {
 		// Check we have a thread.
-		const threadId = message.target.thread;
+		const threadId = event.target.thread;
 		if (!threadId) {
 			return Promise.reject(new TranslatorError(
 				TranslatorErrorCode.IncompleteTransmitInformation, 'Cannot create a comment without a thread.'
+			));
+		}
+		if (!event.details.message) {
+			return Promise.reject(new TranslatorError(
+				TranslatorErrorCode.IncompleteTransmitInformation, 'Cannot emit an absent message.'
 			));
 		}
 		// Bundle for the session.
@@ -80,15 +85,20 @@ export class FlowdockHashtagTranslator extends FlowdockTranslator implements Tra
 				path: `/flows/${threadId}/messages`,
 				payload: {
 					content: FlowdockTranslator.createFormattedText(
-						message.details.text,
+						event.details.message.text,
 						{
-							metadata: FlowdockTranslator.stringifyMetadata(message, MetadataEncoding.Flowdock, metadataConfig),
-							prefix: message.details.hidden ? '' : '% ',
+							metadata: FlowdockTranslator.stringifyMetadata(
+								event.details.message,
+								event.current,
+								MetadataEncoding.Flowdock,
+								metadataConfig
+							),
+							prefix: event.details.message.hidden ? '' : '% ',
 						},
 						metadataConfig,
 					),
 					event: 'message',
-					external_user_name: message.details.handle.replace(/\s/g, '_'),
+					external_user_name: event.details.user.handle.replace(/\s/g, '_'),
 				}
 			}
 		});
@@ -143,12 +153,18 @@ export class FlowdockHashtagTranslator extends FlowdockTranslator implements Tra
 				return {
 					cookedEvent: {
 						details: {
-							handle: fetchedDetails.username,
-							hidden: details.message.metadata.hidden,
-							tags: [],
-							text: details.message.text.replace(/#/g, '#.'),
-							time: details.message.time,
-							title: _.get(firstMessageDetails, ['message', 'title'], '').replace(/#/g, '#.')
+							user: {
+								handle: fetchedDetails.username,
+							},
+							message: {
+								hidden: details.message.metadata.hidden,
+								text: details.message.text.replace(/#/g, '#.'),
+								time: details.message.time,
+							},
+							thread: {
+								tags: [],
+								title: _.get(firstMessageDetails, ['message', 'title'], '').replace(/#/g, '#.')
+							}
 						},
 						current: {
 							service: 'flowdockhashtag',

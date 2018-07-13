@@ -5,7 +5,7 @@ chai.use(chaiAsPromised);
 const expect = chai.expect;
 
 import * as crypto from 'crypto';
-import { BasicMessageInformation } from '../../../../lib/services/messenger-types';
+import { MessageDetails, ReceiptIds } from '../../../../lib/services/messenger-types';
 import {
 	MetadataEncoding,
 	TranslatorScaffold,
@@ -179,27 +179,23 @@ describe('lib/services/messenger/translators/translator-scaffold.ts', () => {
 
 	describe('TranslatorScaffold.stringifyMetadata', () => {
 		const hmac = crypto.createHmac('sha256', 'salt').update('c').digest('hex');
-		const exampleMessage: BasicMessageInformation = {
-			details: {
-				handle: 'b',
-				hidden: true,
-				tags: [],
-				text: 'c',
-				time: '2018-04-16T12:45:46+00:00',
-				title: 'd',
-			},
-			current: {
-				message: 'e',
-				thread: 'f',
-				service: 'g',
-				username: 'h',
-				flow: 'i',
-			},
+		const messageDetails: MessageDetails = {
+			hidden: true,
+			text: 'c',
+			time: '2018-04-16T12:45:46+00:00',
+		};
+		const current: ReceiptIds = {
+			message: 'e',
+			thread: 'f',
+			service: 'g',
+			username: 'h',
+			flow: 'i',
 		};
 
 		it('should encode metadata into an invisible link markdown string', () => {
 			const encodedMetadata = TranslatorScaffold.stringifyMetadata(
-				exampleMessage,
+				messageDetails,
+				current,
 				MetadataEncoding.HiddenMD,
 				exampleConfig,
 			);
@@ -209,7 +205,8 @@ describe('lib/services/messenger/translators/translator-scaffold.ts', () => {
 
 		it('should encode metadata into an invisible link html string', () => {
 			const encodedMetadata = TranslatorScaffold.stringifyMetadata(
-				exampleMessage,
+				messageDetails,
+				current,
 				MetadataEncoding.HiddenHTML,
 				exampleConfig,
 			);
