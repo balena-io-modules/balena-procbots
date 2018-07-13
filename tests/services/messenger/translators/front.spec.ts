@@ -123,7 +123,7 @@ describe('lib/services/messenger/translators/front.ts', () => {
 					username: 'duff',
 					message: 'duff',
 					thread: 'duff',
-					flow: 'duff',
+					flow: 'public-s-premium',
 				},
 				target: {
 					service: 'duff',

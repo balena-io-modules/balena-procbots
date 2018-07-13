@@ -45,7 +45,13 @@ describe('lib/services/messenger/translators/translator-scaffold.ts', () => {
 	describe('TranslatorScaffold.extractSource', () => {
 		it('should find the correct "Connects to" style id from an array of message strings', () => {
 			const threadId = TranslatorScaffold.extractSource(
-				'foo',
+				{
+					service: 'foo',
+					flow: 'baz',
+					message: 'duff',
+					thread: 'duff',
+					username: 'duff',
+				},
 				[
 					'A message that mentions blah, foo, bar, test, discourse and thread.',
 					'[Connects to foo thread abc]',
@@ -58,7 +64,13 @@ describe('lib/services/messenger/translators/translator-scaffold.ts', () => {
 
 		it('should find the correct "Mirrored" style id from an array of message strings', () => {
 			const threadId = TranslatorScaffold.extractSource(
-				'foo',
+				{
+					service: 'foo',
+					flow: 'baz',
+					message: 'duff',
+					thread: 'duff',
+					username: 'duff',
+				},
 				[
 					'A message that mentions blah, foo, bar, test, discourse and thread.',
 					'This is mirrored in [bar thread jkl]',
@@ -71,11 +83,19 @@ describe('lib/services/messenger/translators/translator-scaffold.ts', () => {
 
 		it('should find the correct "Flow cited" style id from an array of message strings', () => {
 			const threadId = TranslatorScaffold.extractSource(
-				'foo',
+				{
+					service: 'foo',
+					flow: 'baz',
+					message: 'duff',
+					thread: 'duff',
+					username: 'duff',
+				},
 				[
 					'A message that mentions blah, foo, bar, test, discourse and thread.',
 					'This is mirrored in [bar baz thread jkl]',
+					'This is mirrored in [foo ram thread mno]',
 					'This is mirrored in [foo baz thread ghi]',
+					'This is mirrored in [foo ewe thread pqr]',
 				],
 				exampleConfig,
 			);
@@ -84,9 +104,17 @@ describe('lib/services/messenger/translators/translator-scaffold.ts', () => {
 
 		it('should find the correct "Atomic" style id from an array of message strings', () => {
 			const threadId = TranslatorScaffold.extractSource(
-				'm',
+				{
+					service: 'm',
+					flow: 'n',
+					message: 'duff',
+					thread: 'duff',
+					username: 'duff',
+				},
 				[
+					'm, blah, test, discourse and thread.[](http://e.com?hidden=whisper&source=m&flow=v&thread=o)',
 					'm, blah, test, discourse and thread.[](http://e.com?hidden=whisper&source=m&flow=n&thread=o)',
+					'm, blah, test, discourse and thread.[](http://e.com?hidden=whisper&source=m&flow=w&thread=o)',
 					'This is mirrored in [bar thread pqr]',
 					'This is mirrored in [foo thread stu]',
 				],
@@ -286,12 +314,12 @@ describe('lib/services/messenger/translators/translator-scaffold.ts', () => {
 		it('should not extract metadata from an html-in-qouted-text string', () => {
 			const copiedMessage = `h<a href="http://e.com?hidden=whisper&source=g&flow=j&thread=i&hmac=${hmac}"></a>`;
 			const extractedMetadata = TranslatorScaffold.extractMetadata(
-				`<div>Their reply.</div><div>${copiedMessage}</div>`,
+				`<div>Their reply.</div><div>${copiedMessage}</div><div>footer</div>`,
 				MetadataEncoding.HiddenHTML,
 				exampleConfig,
 			);
 			expect(extractedMetadata).to.deep.equal({
-				content: `<div>Their reply.</div><div>${copiedMessage}</div>`,
+				content: `<div>Their reply.</div><div>${copiedMessage}</div><div>footer</div>`,
 				hidden: true,
 				service: null,
 				hmac: null,

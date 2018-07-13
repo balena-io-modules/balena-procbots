@@ -152,7 +152,7 @@ export class GithubTranslator extends TranslatorScaffold implements Translator {
 		metadataConfig: MetadataConfiguration, message: TransmitInformation, response: any[]
 	): Promise<SourceDescription> {
 		return Promise.resolve(TranslatorScaffold.extractSource(
-			message.source.service,
+			message.source,
 			_.map(response, (comment) => { return _.get(comment, 'body'); }),
 			metadataConfig,
 			MetadataEncoding.HiddenMD,

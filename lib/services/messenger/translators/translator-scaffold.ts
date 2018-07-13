@@ -26,6 +26,7 @@ import {
 	MessengerEvent,
 	MessengerResponse,
 	PrivacyPreference,
+	ReceiptIds,
 	SourceDescription,
 	ThreadDefinition,
 	TransmitInformation,
@@ -116,21 +117,25 @@ export abstract class TranslatorScaffold implements Translator {
 	 * @param format    Format used to encode the metadata.
 	 */
 	public static extractSource(
-		service: string,
+		source: ReceiptIds,
 		messages: string[],
 		config: MetadataConfiguration,
 		format?: MetadataEncoding,
 	): SourceDescription {
-		const idFinder = new RegExp(`${service} ?\\S* thread ([\\w\\d-+\\/=\\_]+)`);
+		const idFinder = new RegExp(`${source.service} (?:${source.flow} )?thread ([\\w\\d-+\\/=_]+)`);
 		const matches = _.compact(_.map(
 			messages,
 			(message) => {
 				if (!_.isString(message)) {
 					return undefined;
 				}
-				if (format) {
+				if (_.isNumber(format)) {
 					const metadata = TranslatorScaffold.extractMetadata(message, format, config);
-					if ((metadata.service === service) && metadata.thread && metadata.flow) {
+					if (
+						(metadata.service === source.service) &&
+						metadata.thread &&
+						(metadata.flow === source.flow)
+					) {
 						return {
 							flow: metadata.flow,
 							service: metadata.service,
@@ -147,7 +152,7 @@ export abstract class TranslatorScaffold implements Translator {
 			return matches[0];
 		}
 		throw new TranslatorError(
-			TranslatorErrorCode.ValueNotFound, `No connected thread found for ${service}.`
+			TranslatorErrorCode.ValueNotFound, `No connected thread found for ${source.service}.`
 		);
 	}
 
@@ -268,7 +273,7 @@ export abstract class TranslatorScaffold implements Translator {
 		// Find the metadata by seeking a regex within the message.
 		switch (format) {
 			case MetadataEncoding.HiddenHTML:
-				const hiddenHTMLRegex = new RegExp(`<a href="${baseUrl}${querystring}"[^>]*></a>$`, 'i');
+				const hiddenHTMLRegex = new RegExp(`<a href="${baseUrl}${querystring}"[^>]*></a>(?:</[^>]+>)*$`, 'i');
 				metadata = TranslatorScaffold.metadataByRegex(message, hiddenHTMLRegex, publicity);
 				break;
 			case MetadataEncoding.HiddenMD:
