@@ -247,6 +247,8 @@ Errors, where possible, are reported in the originating thread as whispers.
 
 1) You will need the help of a Front admin to perform the first steps,
 and someone with write access to this repo to perform the final step
+1) Ensure that the SyncBot account has access to the inbox on Settings >
+Inboxes > ...inbox... > Teammates
 1) Get the Front API token from Settings > Plugins and API > API
 1) Fire a request similar to the following to acquire a list of inboxes
 	```
@@ -281,7 +283,8 @@ and someone with write access to this repo to perform the final step
 
 ### Setting up a Discourse category for SyncBot
 
-1) You will need the help of a Discourse admin (not moderator) to perform these steps
+1) You will need the help of a Discourse admin (not moderator) to perform the
+first steps, and someone with write access to this repo to perform the final step
 1) Get an All Users API Key from https://your.discourse/admin/api/keys
 1) Fire a request similar to the following to acquire a list of categories
 	```
@@ -291,9 +294,6 @@ and someone with write access to this repo to perform the final step
 	Accept: application/json
 	```
 1) Find the ID of the category you care about, should be in the format `123`.
-1) Adjust the following values in configs/yml
-	* `SYNCBOT_MAPPINGS`
-		* Add the flow mapping to the array
 1) Create a webhook at https://your.discourse/admin/api/web_hooks, the settings should be as follows:
 	```text
 	Payload URL:
@@ -314,6 +314,9 @@ and someone with write access to this repo to perform the final step
 	Active
 		<checked>
 	```
+1) Adjust the following values in configs/yml
+	* `SYNCBOT_MAPPINGS`
+		* Add the flow mapping to the array
 
 ### Setting up a Github org for SyncBot
 
