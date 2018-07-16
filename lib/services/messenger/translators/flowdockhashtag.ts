@@ -49,7 +49,7 @@ export class FlowdockHashtagTranslator extends FlowdockTranslator implements Tra
 				path: `/flows/${threadId}/messages`,
 				payload: {
 					limit: '100', // Default is 30, but there is literally no reason why we wouldn't ask for as many as we can
-					search: `${message.source.service} thread`,
+					search: `${message.current.service} thread`,
 				},
 			}
 		});
@@ -143,8 +143,6 @@ export class FlowdockHashtagTranslator extends FlowdockTranslator implements Tra
 				return {
 					cookedEvent: {
 						details: {
-							service: details.message.metadata.service || 'flowdockhashtag',
-							flow: details.message.metadata.flow || flow,
 							handle: fetchedDetails.username,
 							hidden: details.message.metadata.hidden,
 							tags: [],
@@ -152,7 +150,7 @@ export class FlowdockHashtagTranslator extends FlowdockTranslator implements Tra
 							time: details.message.time,
 							title: _.get(firstMessageDetails, ['message', 'title'], '').replace(/#/g, '#.')
 						},
-						source: {
+						current: {
 							service: 'flowdockhashtag',
 							message: event.rawEvent.id,
 							flow,
@@ -160,6 +158,14 @@ export class FlowdockHashtagTranslator extends FlowdockTranslator implements Tra
 							url: details.paths.thread,
 							username: fetchedDetails.username
 						},
+						source: {
+							service: details.message.metadata.service || 'flowdockhashtag',
+							flow: details.message.metadata.flow || flow,
+							thread: details.message.metadata.thread || details.ids.thread,
+							message: details.ids.message,
+							url: details.paths.thread,
+							username: fetchedDetails.username,
+						}
 					},
 					context: event.context,
 					type: event.type,

@@ -3,7 +3,7 @@ import { expect } from 'chai';
 
 import * as Bluebird from 'bluebird';
 import * as FS from 'fs';
-import { MessengerAction, TransmitInformation } from '../../../../lib/services/messenger-types';
+import { BasicMessageInformation, MessengerAction, TransmitInformation } from '../../../../lib/services/messenger-types';
 import { FrontTranslator } from '../../../../lib/services/messenger/translators/front';
 import { MetadataConfiguration } from '../../../../lib/services/messenger/translators/translator-types';
 
@@ -116,23 +116,15 @@ describe('lib/services/messenger/translators/front.ts', () => {
 				},
 				secret: 'salt',
 			};
-			const target = {
-				action: 1,
-				source: {
+			const target: BasicMessageInformation = {
+				current: {
 					service: 'flowdock',
 					username: 'duff',
 					message: 'duff',
 					thread: 'duff',
 					flow: 'public-s-premium',
 				},
-				target: {
-					service: 'duff',
-					username: 'duff',
-					flow: 'duff',
-				},
 				details: {
-					service: 'duff',
-					flow: 'duff',
 					handle: 'duff',
 					hidden: false,
 					tags: [],
@@ -172,8 +164,6 @@ describe('lib/services/messenger/translators/front.ts', () => {
 		const exampleDetails: TransmitInformation = {
 			action: MessengerAction.ArchiveThread,
 			details: {
-				service: 'a',
-				flow: 'p',
 				handle: 'b',
 				hidden: false,
 				tags: [],
@@ -181,7 +171,7 @@ describe('lib/services/messenger/translators/front.ts', () => {
 				time: '2018-04-16T12:45:46+00:00',
 				title: 'f',
 			},
-			source: {
+			current: {
 				message: 'g',
 				thread: 'h',
 				service: 'i',

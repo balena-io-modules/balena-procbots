@@ -2,15 +2,14 @@
 import { expect } from 'chai';
 import * as crypto from 'crypto';
 import * as _ from 'lodash';
+import { BasicMessageInformation } from '../../../../lib/services/messenger-types';
 import { DiscourseTranslator } from '../../../../lib/services/messenger/translators/discourse';
 
 describe('lib/services/messenger/translators/discourse.ts', () => {
 
 	describe('DiscourseTranslator.bundleMessage', () => {
-		const simpleMessage = {
+		const simpleMessage: BasicMessageInformation = {
 			details: {
-				service: 'a',
-				flow: 'l',
 				handle: 'b',
 				hidden: false,
 				tags: [],
@@ -18,7 +17,7 @@ describe('lib/services/messenger/translators/discourse.ts', () => {
 				time: '2018-04-16T12:45:46+00:00',
 				title: 'f',
 			},
-			source: {
+			current: {
 				message: 'g',
 				thread: 'h',
 				service: 'i',

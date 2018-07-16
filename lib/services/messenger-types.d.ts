@@ -48,10 +48,6 @@ export type PrivacyPreference = boolean | 'preferred';
 
 /** The details that all messages shall possess. */
 export interface MessageDetails {
-	/** The originating service that the message synced from */
-	service: string;
-	/** The originating flow that the message synced from */
-	flow: string;
 	/** The alias relevant to this message, in github form. */
 	handle: string;
 	/** Whether this message should be publicly visible. */
@@ -111,6 +107,11 @@ export const enum MessengerAction {
 export interface BasicMessageInformation {
 	/** Details of the message itself. */
 	details: MessageDetails;
+	/** Where the message was found. */
+	current: ReceiptIds;
+}
+
+export interface ReceiptInformation extends BasicMessageInformation {
 	/** Where the message came from. */
 	source: ReceiptIds;
 }
@@ -119,6 +120,8 @@ export interface BasicMessageInformation {
 export interface TransmitInformation extends BasicMessageInformation {
 	/** Action that should be undertaken */
 	action: MessengerAction;
+	/** Where the message came from. */
+	source?: ReceiptIds;
 	/** Where the action should happen. */
 	target: MessengerBaseIds;
 }
@@ -193,7 +196,7 @@ export interface MessengerConstructor extends ServiceScaffoldConstructor {
 /** Defines that the events that the messenger emits will provide basic message information. */
 export interface MessengerEvent extends ServiceScaffoldEvent {
 	/** A massaged presentation of the data, using message types. */
-	cookedEvent: BasicMessageInformation;
+	cookedEvent: ReceiptInformation;
 }
 
 export interface SolutionIdea {

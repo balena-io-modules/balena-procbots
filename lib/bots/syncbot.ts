@@ -37,6 +37,7 @@ import {
 	MessengerConnectionDetails,
 	MessengerEmitResponse,
 	MessengerEvent,
+	ReceiptInformation,
 	SolutionIdea,
 	SolutionIdeas,
 	SolutionMatrix,
@@ -230,8 +231,8 @@ export class SyncBot extends ProcBot {
 				`---> Considering '${firstLine}' on ${sourceText}, from ${fromText} to ${toText}. ${JSON.stringify(data)}`,
 			);
 			const compare = (a: any, b: any) => ((a.service === b.service) && (a.flow === b.flow));
-			const eventIsOn = data.source;
-			const eventCameFrom = data.details;
+			const eventIsOn = data.current;
+			const eventCameFrom = data.source;
 			if (
 				compare(eventIsOn, from) &&
 				!compare(eventCameFrom, to) &&
@@ -245,6 +246,7 @@ export class SyncBot extends ProcBot {
 					// This allows syncbot to represent specific other accounts.
 					if (_.includes(_.map(aliases, _.toLower), data.details.handle.toLowerCase())) {
 						data.details.handle = name;
+						data.current.username = name;
 						data.source.username = name;
 					}
 				} catch (error) {
@@ -379,7 +381,7 @@ export class SyncBot extends ProcBot {
 	private static createErrorComment(
 		to: FlowDefinition | ThreadDefinition,
 		messenger: MessengerService,
-		data: BasicMessageInformation,
+		data: ReceiptInformation,
 		error: Error,
 		name: string,
 		matrix: SolutionMatrix = {},
@@ -389,10 +391,9 @@ export class SyncBot extends ProcBot {
 		const fixes = solution.fixes.length > 0 ?
 			` * ${solution.fixes.join('\r\n * ')}` :
 			generic || 'No fixes documented.';
-		const echoData: BasicMessageInformation = {
+		// We 'received' this error from the place we were syncing to.
+		const echoData: ReceiptInformation = {
 			details: {
-				service: to.service,
-				flow: to.flow,
 				handle: name,
 				hidden: 'preferred',
 				tags: data.details.tags,
@@ -407,8 +408,16 @@ export class SyncBot extends ProcBot {
 				username: name,
 				flow: to.flow,
 			},
+			current: {
+				message: 'duff_SyncBot_createErrorComment_a',
+				thread: _.get(to, 'thread', 'duff_SyncBot_createErrorComment_b'),
+				service: to.service,
+				username: name,
+				flow: to.flow,
+			},
 		};
-		return SyncBot.processCommand(data.source, messenger, echoData, MessengerAction.ReadErrors)
+		// We should tell the place the message was found on
+		return SyncBot.processCommand(data.current, messenger, echoData, MessengerAction.ReadErrors)
 		.then((response) => {
 			const needle = TranslatorScaffold.extractWords(echoData.details.text).join(' ');
 			const isMentioned = _.some(response.response, (text) => {
@@ -436,12 +445,12 @@ export class SyncBot extends ProcBot {
 		const transmit: TransmitInformation = {
 			action,
 			details: data.details,
-			source: data.source,
+			current: data.current,
 			target: {
 				flow: to.flow,
 				service: to.service,
 				thread: to.thread,
-				username: data.source.username,
+				username: data.current.username,
 			},
 		};
 		// Request that the payload created above be sent.
@@ -470,8 +479,9 @@ export class SyncBot extends ProcBot {
 			action: MessengerAction.ReadConnection,
 			details: data.details,
 			// If credential details are required then consult with the SyncBot user.
-			// Most of `source` doesn't matter, except `service` and `flow`.
-			source: {
+			// `service` and `flow` are used to deduce the scope of connection sought...
+			// the rest is irrelevant
+			current: {
 				flow: to.flow,
 				message: 'duff_SyncBot_readConnectedThread_a',
 				// The service you wish to find a connection for.
@@ -482,9 +492,9 @@ export class SyncBot extends ProcBot {
 			// This feels paradoxical because the target of the read request ...
 			// is the place the event came from.
 			target: {
-				flow: data.source.flow,
-				service: data.source.service,
-				thread: data.source.thread,
+				flow: data.current.flow,
+				service: data.current.service,
+				thread: data.current.thread,
 				username,
 			},
 		};
@@ -507,18 +517,19 @@ export class SyncBot extends ProcBot {
 	 * @returns           Promise to create the thread and respond with the threadId.
 	 */
 	private static createThreadAndConnect(
-		to: FlowDefinition, from: FlowDefinition, messenger: MessengerService, data: BasicMessageInformation, name: string,
+		to: FlowDefinition, from: FlowDefinition, messenger: MessengerService, data: ReceiptInformation, name: string,
 	): Promise<MessengerEmitResponse> {
 		// Bundle a thread creation request.
 		// I've typed this here to split the union type earlier, and make error reports more useful.
 		const createThread: TransmitInformation = {
 			action: MessengerAction.CreateThread,
 			details: data.details,
+			current: data.current,
 			source: data.source,
 			target: {
 				flow: to.flow,
 				service: to.service,
-				username: data.source.username,
+				username: data.current.username,
 			},
 		};
 		// Request that the payload created above be sent.
@@ -538,8 +549,6 @@ export class SyncBot extends ProcBot {
 					action: MessengerAction.CreateConnection,
 					// A message that advertises the connected thread.
 					details: {
-						service: 'duff_SyncBot_createThreadAndConnect_a', // will be replaced
-						flow: 'duff_SyncBot_createThreadAndConnect_j', // will be replaced
 						handle: name,
 						hidden: 'preferred',
 						tags: data.details.tags,
@@ -548,7 +557,7 @@ export class SyncBot extends ProcBot {
 						title: data.details.title,
 					},
 					// this message is being created from nothing.
-					source: {
+					current: {
 						message: 'duff_SyncBot_createThreadAndConnect_b',
 						thread: 'duff_SyncBot_createThreadAndConnect_c', // will be replaced
 						flow: 'duff_SyncBot_createThreadAndConnect_d', // will be replaced
@@ -568,19 +577,17 @@ export class SyncBot extends ProcBot {
 				const updateOriginating = _.cloneDeep(genericConnect);
 				// This should update the thread that this process sourced from.
 				updateOriginating.target = {
-					flow: data.source.flow,
-					service: data.source.service,
+					flow: data.current.flow,
+					service: data.current.service,
 					username: name,
-					thread: data.source.thread,
+					thread: data.current.thread,
 				};
 				// This comments on the original thread about the new thread.
 				const targetText = `${createThread.target.service} ${to.alias || to.flow} thread ${response.thread}`;
 				updateOriginating.details.text += `[${targetText}](${response.url})`;
-				updateOriginating.details.service = createThread.target.service;
-				updateOriginating.details.flow = createThread.target.flow;
-				updateOriginating.source.service = createThread.target.service;
-				updateOriginating.source.thread = response.thread;
-				updateOriginating.source.flow = createThread.target.flow;
+				updateOriginating.current.service = createThread.target.service;
+				updateOriginating.current.thread = response.thread;
+				updateOriginating.current.flow = createThread.target.flow;
 
 				// Clone and mutate the generic payload for emitting to the created thread.
 				const updateCreated = _.cloneDeep(genericConnect);
@@ -592,13 +599,11 @@ export class SyncBot extends ProcBot {
 					thread: response.thread,
 				};
 				// This comments on the new thread about the original thread..
-				const sourceText = `${data.source.service} ${from.alias || from.flow} thread ${data.source.thread}`;
-				updateCreated.details.text += `[${sourceText}](${data.source.url})`;
-				updateCreated.details.service = data.source.service;
-				updateCreated.details.flow = data.source.flow;
-				updateCreated.source.service = data.source.service;
-				updateCreated.source.thread = data.source.thread;
-				updateCreated.source.flow = data.source.flow;
+				const sourceText = `${data.current.service} ${from.alias || from.flow} thread ${data.current.thread}`;
+				updateCreated.details.text += `[${sourceText}](${data.current.url})`;
+				updateCreated.current.service = data.current.service;
+				updateCreated.current.thread = data.current.thread;
+				updateCreated.current.flow = data.current.flow;
 
 				// Promise to post a message count if there is more than one message when the synced thread is created.
 				let summariseThread: Promise<void> = Promise.resolve();
@@ -670,8 +675,8 @@ export class SyncBot extends ProcBot {
 			const hash = crypto.createHash('sha256').update(event.cookedEvent.source.username).digest('hex');
 			if (
 				// Not a synchronised post.
-				(event.cookedEvent.details.service === event.cookedEvent.source.service) &&
-				(event.cookedEvent.details.flow === event.cookedEvent.source.flow) &&
+				(event.cookedEvent.current.service === event.cookedEvent.source.service) &&
+				(event.cookedEvent.current.flow === event.cookedEvent.source.flow) &&
 				// Addressed to syncbot.
 				(beginsWithBotName.test(event.cookedEvent.details.text)) &&
 				// On devops flow and from a devops user.
@@ -687,8 +692,6 @@ export class SyncBot extends ProcBot {
 							const text = SyncBot.envResultIntoMessage(environment);
 							const echoData: BasicMessageInformation = {
 								details: {
-									service: 'process',
-									flow: process.pid.toString(),
 									handle: botname,
 									hidden: true,
 									tags: event.cookedEvent.details.tags,
@@ -696,7 +699,13 @@ export class SyncBot extends ProcBot {
 									time: event.cookedEvent.details.time,
 									title: event.cookedEvent.details.title,
 								},
-								source: event.cookedEvent.source,
+								current: {
+									service: 'process',
+									flow: process.pid.toString(),
+									thread: process.pid.toString(),
+									message: process.uptime().toString(),
+									username: botname,
+								},
 							};
 							return SyncBot.processCommand(
 								event.cookedEvent.source,

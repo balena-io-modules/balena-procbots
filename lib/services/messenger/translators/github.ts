@@ -25,6 +25,7 @@ import {
 	GithubListenerConstructor,
 } from '../../github-types';
 import {
+	BasicMessageInformation,
 	EmitInstructions,
 	MessengerAction,
 	MessengerBaseIds,
@@ -149,10 +150,10 @@ export class GithubTranslator extends TranslatorScaffold implements Translator {
 	 * @returns               Promise that resolves to the metadata of the connection.
 	 */
 	private static convertReadConnectionResponse(
-		metadataConfig: MetadataConfiguration, message: TransmitInformation, response: any[]
+		metadataConfig: MetadataConfiguration, message: BasicMessageInformation, response: any[]
 	): Promise<SourceDescription> {
 		return Promise.resolve(TranslatorScaffold.extractSource(
-			message.source,
+			message.current,
 			_.map(response, (comment) => { return _.get(comment, 'body'); }),
 			metadataConfig,
 			MetadataEncoding.HiddenMD,
@@ -250,8 +251,6 @@ export class GithubTranslator extends TranslatorScaffold implements Translator {
 			context: `${event.source}.${thread.id}`,
 			cookedEvent: {
 				details: {
-					service: metadata.service || event.source,
-					flow: metadata.flow || event.cookedEvent.flow,
 					handle: data.sender.login,
 					hidden: _.isSet(metadata.hidden) ? metadata.hidden : false,
 					tags: thread.labels,
@@ -259,13 +258,21 @@ export class GithubTranslator extends TranslatorScaffold implements Translator {
 					time: event.cookedEvent.data.updated_at,
 					title: thread.title
 				},
-				source: {
+				current: {
 					flow: data.repository.full_name,
 					message: comment.id,
 					service: event.source,
 					thread: thread.number,
 					url: thread.html_url,
 					username: data.sender.login
+				},
+				source: {
+					service: metadata.service || event.source,
+					flow: metadata.flow || event.cookedEvent.flow,
+					thread: metadata.thread || thread.number,
+					message: comment.id,
+					url: thread.html_url,
+					username: data.sender.login,
 				}
 			},
 			rawEvent: event.rawEvent,

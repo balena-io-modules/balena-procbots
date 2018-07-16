@@ -161,7 +161,7 @@ class MappingTester {
 		});
 	}
 
-	private makeSourceObject(action: MessengerAction) {
+	private makeCurrentObject(action: MessengerAction) {
 		if (action === MessengerAction.ReadConnection) {
 			return {
 				service: this.destinationFlow.service,
@@ -213,7 +213,7 @@ class MappingTester {
 						time,
 						title: this.title,
 					},
-					source: this.makeSourceObject(action),
+					current: this.makeCurrentObject(action),
 				},
 			},
 			source: 'tests',

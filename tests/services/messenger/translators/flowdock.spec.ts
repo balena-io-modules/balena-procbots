@@ -2,6 +2,7 @@
 import { expect } from 'chai';
 
 import * as crypto from 'crypto';
+import { BasicMessageInformation } from '../../../../lib/services/messenger-types';
 import { FlowdockTranslator } from '../../../../lib/services/messenger/translators/flowdock';
 import {
 	MetadataEncoding,
@@ -354,10 +355,8 @@ describe('lib/services/messenger/translators/flowdock.ts', () => {
 	});
 
 	describe('FlowdockTranslator.stringifyMetadata', () => {
-		const message = {
+		const message: BasicMessageInformation = {
 			details: {
-				service: 'a',
-				flow: 'j',
 				handle: 'b',
 				hidden: true,
 				tags: [],
@@ -365,7 +364,7 @@ describe('lib/services/messenger/translators/flowdock.ts', () => {
 				time: '2018-04-16T12:45:46+00:00',
 				title: 'd',
 			},
-			source: {
+			current: {
 				message: 'e',
 				thread: 'f',
 				service: 'g',
