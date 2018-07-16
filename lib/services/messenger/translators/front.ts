@@ -257,7 +257,8 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	 * @returns         Promise that resolves to the conversation ID.
 	 */
 	private static findConversation = (
-		session: Front, subject: string, delay: number = 50, maxDelay: number = 60000
+		// Note that sometimes conversations can take up to 15 minutes to index.
+		session: Front, subject: string, delay: number = 50, maxDelay: number = 15 * 60 * 1000
 	): Promise<string> => {
 		return session.conversation.list()
 		.then((conversations: Conversations) => {
@@ -273,7 +274,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 				));
 			}
 			return Promise.delay(
-				delay,
+				Math.ceil(delay),
 				FrontTranslator.findConversation(session, subject, delay * (Math.random() + 1.5), maxDelay)
 			);
 		});
