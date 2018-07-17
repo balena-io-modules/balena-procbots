@@ -101,6 +101,9 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 	public static bundleMessage(
 		message: BasicMessageInformation, thread: string, metadataConfig: MetadataConfiguration
 	): Promise<DiscourseEmitInstructions> {
+		if (message.details.hidden) {
+			message.details.text = `${message.details.handle} whispered:\n${message.details.text}`;
+		}
 		const metadataString = TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenMD, metadataConfig);
 		const converter = DiscourseTranslator.convertUsernameToDiscourse;
 		const messageString = TranslatorScaffold.convertPings(message.details.text, converter);
@@ -155,13 +158,12 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 
 	/**
 	 * Converts a provided message object into instructions to create a message.
-	 * @param connectionDetails  Details to use to retrieve the user object.
 	 * @param metadataConfig     Configuration of how to encode the metadata.
 	 * @param message            object to analyse.
 	 * @returns                  Promise that resolves to emit instructions.
 	 */
 	private static createMessageIntoEmit(
-		connectionDetails: DiscourseConstructor, metadataConfig: MetadataConfiguration, message: TransmitInformation
+		metadataConfig: MetadataConfiguration, message: TransmitInformation
 	): Promise<DiscourseEmitInstructions> {
 		// Check we have a thread.
 		const thread = message.target.thread;
@@ -169,26 +171,6 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 			return Promise.reject(new TranslatorError(
 				TranslatorErrorCode.IncompleteTransmitInformation, 'Cannot create a comment without a thread.'
 			));
-		}
-		if (message.details.hidden) {
-			// Check that the account is allowed to whisper.
-			const username = DiscourseTranslator.convertUsernameToDiscourse(message.target.username);
-			return request({
-				json: true,
-				method: 'GET',
-				qs: {
-					api_key: connectionDetails.token,
-					api_username: connectionDetails.username,
-				},
-				url: `${connectionDetails.protocol || 'https'}://${connectionDetails.instance}/users/${username}.json`,
-			}).then((response) => {
-				if (response.user.admin || response.user.moderator) {
-					return DiscourseTranslator.bundleMessage(message, thread, metadataConfig);
-				}
-				return Promise.reject(new TranslatorError(
-					TranslatorErrorCode.PermissionsError, 'Whisper requested, but account is not sufficiently privileged.'
-				));
-			});
 		}
 		return DiscourseTranslator.bundleMessage(message, thread, metadataConfig);
 	}
@@ -357,6 +339,11 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 	): Promise<TranslatorMetadata[]> {
 		return Promise.resolve(_.compact(_.map(response.post_stream.posts, (comment) => {
 			const messageObject = DiscourseTranslator.extractMetadata(comment.cooked, MetadataEncoding.HiddenHTML, config);
+			// The Discourse API docs do not publish what the various comment.post_type numbers mean.
+			// 4 seems to correspond to whisper.
+			if (messageObject.hidden || comment.post_type === 4) {
+				messageObject.content = messageObject.content.replace(/\S+ whispered:<br>/, '');
+			}
 			if (show === 'all') {
 				return messageObject;
 			} else if ((show === 'reply') && (messageObject.hidden === false)) {
@@ -393,9 +380,9 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 		this.emitConverters[MessengerAction.CreateThread] =
 			_.partial(DiscourseTranslator.createThreadIntoEmit, metadataConfig);
 		this.emitConverters[MessengerAction.CreateMessage] =
-			_.partial(DiscourseTranslator.createMessageIntoEmit, data, metadataConfig);
+			_.partial(DiscourseTranslator.createMessageIntoEmit, metadataConfig);
 		this.emitConverters[MessengerAction.CreateConnection] =
-			_.partial(DiscourseTranslator.createMessageIntoEmit, data, metadataConfig);
+			_.partial(DiscourseTranslator.createMessageIntoEmit, metadataConfig);
 		this.responseConverters[MessengerAction.ReadConnection] =
 			_.partial(DiscourseTranslator.convertReadConnectionResponse, metadataConfig);
 		this.responseConverters[MessengerAction.CreateThread] =
@@ -459,6 +446,9 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 				// Track them via their `alt` text
 				images[attributes.alt] = attributes.src;
 			});
+			if (metadata.hidden === true || details.post.post_type === 4) {
+				metadata.content = metadata.content.replace(/^\S+ whispered:/, '');
+			}
 			// Find every ![alt|size](url) (aka image) tag in the MD (raw) string
 			const imgFinder = /!\[([^|]*)[|\]].*]\(.*?\)/;
 			const imgReplacedText = metadata.content.replace(new RegExp(imgFinder, 'g'), (fullMatch) => {
@@ -530,7 +520,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 		// Pass back details that may be used to connect.
 		return {
 			token: this.connectionDetails.token,
-			username: convertedUsername,
+			username: message.details.hidden ? this.connectionDetails.username : convertedUsername,
 			instance: this.connectionDetails.instance,
 			protocol: this.connectionDetails.protocol,
 			serviceName: 'discourse',
