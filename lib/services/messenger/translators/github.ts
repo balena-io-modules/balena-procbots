@@ -133,8 +133,9 @@ export class GithubTranslator extends TranslatorScaffold implements Translator {
 				TranslatorErrorCode.EmitUnsupported, 'GitHub does not support whispers.'
 			));
 		}
+		message.details.text = `**${message.details.handle}**:\n${message.details.text}`;
 		const metadataString = TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenMD, metadataConfig);
-		const body = `${message.details.handle}:\n${message.details.text}\n${metadataString}`;
+		const body = `${message.details.text}\n${metadataString}`;
 		const payload: IssuesCreateCommentParams = _.merge({ body, number: thread }, splitIds);
 		return Promise.resolve({
 			method: ['issues', 'createComment'],
