@@ -102,7 +102,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 		message: BasicMessageInformation, thread: string, metadataConfig: MetadataConfiguration
 	): Promise<DiscourseEmitInstructions> {
 		if (message.details.hidden) {
-			message.details.text = `${message.details.handle} whispered:\n${message.details.text}`;
+			message.details.text = `**${message.details.handle}** whispered:\n${message.details.text}`;
 		}
 		const metadataString = TranslatorScaffold.stringifyMetadata(message, MetadataEncoding.HiddenMD, metadataConfig);
 		const converter = DiscourseTranslator.convertUsernameToDiscourse;
