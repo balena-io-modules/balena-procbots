@@ -6,7 +6,13 @@ import 'mocha';
 import * as moment from 'moment';
 import { SyncBot, SyncBotConstructor } from '../../lib/bots/syncbot';
 import { MessengerService } from '../../lib/services/messenger';
-import { FlowDefinition, FlowMapping, MessengerAction } from '../../lib/services/messenger-types';
+import {
+	FlowDefinition,
+	FlowMapping,
+	MessengerAction,
+	ReceiptIds,
+	TransmitInformation,
+} from '../../lib/services/messenger-types';
 import { TranslatorScaffold } from '../../lib/services/messenger/translators/translator-scaffold';
 import { ServiceEmitRequest, ServiceEmitResponse, ServiceType } from '../../lib/services/service-types';
 import { Logger } from '../../lib/utils/logger';
@@ -148,9 +154,9 @@ class MappingTester {
 		},
 	): Promise<ServiceEmitResponse> {
 		const payload = this.makePayload(action, targetSource, options);
-		const text = _.get(payload, ['contexts', 'messenger', 'details', 'text']);
+		const text = _.get(payload, ['contexts', 'messenger', 'details', 'message', 'text']);
 		if (text) {
-			this._firedMessages.push(TranslatorScaffold.extractWords(payload.contexts.messenger.details.text).join(' '));
+			this._firedMessages.push(TranslatorScaffold.extractWords(text).join(' '));
 		}
 		return this.emitter.sendData(payload)
 		.then((response) => {
@@ -161,14 +167,18 @@ class MappingTester {
 		});
 	}
 
-	private makeCurrentObject(action: MessengerAction) {
+	private makeCurrentObject(action: MessengerAction): ReceiptIds {
 		if (action === MessengerAction.ReadConnection) {
 			return {
 				service: this.destinationFlow.service,
 				flow: this.destinationFlow.flow,
+				message: 'test',
+				thread: 'test',
+				username: this.botName,
 			};
 		}
 		return {
+			message: 'test',
 			service: 'test',
 			flow: 'test',
 			thread: 'test',
@@ -190,31 +200,37 @@ class MappingTester {
 		const service = (targetSource) ? this.sourceFlow.service : this.destinationFlow.service;
 		const flow = (targetSource) ? this.sourceFlow.flow : this.destinationFlow.flow;
 		const thread = (targetSource) ? this.sourceThread : this._destinationThread;
-		const text = _.get(options, ['text']);
-		const hidden = _.get(options, ['hidden'], false);
+		const text = options && options.text ? options.text : '';
+		const hidden = options && options.hidden ? options.hidden : false;
 		const shouldBreadcrumb = _.get(options, ['shouldBreadcrumb'], false);
+		const messengerContext: TransmitInformation = {
+			action,
+			target: {
+				service,
+				username: this.botName,
+				flow,
+				thread,
+			},
+			details: {
+				user: {
+					handle: this.botName,
+				},
+				message: {
+					hidden,
+					text: (shouldBreadcrumb && text) ? `${text}\n\n${service} ${time}` : text,
+					time,
+				},
+				thread: {
+					tags: [],
+					title: this.title,
+				}
+			},
+			current: this.makeCurrentObject(action),
+		};
+
 		return {
 			contexts: {
-				messenger: {
-					action,
-					target: {
-						service,
-						username: this.botName,
-						flow,
-						thread,
-					},
-					details: {
-						service: 'test_a',
-						flow: 'test_b',
-						handle: this.botName,
-						hidden,
-						tags: [],
-						text: (shouldBreadcrumb && text) ? `${text}\n\n${service} ${time}` : text,
-						time,
-						title: this.title,
-					},
-					current: this.makeCurrentObject(action),
-				},
+				messenger: messengerContext,
 			},
 			source: 'tests',
 		};

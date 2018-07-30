@@ -36,7 +36,7 @@ import * as marked from 'marked';
 import * as moment from 'moment';
 import { FrontConstructor, FrontEmitInstructions, FrontResponse, FrontServiceEvent } from '../../front-types';
 import {
-	BasicMessageInformation,
+	BasicEventInformation,
 	CreateThreadResponse,
 	MessengerAction,
 	MessengerConstructor,
@@ -110,15 +110,15 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	/**
 	 * Converts a response into the generic format.
 	 * @param metadataConfig  Configuration that may have been used to encode metadata.
-	 * @param message       The initial message that prompted this action.
-	 * @param response      The response from the SDK.
-	 * @returns             Promise that resolve to the thread details.
+	 * @param event           The initial message that prompted this action.
+	 * @param response        The response from the SDK.
+	 * @returns               Promise that resolve to the thread details.
 	 */
 	public static convertReadConnectionResponse(
-		metadataConfig: MetadataConfiguration, message: BasicMessageInformation, response: ConversationComments
+		metadataConfig: MetadataConfiguration, event: BasicEventInformation, response: ConversationComments
 	): Promise<SourceDescription> {
 		return Promise.resolve(TranslatorScaffold.extractSource(
-			message.current,
+			event.current,
 			_.reverse(_.map(response._results, (comment) => { return comment.body; })),
 			metadataConfig,
 			MetadataEncoding.HiddenMD,
@@ -283,19 +283,19 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 
 	/**
 	 * Converts a provided message object into instructions to update tags.
-	 * @param message  object to analyse.
+	 * @param event    object to analyse.
 	 * @returns        Promise that resolves to emit instructions.
 	 */
-	private static updateTagsIntoEmit(message: TransmitInformation): Promise<FrontEmitInstructions> {
+	private static updateTagsIntoEmit(event: TransmitInformation): Promise<FrontEmitInstructions> {
 		// Check we have a thread.
-		const threadId = message.target.thread;
+		const threadId = event.target.thread;
 		if (!threadId) {
 			return Promise.reject(new TranslatorError(
 				TranslatorErrorCode.IncompleteTransmitInformation, 'Cannot update tags without a thread.'
 			));
 		}
 		// Check we have an array of tags.
-		const tags = message.details.tags;
+		const tags = event.details.thread.tags;
 		if (!_.isArray(tags)) {
 			return Promise.reject(new TranslatorError(
 				TranslatorErrorCode.IncompleteTransmitInformation, 'Cannot update tags without a tags array.'
@@ -317,43 +317,50 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	 * @param session         Session to interrogate.
 	 * @param channelMap      Map of inbox ids to channel ids
 	 * @param metadataConfig  Configuration to use to encode metadata
-	 * @param message         object to analyse.
+	 * @param event           object to analyse.
 	 * @returns               Promise that resolves to emit instructions.
 	 */
 	private static createThreadIntoEmit(
 		session: Front,
 		channelMap: {[inbox: string]: string},
 		metadataConfig: MetadataConfiguration,
-		message: TransmitInformation,
+		event: TransmitInformation,
 	): Promise<FrontEmitInstructions> {
 		// Check we have a title.
-		if (!message.details.title) {
+		if (!event.details.thread.title) {
 			return Promise.reject(new TranslatorError(
 				TranslatorErrorCode.IncompleteTransmitInformation, 'Cannot create a thread without a title'
 			));
 		}
+		const messageDetails = event.details.message;
+		if (!messageDetails) {
+			return Promise.reject(new TranslatorError(
+				TranslatorErrorCode.IncompleteTransmitInformation, 'Cannot emit an absent message.'
+			));
+		}
 		// Gather the ID for the user.
-		return FrontTranslator.fetchUserId(session, message.target.username)
+		return FrontTranslator.fetchUserId(session, event.target.username)
 		.then((userId) => {
 			// Bundle for the session.
 			const metadataString = TranslatorScaffold.stringifyMetadata(
-				message,
+				messageDetails,
+				event.current,
 				MetadataEncoding.HiddenHTML,
 				metadataConfig,
 			);
 			const converter = FrontTranslator.convertUsernameToFront;
-			const messageString = TranslatorScaffold.convertPings(message.details.text, converter);
+			const messageString = TranslatorScaffold.convertPings(messageDetails.text, converter);
 			const createThreadData: MessageRequest.Send = {
 				author_id: userId,
 				body: `${marked(messageString)}<br />${metadataString}`,
-				channel_id: channelMap[message.target.flow],
+				channel_id: channelMap[event.target.flow],
 				options: {
 					archive: false,
-					tags: message.details.tags,
+					tags: event.details.thread.tags,
 				},
-				sender_name: message.target.username,
-				subject: message.details.title,
-				to: [message.details.handle],
+				sender_name: event.target.username,
+				subject: event.details.thread.title,
+				to: [event.details.user.handle],
 			};
 			return {
 				method: ['message', 'send'],
@@ -366,38 +373,45 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	 * Converts a provided message object into instructions to create a message.
 	 * @param session         Details of the connection to find things user ID.
 	 * @param metadataConfig  Configuration to use to encode metadata
-	 * @param message         object to analyse.
+	 * @param event           object to analyse.
 	 * @returns               Promise that resolves to emit instructions.
 	 */
 	private static createMessageIntoEmit(
-		session: Front, metadataConfig: MetadataConfiguration, message: TransmitInformation
+		session: Front, metadataConfig: MetadataConfiguration, event: TransmitInformation
 	): Promise<FrontEmitInstructions> {
 		// Check we have a thread.
-		const threadId = message.target.thread;
+		const threadId = event.target.thread;
 		if (!threadId) {
 			return Promise.reject(new TranslatorError(
 				TranslatorErrorCode.IncompleteTransmitInformation, 'Cannot create a comment without a thread.'
 			));
 		}
+		const messageDetails = event.details.message;
+		if (!messageDetails) {
+			return Promise.reject(new TranslatorError(
+				TranslatorErrorCode.IncompleteTransmitInformation, 'Cannot emit an absent message.'
+			));
+		}
 		// Gather the user ID for the username.
-		return FrontTranslator.fetchUserId(session, message.target.username)
+		return FrontTranslator.fetchUserId(session, event.target.username)
 		.then((userId: string) => {
 			// Bundle a 'comment', which is private, for the session.
-			if (message.details.hidden) {
+			if (messageDetails.hidden) {
 				const metadataInjection = TranslatorScaffold.stringifyMetadata(
-					message,
+					messageDetails,
+					event.current,
 					MetadataEncoding.HiddenMD,
 					metadataConfig,
 				);
 				const converter = FrontTranslator.convertUsernameToFront;
-				const messageString = TranslatorScaffold.convertPings(message.details.text, converter);
+				const messageString = TranslatorScaffold.convertPings(messageDetails.text, converter);
 				const createCommentData: CommentRequest.Create = {
 					author_id: userId,
 					body: `${messageString}\n${metadataInjection}`,
 					conversation_id: threadId,
 				};
-				if (message.details.title) {
-					createCommentData.subject = message.details.title;
+				if (event.details.thread.title) {
+					createCommentData.subject = event.details.thread.title;
 				}
 				return {
 					method: ['comment', 'create'],
@@ -406,12 +420,13 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 			}
 			// Bundle a 'reply', which is public, for the session.
 			const metadataInjection = TranslatorScaffold.stringifyMetadata(
-				message,
+				messageDetails,
+				event.current,
 				MetadataEncoding.HiddenHTML,
 				metadataConfig,
 			);
 			const converter = FrontTranslator.convertUsernameToFront;
-			const messageString = TranslatorScaffold.convertPings(message.details.text, converter);
+			const messageString = TranslatorScaffold.convertPings(messageDetails.text, converter);
 			const createMessageData: MessageRequest.Reply = {
 				author_id: userId,
 				body: `${marked(messageString)}${metadataInjection}`,
@@ -419,11 +434,11 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 				options: {
 					archive: false,
 				},
-				sender_name: message.target.username,
+				sender_name: event.target.username,
 				type: 'message',
 			};
-			if (message.details.title) {
-				createMessageData.subject = message.details.title;
+			if (event.details.thread.title) {
+				createMessageData.subject = event.details.thread.title;
 			}
 			return {
 				method: ['message', 'reply'],
@@ -493,15 +508,15 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	/**
 	 * Converts a response into the generic format.
 	 * @param session    Session to query for conversation details.
-	 * @param message    The initial message that prompted this action.
+	 * @param event      The initial message that prompted this action.
 	 * @param _response  The response from the SDK.
 	 * @returns          Promise that resolve to the thread details.
 	 */
 	private static convertCreateThreadResponse(
-		session: Front, message: TransmitInformation, _response: FrontResponse
+		session: Front, event: TransmitInformation, _response: FrontResponse
 	): Promise<CreateThreadResponse> {
 		// Check we have a title.
-		if (!message.details.title) {
+		if (!event.details.thread.title) {
 			return Promise.reject(new TranslatorError(
 				TranslatorErrorCode.IncompleteTransmitInformation, 'Could not have created a thread without a title'
 			));
@@ -509,7 +524,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 		// The creation of a conversation returns a conversation_reference which is compartmentalised.
 		// It bears no relation to anything understood by any other part of Front.
 		// So we go diving through the recent conversations for a matching subject line.
-		return FrontTranslator.findConversation(session, message.details.title)
+		return FrontTranslator.findConversation(session, event.details.thread.title)
 		.then((conversation: string) => {
 			return Promise.resolve({
 				thread: conversation,
@@ -519,7 +534,12 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	}
 
 	protected eventEquivalencies = {
-		message: ['comment', 'out_reply', 'inbound', 'mention', 'move', 'outbound'],
+		message: [
+			'comment', 'out_reply', 'inbound',
+			'mention', 'move', 'outbound',
+			'archive', 'reopen', 'assign',
+			'unassign'
+		],
 	};
 	protected emitConverters: EmitConverters = {
 		[MessengerAction.ReadConnection]: FrontTranslator.listWhispersIntoEmit,
@@ -584,7 +604,6 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 			author: string
 		}) => {
 			// Extract some details from the event.
-			const message = details.event.target.data;
 			const hidden = _.includes(['comment', 'mention'], details.event.type);
 			const metadataFormat = hidden ? MetadataEncoding.HiddenMD : MetadataEncoding.HiddenHTML;
 			let metadata = TranslatorScaffold.emptyMetadata();
@@ -592,36 +611,53 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 				// Be a bit careful when adding cases to this. `details.event.type` is embedded within a sentence so
 				// English grammar must be considered.
 				case 'move':
+				case 'archive':
 					metadata = TranslatorScaffold.emptyMetadata(`This thread was ${details.event.type}d by ${details.author}.`);
 					metadata.hidden = 'preferred';
 					break;
-				default:
+				case 'reopen':
+					metadata = TranslatorScaffold.emptyMetadata(`This thread was ${details.event.type}ed by ${details.author}.`);
+					metadata.hidden = 'preferred';
+					break;
+				case 'comment':
+				case 'out_reply':
+				case 'inbound':
+				case 'mention':
+				case 'outbound':
 					// Find the metadata from the post created
-					metadata = TranslatorScaffold.extractMetadata(message.body, metadataFormat, this.metadataConfig);
+					metadata = TranslatorScaffold.extractMetadata(details.event.target.data.body, metadataFormat, this.metadataConfig);
+					break;
+				default:
+					metadata = TranslatorScaffold.emptyMetadata('An unrecognised event happened on this thread.');
+					metadata.hidden = true;
 			}
-			const body = message.text || metadata.content;
-			const reply = _.includes(['inbound'], details.event.type) ? FrontTranslator.extractReply(body) : body;
-			const text = TranslatorScaffold.convertPings(reply, FrontTranslator.convertUsernameToGeneric);
 			const duffFlow = 'duff_FrontTranslator_eventIntoMessages_b';
 			const tags = _.map(details.event.conversation.tags, (tag: {name: string}) => {
 				return tag.name;
 			});
 			// Bundle it in service scaffold form and resolve.
+			const isIntercom = details.event.target && (details.event.target.data.type === 'intercom');
 			const cookedEvent: ReceiptInformation = {
 				details: {
-					handle: details.author,
-					hidden: _.isSet(metadata.hidden) ? metadata.hidden : hidden,
-					// https://github.com/resin-io-modules/resin-procbots/issues/301
-					intercomHack: message.type === 'intercom' ? details.event.conversation.subject !== '' : undefined,
-					tags,
-					text,
-					time: moment.unix(details.event.emitted_at).toISOString(),
-					title: details.subject,
-					messageCount: details.messages._results.length + details.comments._results.length,
+					user: {
+						handle: details.author,
+					},
+					thread: {
+						tags,
+						title: details.subject,
+						messageCount: details.messages._results.length + details.comments._results.length,
+						states: {
+							archived: details.event.conversation.status === 'archived',
+							open: details.event.conversation.status === 'unassigned',
+							assigned: details.event.conversation.status === 'assigned',
+						}
+					}
 				},
 				current: {
+					// https://github.com/resin-io-modules/resin-procbots/issues/301
+					intercomHack: isIntercom ? details.event.conversation.subject !== '' : undefined,
 					service: event.source,
-					message: message.id,
+					message: details.event.id,
 					flow: 'duff_FrontTranslator_eventIntoMessages_a', // Gets replaced
 					thread: details.event.conversation.id,
 					url: `https://app.frontapp.com/open/${details.event.conversation.id}`,
@@ -631,11 +667,21 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 					service: metadata.service || event.source,
 					flow: metadata.flow || duffFlow, // Gets replaced
 					thread: metadata.thread || details.event.conversation.id,
-					message: message.id,
+					message: details.event.id,
 					url: `https://app.frontapp.com/open/${details.event.conversation.id}`,
 					username: details.author,
 				}
 			};
+			if (_.includes(['comment', 'out_reply', 'inbound', 'mention', 'move', 'outbound'], details.event.type)) {
+				const body = (details.event.target && details.event.target.data.text) || metadata.content;
+				const reply = _.includes(['inbound'], details.event.type) ? FrontTranslator.extractReply(body) : body;
+				const text = TranslatorScaffold.convertPings(reply, FrontTranslator.convertUsernameToGeneric);
+				cookedEvent.details.message = {
+					hidden: _.isSet(metadata.hidden) ? metadata.hidden : hidden,
+					text,
+					time: moment.unix(details.event.emitted_at).toISOString(),
+				};
+			}
 			return _.map(details.inboxes._results, (inbox) => {
 				const recookedEvent = _.cloneDeep(cookedEvent);
 				recookedEvent.current.flow = inbox.id;

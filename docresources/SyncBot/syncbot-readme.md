@@ -267,7 +267,7 @@ Inboxes > ...inbox... > Teammates
 1) Add the inbox to the `SyncBot <- Inboxes` rule.  The settings for the rule should be as follows:
 	```text
 	WHEN:
-		<Inbound message, Outbound message, Outbound reply, Comment, Mention, Conversation moved>
+		<Inbound message, Outbound message, Outbound reply, Comment, Mention, Conversation assigned, Conversation unassigned, Conversation archived, Conversation reopened, Conversation moved>
 	IF <at least one> CONDITION IS MET:
 		- <Inbox is> <synchronised inbox>
 		- <Inbox is> <synchronised inbox>

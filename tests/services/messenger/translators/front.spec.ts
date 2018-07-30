@@ -3,7 +3,7 @@ import { expect } from 'chai';
 
 import * as Bluebird from 'bluebird';
 import * as FS from 'fs';
-import { BasicMessageInformation, MessengerAction, TransmitInformation } from '../../../../lib/services/messenger-types';
+import { BasicEventInformation, MessengerAction, TransmitInformation } from '../../../../lib/services/messenger-types';
 import { FrontTranslator } from '../../../../lib/services/messenger/translators/front';
 import { MetadataConfiguration } from '../../../../lib/services/messenger/translators/translator-types';
 
@@ -116,7 +116,7 @@ describe('lib/services/messenger/translators/front.ts', () => {
 				},
 				secret: 'salt',
 			};
-			const target: BasicMessageInformation = {
+			const target: BasicEventInformation = {
 				current: {
 					service: 'flowdock',
 					username: 'duff',
@@ -125,12 +125,18 @@ describe('lib/services/messenger/translators/front.ts', () => {
 					flow: 'public-s-premium',
 				},
 				details: {
-					handle: 'duff',
-					hidden: false,
-					tags: [],
-					text: 'duff',
-					time: '2018-04-16T12:45:46+00:00',
-					title: 'duff',
+					user: {
+						handle: 'duff',
+					},
+					message: {
+						hidden: false,
+						text: 'duff',
+						time: '2018-04-16T12:45:46+00:00',
+					},
+					thread: {
+						tags: [],
+						title: 'duff',
+					}
 				}
 			};
 			const messages = await fsReadFile('tests/services/messenger/translators/example-front-thread.json', 'utf8');
@@ -164,12 +170,18 @@ describe('lib/services/messenger/translators/front.ts', () => {
 		const exampleDetails: TransmitInformation = {
 			action: MessengerAction.ArchiveThread,
 			details: {
-				handle: 'b',
-				hidden: false,
-				tags: [],
-				text: 'cde @test',
-				time: '2018-04-16T12:45:46+00:00',
-				title: 'f',
+				user: {
+					handle: 'b',
+				},
+				message: {
+					hidden: false,
+					text: 'cde @test',
+					time: '2018-04-16T12:45:46+00:00',
+				},
+				thread: {
+					tags: [],
+					title: 'f',
+				}
 			},
 			current: {
 				message: 'g',
