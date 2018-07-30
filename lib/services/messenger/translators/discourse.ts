@@ -109,9 +109,6 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 		if (event.details.message.hidden) {
 			event.details.message.text = `**${event.details.user.handle}** whispered:\n${event.details.message.text}`;
 		}
-		if (event.details.message.hidden) {
-			event.details.message.text = `${event.details.user.handle} whispered:\n${event.details.message.text}`;
-		}
 		const metadataString = TranslatorScaffold.stringifyMetadata(
 			event.details.message,
 			event.current,
