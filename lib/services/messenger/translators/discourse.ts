@@ -17,6 +17,7 @@
 import * as Promise from 'bluebird';
 import * as _ from 'lodash';
 import { Dictionary } from 'lodash';
+import * as moment from 'moment';
 import * as request from 'request-promise';
 import {
 	DiscourseConstructor,
@@ -435,11 +436,14 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 		getPost.uri += `/posts/${event.cookedEvent.id}`;
 		const getTopic = _.cloneDeep(getGeneric);
 		getTopic.uri += `/t/${event.cookedEvent.topic_id}`;
+		const getUser = _.cloneDeep(getGeneric);
+		getUser.uri += `/admin/users/${event.cookedEvent.user_id}.json`;
 		return Promise.props({
 			post: request(getPost),
 			topic: request(getTopic),
+			user: request(getUser),
 		})
-		.then((details: { post: any, topic: any }) => {
+		.then((details: { post: any, topic: any, user: any }) => {
 			// Generic has `-` at the end, Discourse has `_` at the beginning
 			const convertedUsername = DiscourseTranslator.convertUsernameToGeneric(details.post.username);
 			let metadata = TranslatorScaffold.emptyMetadata();
@@ -526,13 +530,38 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 				}
 			};
 			// Yield the object in a form suitable for service scaffold.
-			return [{
+			const messages = [{
 				context: `${event.source}.${event.context}`,
 				type: this.eventIntoMessageType(event),
 				cookedEvent,
 				rawEvent: event.rawEvent,
 				source: 'messenger',
 			}];
+			if (details.post.post_number === 1) {
+				const userSummary = _.cloneDeep(cookedEvent);
+				userSummary.details.message = {
+					hidden: true,
+					text: [
+						`Username: ${details.user.username}`,
+						`Email: ${details.user.email}`,
+						`Signed up: ${moment(details.user.created_at).fromNow()}`,
+						`Written: ${details.user.post_count} posts`,
+						`Read: ${details.user.posts_read_count} posts`
+					].join('\n'),
+					time: details.post.created_at
+				};
+				userSummary.details.user.handle = this.connectionDetails.username;
+				userSummary.current.username = this.connectionDetails.username;
+				userSummary.source.username = this.connectionDetails.username;
+				messages.push({
+					context: `${event.source}.${event.context}`,
+					type: this.eventIntoMessageType(event),
+					cookedEvent: userSummary,
+					rawEvent: event.rawEvent,
+					source: 'messenger',
+				});
+			}
+			return messages;
 		});
 	}
 

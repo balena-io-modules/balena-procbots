@@ -142,6 +142,8 @@ export interface DiscourseReceivedMessage {
 	id: string;
 	/** Topic ID of the message. */
 	topic_id: string;
+	/** User ID of the message. */
+	user_id: string;
 	/** Blurb of the message. */
 	blurb: string;
 	/** Cooked version of the message. */
