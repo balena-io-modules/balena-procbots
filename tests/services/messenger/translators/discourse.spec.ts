@@ -110,6 +110,7 @@ describe('lib/services/messenger/translators/discourse.ts', () => {
 			const messageWithDashes = {
 				id: 'duff',
 				topic_id: 'duff',
+				user_id: 'duff',
 				blurb: 'duff',
 				cooked: 'h:- n:– m:—',
 			};
@@ -120,6 +121,7 @@ describe('lib/services/messenger/translators/discourse.ts', () => {
 			const messageWithAmp = {
 				id: 'duff',
 				topic_id: 'duff',
+				user_id: 'duff',
 				blurb: 'duff',
 				cooked: 'bits &amp; bobs',
 			};
