@@ -145,7 +145,7 @@ export class GithubTranslator extends TranslatorScaffold implements Translator {
 			MetadataEncoding.HiddenMD,
 			metadataConfig
 		);
-		const body = `${event.details.user.handle}:\n${event.details.message.text}\n${metadataString}`;
+		const body = `${event.details.message.text}\n${metadataString}`;
 		const payload: IssuesCreateCommentParams = _.merge({ body, number: thread }, splitIds);
 		return Promise.resolve({
 			method: ['issues', 'createComment'],
