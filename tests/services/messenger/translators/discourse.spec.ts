@@ -111,6 +111,7 @@ describe('lib/services/messenger/translators/discourse.ts', () => {
 				id: 'duff',
 				topic_id: 'duff',
 				user_id: 'duff',
+				username: 'duff',
 				blurb: 'duff',
 				cooked: 'h:- n:– m:—',
 			};
@@ -122,6 +123,7 @@ describe('lib/services/messenger/translators/discourse.ts', () => {
 				id: 'duff',
 				topic_id: 'duff',
 				user_id: 'duff',
+				username: 'duff',
 				blurb: 'duff',
 				cooked: 'bits &amp; bobs',
 			};
