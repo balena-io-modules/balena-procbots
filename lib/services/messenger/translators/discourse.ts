@@ -438,12 +438,15 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 		getTopic.uri += `/t/${event.cookedEvent.topic_id}`;
 		const getUser = _.cloneDeep(getGeneric);
 		getUser.uri += `/admin/users/${event.cookedEvent.user_id}.json`;
+		const getEmail = _.cloneDeep(getGeneric);
+		getEmail.uri += `/u/${event.cookedEvent.username}/emails.json`;
 		return Promise.props({
 			post: request(getPost),
 			topic: request(getTopic),
 			user: request(getUser),
+			email: request(getEmail),
 		})
-		.then((details: { post: any, topic: any, user: any }) => {
+		.then((details: { post: any, topic: any, user: any, email: any }) => {
 			// Generic has `-` at the end, Discourse has `_` at the beginning
 			const convertedUsername = DiscourseTranslator.convertUsernameToGeneric(details.post.username);
 			let metadata = TranslatorScaffold.emptyMetadata();
@@ -543,7 +546,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 					hidden: true,
 					text: [
 						`Username: ${details.user.username}`,
-						`Email: ${details.user.email}`,
+						`Email: ${details.email.email}`,
 						`Signed up: ${moment(details.user.created_at).fromNow()}`,
 						`Written: ${details.user.post_count} posts`,
 						`Read: ${details.user.posts_read_count} posts`
