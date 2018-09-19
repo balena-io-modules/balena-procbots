@@ -499,3 +499,28 @@ e.g. `syncbot`
 This is an integer value for which port the web hooks should listen to.
 
 e.g. `4567`
+
+## Managing SyncBot via a Chat Interface
+
+SyncBot is configured to accept management commands from a chat interface using `SYNCBOT_DEVOPS_FLOW` and `SYNCBOT_DEVOPS_USERS`. This allows a list of users (stored as the hash of the username) to perform tasks upon SyncBot within the configured flow.
+
+### Syntax
+
+1) Begin with `@syncbot`
+1) Follow with any number of filters or queries
+   * A filter is `object.property=value` and checks against simple non-function properties before queries are processed
+   * A query is `object.property` and reports on the result, executing if relevant
+   * You may shortcut access to the `process` object by omitting `object`
+
+For example `@syncbot pid=1 process.uptime system.uptime` will instruct the SyncBot with PID 1 to tell you how long its process and system have been running.
+
+A more nuclear example is `@syncbot exit` which will kill all running SyncBot processes.
+
+### Entities
+
+The entities that may be interacted with are:
+* `process` - [the npm process object](https://www.npmjs.com/package/process)
+* `system` - [the npm os object](https://www.npmjs.com/package/os)
+* `package` - the package.json
+
+Note that properties used in a filter (`x.y=z`) are never executed, but that functions in an query will be (`x.y`).
