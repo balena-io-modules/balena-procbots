@@ -427,9 +427,16 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 			);
 			const converter = FrontTranslator.convertUsernameToFront;
 			const messageString = TranslatorScaffold.convertPings(messageDetails.text, converter);
+			const messageHTML = marked(
+				messageString,
+				{
+					gfm: true, // github-flavoured-markdown
+					breaks: true, // with line breaks and paragraphs
+				},
+			);
 			const createMessageData: MessageRequest.Reply = {
 				author_id: userId,
-				body: `${marked(messageString)}${metadataInjection}`,
+				body: `${messageHTML}${metadataInjection}`,
 				conversation_id: threadId,
 				options: {
 					archive: false,
