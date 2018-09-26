@@ -1,0 +1,6 @@
+---
+docker:
+  builds:
+    - path: .
+      dockerfile: Dockerfile
+      publish: false
