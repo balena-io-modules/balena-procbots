@@ -7,24 +7,22 @@ SYNCBOT_ERROR_SOLUTIONS:
       description: "permissions error"
       fixes:
         - "Your username on all services should be a derivative of your GitHub username, try `Hubot suggest usernames`."
-        - "If Discourse is still complaining then ping (at)sqweelygig."
     ^5:
       description: "Problem with their server infrastructure."
       fixes:
         - "Try again in a few minutes"
-        - "If it persists put an (at)team, (at)sqweelygig PSA into r/support"
+        - "If it persists put an (at)team PSA into r/support"
   flowdock:
     ^5:
       description: "Problem with their server infrastructure."
       fixes:
         - "Try again in a few minutes"
-        - "If it persists put an (at)team, (at)sqweelygig PSA into r/support"
+        - "If it persists put an (at)team PSA into r/support"
   front:
     ^Conversation has been received on multiple channels:
       description: "This issue was sent to more than one e-mail address, and SyncBot doesn't know which to reply from."
       fixes:
         - "Reply via Front"
-        - "@sqweelygig is monitoring to see how frequently we experience this issue."
     ^Tried loads of times to find the conversation:
       description: "There is an unusually long delay on Front indexing a conversation"
       fixes:
@@ -32,14 +30,13 @@ SYNCBOT_ERROR_SOLUTIONS:
         - "Replies via the Front UI should still get to the Forums thread."
         - "Replies via the Forums or Flowdock UI may result in duplicated Front threads."
         - "Keep half an eye on https://www.frontstatus.com/"
-        - "Ping (at)sqweelygig if anything doesn't fit in the above pattern."
     ^5:
       description: "Problem with their server infrastructure."
       fixes:
         - "Try again in a few minutes"
         - "Keep half an eye on https://www.frontstatus.com/"
-        - "If it persists put an (at)team, (at)sqweelygig PSA into r/support"
-SYNCBOT_ERROR_UNDOCUMENTED: 'No fixes currently documented. (@sqweelygig)'
+        - "If it persists put an (at)team PSA into r/support"
+SYNCBOT_ERROR_UNDOCUMENTED: 'No fixes currently documented.'
 SYNCBOT_MAPPINGS:
   # All threads in discourse/troubleshooting become threads in flowdock/support_forums
   - source:
@@ -218,7 +215,6 @@ SYNCBOT_NAME: "<<INJECT_SYNCBOT_NAME>>"
 SYNCBOT_PORT: "<<INJECT_SYNCBOT_PORT>>"
 SYNCBOT_DEVOPS_FLOW: "rulemotion/resin-devops"
 SYNCBOT_DEVOPS_USERS:
-  - "2273d667fb262d0b3b891b80f198fa9ba9a88fe8025982030b813b33d0d4b8c6"
   - "788f2210f0e7227df13eeb5deda9a24a8dbb47099a83471f866f60a6b829d7fe"
   - "29d56e7a6f6de242f5d10bb691b03b775ca21b5bed45e2ce8524abe32ca19072"
   - "fff37675b12a23600dcda2bfe16a9f4cb001045ac2398cac1c0021e1eacc0218"

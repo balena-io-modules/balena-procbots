@@ -7,7 +7,7 @@ SYNCBOT_ERROR_SOLUTIONS:
       description: "permissions error"
       fixes:
         - "You should check that your username and token are correct."
-SYNCBOT_ERROR_UNDOCUMENTED: 'No fixes currently documented. (at)sqweelygig'
+SYNCBOT_ERROR_UNDOCUMENTED: 'No fixes currently documented.'
 SYNCBOT_SERVICE_CONSTRUCTORS:
   flowdock:
     token: "<<INJECT_SYNCBOT_FLOWDOCK_TOKEN>>"
@@ -78,4 +78,6 @@ SYNCBOT_NAME: "<<INJECT_SYNCBOT_NAME>>"
 SYNCBOT_PORT: "<<INJECT_SYNCBOT_PORT>>"
 SYNCBOT_DEVOPS_FLOW: "rulemotion/testing"
 SYNCBOT_DEVOPS_USERS:
-  - "2273d667fb262d0b3b891b80f198fa9ba9a88fe8025982030b813b33d0d4b8c6"
+  - "788f2210f0e7227df13eeb5deda9a24a8dbb47099a83471f866f60a6b829d7fe"
+  - "29d56e7a6f6de242f5d10bb691b03b775ca21b5bed45e2ce8524abe32ca19072"
+  - "fff37675b12a23600dcda2bfe16a9f4cb001045ac2398cac1c0021e1eacc0218"
