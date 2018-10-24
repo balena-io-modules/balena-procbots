@@ -199,7 +199,7 @@ SYNCBOT_SERVICE_CONSTRUCTORS:
       inb_amf7: "cha_9vh"
     serviceName: "front"
   discourse:
-    instance: "forums.resin.io"
+    instance: "forums.balena.io"
     username: "syncbot"
     secret: "<<INJECT_SYNCBOT_DISCOURSE_SECRET>>"
     token: "<<INJECT_SYNCBOT_DISCOURSE_TOKEN>>"
