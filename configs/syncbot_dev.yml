@@ -89,7 +89,7 @@ SYNCBOT_MAPPINGS:
       previous:
         - "testing_hubot"
 SYNCBOT_METADATA_CONFIG:
-  baseUrl: "http://resin.io"
+  baseUrl: "https://www.balena-cloud.com"
   publicity:
     hidden: "whisper"
     hiddenPreferred: "murmur"

@@ -22,7 +22,7 @@ describe('lib/services/messenger/translators/front.ts', () => {
 			const email = [
 				'Thank you, I will check it out.',
 				'',
-				'On Mon, 14 May 2018 at 16:42 Someone Great <support@resin.io> wrote:',
+				'On Mon, 14 May 2018 at 16:42 Someone Great <support@balena.io> wrote:',
 				'',
 				'> Hi,',
 				'>',
@@ -108,7 +108,7 @@ describe('lib/services/messenger/translators/front.ts', () => {
 	describe('FrontTranslator.convertReadConnectionResponse', () => {
 		it('should convert a list of messages into an id', async () => {
 			const config: MetadataConfiguration = {
-				baseUrl: 'http://resin.io',
+				baseUrl: 'https://www.balena-cloud.com',
 				publicity: {
 					hidden: 'whisper',
 					hiddenPreferred: 'murmur',

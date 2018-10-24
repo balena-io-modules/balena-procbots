@@ -480,7 +480,7 @@ This is a JSON object that specifies how metadata is to be encoded.
 e.g.
 ```json
 {
-    "baseUrl": "https://resin.io",
+    "baseUrl": "https://www.balena-cloud.com",
     "publicity": {
         "hidden": "whisper",
         "shown": "reply"
