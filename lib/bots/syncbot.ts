@@ -390,7 +390,8 @@ export class SyncBot extends ProcBot {
 							// Details of the message and the response
 							data, threadDetails,
 							// These are a couple of properties that do not always survive the stringify
-							message: threadDetails.err.message, stack: threadDetails.err.stack,
+							message: threadDetails.err.message || threadDetails.err,
+							stack: threadDetails.err.stack,
 						}));
 						return SyncBot.createErrorComment(
 							to, emitter, data, threadDetails.err, name, solutionMatrix, genericErrorMessage
@@ -424,7 +425,7 @@ export class SyncBot extends ProcBot {
 		matrix: SolutionMatrix = {},
 		generic?: string,
 	): Promise<MessengerEmitResponse> {
-		const solution = SyncBot.getErrorSolution(to.service, error.message, matrix);
+		const solution = SyncBot.getErrorSolution(to.service, error.message || error, matrix);
 		const fixes = solution.fixes.length > 0 ?
 			` * ${solution.fixes.join('\r\n * ')}` :
 			generic || 'No fixes documented.';
