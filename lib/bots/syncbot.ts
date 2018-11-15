@@ -385,7 +385,7 @@ export class SyncBot extends ProcBot {
 				// At the end report any errors. ProcBot only expects promise resolution, no actual payload.
 				// This also bookends the promise chain so each .then() above can be developed atomically.
 				.then((threadDetails: MessengerEmitResponse) => {
-					if (threadDetails.err) {
+					if (!_.isEmpty(threadDetails.err)) {
 						logger.log(LogLevel.WARN, JSON.stringify({
 							// Details of the message and the response
 							data, threadDetails,
