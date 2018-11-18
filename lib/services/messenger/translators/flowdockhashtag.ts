@@ -145,7 +145,15 @@ export class FlowdockHashtagTranslator extends FlowdockTranslator implements Tra
 			const firstMessageDetails = this.eventIntoMessageDetails(firstMessageAsEvent);
 			const hashtags: string[] = [];
 			_.forEach(fetchedDetails.messages, (message) => {
-				_.forEach(message.content.match(/#\w+/g), (match) => {
+				// Flowdock may report a wide variety of event types,
+				// but we're only interested in messages.
+				// See https://www.flowdock.com/api/message-types
+				if (message.event !== 'message' || message.event !== 'message-edit') {
+					return;
+				}
+
+				const content = message.content.updated_content || message.content
+				_.forEach(content.match(/#\w+/g), (match) => {
 					hashtags.push(match.replace(/^#/, ''));
 				});
 			});
