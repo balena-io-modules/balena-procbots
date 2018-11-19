@@ -152,7 +152,7 @@ export class FlowdockHashtagTranslator extends FlowdockTranslator implements Tra
 					return;
 				}
 
-				const content = message.content.updated_content || message.content
+				const content = message.content.updated_content || message.content;
 				_.forEach(content.match(/#\w+/g), (match) => {
 					hashtags.push(match.replace(/^#/, ''));
 				});

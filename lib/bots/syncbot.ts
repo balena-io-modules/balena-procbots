@@ -385,16 +385,17 @@ export class SyncBot extends ProcBot {
 				// At the end report any errors. ProcBot only expects promise resolution, no actual payload.
 				// This also bookends the promise chain so each .then() above can be developed atomically.
 				.then((threadDetails: MessengerEmitResponse) => {
-					if (!_.isEmpty(threadDetails.err)) {
+					if (threadDetails.err !== undefined && !_.isEmpty(threadDetails.err)) {
+						let errMsg: string = threadDetails.err.message || JSON.stringify(threadDetails.err);
 						logger.log(LogLevel.WARN, JSON.stringify({
 							// Details of the message and the response
 							data, threadDetails,
 							// These are a couple of properties that do not always survive the stringify
-							message: threadDetails.err.message || threadDetails.err,
-							stack: threadDetails.err.stack,
+							message: errMsg,
+							stack: threadDetails.err.stack || '',
 						}));
 						return SyncBot.createErrorComment(
-							to, emitter, data, threadDetails.err, name, solutionMatrix, genericErrorMessage
+							to, emitter, data, errMsg, name, solutionMatrix, genericErrorMessage
 						)
 						.return();
 					}
@@ -420,12 +421,12 @@ export class SyncBot extends ProcBot {
 		to: FlowDefinition | ThreadDefinition,
 		messenger: MessengerService,
 		data: ReceiptInformation,
-		error: Error,
+		error: string,
 		name: string,
 		matrix: SolutionMatrix = {},
 		generic?: string,
 	): Promise<MessengerEmitResponse> {
-		const solution = SyncBot.getErrorSolution(to.service, error.message || error, matrix);
+		const solution = SyncBot.getErrorSolution(to.service, error, matrix);
 		const fixes = solution.fixes.length > 0 ?
 			` * ${solution.fixes.join('\r\n * ')}` :
 			generic || 'No fixes documented.';
