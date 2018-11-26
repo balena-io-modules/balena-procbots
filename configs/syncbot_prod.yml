@@ -71,6 +71,176 @@ SYNCBOT_MAPPINGS:
       alias: "forums"
       previous:
         - "public-s-community"
+
+  # All threads in discourse/OpenBalena become threads in flowdock/s/support_openbalena
+  - source:
+      service: "discourse"
+      flow: "46"
+      alias: "openbalena"
+    destination:
+      service: "flowdock"
+      flow: "rulemotion/public-s-openbalena"
+      alias: "openbalena"
+  # All threads in flowdock/s/support_openbalena become threads in front/s/openbalena
+  - source:
+      service: "flowdock"
+      flow: "rulemotion/public-s-openbalena"
+      alias: "openbalena"
+    destination:
+      service: "front"
+      flow: "inb_fsez"
+      alias: "openbalena"
+  # All threads in front/s/openbalena become threads in flowdock/support_openbalena
+  - source:
+      service: "front"
+      flow: "inb_fsez"
+      alias: "openbalena"
+    destination:
+      service: "flowdock"
+      flow: "rulemotion/public-s-openbalena"
+      alias: "openbalena"
+
+  ## All threads in discourse/balenaEtcher become threads in flowdock/s/support_balenaetcher
+  #- source:
+  #    service: "discourse"
+  #    flow: "32"
+  #    alias: "balenaetcher"
+  #  destination:
+  #    service: "flowdock"
+  #    flow: "rulemotion/public-s-balenaetcher"
+  #    alias: "balenaetcher"
+  ## All threads in flowdock/s/support_openbalena become threads in front/s/openbalena
+  #- source:
+  #    service: "flowdock"
+  #    flow: "rulemotion/public-s-balenaetcher"
+  #    alias: "balenaetcher"
+  #  destination:
+  #    service: "front"
+  #    flow: "inb_fsjv"
+  #    alias: "balenaetcher"
+  ## All threads in front/s/openbalena become threads in flowdock/support_openbalena
+  #- source:
+  #    service: "front"
+  #    flow: "inb_fsjv"
+  #    alias: "balenaetcher"
+  #  destination:
+  #    service: "flowdock"
+  #    flow: "rulemotion/public-s-balenaetcher"
+  #    alias: "balenaetcher"
+
+  ## All threads in discourse/BalenaOS become threads in flowdock/s/support_balenaos
+  #- source:
+  #    service: "discourse"
+  #    flow: "47"
+  #    alias: "balenaos"
+  #  destination:
+  #    service: "flowdock"
+  #    flow: "rulemotion/public-s-balenaos"
+  #    alias: "balenaos"
+  ## All threads in flowdock/s/support_balenaos become threads in front/s/balenaos
+  #- source:
+  #    service: "flowdock"
+  #    flow: "rulemotion/public-s-balenaos"
+  #    alias: "balenaos"
+  #  destination:
+  #    service: "front"
+  #    flow: "inb_fsfv"
+  #    alias: "balenaos"
+  ## All threads in front/s/balenaos become threads in flowdock/support_balenaos
+  #- source:
+  #    service: "front"
+  #    flow: "inb_fsfv"
+  #    alias: "balenaos"
+  #  destination:
+  #    service: "flowdock"
+  #    flow: "rulemotion/public-s-balenaos"
+  #    alias: "balenaos"
+  #
+
+  ## All threads in discourse/BalenaEngine become threads in flowdock/s/support_balenaengine
+  #- source:
+  #    service: "discourse"
+  #    flow: "48"
+  #    alias: "balenaengine"
+  #  destination:
+  #    service: "flowdock"
+  #    flow: "rulemotion/public-s-balenaengine"
+  #    alias: "balenaengine"
+  ## All threads in flowdock/s/support_balenaengine become threads in front/s/balenaengine
+  #- source:
+  #    service: "flowdock"
+  #    flow: "rulemotion/public-s-balenaengine"
+  #    alias: "balenaengine"
+  #  destination:
+  #    service: "front"
+  #    flow: "inb_fsf7"
+  #    alias: "balenaengine"
+  ## All threads in front/s/balenaengine become threads in flowdock/support_balenaengine
+  #- source:
+  #    service: "front"
+  #    flow: "inb_fsf7"
+  #    alias: "balenaengine"
+  #  destination:
+  #    service: "flowdock"
+  #    flow: "rulemotion/public-s-balenaengine"
+  #    alias: "balenaengine"
+
+  ## All threads in discourse/BalenaFin become threads in flowdock/s/support_balenafin
+  #- source:
+  #    service: "discourse"
+  #    flow: "45"
+  #    alias: "balenafin"
+  #  destination:
+  #    service: "flowdock"
+  #    flow: "rulemotion/public-s-balenafin"
+  #    alias: "balenafin"
+  ## All threads in flowdock/s/support_balenafin become threads in front/s/balenafin
+  #- source:
+  #    service: "flowdock"
+  #    flow: "rulemotion/public-s-balenafin"
+  #    alias: "balenafin"
+  #  destination:
+  #    service: "front"
+  #    flow: "inb_fsff"
+  #    alias: "balenafin"
+  ## All threads in front/s/balenafin become threads in flowdock/support_balenafin
+  #- source:
+  #    service: "front"
+  #    flow: "inb_fsff"
+  #    alias: "balenafin"
+  #  destination:
+  #    service: "flowdock"
+  #    flow: "rulemotion/public-s-balenafin"
+  #    alias: "balenafin"
+
+  ## All threads in discourse/Projects become threads in flowdock/s/support_projects
+  #- source:
+  #    service: "discourse"
+  #    flow: "12"
+  #    alias: "projects"
+  #  destination:
+  #    service: "flowdock"
+  #    flow: "rulemotion/public-s-projects"
+  #    alias: "projects"
+  ## All threads in flowdock/s/support_projects become threads in front/s/projects
+  #- source:
+  #    service: "flowdock"
+  #    flow: "rulemotion/public-s-projects"
+  #    alias: "projects"
+  #  destination:
+  #    service: "front"
+  #    flow: "inb_fsfn"
+  #    alias: "projects"
+  ## All threads in front/s/projects become threads in flowdock/support_projects
+  #- source:
+  #    service: "front"
+  #    flow: "inb_fsfn"
+  #    alias: "projects"
+  #  destination:
+  #    service: "flowdock"
+  #    flow: "rulemotion/public-s-projects"
+  #    alias: "projects"
+
   # All threads in front/paid become threads in flowdock/support_premium
   - source:
       service: "front"
