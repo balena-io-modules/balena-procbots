@@ -576,8 +576,8 @@ export class GithubService extends WorkerClient<string> implements ServiceListen
 	private getExpressInstance(server: number | express.Express): express.Express {
 		if (_.isNumber(server)) {
 			const app = express();
-			app.use(bodyParser.urlencoded({ extended: true }));
-			app.use(bodyParser.text({type: '*/*'}));
+			app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
+			app.use(bodyParser.text({ type: '*/*', limit: '50mb' }));
 			app.listen(server, () => {
 				this.logger.log(LogLevel.INFO, `---> Created Express app on port ${server} for '${this.serviceName}'.`);
 			});
