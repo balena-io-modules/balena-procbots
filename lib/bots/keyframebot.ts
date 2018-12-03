@@ -236,8 +236,8 @@ export class KeyframeBot extends ProcBot {
 		}
 
 		// Add body parser.
-		this.expressApp.use(bodyParser.urlencoded({ extended: true }));
-		this.expressApp.use(bodyParser.json());
+		this.expressApp.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
+		this.expressApp.use(bodyParser.json({ limit: '50mb' }));
 		this.expressApp.post(DeployKeyframePath, this.deployKeyframe);
 
 		// Listen.
