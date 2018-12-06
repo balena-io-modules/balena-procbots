@@ -91,7 +91,12 @@ export class FlowdockService extends ServiceScaffold<string> implements ServiceE
 				context.data.path, context.data.payload,
 				(error: Error, response: FlowdockResponse) => {
 					if (error) {
-						reject(error);
+						try {
+							// Attempt to stringify response so that the full object is printed on error
+							response = JSON.stringify(response);
+						} finally {
+							reject(new Error(`${error}: ${response}`));
+						}
 					} else {
 						resolve(response);
 					}
