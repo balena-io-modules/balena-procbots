@@ -232,11 +232,6 @@ At this stage usernames across services must match.  This is so that SyncBot
 knows which user's 1-1 history to search for details.  In future this could
 become configurable, in a similar way to flows.
 
-#### Flowdock is quizzed for token
-
-Flowdock will search the 1-1 history of a user for a phrase that matches "My
-{service} token is blah", returning blah
-
 #### Error reporting
 
 Errors, where possible, are reported in the originating thread as whispers.
