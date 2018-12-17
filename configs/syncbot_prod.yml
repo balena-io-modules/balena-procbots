@@ -335,6 +335,15 @@ SYNCBOT_MAPPINGS:
       service: "flowdock"
       flow: "rulemotion/user_happiness"
       alias: "support_meta"
+  # All threads in front/hello become threads in flowdock/hello
+  - source:
+      service: "front"
+      flow: "inb_1r2n"
+      alias: "hello"
+    destination:
+      service: "flowdock"
+      flow: "rulemotion/s-hello"
+      alias: "hello"
 SYNCBOT_SERVICE_CONSTRUCTORS:
   github:
     client: "syncbot"
