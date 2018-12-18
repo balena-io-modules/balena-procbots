@@ -376,6 +376,8 @@ SYNCBOT_SERVICE_CONSTRUCTORS:
       inb_srn: "cha_9u57"
       inb_udy: "cha_9sir"
       inb_amf7: "cha_9vh"
+      inb_fsez: "cha_ey0b"
+      inb_nsn: "cha_f39f"
     serviceName: "front"
   discourse:
     instance: "forums.balena.io"
