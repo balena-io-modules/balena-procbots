@@ -95,7 +95,6 @@ export class FlowdockService extends ServiceScaffold<string> implements ServiceE
 							// Attempt to stringify response so that the full object is printed on error
 							response = JSON.stringify(response);
 						} finally {
-							this.logger.log(LogLevel.DEBUG, `Error in emitData with response: ${response}`);
 							reject(new Error(`${error}: ${response}`));
 						}
 					} else {
