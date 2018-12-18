@@ -338,7 +338,7 @@ SYNCBOT_MAPPINGS:
   # All threads in front/hello become threads in flowdock/hello
   - source:
       service: "front"
-      flow: "inb_1r2n"
+      flow: "inb_nsn"
       alias: "hello"
     destination:
       service: "flowdock"
