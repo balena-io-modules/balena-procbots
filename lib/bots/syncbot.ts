@@ -172,13 +172,16 @@ export class SyncBot extends ProcBot {
 		_.forEach(result, (list, scope) => {
 			_.forEach(list, (item: SystemProperty | ProcessProperty) => {
 				if (_.isArray(item.value) || _.isObject(item.value)) {
-					const value = util.inspect(
+					let value = util.inspect(
 						item.value,
 						{
 							depth: null,
 							maxArrayLength: null,
 						},
 					);
+
+					// util.inspect() changes between node versions cause an inconsistency with regards to whitespace
+					value = value.split('\n').map((line) => { return line.replace(/\s*$/,''); }).join('\n');
 					longResponses.push(`${scope}.${item.property}=\n\`\`\`json\n${value}\n\`\`\``);
 				} else if (_.isNull(item.value) || _.isUndefined(item.value)) {
 					shortResponses.push(`${scope}.${item.property}?!`);
