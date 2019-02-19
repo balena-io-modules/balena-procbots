@@ -142,7 +142,7 @@ describe('lib/bots/syncbot.ts', () => {
 				'system.uptime=5678',
 				'system.networkInterfaces=',
 				'```json',
-				'{ lo: ',
+				'{ lo:',
 				'   [ { address: \'127.0.0.1\',',
 				'       netmask: \'255.0.0.0\',',
 				'       family: \'IPv4\',',
