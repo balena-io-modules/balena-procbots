@@ -3,7 +3,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: library/docker:1.12.6
+      - image: library/docker:18.06.2-ce
     working_directory: /tmp/build
     environment:
       DOCKER_USERNAME: travisciresin
@@ -11,7 +11,7 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker:
-          version: 17.07.0-ce
+          version: 18.06.0-ce
           reusable: true
           exclusive: false
       - run: |
