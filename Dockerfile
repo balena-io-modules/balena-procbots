@@ -35,6 +35,7 @@ COPY --from=build /usr/src/app/package.json ./package.json
 COPY --from=build /usr/src/app/bin ./bin
 COPY --from=build /usr/src/app/build ./build
 COPY --from=build /usr/src/app/node_modules ./node_modules
+COPY --from=build /usr/src/app/configs ./configs
 
 # server.js will run when container starts up on the device
 ENTRYPOINT ["/usr/local/bin/node", "./bin/procbots"]
