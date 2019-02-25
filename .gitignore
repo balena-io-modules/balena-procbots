@@ -44,7 +44,6 @@ _dev_notes
 .vscode
 
 # package-lock
-package-lock.json
 
 # build files
 build
