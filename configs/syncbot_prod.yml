@@ -60,17 +60,6 @@ SYNCBOT_MAPPINGS:
       service: "front"
       flow: "inb_23sp"
       alias: "forums"
-  # All threads in front/forums become threads in flowdock/support_forums
-  - source:
-      service: "front"
-      flow: "inb_23sp"
-      alias: "forums"
-    destination:
-      service: "flowdock"
-      flow: "rulemotion/public-s-community"
-      alias: "forums"
-      previous:
-        - "public-s-community"
 
   # All threads in discourse/OpenBalena become threads in flowdock/s/support_openbalena
   - source:
@@ -89,15 +78,6 @@ SYNCBOT_MAPPINGS:
     destination:
       service: "front"
       flow: "inb_fsez"
-      alias: "openbalena"
-  # All threads in front/s/openbalena become threads in flowdock/support_openbalena
-  - source:
-      service: "front"
-      flow: "inb_fsez"
-      alias: "openbalena"
-    destination:
-      service: "flowdock"
-      flow: "rulemotion/public-s-openbalena"
       alias: "openbalena"
 
   ## All threads in discourse/balenaEtcher become threads in flowdock/s/support_balenaetcher
@@ -146,34 +126,25 @@ SYNCBOT_MAPPINGS:
       service: "front"
       flow: "inb_fsfv"
       alias: "balenaos"
-  # All threads in front/s/balenaos become threads in flowdock/support_balenaos
+
+  # All threads in discourse/BalenaEngine become threads in flowdock/s/support_balenaengine
   - source:
-      service: "front"
-      flow: "inb_fsfv"
-      alias: "balenaos"
+      service: "discourse"
+      flow: "48"
+      alias: "balenaengine"
     destination:
       service: "flowdock"
-      flow: "rulemotion/public-s-balenaos"
-      alias: "balenaos"
-
-  ## All threads in discourse/BalenaEngine become threads in flowdock/s/support_balenaengine
-  #- source:
-  #    service: "discourse"
-  #    flow: "48"
-  #    alias: "balenaengine"
-  #  destination:
-  #    service: "flowdock"
-  #    flow: "rulemotion/public-s-balenaengine"
-  #    alias: "balenaengine"
-  ## All threads in flowdock/s/support_balenaengine become threads in front/s/balenaengine
-  #- source:
-  #    service: "flowdock"
-  #    flow: "rulemotion/public-s-balenaengine"
-  #    alias: "balenaengine"
-  #  destination:
-  #    service: "front"
-  #    flow: "inb_fsf7"
-  #    alias: "balenaengine"
+      flow: "rulemotion/public-s-balenaengine"
+      alias: "balenaengine"
+  # All threads in flowdock/s/support_balenaengine become threads in front/s/balenaengine
+  - source:
+      service: "flowdock"
+      flow: "rulemotion/public-s-balenaengine"
+      alias: "balenaengine"
+    destination:
+      service: "front"
+      flow: "inb_fsf7"
+      alias: "balenaengine"
   ## All threads in front/s/balenaengine become threads in flowdock/support_balenaengine
   #- source:
   #    service: "front"
@@ -212,24 +183,24 @@ SYNCBOT_MAPPINGS:
   #    flow: "rulemotion/public-s-balenafin"
   #    alias: "balenafin"
 
-  ## All threads in discourse/Projects become threads in flowdock/s/support_projects
-  #- source:
-  #    service: "discourse"
-  #    flow: "12"
-  #    alias: "projects"
-  #  destination:
-  #    service: "flowdock"
-  #    flow: "rulemotion/public-s-projects"
-  #    alias: "projects"
-  ## All threads in flowdock/s/support_projects become threads in front/s/projects
-  #- source:
-  #    service: "flowdock"
-  #    flow: "rulemotion/public-s-projects"
-  #    alias: "projects"
-  #  destination:
-  #    service: "front"
-  #    flow: "inb_fsfn"
-  #    alias: "projects"
+  # All threads in discourse/Projects become threads in flowdock/s/support_projects
+  - source:
+      service: "discourse"
+      flow: "12"
+      alias: "projects"
+    destination:
+      service: "flowdock"
+      flow: "rulemotion/public-s-projects"
+      alias: "projects"
+  # All threads in flowdock/s/support_projects become threads in front/s/projects
+  - source:
+      service: "flowdock"
+      flow: "rulemotion/public-s-projects"
+      alias: "projects"
+    destination:
+      service: "front"
+      flow: "inb_fsfn"
+      alias: "projects"
   ## All threads in front/s/projects become threads in flowdock/support_projects
   #- source:
   #    service: "front"
@@ -289,15 +260,7 @@ SYNCBOT_MAPPINGS:
     destination:
       service: "flowdock"
       flow: "resinio-collaborations/p_colab_flow"
-  # All threads in front/fin become threads in flowdock/support_fin
-  - source:
-      service: "front"
-      flow: "inb_8go3"
-      alias: "fin"
-    destination:
-      service: "flowdock"
-      flow: "rulemotion/s-support_fin"
-      alias: "fin"
+
   # All threads in forums/fin become threads in flowdock/support_fin
   - source:
       service: "discourse"
@@ -316,6 +279,7 @@ SYNCBOT_MAPPINGS:
       service: "front"
       flow: "inb_8go3"
       alias: "fin"
+
   # All threads in front/sales become threads in flowdock/sales
   - source:
       service: "front"
@@ -378,6 +342,8 @@ SYNCBOT_SERVICE_CONSTRUCTORS:
       inb_fsez: "cha_ey0b"
       inb_nsn: "cha_f39f"
       inb_fsfv: "cha_ey23"
+      inb_fsf7: "cha_ey0r"
+      inb_fsfn: "cha_ey1n"
     serviceName: "front"
   discourse:
     instance: "forums.balena.io"
