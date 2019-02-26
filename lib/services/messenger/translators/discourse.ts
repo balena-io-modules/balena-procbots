@@ -454,7 +454,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 				// If this is an edit, then create a murmur to that effect
 				case 'post_edited':
 					metadata = TranslatorScaffold.emptyMetadata(`This thread was edited by ${convertedUsername}.`);
-					metadata.hidden = 'preferred';
+					metadata.hidden = true;
 					break;
 				// Find the metadata from the post created
 				default:
@@ -509,7 +509,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 					},
 					message: {
 						// post_type 4 seems to correspond to whisper
-						hidden: _.isSet(metadata.hidden) ? metadata.hidden : details.post.post_type === 4,
+						hidden: !_.isNil(metadata.hidden) ? metadata.hidden : details.post.post_type === 4,
 						text: TranslatorScaffold.convertPings(codeParsedText, DiscourseTranslator.convertUsernameToGeneric),
 						time: details.post.created_at,
 					}
