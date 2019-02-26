@@ -80,33 +80,24 @@ SYNCBOT_MAPPINGS:
       flow: "inb_fsez"
       alias: "openbalena"
 
-  ## All threads in discourse/balenaEtcher become threads in flowdock/s/support_balenaetcher
-  #- source:
-  #    service: "discourse"
-  #    flow: "32"
-  #    alias: "balenaetcher"
-  #  destination:
-  #    service: "flowdock"
-  #    flow: "rulemotion/public-s-balenaetcher"
-  #    alias: "balenaetcher"
-  ## All threads in flowdock/s/support_openbalena become threads in front/s/openbalena
-  #- source:
-  #    service: "flowdock"
-  #    flow: "rulemotion/public-s-balenaetcher"
-  #    alias: "balenaetcher"
-  #  destination:
-  #    service: "front"
-  #    flow: "inb_fsjv"
-  #    alias: "balenaetcher"
-  ## All threads in front/s/openbalena become threads in flowdock/support_openbalena
-  #- source:
-  #    service: "front"
-  #    flow: "inb_fsjv"
-  #    alias: "balenaetcher"
-  #  destination:
-  #    service: "flowdock"
-  #    flow: "rulemotion/public-s-balenaetcher"
-  #    alias: "balenaetcher"
+  # All threads in discourse/balenaEtcher become threads in flowdock/s/support_balenaetcher
+  - source:
+      service: "discourse"
+      flow: "32"
+      alias: "balenaetcher"
+    destination:
+      service: "flowdock"
+      flow: "rulemotion/s-support_balenaetcher"
+      alias: "balenaetcher"
+  # All threads in flowdock/s/support_openbalena become threads in front/s/openbalena
+  - source:
+      service: "flowdock"
+      flow: "rulemotion/s-support_balenaetcher"
+      alias: "balenaetcher"
+    destination:
+      service: "front"
+      flow: "inb_fsjv"
+      alias: "balenaetcher"
 
   ## All threads in discourse/BalenaOS become threads in flowdock/s/support_balenaos
   - source:
@@ -242,6 +233,7 @@ SYNCBOT_MAPPINGS:
       service: "flowdock"
       flow: "rulemotion/sales"
       alias: "sales_meta"
+
   # All threads in github/hubot become threads in flowdock/bots
   - source:
       service: "github"
@@ -344,6 +336,7 @@ SYNCBOT_SERVICE_CONSTRUCTORS:
       inb_fsfv: "cha_ey23"
       inb_fsf7: "cha_ey0r"
       inb_fsfn: "cha_ey1n"
+      inb_fsjv: "cha_ey5f"
     serviceName: "front"
   discourse:
     instance: "forums.balena.io"
