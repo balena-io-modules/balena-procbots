@@ -34,6 +34,7 @@ import {
 import * as _ from 'lodash';
 import * as marked from 'marked';
 import * as moment from 'moment';
+import { Logger, LogLevel } from '../../../utils/logger';
 import { FrontConstructor, FrontEmitInstructions, FrontResponse, FrontServiceEvent } from '../../front-types';
 import {
 	BasicEventInformation,
@@ -174,7 +175,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	 * @returns        Promise that resolves to the name of the author.
 	 */
 	private static fetchAuthorName(session: Front, event: Event): Promise<string> {
-		if (event.source._meta.type === 'teammate') {
+		if (event.source._meta.type === 'teammate' && !_.isNil(event.source.data) && !_.isNil(event.source.data.username)) {
 			return Promise.resolve(FrontTranslator.convertUsernameToGeneric(event.source.data.username));
 		}
 		const target = _.get(event, ['target', 'data'], {});
@@ -566,9 +567,11 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 
 	private readonly session: Front;
 	private readonly token: string;
+	private loggerInstance: Logger;
 
 	constructor(data: FrontConstructor, metadataConfig: MetadataConfiguration) {
 		super(metadataConfig);
+		this.loggerInstance = new Logger();
 		this.session = new Front(data.token);
 		this.token = data.token;
 		this.responseConverters[MessengerAction.CreateThread] =
@@ -593,6 +596,9 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	 * @returns      Promise that resolves to an array of message objects in the standard form
 	 */
 	public eventIntoMessages(event: FrontServiceEvent): Promise<MessengerEvent[]> {
+		this.loggerInstance.log(LogLevel.INFO, 'Logging Front event');
+		this.loggerInstance.log(LogLevel.INFO, JSON.stringify(event));
+
 		const rawEvent: any = event.rawEvent;
 		return Promise.props({
 			inboxes: this.session.conversation.listInboxes({conversation_id: rawEvent.conversation.id}),
@@ -610,6 +616,8 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 			subject: string,
 			author: string
 		}) => {
+			this.loggerInstance.log(LogLevel.INFO, 'Logging Front details for event');
+			this.loggerInstance.log(LogLevel.INFO, JSON.stringify(details));
 			// Extract some details from the event.
 			const hidden = _.includes(['comment', 'mention'], details.event.type);
 			const metadataFormat = hidden ? MetadataEncoding.HiddenMD : MetadataEncoding.HiddenHTML;
