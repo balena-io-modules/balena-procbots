@@ -175,7 +175,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	 * @returns        Promise that resolves to the name of the author.
 	 */
 	private static fetchAuthorName(session: Front, event: Event): Promise<string> {
-		if (event.source._meta.type === 'teammate') {
+		if (event.source._meta.type === 'teammate' && !_.isNil(event.source.data) && !_.isNil(event.source.data.username)) {
 			return Promise.resolve(FrontTranslator.convertUsernameToGeneric(event.source.data.username));
 		}
 		const target = _.get(event, ['target', 'data'], {});
