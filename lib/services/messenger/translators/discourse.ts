@@ -376,7 +376,7 @@ export class DiscourseTranslator extends TranslatorScaffold implements Translato
 	}
 
 	protected eventEquivalencies = {
-		message: ['post_created', 'post_edited'],
+		message: ['post_created']
 	};
 	protected emitConverters: EmitConverters = {
 		[MessengerAction.ReadConnection]: DiscourseTranslator.searchThreadIntoEmit,
