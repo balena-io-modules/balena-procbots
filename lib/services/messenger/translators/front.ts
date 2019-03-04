@@ -670,7 +670,7 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 				},
 				current: {
 					// https://github.com/resin-io-modules/resin-procbots/issues/301
-					intercomHack: isIntercom ? details.event.conversation.subject !== '' : undefined,
+					intercomHack: isIntercom ? details.event.conversation.subject.replace(/^Re:\s+/, '') !== '' : undefined,
 					service: event.source,
 					message: details.event.id,
 					flow: 'duff_FrontTranslator_eventIntoMessages_a', // Gets replaced
