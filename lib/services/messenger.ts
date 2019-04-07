@@ -109,10 +109,12 @@ export class MessengerService extends ServiceScaffold<string> implements Service
 				contexts: { [emitter.serviceName]: { method: method.bind(sdk), data: details.emit.payload } },
 				source: this.serviceName,
 			};
+			this.logger.log(LogLevel.INFO, `---> sendData() request: ${JSON.stringify(request)}`);
 			return emitter.sendData(request);
 		})
 		// Translates any response from the sub-service emitter, before passing it on up.
 		.then((response: ServiceEmitResponse) => {
+			this.logger.log(LogLevel.INFO, `---> sendData() response: ${JSON.stringify(response)}`);
 			if (response.err) {
 				return response;
 			}
