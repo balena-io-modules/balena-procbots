@@ -38,58 +38,6 @@ SYNCBOT_ERROR_SOLUTIONS:
         - "If it persists put an (at)team PSA into r/support"
 SYNCBOT_ERROR_UNDOCUMENTED: 'No fixes currently documented.'
 SYNCBOT_MAPPINGS:
-  # All threads in discourse/troubleshooting become threads in flowdock/support_forums
-  - source:
-      service: "discourse"
-      flow: "42"
-      alias: "troubleshooting"
-    destination:
-      service: "flowdock"
-      flow: "rulemotion/public-s-community"
-      alias: "forums"
-      previous:
-        - "public-s-community"
-
-  # All threads in discourse/OpenBalena become threads in flowdock/s/support_openbalena
-  - source:
-      service: "discourse"
-      flow: "46"
-      alias: "openbalena"
-    destination:
-      service: "flowdock"
-      flow: "rulemotion/public-s-openbalena"
-      alias: "openbalena"
-
-  # All threads in discourse/balenaEtcher become threads in flowdock/s/support_balenaetcher
-  - source:
-      service: "discourse"
-      flow: "32"
-      alias: "balenaetcher"
-    destination:
-      service: "flowdock"
-      flow: "rulemotion/s-support_balenaetcher"
-      alias: "balenaetcher"
-
-  ## All threads in discourse/BalenaOS become threads in flowdock/s/support_balenaos
-  - source:
-      service: "discourse"
-      flow: "47"
-      alias: "balenaos"
-    destination:
-      service: "flowdock"
-      flow: "rulemotion/public-s-balenaos"
-      alias: "balenaos"
-
-  # All threads in discourse/BalenaEngine become threads in flowdock/s/support_balenaengine
-  - source:
-      service: "discourse"
-      flow: "48"
-      alias: "balenaengine"
-    destination:
-      service: "flowdock"
-      flow: "rulemotion/public-s-balenaengine"
-      alias: "balenaengine"
-
   ## All threads in front/s/balenaengine become threads in flowdock/support_balenaengine
   #- source:
   #    service: "front"
@@ -127,16 +75,6 @@ SYNCBOT_MAPPINGS:
   #    service: "flowdock"
   #    flow: "rulemotion/public-s-balenafin"
   #    alias: "balenafin"
-
-  # All threads in discourse/Projects become threads in flowdock/s/support_projects
-  - source:
-      service: "discourse"
-      flow: "12"
-      alias: "projects"
-    destination:
-      service: "flowdock"
-      flow: "rulemotion/public-s-projects"
-      alias: "projects"
 
   ## All threads in front/s/projects become threads in flowdock/support_projects
   #- source:
@@ -198,16 +136,6 @@ SYNCBOT_MAPPINGS:
     destination:
       service: "flowdock"
       flow: "resinio-collaborations/p_colab_flow"
-
-  # All threads in forums/fin become threads in flowdock/support_fin
-  - source:
-      service: "discourse"
-      flow: "45"
-      alias: "fin"
-    destination:
-      service: "flowdock"
-      flow: "rulemotion/s-support_fin"
-      alias: "fin"
 
   # All threads in front/sales become threads in flowdock/sales
   - source:
