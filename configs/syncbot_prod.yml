@@ -147,14 +147,15 @@ SYNCBOT_MAPPINGS:
       flow: "rulemotion/s-sales"
       alias: "sales"
   # All threads in front/syncbot (service outage) become threads in flowdock/support_meta
-  - source:
-      service: "front"
-      flow: "inb_amf7"
-      alias: "outage"
-    destination:
-      service: "flowdock"
-      flow: "rulemotion/user_happiness"
-      alias: "support_meta"
+  # - source:
+  #     service: "front"
+  #     flow: "inb_amf7"
+  #     alias: "outage"
+  #   destination:
+  #     service: "flowdock"
+  #     flow: "rulemotion/user_happiness"
+  #     alias: "support_meta"
+  #
   # All threads in front/hello become threads in flowdock/hello
   - source:
       service: "front"
