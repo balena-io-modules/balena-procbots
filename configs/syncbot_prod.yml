@@ -2,16 +2,6 @@
 SYNCBOT_ALIAS_USERS:
   - "hubot"
 SYNCBOT_ERROR_SOLUTIONS:
-  discourse:
-    ^403:
-      description: "permissions error"
-      fixes:
-        - "Your username on all services should be a derivative of your GitHub username, try `Hubot suggest usernames`."
-    ^5:
-      description: "Problem with their server infrastructure."
-      fixes:
-        - "Try again in a few minutes"
-        - "If it persists put an (at)team PSA into r/support"
   flowdock:
     ^5:
       description: "Problem with their server infrastructure."
@@ -38,54 +28,6 @@ SYNCBOT_ERROR_SOLUTIONS:
         - "If it persists put an (at)team PSA into r/support"
 SYNCBOT_ERROR_UNDOCUMENTED: 'No fixes currently documented.'
 SYNCBOT_MAPPINGS:
-  ## All threads in front/s/balenaengine become threads in flowdock/support_balenaengine
-  #- source:
-  #    service: "front"
-  #    flow: "inb_fsf7"
-  #    alias: "balenaengine"
-  #  destination:
-  #    service: "flowdock"
-  #    flow: "rulemotion/public-s-balenaengine"
-  #    alias: "balenaengine"
-
-  ## All threads in discourse/BalenaFin become threads in flowdock/s/support_balenafin
-  #- source:
-  #    service: "discourse"
-  #    flow: "45"
-  #    alias: "balenafin"
-  #  destination:
-  #    service: "flowdock"
-  #    flow: "rulemotion/public-s-balenafin"
-  #    alias: "balenafin"
-  ## All threads in flowdock/s/support_balenafin become threads in front/s/balenafin
-  #- source:
-  #    service: "flowdock"
-  #    flow: "rulemotion/public-s-balenafin"
-  #    alias: "balenafin"
-  #  destination:
-  #    service: "front"
-  #    flow: "inb_fsff"
-  #    alias: "balenafin"
-  ## All threads in front/s/balenafin become threads in flowdock/support_balenafin
-  #- source:
-  #    service: "front"
-  #    flow: "inb_fsff"
-  #    alias: "balenafin"
-  #  destination:
-  #    service: "flowdock"
-  #    flow: "rulemotion/public-s-balenafin"
-  #    alias: "balenafin"
-
-  ## All threads in front/s/projects become threads in flowdock/support_projects
-  #- source:
-  #    service: "front"
-  #    flow: "inb_fsfn"
-  #    alias: "projects"
-  #  destination:
-  #    service: "flowdock"
-  #    flow: "rulemotion/public-s-projects"
-  #    alias: "projects"
-
   # All threads in front/paid become threads in flowdock/support_premium
   - source:
       service: "front"
@@ -117,18 +59,6 @@ SYNCBOT_MAPPINGS:
       service: "flowdock"
       flow: "rulemotion/sales"
       alias: "sales_meta"
-
-  # All threads in github/hubot become threads in flowdock/bots
-  - source:
-      service: "github"
-      flow: "resin-io/hubot-as-mainbot"
-      alias: "hubot"
-    destination:
-      service: "flowdock"
-      flow: "rulemotion/d-bots"
-      alias: "bots"
-      previous:
-        - "d-bots"
   # All threads in front/p become threads in flowdock/p
   - source:
       service: "front"
@@ -136,7 +66,6 @@ SYNCBOT_MAPPINGS:
     destination:
       service: "flowdock"
       flow: "resinio-collaborations/p_colab_flow"
-
   # All threads in front/sales become threads in flowdock/sales
   - source:
       service: "front"
@@ -146,16 +75,6 @@ SYNCBOT_MAPPINGS:
       service: "flowdock"
       flow: "rulemotion/s-sales"
       alias: "sales"
-  # All threads in front/syncbot (service outage) become threads in flowdock/support_meta
-  # - source:
-  #     service: "front"
-  #     flow: "inb_amf7"
-  #     alias: "outage"
-  #   destination:
-  #     service: "flowdock"
-  #     flow: "rulemotion/user_happiness"
-  #     alias: "support_meta"
-  #
   # All threads in front/hello become threads in flowdock/hello
   - source:
       service: "front"
@@ -166,14 +85,6 @@ SYNCBOT_MAPPINGS:
       flow: "rulemotion/s-hello"
       alias: "hello"
 SYNCBOT_SERVICE_CONSTRUCTORS:
-  github:
-    client: "syncbot"
-    authentication:
-      appId: "<<INJECT_SYNCBOT_GITHUB_APP_ID>>"
-      pem: "<<INJECT_SYNCBOT_GITHUB_PEM>>"
-      type: 0
-    path: "/github"
-    webhookSecret: "<<INJECT_SYNCBOT_GITHUB_SECRET>>"
   flowdock:
     token: "<<INJECT_SYNCBOT_FLOWDOCK_TOKEN>>"
     serviceName: "flowdock"
@@ -204,12 +115,6 @@ SYNCBOT_SERVICE_CONSTRUCTORS:
       inb_fsfn: "cha_ey1n"
       inb_fsjv: "cha_ey5f"
     serviceName: "front"
-  discourse:
-    instance: "forums.balena.io"
-    username: "syncbot"
-    secret: "<<INJECT_SYNCBOT_DISCOURSE_SECRET>>"
-    token: "<<INJECT_SYNCBOT_DISCOURSE_TOKEN>>"
-    serviceName: "discourse"
 SYNCBOT_METADATA_CONFIG:
   baseUrl: "https://www.balena-cloud.com"
   publicity:
@@ -221,6 +126,8 @@ SYNCBOT_NAME: "<<INJECT_SYNCBOT_NAME>>"
 SYNCBOT_PORT: "<<INJECT_SYNCBOT_PORT>>"
 SYNCBOT_DEVOPS_FLOW: "rulemotion/resin-devops"
 SYNCBOT_DEVOPS_USERS:
-  - "788f2210f0e7227df13eeb5deda9a24a8dbb47099a83471f866f60a6b829d7fe"  # hedss
-  - "fff37675b12a23600dcda2bfe16a9f4cb001045ac2398cac1c0021e1eacc0218"  # mikesimos
-  - "c1ef74d55b9503ebc32ba8c2929495779a03b154ca5dd4a28cf7816ad974c211"  # lekkas
+  - "f3b480843f59c8f0200a75bc090ec4866401d0252bf09db3f404ea9b07060568"  # ab77
+  - "76d03c51e9816cc281dbb2964f9a8012ba6c1c5f399333443c335ab60cdb314e"  # cmfcruz
+  - "f207acf795f4949e200ea48af10991a8b7145269e3a67dcf333bf914c0d22ee3"  # jviotti
+  - "6e82e5c266a7a74af3deaec9eec1da83ede13d1e3ea20418bc82fef75d517495"  # mbalamat
+  - "c6df81ee1330868330ae4076bad4cdd7d41933d54c4cb72830d9ddd579da3c64"  # petrosagg
