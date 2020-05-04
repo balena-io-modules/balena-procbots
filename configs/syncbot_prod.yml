@@ -59,13 +59,6 @@ SYNCBOT_MAPPINGS:
       service: "flowdock"
       flow: "rulemotion/sales"
       alias: "sales_meta"
-  # All threads in front/p become threads in flowdock/p
-  - source:
-      service: "front"
-      flow: "inb_67mx"
-    destination:
-      service: "flowdock"
-      flow: "resinio-collaborations/p_colab_flow"
   # All threads in front/sales become threads in flowdock/sales
   - source:
       service: "front"
