@@ -89,11 +89,11 @@ SYNCBOT_SERVICE_CONSTRUCTORS:
     secret: "<<INJECT_SYNCBOT_FRONT_SECRET>>"
     token: "<<INJECT_SYNCBOT_FRONT_TOKEN>>"
     channelPerInbox:
-      inb_nla: "cha_20er"
-      inb_2hvh: "cha_5cih"
-      inb_8htn: "cha_85e3"
-      inb_srn: "cha_9u57"
-      inb_nsn: "cha_f39f"
+      inb_nla: "cha_3rd3h"
+      inb_2hvh: "cha_3rd59"
+      inb_8htn: "cha_3rdal"
+      inb_srn: "cha_3rd71"
+      inb_nsn: "cha_3rd8t"
     serviceName: "front"
 SYNCBOT_METADATA_CONFIG:
   baseUrl: "https://www.balena-cloud.com"
