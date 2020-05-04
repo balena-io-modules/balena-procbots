@@ -59,13 +59,6 @@ SYNCBOT_MAPPINGS:
       service: "flowdock"
       flow: "rulemotion/sales"
       alias: "sales_meta"
-  # All threads in front/p become threads in flowdock/p
-  - source:
-      service: "front"
-      flow: "inb_67mx"
-    destination:
-      service: "flowdock"
-      flow: "resinio-collaborations/p_colab_flow"
   # All threads in front/sales become threads in flowdock/sales
   - source:
       service: "front"
@@ -96,24 +89,11 @@ SYNCBOT_SERVICE_CONSTRUCTORS:
     secret: "<<INJECT_SYNCBOT_FRONT_SECRET>>"
     token: "<<INJECT_SYNCBOT_FRONT_TOKEN>>"
     channelPerInbox:
-      inb_23sp: "cha_20ep"
-      inb_nla: "cha_20er"
-      inb_2hvh: "cha_5cih"
-      inb_8i97: "cha_80mj"
-      inb_8htn: "cha_85e3"
-      inb_8go3: "cha_86t7"
-      inb_1deg: "cha_9si3"
-      inb_26il: "cha_9sib"
-      inb_stt: "cha_9sij"
-      inb_srn: "cha_9u57"
-      inb_udy: "cha_9sir"
-      inb_amf7: "cha_9vh"
-      inb_fsez: "cha_ey0b"
-      inb_nsn: "cha_f39f"
-      inb_fsfv: "cha_ey23"
-      inb_fsf7: "cha_ey0r"
-      inb_fsfn: "cha_ey1n"
-      inb_fsjv: "cha_ey5f"
+      inb_nla: "cha_3rd3h"
+      inb_2hvh: "cha_3rd59"
+      inb_8htn: "cha_3rdal"
+      inb_srn: "cha_3rd71"
+      inb_nsn: "cha_3rd8t"
     serviceName: "front"
 SYNCBOT_METADATA_CONFIG:
   baseUrl: "https://www.balena-cloud.com"
