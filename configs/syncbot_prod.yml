@@ -77,6 +77,15 @@ SYNCBOT_MAPPINGS:
       service: "flowdock"
       flow: "rulemotion/s-hello"
       alias: "hello"
+  # All threads in front/U/feedback become threads in flowdock/s/user_feedback
+  - source:
+      service: "front"
+      flow: "inb_nvj"
+      alias: "feedback"
+    destination:
+      service: "flowdock"
+      flow: "rulemotion/s-user_feedback"
+      alias: "user_feedback"
 SYNCBOT_SERVICE_CONSTRUCTORS:
   flowdock:
     token: "<<INJECT_SYNCBOT_FLOWDOCK_TOKEN>>"
