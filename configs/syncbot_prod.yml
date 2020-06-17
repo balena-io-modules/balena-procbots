@@ -103,6 +103,7 @@ SYNCBOT_SERVICE_CONSTRUCTORS:
       inb_8htn: "cha_3rdal"
       inb_srn: "cha_3rd71"
       inb_nsn: "cha_3rd8t"
+      inb_nvj: "cha_3s3d9"
     serviceName: "front"
 SYNCBOT_METADATA_CONFIG:
   baseUrl: "https://www.balena-cloud.com"
