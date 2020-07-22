@@ -86,6 +86,15 @@ SYNCBOT_MAPPINGS:
       service: "flowdock"
       flow: "rulemotion/s-user_feedback"
       alias: "user_feedback"
+  # All threads in front/Z/Store become threads in flowdock/s/distribution
+  - source:
+      service: "front"
+      flow: "inb_aopn"
+      alias: "distribution"
+    destination:
+      service: "flowdock"
+      flow: "rulemotion/distribution-for-physical-goods"
+      alias: "distribution"
 SYNCBOT_SERVICE_CONSTRUCTORS:
   flowdock:
     token: "<<INJECT_SYNCBOT_FLOWDOCK_TOKEN>>"
@@ -104,6 +113,7 @@ SYNCBOT_SERVICE_CONSTRUCTORS:
       inb_srn: "cha_3rd71"
       inb_nsn: "cha_3rd8t"
       inb_nvj: "cha_3s3d9"
+      inb_aopn: "cha_3snm5"
     serviceName: "front"
 SYNCBOT_METADATA_CONFIG:
   baseUrl: "https://www.balena-cloud.com"
