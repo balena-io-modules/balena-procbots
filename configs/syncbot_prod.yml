@@ -93,7 +93,7 @@ SYNCBOT_MAPPINGS:
       alias: "distribution"
     destination:
       service: "flowdock"
-      flow: "rulemotion/distribution-for-physical-goods"
+      flow: "rulemotion/s-distribution"
       alias: "distribution"
 SYNCBOT_SERVICE_CONSTRUCTORS:
   flowdock:
