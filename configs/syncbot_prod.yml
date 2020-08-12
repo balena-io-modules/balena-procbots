@@ -28,17 +28,6 @@ SYNCBOT_ERROR_SOLUTIONS:
         - "If it persists put an (at)team PSA into r/support"
 SYNCBOT_ERROR_UNDOCUMENTED: 'No fixes currently documented.'
 SYNCBOT_MAPPINGS:
-  # All threads in front/paid become threads in flowdock/support_premium
-  - source:
-      service: "front"
-      flow: "inb_nla"
-      alias: "paid"
-    destination:
-      service: "flowdock"
-      flow: "rulemotion/public-s-premium"
-      alias: "premium"
-      previous:
-        - "public-s-premium"
   # All threads in front/leads become threads in flowdock/leads
   - source:
       service: "front"
@@ -107,7 +96,6 @@ SYNCBOT_SERVICE_CONSTRUCTORS:
     secret: "<<INJECT_SYNCBOT_FRONT_SECRET>>"
     token: "<<INJECT_SYNCBOT_FRONT_TOKEN>>"
     channelPerInbox:
-      inb_nla: "cha_3rd3h"
       inb_2hvh: "cha_3rd59"
       inb_8htn: "cha_3rdal"
       inb_srn: "cha_3rd71"
