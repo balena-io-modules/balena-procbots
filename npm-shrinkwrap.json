@@ -1,6 +1,6 @@
 {
   "name": "resin-procbots",
-  "version": "3.21.18",
+  "version": "3.21.19",
   "dependencies": {
     "@gulp-sourcemaps/identity-map": {
       "version": "1.0.2",
