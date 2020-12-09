@@ -201,7 +201,11 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	 * @returns           Promise that resolves to the name of the contact.
 	 */
 	private static fetchContactName(session: Front, contactUrl: string): Promise<string> {
-		return session.getFromLink(contactUrl)
+		// HACK
+		// replacing the https://resin.io.api.frontapp.com URL with
+		// https://api2.frontapp.com
+		const correctUrl = contactUrl.replace('https://resin.io.api.frontapp.com', 'https://api2.frontapp.com');
+		return session.getFromLink(correctUrl)
 		.then((contact: Contact) => {
 			return contact.name || contact.handles[0].handle;
 		});
