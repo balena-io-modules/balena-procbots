@@ -64,6 +64,7 @@
     "body-parser": "^1.17.1",
     "colors": "^1.1.2",
     "emailreplyparser": "0.0.5",
+    "errio": "^1.2.2",
     "express": "^4.0.34",
     "flowdock": "github:balena-io-playground/node-flowdock#emit-error-response",
     "front-sdk": "^0.6.0",

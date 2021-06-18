@@ -389,7 +389,7 @@ export class SyncBot extends ProcBot {
 				// This also bookends the promise chain so each .then() above can be developed atomically.
 				.then((threadDetails: MessengerEmitResponse) => {
 					if (threadDetails.err !== undefined && !_.isEmpty(threadDetails.err)) {
-						let errMsg: string = threadDetails.err.message || JSON.stringify(threadDetails.err);
+						const errMsg: string = threadDetails.err.message || JSON.stringify(threadDetails.err);
 						logger.log(LogLevel.WARN, JSON.stringify({
 							// Details of the message and the response
 							data, threadDetails,
