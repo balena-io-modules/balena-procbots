@@ -1,6 +1,6 @@
 {
   "name": "balena-procbots",
-  "version": "3.21.20",
+  "version": "3.21.21",
   "description": "Process robots for automating CI pipelines",
   "homepage": "https://github.com/balena-io-modules/resin-procbots#readme",
   "preferGlobal": true,
