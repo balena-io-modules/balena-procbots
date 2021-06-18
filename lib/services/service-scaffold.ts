@@ -18,6 +18,7 @@
 import TypedError = require('typed-error');
 import * as Promise from 'bluebird';
 import * as bodyParser from 'body-parser';
+import * as Errio from 'errio';
 import * as express from 'express';
 import { RequestHandler } from 'express';
 import * as _ from 'lodash';
@@ -254,9 +255,13 @@ export abstract class ServiceScaffold<T> extends WorkerClient<T> implements Serv
 		const listeners: ServiceRegistration[] = _.get(this.eventListeners, data.type, []);
 		return Promise.map(listeners, (listener) => {
 			return listener.listenerMethod(listener, data)
-			.catch((error: Error) =>
-				this.logger.alert(LogLevel.WARN, `Error thrown in handler queue processing:${error}`)
-			);
+			.catch((error: Error) => {
+				const errorString = Errio.stringify(error, { stack: true });
+				this.logger.alert(
+					LogLevel.WARN,
+					`Error thrown in handler queue processing: ${errorString}`
+				);
+			});
 		}).return();
 	}
 
