@@ -6,26 +6,26 @@ This README aims to get the reader up to speed with both running and developing 
 
 ## Installation
 
-Run `npm install` in the root `resin-procbots` repository.
+Run `npm install` in the root `balena-procbots` repository.
 
 ProcBots uses a dynamic loader to execute its Client Bots. The `PROCBOT_BOTS_TO_LOAD` environment variable needs to be set to a valid ProcBot instance (the name of which corresponds to the bot names in `lib/bots`, eg. `versionbot`).
 
 Other environment variables are required depending on the ProcBot being executed. Please see the section at the bottom of this README which has links to each individual bots own documentation.
 
-### `resin-on-resin` Deployment
+### `balena-on-balena` Deployment
 
-Create new app, add appropriate git remote for resin.io.
+Create new app, add appropriate git remote for balena.io.
 
 ```
 gulp build
-git push resin master
+git push balena master
 ```
 
 Appropriate environment variables are required before execution. See below.
 
 ### Kubernetes Deployment
 
-Deploying to a local K8 cluster (or to an already existing environment) requires a bit of implicit knowledge. A framework for doing this within Resin exists. Please speak to DevOps.
+Deploying to a local K8 cluster (or to an already existing environment) requires a bit of implicit knowledge. A framework for doing this within balena exists. Please speak to DevOps.
 
 ### Running Locally
 
@@ -70,24 +70,24 @@ To run the tests use `npm test`.
 
 ## Contributions
 
-Whilst this is a [resin.io](http://resin.io) project, we welcome any contributions to the ProcBots project, including issue reports, ideas for features, new Client Bots, etc.
+Whilst this is a [balena.io](http://balena.io) project, we welcome any contributions to the ProcBots project, including issue reports, ideas for features, new Client Bots, etc.
 
 ## Architecture
 
-[The full architecture documentation.](https://github.com/resin-io-modules/resin-procbots/blob/master/docresources/Architecture/procbot-architecture.md)
+[The full architecture documentation.](https://github.com/balena-io-modules/balena-procbots/blob/master/docresources/Architecture/procbot-architecture.md)
 
 ## VersionBot
 
-* [VersionBot HowTo](https://github.com/resin-io-modules/resin-procbots/blob/master/docresources/VersionBot/versionbot.md)
+* [VersionBot HowTo](https://github.com/balena-io-modules/balena-procbots/blob/master/docresources/VersionBot/versionbot.md)
 
 ## SyncBot
 
-* [SyncBot getting started for users.](https://github.com/resin-io-modules/resin-procbots/blob/master/docresources/SyncBot/syncbot-readme.md)
+* [SyncBot getting started for users.](https://github.com/balena-io-modules/balena-procbots/blob/master/docresources/SyncBot/syncbot-readme.md)
 
 ## KeyframeBot
 
-* [KeyframeBot HowTo](https://github.com/resin-io-modules/resin-procbots/blob/master/docresources/KeyframeBot/keyframebot.md)
+* [KeyframeBot HowTo](https://github.com/balena-io-modules/balena-procbots/blob/master/docresources/KeyframeBot/keyframebot.md)
 
 ## NotifyBot
 
-* [NotifyBot HowTo](https://github.com/resin-io-modules/resin-procbots/blob/master/docresources/NotifyBot/notifybot.md)
+* [NotifyBot HowTo](https://github.com/balena-io-modules/balena-procbots/blob/master/docresources/NotifyBot/notifybot.md)
