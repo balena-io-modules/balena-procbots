@@ -201,10 +201,10 @@ export class FrontTranslator extends TranslatorScaffold implements Translator {
 	 * @returns           Promise that resolves to the name of the contact.
 	 */
 	private static fetchContactName(session: Front, contactUrl: string): Promise<string> {
-		// HACK
-		// replacing the https://resin.io.api.frontapp.com URL with
-		// https://api2.frontapp.com
-		const correctUrl = contactUrl.replace('https://resin.io.api.frontapp.com', 'https://api2.frontapp.com');
+		// Omit the base URL and just use the path, as the front-sdk
+		// will automatically prefix the correct path. Doing this works around
+		// Front occasionally changing the subdomain prefix, e.g. resin.io or resinio instead of api2
+		const correctUrl = contactUrl.replace(/^.*frontapp.com\//, '');
 		return session.getFromLink(correctUrl)
 		.then((contact: Contact) => {
 			return contact.name || contact.handles[0].handle;
