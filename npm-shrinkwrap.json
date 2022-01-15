@@ -1,6 +1,8 @@
 {
   "name": "resin-procbots",
   "version": "3.21.22",
+  "lockfileVersion": 1,
+  "requires": true,
   "dependencies": {
     "@gulp-sourcemaps/identity-map": {
       "version": "1.0.2",
@@ -914,15 +916,14 @@
       "integrity": "sha1-MvxLn82vhF/N9+c7uXysImHwqwo="
     },
     "capitano": {
-      "version": "1.8.2",
-      "resolved": "https://registry.npmjs.org/capitano/-/capitano-1.8.2.tgz",
-      "integrity": "sha512-+/voUBm+dBKiwUeT5wtQEclMU/EGPOP0yW8zZdnL73aUS2wN2koUbEBWKy5USAmwYWYmhee6GlSYSEp2C/k1mw==",
+      "version": "1.9.2",
+      "resolved": "https://registry.npmjs.org/capitano/-/capitano-1.9.2.tgz",
+      "integrity": "sha512-o2tjD1OAeudIUv5iILhocL6eFSzKJVlp0m1yMFprL9I08LvymaE3NaktGIijx6+zQYXVi1GXIA7S+XAl6v/CfQ==",
       "requires": {
         "async": "^1.0.0",
         "get-stdin": "^4.0.1",
         "is-elevated": "^1.0.0",
         "lodash": "~4.17.10",
-        "underscore.string": "~3.3.4",
         "yargs-parser": "^2.4.0"
       },
       "dependencies": {
@@ -4257,6 +4258,12 @@
         "underscore": "~1.8.3"
       },
       "dependencies": {
+        "marked": {
+          "version": "0.3.19",
+          "resolved": "https://registry.npmjs.org/marked/-/marked-0.3.19.tgz",
+          "integrity": "sha512-ea2eGWOqNxPcXv8dyERdSr/6FmzvWwzjMxpfGB/sbMccXoct+xY+YukPD+QTUZwyvK7BZwcr4m21WBOW41pAkg==",
+          "dev": true
+        },
         "underscore": {
           "version": "1.8.3",
           "resolved": "https://registry.npmjs.org/underscore/-/underscore-1.8.3.tgz",
@@ -4355,8 +4362,8 @@
       "integrity": "sha1-fYa9VmefWM5qhHBKZX3TkruoGnk="
     },
     "keyfctl": {
-      "version": "git://github.com/resin-io-modules/keyfctl.git#18af67b9182cd08d15ad688253808ccc231ca478",
-      "from": "git://github.com/resin-io-modules/keyfctl.git#linter",
+      "version": "git://github.com/balena-io-modules/keyfctl.git#18af67b9182cd08d15ad688253808ccc231ca478",
+      "from": "git://github.com/balena-io-modules/keyfctl.git#linter",
       "requires": {
         "bluebird": "^3.4.7",
         "capitano": "^1.7.4",
@@ -4772,9 +4779,9 @@
       }
     },
     "marked": {
-      "version": "0.3.19",
-      "resolved": "https://registry.npmjs.org/marked/-/marked-0.3.19.tgz",
-      "integrity": "sha512-ea2eGWOqNxPcXv8dyERdSr/6FmzvWwzjMxpfGB/sbMccXoct+xY+YukPD+QTUZwyvK7BZwcr4m21WBOW41pAkg=="
+      "version": "4.0.10",
+      "resolved": "https://registry.npmjs.org/marked/-/marked-4.0.10.tgz",
+      "integrity": "sha512-+QvuFj0nGgO970fySghXGmuw+Fd0gD2x3+MqCWLIPf5oxdv1Ka6b2q+z9RP01P/IaKPMEramy+7cNy/Lw8c3hw=="
     },
     "math-random": {
       "version": "1.0.4",
@@ -10941,6 +10948,12 @@
         "typescript": "2.3.4"
       },
       "dependencies": {
+        "marked": {
+          "version": "0.3.19",
+          "resolved": "https://registry.npmjs.org/marked/-/marked-0.3.19.tgz",
+          "integrity": "sha512-ea2eGWOqNxPcXv8dyERdSr/6FmzvWwzjMxpfGB/sbMccXoct+xY+YukPD+QTUZwyvK7BZwcr4m21WBOW41pAkg==",
+          "dev": true
+        },
         "typescript": {
           "version": "2.3.4",
           "resolved": "https://registry.npmjs.org/typescript/-/typescript-2.3.4.tgz",
@@ -11004,15 +11017,6 @@
           "integrity": "sha1-izixDKze9jM3uLJOT/htRa6lKag=",
           "dev": true
         }
-      }
-    },
-    "underscore.string": {
-      "version": "3.3.5",
-      "resolved": "https://registry.npmjs.org/underscore.string/-/underscore.string-3.3.5.tgz",
-      "integrity": "sha512-g+dpmgn+XBneLmXXo+sGlW5xQEt4ErkS3mgeN2GFbremYeMBSJKr9Wf2KJplQVaiPY/f7FN6atosWYNm9ovrYg==",
-      "requires": {
-        "sprintf-js": "^1.0.3",
-        "util-deprecate": "^1.0.2"
       }
     },
     "union-value": {
